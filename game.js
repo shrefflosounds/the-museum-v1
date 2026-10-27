@@ -2422,6 +2422,10 @@
       this.systemNotificationTimeout = null;
       this.isSpectatorMode = false;
       this.isNoClipMode = false;
+      this.isSmittyXray = false;
+      this.smittyXrayGroup = null;
+      this.smittyXrayFillMat = null;
+      this.smittyXrayWireMat = null;
       this.isFalling = false;
       this.fallVelocity = 0;
       this.lastKnownPlayerPos = new THREE.Vector3(-10, 0, 22);
@@ -2501,7 +2505,7 @@
       this.scene.background = new THREE.Color(0x05070c);
       this.scene.fog = new THREE.FogExp2(0x05070c, 0.032);
 
-      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.04, 95);
+      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.04, 150);
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
@@ -5119,10 +5123,39 @@
             this.smittyMesh = gltf.scene;
             this.smittyMesh.position.copy(this.smittyPos);
             this.smittyMesh.position.y += 0.05;
-            this.smittyMesh.visible = (this.smittyFloor === this.playerFloor);
+            this.smittyMesh.visible = this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor);
             this.smittyMesh.scale.set(1.2, 1.2, 1.2);
 
             this.smittyBones = {};
+            this.smittyXrayGroup = new THREE.Group();
+            this.smittyXrayGroup.visible = this.isSmittyXray;
+
+            this.smittyXrayFillMat = new THREE.MeshBasicMaterial({
+              color: 0xff1e38,
+              transparent: true,
+              opacity: 0.50,
+              depthTest: true,
+              depthFunc: THREE.GreaterDepth,
+              depthWrite: false,
+              polygonOffset: true,
+              polygonOffsetFactor: -1.0,
+              polygonOffsetUnits: -1.0,
+              side: THREE.DoubleSide
+            });
+
+            this.smittyXrayWireMat = new THREE.MeshBasicMaterial({
+              color: 0xff3b52,
+              wireframe: true,
+              transparent: true,
+              opacity: 0.85,
+              depthTest: true,
+              depthFunc: THREE.GreaterDepth,
+              depthWrite: false,
+              polygonOffset: true,
+              polygonOffsetFactor: -1.0,
+              polygonOffsetUnits: -1.0
+            });
+
             this.smittyMesh.traverse((child) => {
               if (child.isMesh) {
                 if (child.geometry) {
@@ -5144,11 +5177,50 @@
                     child.material = optimizeMat(child.material);
                   }
                 }
+
+                // Build X-ray occluded wall-hack overlay meshes
+                if (child.isSkinnedMesh) {
+                  const fillMesh = new THREE.SkinnedMesh(child.geometry, this.smittyXrayFillMat);
+                  fillMesh.bind(child.skeleton, child.bindMatrix);
+                  fillMesh.renderOrder = 999;
+                  fillMesh.frustumCulled = false;
+                  fillMesh.position.copy(child.position);
+                  fillMesh.quaternion.copy(child.quaternion);
+                  fillMesh.scale.copy(child.scale);
+                  this.smittyXrayGroup.add(fillMesh);
+
+                  const wireMesh = new THREE.SkinnedMesh(child.geometry, this.smittyXrayWireMat);
+                  wireMesh.bind(child.skeleton, child.bindMatrix);
+                  wireMesh.renderOrder = 1000;
+                  wireMesh.frustumCulled = false;
+                  wireMesh.position.copy(child.position);
+                  wireMesh.quaternion.copy(child.quaternion);
+                  wireMesh.scale.copy(child.scale);
+                  this.smittyXrayGroup.add(wireMesh);
+                } else {
+                  const fillMesh = new THREE.Mesh(child.geometry, this.smittyXrayFillMat);
+                  fillMesh.renderOrder = 999;
+                  fillMesh.frustumCulled = false;
+                  fillMesh.position.copy(child.position);
+                  fillMesh.quaternion.copy(child.quaternion);
+                  fillMesh.scale.copy(child.scale);
+                  this.smittyXrayGroup.add(fillMesh);
+
+                  const wireMesh = new THREE.Mesh(child.geometry, this.smittyXrayWireMat);
+                  wireMesh.renderOrder = 1000;
+                  wireMesh.frustumCulled = false;
+                  wireMesh.position.copy(child.position);
+                  wireMesh.quaternion.copy(child.quaternion);
+                  wireMesh.scale.copy(child.scale);
+                  this.smittyXrayGroup.add(wireMesh);
+                }
               }
               if (child.isBone) {
                 this.smittyBones[child.name] = child;
               }
             });
+
+            this.smittyMesh.add(this.smittyXrayGroup);
 
             this.scene.add(this.smittyMesh);
 
@@ -5187,7 +5259,7 @@
       if (this.smittyMesh) {
         this.smittyMesh.position.copy(this.smittyPos);
         this.smittyMesh.position.y += 0.05;
-        this.smittyMesh.visible = (this.smittyFloor === this.playerFloor);
+        this.smittyMesh.visible = this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor);
       }
       this.pickNextPatrolNode();
     }
@@ -5440,7 +5512,13 @@
         } else if (e.code === 'KeyF') {
           if (this.gameStarted) this.toggleFlashlight();
         } else if (e.code === 'KeyR') {
-          if (this.gameStarted) this.reloadPistol();
+          if (this.gameStarted) {
+            if (this.isSpectatorMode) {
+              this.toggleSmittyXray();
+            } else {
+              this.reloadPistol();
+            }
+          }
         } else if (e.code === 'KeyE') {
           if (this.isExaminingArt) {
             this.closeArtModal();
@@ -6041,6 +6119,19 @@
       }, duration);
     }
 
+    updateSpectatorBadge() {
+      if (!this.dom.spectatorIndicator) return;
+      if (!this.isSpectatorMode) {
+        this.dom.spectatorIndicator.classList.add('hidden');
+        return;
+      }
+      this.dom.spectatorIndicator.classList.remove('hidden');
+      const parts = ['SPECTATOR'];
+      if (this.isNoClipMode) parts.push('NO-CLIP');
+      if (this.isSmittyXray) parts.push('X-RAY');
+      this.dom.spectatorIndicator.textContent = parts.join(' • ');
+    }
+
     toggleSpectatorMode() {
       this.isSpectatorMode = !this.isSpectatorMode;
 
@@ -6053,25 +6144,21 @@
         }
         this.audio.setHeartbeatBpm(45);
 
-        if (this.dom.spectatorIndicator) {
-          this.dom.spectatorIndicator.classList.remove('hidden');
-          this.dom.spectatorIndicator.textContent = this.isNoClipMode
-            ? T('hud.noclip_badge', 'SPECTATOR • NO-CLIP')
-            : T('hud.spectator_badge', 'SPECTATOR MODE');
-        }
+        this.updateSpectatorBadge();
 
         this.showSystemNotification(
-          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (PRESS N FOR NO-CLIP, CMD+N TO EXIT)')
+          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (N: NO-CLIP, R: X-RAY, CMD+N: EXIT)')
         );
       } else {
-        // Disengage no-clip if active when exiting spectator mode
+        // Disengage no-clip and X-ray if active when exiting spectator mode
         if (this.isNoClipMode) {
           this.toggleNoClipMode(false);
         }
-
-        if (this.dom.spectatorIndicator) {
-          this.dom.spectatorIndicator.classList.add('hidden');
+        if (this.isSmittyXray) {
+          this.toggleSmittyXray(false);
         }
+
+        this.updateSpectatorBadge();
 
         this.showSystemNotification(
           T('hud.spectator_disabled', 'SPECTATOR MODE DISABLED')
@@ -6079,23 +6166,47 @@
       }
     }
 
+    toggleSmittyXray(forceState) {
+      if (!this.isSpectatorMode && forceState !== false) return;
+      const targetState = (forceState !== undefined) ? forceState : !this.isSmittyXray;
+      if (this.isSmittyXray === targetState) return;
+      this.isSmittyXray = targetState;
+
+      if (this.smittyXrayGroup) {
+        this.smittyXrayGroup.visible = this.isSmittyXray;
+      }
+
+      // If turning on X-ray, ensure Smitty's mesh is visible even across different floors
+      if (this.isSmittyXray && this.smittyMesh && this.smittyState !== 'DEAD') {
+        this.smittyMesh.visible = true;
+      }
+
+      this.updateSpectatorBadge();
+
+      if (this.isSmittyXray) {
+        this.showSystemNotification(
+          T('hud.xray_enabled', 'SMITTY X-RAY OUTLINE ENABLED')
+        );
+      } else {
+        this.showSystemNotification(
+          T('hud.xray_disabled', 'SMITTY X-RAY OUTLINE DISABLED')
+        );
+      }
+    }
+
     toggleNoClipMode(forceState) {
-      if (!this.isSpectatorMode) return;
+      if (!this.isSpectatorMode && forceState !== false) return;
       const targetState = (forceState !== undefined) ? forceState : !this.isNoClipMode;
       if (this.isNoClipMode === targetState) return;
       this.isNoClipMode = targetState;
 
+      this.updateSpectatorBadge();
+
       if (this.isNoClipMode) {
-        if (this.dom.spectatorIndicator) {
-          this.dom.spectatorIndicator.textContent = T('hud.noclip_badge', 'SPECTATOR • NO-CLIP');
-        }
         this.showSystemNotification(
           T('hud.noclip_enabled', 'NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, N TO EXIT)')
         );
       } else {
-        if (this.dom.spectatorIndicator) {
-          this.dom.spectatorIndicator.textContent = T('hud.spectator_badge', 'SPECTATOR MODE');
-        }
         // Seamless drop to ground like Garry's Mod
         const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
         let groundFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
@@ -6847,7 +6958,7 @@
               }
             }
           });
-          this.smittyMesh.visible = (this.smittyFloor === this.playerFloor);
+          this.smittyMesh.visible = this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor);
 
           // Reset health & patrol
           this.smittyHp = CONFIG.SMITTY.MAX_HP;
@@ -6870,7 +6981,14 @@
       const sameFloor = (this.smittyFloor === this.playerFloor);
       const stairVisible = (isNearStairSmitty || isNearStairPlayer);
       const standardVisibility = (sameFloor || (stairVisible && (this.smittyState === 'CHASE' || Math.abs(this.smittyFloor - this.playerFloor) <= 1)));
-      this.smittyMesh.visible = this.isSpectatorMode ? (sameFloor || Math.abs(this.playerPos.y - this.smittyPos.y) < 7.5) : standardVisibility;
+      this.smittyMesh.visible = this.isSmittyXray ? true : (this.isSpectatorMode ? (sameFloor || Math.abs(this.playerPos.y - this.smittyPos.y) < 7.5) : standardVisibility);
+
+      // Dynamic subtle pulse for X-ray materials
+      if (this.isSmittyXray && this.smittyXrayFillMat && this.smittyXrayWireMat) {
+        const pulse = 0.88 + 0.12 * Math.sin(performance.now() * 0.005);
+        this.smittyXrayFillMat.opacity = 0.50 * pulse;
+        this.smittyXrayWireMat.opacity = 0.85 * pulse;
+      }
 
       if (this.graceTimer > 0) {
         this.graceTimer -= delta;
