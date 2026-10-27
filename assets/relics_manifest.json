@@ -1,0 +1,86 @@
+[
+  {
+    "id": 1,
+    "file": "assets/relics/AsceticSebring.glb",
+    "defaultName": "Ascetic Sebring",
+    "color": 14239471
+  },
+  {
+    "id": 2,
+    "file": "assets/relics/BlackNose.glb",
+    "defaultName": "Black Nose",
+    "color": 15680580
+  },
+  {
+    "id": 3,
+    "file": "assets/relics/ChickenLeg.glb",
+    "defaultName": "Chicken Leg",
+    "color": 16096779
+  },
+  {
+    "id": 4,
+    "file": "assets/relics/FighterBoots.glb",
+    "defaultName": "Fighter Boots",
+    "color": 3718648
+  },
+  {
+    "id": 5,
+    "file": "assets/relics/HarbingersBoot.glb",
+    "defaultName": "Harbinger's Boot",
+    "color": 16436245
+  },
+  {
+    "id": 6,
+    "file": "assets/relics/MonaLisa.glb",
+    "defaultName": "Mona Lisa",
+    "color": 3462041
+  },
+  {
+    "id": 7,
+    "file": "assets/relics/PlushMonkey.glb",
+    "defaultName": "Plush Monkey",
+    "color": 16486972
+  },
+  {
+    "id": 8,
+    "file": "assets/relics/R3E4ActionFigure.glb",
+    "defaultName": "R3E4 Action Figure",
+    "color": 11032055
+  },
+  {
+    "id": 9,
+    "file": "assets/relics/Scorpion.glb",
+    "defaultName": "Scorpion",
+    "color": 440020
+  },
+  {
+    "id": 10,
+    "file": "assets/relics/ShreffloHelm.glb",
+    "defaultName": "Shrefflo Helm",
+    "color": 15381256
+  },
+  {
+    "id": 11,
+    "file": "assets/relics/SmittyDoll.glb",
+    "defaultName": "Smitty Doll",
+    "color": 9741240
+  },
+  {
+    "id": 12,
+    "file": "assets/relics/Snake.glb",
+    "defaultName": "Snake",
+    "color": 1096065
+  },
+  {
+    "id": 13,
+    "file": "assets/relics/StoneTablet.glb",
+    "defaultName": "Stone Tablet",
+    "color": 3718648
+  },
+  {
+    "id": 14,
+    "file": "assets/relics/VictoryBust.glb",
+    "defaultName": "Victory Bust",
+    "color": 16007006
+  }
+]

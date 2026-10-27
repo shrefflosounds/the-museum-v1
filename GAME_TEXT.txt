@@ -1,0 +1,531 @@
+################################################################################
+#  SHREFFLOHOUSE — EVERY PIECE OF TEXT THE PLAYER SEES
+################################################################################
+#
+#  HOW TO EDIT:
+#   * Change the words to the RIGHT of the "=" sign. Never change the name on the left.
+#   * To REMOVE a piece of text, delete everything after the "="  (e.g.  pause.text = )
+#   * Words in {curly braces} are filled in by the game, like {floor} or {number}.
+#     You can move them around or delete them, but don't rename them.
+#   * **Double stars** make words bold — only works on lines marked "(bold ok)".
+#   * Lines starting with # are just notes. Lines in [ brackets ] are just headings.
+#   * Save this file, then reopen the game (or use Game > Reload Game) to see changes.
+#   * If you mess up a line, just delete it — the game will use the original text.
+#   * Original copies of the game files are in the "backup_before_text_file" folder.
+#
+#  NOTE: Some text is automatically shown in ALL CAPS by the game:
+#        artwork titles on the wall plaques and in the [E] prompt, relic names in the
+#        [E] prompt, and all wall signs.
+################################################################################
+
+
+[ WINDOW / TAB TITLE ]
+window_title = The Museum
+
+
+[ START SCREEN ]
+start.title = THE MUSEUM
+start.goal = Recover all 13 relics to unlock main door
+# Controls list (bold ok)
+start.control1 = **WASD**: Move
+start.control2 = **MOUSE**: Smooth Look / Aim
+start.control3 = **E**: Examine / Pick Up
+start.control4 = **LEFT CLICK**: Fire Pistol
+start.control5 = **RIGHT CLICK**: Aim Sight
+start.control6 = **SHIFT**: Sprint
+start.control7 = **F**: Flashlight
+start.control8 = **TAB**: Map & Objectives
+start.control9 = **SPACE**: Jump
+start.control10 = **CTRL**: Crouch / Sneak
+start.button = ENTER THE MUSEUM [CLICK TO PLAY]
+
+
+[ HUD (ON SCREEN WHILE PLAYING) ]
+hud.health_label = HEALTH
+hud.sprint_label = SPRINT
+hud.ammo_label = AMMO
+hud.reload_warning = PRESS [R] TO RELOAD
+hud.interact_prompt = PRESS [E] TO INTERACT
+# Prompt when standing next to a relic. {relic} = the relic name
+hud.prompt_take_relic = [E] TAKE RELIC: {relic}
+# Prompt when looking at a painting. {title} = the artwork title
+hud.prompt_examine_art = [E] EXAMINE ARTWORK: "{title}"
+# Shown at the top of the screen once all relics are collected
+hud.exit_unlocked = LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!
+# Room name at the top of the screen. {floor} = floor name, {area} = room name (both listed below)
+hud.room_format = {floor} • {area}
+hud.spectator_badge = SPECTATOR MODE
+hud.noclip_badge = SPECTATOR • NO-CLIP
+hud.spectator_enabled = SPECTATOR MODE ENABLED (PRESS N FOR NO-CLIP, CMD+N TO EXIT)
+hud.spectator_disabled = SPECTATOR MODE DISABLED
+hud.noclip_enabled = NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, N TO EXIT)
+hud.noclip_disabled = NO-CLIP DISABLED
+
+
+[ FLOOR NAMES ]
+# Used in the top-of-screen room name and as the small line on the room signs
+floor.1 = 1ST FLOOR
+floor.2 = 2ND FLOOR
+floor.3 = 3RD FLOOR
+floor.4 = 4TH FLOOR
+
+
+[ ROOM NAMES (TOP OF SCREEN AS YOU WALK AROUND) ]
+area.hosmer_gallery = BUFFOON GALLERY
+area.magazines_alcove = YELLOW CREATURE'S ALCOVE
+area.stairwell_a = SOUTH-WEST STAIRWELL A
+area.stairwell_b = NORTH-CENTRAL STAIRWELL B
+area.west_room.floor1 = CLASSICAL ANTIQUITIES
+area.west_room.floor2 = COOL DUDE CENTRAL
+area.west_room.floor3 = THE ART OF SCAMMING
+area.west_room.floor4 = PROMOTIONAL ART VAULT
+area.southwest_office.floor2 = SHREFFLO OFFICE
+area.southwest_office.other_floors = SOUTH-WEST OFFICE
+area.north_room.other_floors = LOCAL HISTORY
+area.north_room.floor4 = RESTRICTED RELIQUARY VAULT
+area.restrooms = RESTROOMS
+area.study_room = STUDY ROOM
+area.main_stacks = ARTS & MUSIC MAIN STACKS
+area.arts_music_office = ARTS & MUSIC OFFICE
+area.south_media_wing = SOUTH MEDIA & REFERENCE WING
+area.feature_films_rotunda = FEATURE FILMS ROTUNDA
+
+
+[ SIGNS ON THE WALLS ]
+# Room signs above doorways (the floor name is printed under them)
+sign.west_room.floor1 = CLASSICAL ANTIQUITIES
+sign.west_room.floor2 = COOL DUDE CENTRAL
+sign.west_room.floor3 = THE ART OF SCAMMING
+sign.west_room.floor4 = PROMOTIONAL ART VAULT
+sign.north_room.floor2 = LOCAL HISTORY
+sign.north_room.floor4 = RESTRICTED RELIQUARY VAULT
+sign.north_room.floor1_and_3 = SPECIAL COLLECTIONS ARCHIVE
+# Stairwell signs. {number} = floor number
+sign.stairwell_a = STAIRWELL A • FLOOR {number}
+sign.stairwell_a.subtitle = WEST FLIGHT UP / EAST FLIGHT DOWN
+sign.stairwell_b = STAIRWELL B • FLOOR {number}
+sign.stairwell_b.subtitle_floor1 = EXIT LEVEL
+sign.stairwell_b.subtitle_upper = USE WEST FLIGHT UP / EAST FLIGHT DOWN
+# Small line printed under the title on every artwork plaque
+plaque.subtitle = SHREFFLO MUSEUM ARCHIVE
+
+
+[ RELICS ]
+# Names of the 13 relics (from your 3D models in "Models for game relics")
+relic.1.name = Ascetic Sebring
+relic.2.name = Black Nose
+relic.3.name = Chicken Leg
+relic.4.name = Fighter Boots
+relic.5.name = Harbinger's Boot
+relic.6.name = Mona Lisa
+relic.7.name = Plush Monkey
+relic.8.name = R3E4 Action Figure
+relic.9.name = Scorpion
+relic.10.name = Shrefflo Helm
+relic.11.name = Smitty Doll
+relic.12.name = Snake
+relic.13.name = Stone Tablet
+relic.14.name = Victory Bust
+
+# Location hints shown on the Tab map checklist.
+# The game randomly assigns each relic to one of these spots across the 4 floors.
+relic.loc.1 = 1st Floor
+relic.loc.2 = 1st Floor
+relic.loc.3 = 1st Floor
+relic.loc.4 = 2nd Floor
+relic.loc.5 = 2nd Floor
+relic.loc.6 = 2nd Floor
+relic.loc.7 = 3rd Floor
+relic.loc.8 = 3rd Floor
+relic.loc.9 = 3rd Floor
+relic.loc.10 = 4th Floor
+relic.loc.11 = 4th Floor
+relic.loc.12 = 4th Floor
+relic.loc.13 = 1st Floor
+relic.loc.14 = 2nd Floor
+
+
+[ MAP & OBJECTIVES SCREEN (HOLD TAB) ]
+map.title = MAP & OBJECTIVES
+map.subtitle = Recover all {total} relics to unlock the main door:
+# Tag shown next to a relic once you have it
+map.recovered_tag = ✓ RECOVERED
+relic.undiscovered = Undiscovered
+hud.relic_notification = RELIC RECOVERED: {obtained}/{total} ({remaining} LEFT)
+# Top-left of the mini map. {number} = floor number
+map.current_level = CURRENT LEVEL: FLOOR {number} OF 4
+map.close_hint = Release or Press [Tab] to close map
+# Room labels drawn on the mini map
+map.label.west_museum = WEST MUSEUM
+map.label.west_office = OFFICE
+map.label.stair_a = STAIR A
+map.label.hosmer_gallery = HOSMER GALLERY
+map.label.stair_b = STAIR B
+map.label.study_wc = STUDY/WC
+map.label.hampshire_room = HAMPSHIRE ROOM
+map.label.arts_music_stacks = ARTS & MUSIC STACKS
+map.label.east_office = OFFICE
+map.label.media_wing = MEDIA WING
+
+
+[ ARTWORK POPUP (WHEN YOU PRESS E ON A PAINTING) ]
+art_popup.archive_tag = SHREFFLO MUSEUM ARCHIVE
+art_popup.artist_label = Artist:
+art_popup.artist_name = Smitty Fantastic
+art_popup.source_text = Featured in the official online gallery at
+art_popup.link_text = smittyfantastic.neocities.org/Gallery
+# Web address the link opens
+art_popup.link_url = https://smittyfantastic.neocities.org/Gallery
+# (bold ok)
+art_popup.close_hint = Press **[E]** or **[ESC]** to return to the museum
+# Tooltip when hovering the X button
+art_popup.close_button_tooltip = Close [E or ESC]
+# Placeholder room label (normally replaced by the artwork room label below)
+art_popup.default_room = EXHIBIT
+
+
+[ PAUSE SCREEN (ESC) ]
+pause.title = EXHIBITION PAUSED
+pause.text = The Museum
+pause.button = RESUME EXPLORATION
+
+
+[ GAME OVER SCREEN ]
+gameover.title = EXHIBIT CASUALTY
+gameover.text = You were beaten to death
+gameover.relics_label = Relics Recovered:
+gameover.relics_out_of = / {total}
+gameover.shots_label = Shots Fired:
+gameover.hits_label = Smitty Hits:
+gameover.button = TRY AGAIN
+
+
+[ VICTORY SCREEN ]
+victory.title = YOU ESCAPED
+victory.text = You escaped
+victory.all_relics = All {total} Relics Recovered
+victory.time_label = Time Survived:
+victory.accuracy_label = Accuracy:
+victory.button = PLAY AGAIN
+
+
+[ ARTWORK ROOM LABELS ]
+# The small room tag at the top of the artwork popup.
+# Each line covers every painting hung in that spot.
+artroom.01 = 1ST FLOOR • CLASSICAL ANTIQUITIES
+artroom.02 = 1ST FLOOR • YELLOW CREATURE'S ALCOVE
+artroom.03 = 1ST FLOOR • BUFFOON GALLERY
+artroom.04 = 1ST FLOOR • LOCAL HISTORY
+artroom.05 = 1ST FLOOR • ARTS & MUSIC MAIN STACKS
+artroom.06 = 1ST FLOOR • EAST BAY ALCOVE
+artroom.07 = 1ST FLOOR • SOUTH-WEST OFFICE
+artroom.08 = 1ST FLOOR • ARTS & MUSIC OFFICE
+artroom.09 = 1ST FLOOR • SOUTH MEDIA & REFERENCE WING
+artroom.10 = 1ST FLOOR • FEATURE FILMS ROTUNDA
+artroom.11 = 2ND FLOOR • COOL DUDE CENTRAL
+artroom.12 = 2ND FLOOR • YELLOW CREATURE'S ALCOVE
+artroom.13 = 2ND FLOOR • BUFFOON GALLERY
+artroom.14 = 2ND FLOOR • LOCAL HISTORY
+artroom.15 = 2ND FLOOR • ARTS & MUSIC MAIN STACKS
+artroom.16 = 2ND FLOOR • EAST BAY ALCOVE
+artroom.17 = 2ND FLOOR • SHREFFLO OFFICE
+artroom.18 = 2ND FLOOR • ARTS & MUSIC OFFICE
+artroom.19 = 2ND FLOOR • SOUTH MEDIA & REFERENCE WING
+artroom.20 = 2ND FLOOR • FEATURE FILMS ROTUNDA
+artroom.21 = 3RD FLOOR • THE ART OF SCAMMING
+artroom.22 = 3RD FLOOR • YELLOW CREATURE'S ALCOVE
+artroom.23 = 3RD FLOOR • BUFFOON GALLERY
+artroom.24 = 3RD FLOOR • LOCAL HISTORY
+artroom.25 = 3RD FLOOR • ARTS & MUSIC MAIN STACKS
+artroom.26 = 3RD FLOOR • EAST BAY ALCOVE
+artroom.27 = 3RD FLOOR • SOUTH-WEST OFFICE
+artroom.28 = 3RD FLOOR • ARTS & MUSIC OFFICE
+artroom.29 = 3RD FLOOR • SOUTH MEDIA & REFERENCE WING
+artroom.30 = 3RD FLOOR • FEATURE FILMS ROTUNDA
+artroom.31 = 4TH FLOOR • PROMOTIONAL ART VAULT
+artroom.32 = 4TH FLOOR • YELLOW CREATURE'S ALCOVE
+artroom.33 = 4TH FLOOR • BUFFOON GALLERY
+artroom.34 = 4TH FLOOR • RESTRICTED RELIQUARY VAULT
+artroom.35 = 4TH FLOOR • ARTS & MUSIC MAIN STACKS
+artroom.36 = 4TH FLOOR • EAST BAY ALCOVE
+artroom.37 = 4TH FLOOR • SOUTH-WEST OFFICE
+artroom.38 = 4TH FLOOR • ARTS & MUSIC OFFICE
+artroom.39 = 4TH FLOOR • SOUTH MEDIA & REFERENCE WING
+artroom.40 = 4TH FLOOR • FEATURE FILMS ROTUNDA
+
+
+[ ARTWORK TITLES ]
+# Shown on the wall plaque, in the [E] prompt, and in the artwork popup.
+# The image file for each one is noted in the line above it.
+# image: 001_Smitty-silly.gif
+art.001 = Smitty Silly
+# image: 002_Emoji-movie.jpg
+art.002 = Emoji Movie
+# image: 003_pinkthing.jpg
+art.003 = Pinkthing
+# image: 004_iwanttolivebythesea.jpg
+art.004 = Iwanttolivebythesea
+# image: 005_frenchhouse.jpg
+art.005 = Frenchhouse
+# image: 006_Curator_s_Assets.png
+art.006 = Curator S Assets
+# image: 007_painting-grey-face.jpg
+art.007 = Painting Grey Face
+# image: 008_Smitty-wild-animal-framed.jpg
+art.008 = Smitty Wild Animal Framed
+# image: 009_leadership-lemon.jpg
+art.009 = Leadership Lemon
+# image: 010_star-ez-duz-it.jpg
+art.010 = Star Ez Duz It
+# image: 011_smitty-cola-melt-shirtless.jpg
+art.011 = Smitty Cola Melt Shirtless
+# image: 012_shocksites.jpg
+art.012 = Shocksites
+# image: 013_gemini.jpg
+art.013 = Gemini
+# image: 014_smitty-dirt.jpg
+art.014 = Smitty Dirt
+# image: 015_E9e.jpg
+art.015 = E9E
+# image: 016_bathbomb.jpg
+art.016 = Bathbomb
+# image: 017_crate-challenge.jpg
+art.017 = Crate Challenge
+# image: 018_elderly-portrait.jpg
+art.018 = Elderly Portrait
+# image: 019_astonishment.jpg
+art.019 = Astonishment
+# image: 020_sf-astonishment-ad.jpg
+art.020 = Sf Astonishment Ad
+# image: 021_heknah-wallpaper-AS.jpg
+art.021 = Heknah Wallpaper As
+# image: 022_spongeclownbob.jpg
+art.022 = Spongeclownbob
+# image: 023_smittys-room-toon.jpg
+art.023 = Smittys Room Toon
+# image: 024_smittys-room-live-action.jpg
+art.024 = Smittys Room Live Action
+# image: 025_pinocchio.jpg
+art.025 = Pinocchio
+# image: 026_shawtys-mix.jpg
+art.026 = Shawtys Mix
+# image: 027_2008-red-fox.jpg
+art.027 = 2008 Red Fox
+# image: 028_rip-odi.jpg
+art.028 = Rip Odi
+# image: 029_Shrefflo-SmittyFantastic.jpg
+art.029 = Shrefflo Smittyfantastic
+# image: 030_cherry-drink.jpg
+art.030 = Cherry Drink
+# image: 031_trumpa.jpg
+art.031 = Trumpa
+# image: 032_dynamic.jpg
+art.032 = Dynamic
+# image: 033_work-breakroom.jpg
+art.033 = Work Breakroom
+# image: 034_mocha-slip.jpg
+art.034 = Mocha Slip
+# image: 035_spotify-ad.jpg
+art.035 = Spotify Ad
+# image: 036_shake-it-for-me.jpg
+art.036 = Shake It For Me
+# image: 037_misty-morning.jpg
+art.037 = Misty Morning
+# image: 038_omelette-on_paper.jpg
+art.038 = Omelette On Paper
+# image: 039_bird-mouth.jpg
+art.039 = Bird Mouth
+# image: 040_4Who.jpg
+art.040 = 4Who
+# image: 041_Joyous_Protection.jpg
+art.041 = Joyous Protection
+# image: 042_made-u-a-bird.jpg
+art.042 = Made U A Bird
+# image: 043_dog-drawing.jpg
+art.043 = Dog Drawing
+# image: 044_Smitty-pixels-mussel-heart.jpg
+art.044 = Smitty Pixels Mussel Heart
+# image: 045_Hans.jpg
+art.045 = Hans
+# image: 046_blip-vision-pizza-reach.jpg
+art.046 = Blip Vision Pizza Reach
+# image: 047_lake-excursion-ad.jpg
+art.047 = Lake Excursion Ad
+# image: 048_Sand.jpg
+art.048 = Sand
+# image: 049_floating-boxer-ad.jpg
+art.049 = Floating Boxer Ad
+# image: 050_peter-griffin-tribute.jpg
+art.050 = Peter Griffin Tribute
+# image: 051_imagen.jpg
+art.051 = Imagen
+# image: 052_spew.jpg
+art.052 = Spew
+# image: 053_purple-smile.jpg
+art.053 = Purple Smile
+# image: 054_Smitty-ocean-storm.jpg
+art.054 = Smitty Ocean Storm
+# image: 055_liberal-lawn-sign.jpg
+art.055 = Liberal Lawn Sign
+# image: 056_smitty-cow.jpg
+art.056 = Smitty Cow
+# image: 057_ancient-predators.jpg
+art.057 = Ancient Predators
+# image: 058_hey-guy-tv.jpg
+art.058 = Hey Guy Tv
+# image: 059_yellow-guy-cute.jpg
+art.059 = Yellow Guy Cute
+# image: 060_Smitty-BlackBox_Sigil_Tee.png
+art.060 = Smitty Blackbox Sigil Tee
+# image: 061_annoyeornej.jpg
+art.061 = Annoyeornej
+# image: 062_dogandghostthings.jpg
+art.062 = Dogandghostthings
+# image: 063_thin-blue-line.jpg
+art.063 = Thin Blue Line
+# image: 064_Space-planet.jpg
+art.064 = Space Planet
+# image: 065_messages-from-God.jpg
+art.065 = Messages From God
+# image: 066_beach-video.jpg
+art.066 = Beach Video
+# image: 067_grafeetee.jpg
+art.067 = Grafeetee
+# image: 068_SF-penguin-1.jpg
+art.068 = Sf Penguin 1
+# image: 069_penguin-2.jpg
+art.069 = Penguin 2
+# image: 070_SF_beach_photo_drawn_eyebrows.jpg
+art.070 = Sf Beach Photo Drawn Eyebrows
+# image: 071_yellow-ball-face.jpg
+art.071 = Yellow Ball Face
+# image: 072_evil-purple-pixelated-face.jpg
+art.072 = Evil Purple Pixelated Face
+# image: 073_fancy.jpg
+art.073 = Fancy
+# image: 074_cow-flag.jpg
+art.074 = Cow Flag
+# image: 075_the-big-man.jpg
+art.075 = The Big Man
+# image: 076_consumer-sculpture.jpg
+art.076 = Consumer Sculpture
+# image: 077_green-guy-with-wings.jpg
+art.077 = Green Guy With Wings
+# image: 078_pointy-world-car-fire.jpg
+art.078 = Pointy World Car Fire
+# image: 079_paint-red-house.jpg
+art.079 = Paint Red House
+# image: 080_the-harbinger.jpg
+art.080 = The Harbinger
+# image: 081_monkey-full-body.jpg
+art.081 = Monkey Full Body
+# image: 082_now-watch-me-whip.jpg
+art.082 = Now Watch Me Whip
+# image: 083_luv-graffiti-shirt-ad.jpg
+art.083 = Luv Graffiti Shirt Ad
+# image: 084_sf-mini-drawing-red.jpg
+art.084 = Sf Mini Drawing Red
+# image: 085_painting-with-a-bed.jpg
+art.085 = Painting With A Bed
+# image: 086_person-with-mask-behind.jpg
+art.086 = Person With Mask Behind
+# image: 087_photo-turned-drawing-creatureg.jpg
+art.087 = Photo Turned Drawing Creatureg
+# image: 088_goblin-drawing.jpg
+art.088 = Goblin Drawing
+# image: 089_snapchat-athlete-gun-woman-boo.jpg
+art.089 = Snapchat Athlete Gun Woman Boo
+# image: 090_smitty-shirt-handmade.jpg
+art.090 = Smitty Shirt Handmade
+# image: 091_painted-smitty-red.jpg
+art.091 = Painted Smitty Red
+# image: 092_three-creatures.jpg
+art.092 = Three Creatures
+# image: 093_saxophone-fight.jpg
+art.093 = Saxophone Fight
+# image: 094_escapism-by-medication.jpg
+art.094 = Escapism By Medication
+# image: 095_Minnesota-fish-painting.jpg
+art.095 = Minnesota Fish Painting
+# image: 096_dr-coach-incubation.jpg
+art.096 = Dr Coach Incubation
+# image: 097_Ascetic_Sebring_ad.jpg
+art.097 = Ascetic Sebring Ad
+# image: 098_hairy-guy-drawing.jpg
+art.098 = Hairy Guy Drawing
+# image: 099_lake-blue-violet.jpg
+art.099 = Lake Blue Violet
+# image: 100_orange-stick-figure.jpg
+art.100 = Orange Stick Figure
+# image: 101_green-beanie-ad.jpg
+art.101 = Green Beanie Ad
+# image: 102_person-on-fire.jpg
+art.102 = Person On Fire
+# image: 103_painting-red-abstract.jpg
+art.103 = Painting Red Abstract
+# image: 104_clown-fast-food.jpg
+art.104 = Clown Fast Food
+# image: 105_shirt-ad-flight.jpg
+art.105 = Shirt Ad Flight
+# image: 106_simple-drawing-flower.jpg
+art.106 = Simple Drawing Flower
+# image: 107_framed-sf-animal-2.jpg
+art.107 = Framed Sf Animal 2
+# image: 108_darling-actor-drawing.jpg
+art.108 = Darling Actor Drawing
+# image: 109_beekeeper.jpg
+art.109 = Beekeeper
+# image: 110_run-your-shit-1.jpg
+art.110 = Run Your Shit 1
+# image: 111_run-your-shit-2.jpg
+art.111 = Run Your Shit 2
+# image: 112_hundred-percent-can.jpg
+art.112 = Hundred Percent Can
+# image: 113_early-memorial-2.jpg
+art.113 = Early Memorial 2
+# image: 114_cheetah-in-space.jpg
+art.114 = Cheetah In Space
+# image: 115_Shrefflo-ocean-cap-ad.jpg
+art.115 = Shrefflo Ocean Cap Ad
+# image: 116_cartoon-ampersand-face.jpg
+art.116 = Cartoon Ampersand Face
+# image: 117_painted-sheet-mouse-shapes.jpg
+art.117 = Painted Sheet Mouse Shapes
+# image: 118_orange-kitchen-visions.jpg
+art.118 = Orange Kitchen Visions
+# image: 119_intense-face-clown.jpg
+art.119 = Intense Face Clown
+# image: 120_yoda-smoking-weed.jpg
+art.120 = Yoda Smoking Weed
+# image: 121_Agressive-Defensive-Stance.png
+art.121 = Agressive Defensive Stance
+# image: 122_meg-chain-sf-crate-challenge.jpg
+art.122 = Meg Chain Sf Crate Challenge
+# image: 123_Bird.jpg
+art.123 = Bird
+# image: 124_gaiter-mask-dr-coach-ad.jpg
+art.124 = Gaiter Mask Dr Coach Ad
+# image: 125_tissue.jpg
+art.125 = Tissue
+# image: 126_older-bald-drawing.jpg
+art.126 = Older Bald Drawing
+# image: 127_selfie-in-the-woods.jpg
+art.127 = Selfie In The Woods
+# image: 128_curly-hair-low-res-guy.jpg
+art.128 = Curly Hair Low Res Guy
+# image: 129_winter-2022-ad.jpg
+art.129 = Winter 2022 Ad
+# image: 130_dr-coach-full-face.jpg
+art.130 = Dr Coach Full Face
+# image: 131_Auto-shop-nightmare.jpg
+art.131 = Auto Shop Nightmare
+# image: 132_pink-slime-thing.jpg
+art.132 = Pink Slime Thing
+# image: 133_2-hands-drawing-at-once.jpg
+art.133 = 2 Hands Drawing At Once
+# image: 134_no-weather-data.jpg
+art.134 = No Weather Data
+# image: 135_Most-Famous-cover.jpg
+art.135 = Most Famous Cover
+# image: 136_big-party-weather.jpg
+art.136 = Big Party Weather

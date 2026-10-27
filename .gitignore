@@ -1,0 +1,13 @@
+# Raw 3D Blender models & intermediate source assets (not needed to play)
+3D_Source_Models/
+assets/relics_original_raw/
+assets/relics_original_uncompressed/
+assets/*_original_raw.glb
+
+# Mac app build & backup files
+The Museum.app/
+*.bak
+
+# OS metadata
+.DS_Store
+Thumbs.db

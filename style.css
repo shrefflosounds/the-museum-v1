@@ -1,0 +1,735 @@
+/* ========================================================
+   SMITTY MUST DIE: THE CURSED MUSEUM (v3.0)
+   Minimalist Modern Atmospheric Museum CSS
+   ======================================================== */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  user-select: none;
+}
+
+.hidden {
+  display: none !important;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background-color: #030407;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #e2e8f0;
+}
+
+#game-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 1;
+}
+
+#game-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+body.game-playing,
+body.game-playing #game-canvas,
+body.game-playing #game-container {
+  cursor: none !important;
+}
+
+/* ========================================================
+   ATMOSPHERIC OVERLAYS (Lightweight & Smooth)
+   ======================================================== */
+
+#vignette-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 2;
+  background: radial-gradient(circle at center, transparent 45%, rgba(0, 0, 0, 0.6) 80%, rgba(2, 3, 5, 0.95) 100%);
+}
+
+#damage-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 4;
+  opacity: 0;
+  background: radial-gradient(circle at center, transparent 30%, rgba(180, 0, 0, 0.5) 75%, rgba(120, 0, 0, 0.95) 100%);
+  transition: opacity 0.15s ease-out;
+}
+
+#jumpscare-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+  background: rgba(0, 0, 0, 0.95);
+  justify-content: center;
+  align-items: center;
+}
+
+#jumpscare-overlay.active {
+  display: flex;
+  animation: flash-shake 0.08s infinite;
+}
+
+@keyframes flash-shake {
+  0% { transform: translate(0, 0) scale(1); filter: brightness(2) contrast(2); }
+  25% { transform: translate(-8px, 6px) scale(1.04); filter: brightness(1.2); }
+  50% { transform: translate(8px, -6px) scale(0.98); filter: invert(0.8); }
+  75% { transform: translate(-6px, -8px) scale(1.02); filter: brightness(2); }
+  100% { transform: translate(0, 0) scale(1); }
+}
+
+/* ========================================================
+   MINIMALIST SLEEK HUD
+   ======================================================== */
+
+#hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+  padding: 24px 32px;
+}
+
+/* Center Crosshair Reticle */
+#crosshair {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  pointer-events: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.crosshair-dot {
+  width: 5px;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.8), 0 0 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Floating Interaction Prompt */
+#interact-prompt {
+  position: absolute;
+  top: 56%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #f8fafc;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  padding: 7px 18px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.6);
+  opacity: 0.2;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  pointer-events: none;
+}
+
+#interact-prompt.hidden {
+  opacity: 0 !important;
+  transform: translate(-50%, 6px);
+  pointer-events: none;
+}
+
+/* Hidden area label (all area labels removed per specification) */
+#room-indicator {
+  display: none !important;
+}
+
+/* Floor Indicator: Subtle non-intrusive notification in the top-left corner that appears for a few seconds on floor change */
+#floor-indicator {
+  position: absolute;
+  top: 24px;
+  left: 28px;
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 3.5px;
+  color: #e2e8f0;
+  background: rgba(15, 23, 42, 0.52);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  padding: 6px 16px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s ease-in-out;
+  z-index: 10;
+}
+
+#spectator-indicator {
+  position: absolute;
+  top: 64px;
+  left: 28px;
+  font-family: 'Cinzel', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #38bdf8;
+  background: rgba(15, 23, 42, 0.78);
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.45), 0 0 10px rgba(56, 189, 248, 0.25);
+  padding: 5px 14px;
+  border-radius: 4px;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 10;
+  pointer-events: none;
+  transition: color 0.3s ease;
+}
+
+#spectator-indicator.hidden {
+  display: none !important;
+}
+
+/* Non-Intrusive Relic Pickup Notification: Subtle top-center floating badge */
+#relic-notification {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #fef08a;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5), 0 0 14px rgba(250, 204, 21, 0.18);
+  padding: 8px 22px;
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.6s ease-in-out, transform 0.6s ease-in-out;
+  z-index: 15;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#relic-notification.visible {
+  opacity: 1;
+}
+
+/* System / Spectator Mode Notification */
+#system-notification {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: 'Cinzel', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 2.2px;
+  color: #38bdf8;
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.55), 0 0 16px rgba(56, 189, 248, 0.3);
+  padding: 8px 24px;
+  border-radius: 6px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.35s ease-in-out, transform 0.35s ease-in-out;
+  z-index: 20;
+  text-align: center;
+  white-space: nowrap;
+}
+
+#system-notification.visible {
+  opacity: 1;
+}
+
+/* Bottom-Left Status Readout */
+.hud-status-left {
+  position: absolute;
+  bottom: 28px;
+  left: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  min-width: 140px;
+}
+
+.hud-stat-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.hud-stat-line {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.hud-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #94a3b8;
+}
+
+.hud-label-sprint {
+  font-size: 9px;
+  letter-spacing: 1.5px;
+  color: #7dd3fc;
+}
+
+#health-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #f87171;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.health-bar-bg {
+  width: 100%;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#health-fill {
+  width: 100%;
+  height: 100%;
+  background: #ef4444;
+  border-radius: 2px;
+  transition: width 0.12s ease-out, background-color 0.2s;
+  box-shadow: 0 0 6px rgba(239, 68, 68, 0.5);
+}
+
+.stamina-bar-bg {
+  width: 100%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+#stamina-fill {
+  width: 100%;
+  height: 100%;
+  background: #38bdf8;
+  border-radius: 2px;
+  transition: width 0.08s linear;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.4);
+}
+
+/* Bottom-Right Ammo Readout */
+.hud-status-right {
+  position: absolute;
+  bottom: 28px;
+  right: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  padding: 8px 16px;
+  border-radius: 8px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+#ammo-value {
+  font-size: 20px;
+  font-weight: 700;
+  color: #f1f5f9;
+  font-feature-settings: 'tnum';
+  font-variant-numeric: tabular-nums;
+}
+
+#reload-warning {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #f87171;
+  text-transform: uppercase;
+}
+
+#reload-warning.hidden {
+  display: none;
+}
+
+/* ========================================================
+   MODALS & LIGHTBOXES
+   ======================================================== */
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(5, 7, 12, 0.85);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  opacity: 1;
+  transition: opacity 0.25s ease-in-out;
+}
+
+.modal-overlay.hidden {
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+}
+
+.modal-box {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 36px 42px;
+  max-width: 620px;
+  width: 100%;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);
+  text-align: center;
+}
+
+.museum-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+
+.horror-title {
+  font-family: 'Cinzel', serif;
+  font-size: 32px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #f8fafc;
+  margin-bottom: 16px;
+}
+
+.death-title {
+  color: #ef4444;
+}
+
+.win-title {
+  color: #34d399;
+}
+
+.lore-text {
+  font-size: 14px;
+  line-height: 1.6;
+  color: #cbd5e1;
+  margin-bottom: 22px;
+  text-align: left;
+}
+
+.lore-text p {
+  margin-bottom: 8px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px 16px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  padding: 14px;
+  margin-bottom: 24px;
+  font-size: 13px;
+  text-align: left;
+  color: #94a3b8;
+}
+
+.ctrl-col strong {
+  color: #f1f5f9;
+}
+
+.museum-btn {
+  background: #f8fafc;
+  color: #0f172a;
+  border: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  padding: 14px 28px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.museum-btn:hover {
+  background: #e2e8f0;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.15);
+}
+
+.museum-btn:active {
+  transform: translateY(0);
+}
+
+/* ========================================================
+   ARTWORK LIGHTBOX VIEWER
+   ======================================================== */
+
+.art-lightbox {
+  background: #0f172a;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  max-width: 880px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.85);
+}
+
+.close-btn {
+  position: absolute;
+  top: 14px;
+  right: 18px;
+  background: rgba(15, 23, 42, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #f8fafc;
+  font-size: 24px;
+  line-height: 1;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  transition: background 0.15s ease;
+}
+
+.close-btn:hover {
+  background: rgba(30, 41, 59, 1);
+}
+
+.art-img-wrap {
+  flex: 1;
+  background: #030407;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  overflow: hidden;
+  max-height: 60vh;
+}
+
+#art-modal-img {
+  max-width: 100%;
+  max-height: 56vh;
+  object-fit: contain;
+  border-radius: 4px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+}
+
+.art-details {
+  padding: 20px 28px;
+  background: #0f172a;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  text-align: left;
+}
+
+.art-meta-header {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.art-wing-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  color: #38bdf8;
+  background: rgba(56, 189, 248, 0.12);
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.art-archive-tag {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  color: #94a3b8;
+  padding: 3px 0;
+}
+
+#art-modal-title {
+  font-family: 'Cinzel', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: #f8fafc;
+  margin-bottom: 6px;
+}
+
+.art-artist {
+  font-size: 13px;
+  color: #cbd5e1;
+  margin-bottom: 6px;
+}
+
+.art-source {
+  font-size: 12px;
+  color: #94a3b8;
+  margin-bottom: 12px;
+}
+
+.art-source a {
+  color: #38bdf8;
+  text-decoration: none;
+}
+
+.art-source a:hover {
+  text-decoration: underline;
+}
+
+.art-close-hint {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+/* Relic Manifest Checklist */
+.checklist-box {
+  max-width: 540px;
+  text-align: left;
+}
+
+.checklist-sub {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-bottom: 16px;
+}
+
+.objective-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 250px;
+  overflow-y: auto;
+  padding-right: 6px;
+  margin-bottom: 16px;
+}
+
+.objective-list li {
+  padding: 10px 14px;
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  font-size: 13px;
+  color: #e2e8f0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.objective-list li.completed {
+  text-decoration: line-through;
+  opacity: 0.45;
+  background: rgba(16, 185, 129, 0.08);
+  border-color: rgba(16, 185, 129, 0.2);
+}
+
+.objective-list li.completed::after {
+  content: '✓ RECOVERED';
+  margin-left: auto;
+  font-size: 11px;
+  font-weight: 700;
+  color: #34d399;
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.relic-num {
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.modal-close-hint {
+  font-size: 12px;
+  color: #64748b;
+  text-align: center;
+}
+
+.stats-box {
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  padding: 16px;
+  margin: 16px 0 24px;
+  font-size: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #cbd5e1;
+}
+
+.death-sub, .victory-sub {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}

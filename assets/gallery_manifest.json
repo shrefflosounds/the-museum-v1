@@ -1,0 +1,777 @@
+[
+  {
+    "id": 1,
+    "title": "Smitty Silly",
+    "file": "assets/gallery/001_Smitty-silly.gif"
+  },
+  {
+    "id": 2,
+    "title": "Emoji Movie",
+    "file": "assets/gallery/002_Emoji-movie.jpg"
+  },
+  {
+    "id": 3,
+    "title": "Pinkthing",
+    "file": "assets/gallery/003_pinkthing.jpg"
+  },
+  {
+    "id": 4,
+    "title": "Iwanttolivebythesea",
+    "file": "assets/gallery/004_iwanttolivebythesea.jpg"
+  },
+  {
+    "id": 5,
+    "title": "Frenchhouse",
+    "file": "assets/gallery/005_frenchhouse.jpg"
+  },
+  {
+    "id": 6,
+    "title": "Curator'S Assets",
+    "file": "assets/gallery/006_Curator_s_Assets.png"
+  },
+  {
+    "id": 7,
+    "title": "Painting Grey Face",
+    "file": "assets/gallery/007_painting-grey-face.jpg"
+  },
+  {
+    "id": 8,
+    "title": "Smitty Wild Animal Framed",
+    "file": "assets/gallery/008_Smitty-wild-animal-framed.jpg"
+  },
+  {
+    "id": 9,
+    "title": "Leadership Lemon",
+    "file": "assets/gallery/009_leadership-lemon.jpg"
+  },
+  {
+    "id": 10,
+    "title": "Star Ez Duz It",
+    "file": "assets/gallery/010_star-ez-duz-it.jpg"
+  },
+  {
+    "id": 11,
+    "title": "Smitty Cola Melt Shirtless",
+    "file": "assets/gallery/011_smitty-cola-melt-shirtless.jpg"
+  },
+  {
+    "id": 12,
+    "title": "Shocksites",
+    "file": "assets/gallery/012_shocksites.jpg"
+  },
+  {
+    "id": 13,
+    "title": "Gemini",
+    "file": "assets/gallery/013_gemini.jpg"
+  },
+  {
+    "id": 14,
+    "title": "Smitty Dirt",
+    "file": "assets/gallery/014_smitty-dirt.jpg"
+  },
+  {
+    "id": 15,
+    "title": "E9E",
+    "file": "assets/gallery/015_E9e.jpg"
+  },
+  {
+    "id": 16,
+    "title": "Bathbomb",
+    "file": "assets/gallery/016_bathbomb.jpg"
+  },
+  {
+    "id": 17,
+    "title": "Crate Challenge",
+    "file": "assets/gallery/017_crate-challenge.jpg"
+  },
+  {
+    "id": 18,
+    "title": "Elderly Portrait",
+    "file": "assets/gallery/018_elderly-portrait.jpg"
+  },
+  {
+    "id": 19,
+    "title": "Astonishment",
+    "file": "assets/gallery/019_astonishment.jpg"
+  },
+  {
+    "id": 20,
+    "title": "Sf Astonishment Ad",
+    "file": "assets/gallery/020_sf-astonishment-ad.jpg"
+  },
+  {
+    "id": 21,
+    "title": "Heknah Wallpaper As",
+    "file": "assets/gallery/021_heknah-wallpaper-AS.jpg"
+  },
+  {
+    "id": 22,
+    "title": "Spongeclownbob",
+    "file": "assets/gallery/022_spongeclownbob.jpg"
+  },
+  {
+    "id": 23,
+    "title": "Smittys Room Toon",
+    "file": "assets/gallery/023_smittys-room-toon.jpg"
+  },
+  {
+    "id": 24,
+    "title": "Smittys Room Live Action",
+    "file": "assets/gallery/024_smittys-room-live-action.jpg"
+  },
+  {
+    "id": 25,
+    "title": "Pinocchio",
+    "file": "assets/gallery/025_pinocchio.jpg"
+  },
+  {
+    "id": 26,
+    "title": "Shawtys Mix",
+    "file": "assets/gallery/026_shawtys-mix.jpg"
+  },
+  {
+    "id": 27,
+    "title": "2008 Red Fox",
+    "file": "assets/gallery/027_2008-red-fox.jpg"
+  },
+  {
+    "id": 28,
+    "title": "Rip Odi",
+    "file": "assets/gallery/028_rip-odi.jpg"
+  },
+  {
+    "id": 29,
+    "title": "Shrefflo Smittyfantastic",
+    "file": "assets/gallery/029_Shrefflo-SmittyFantastic.jpg"
+  },
+  {
+    "id": 30,
+    "title": "Cherry Drink",
+    "file": "assets/gallery/030_cherry-drink.jpg"
+  },
+  {
+    "id": 31,
+    "title": "Trumpa",
+    "file": "assets/gallery/031_trumpa.jpg"
+  },
+  {
+    "id": 32,
+    "title": "Dynamic",
+    "file": "assets/gallery/032_dynamic.jpg"
+  },
+  {
+    "id": 33,
+    "title": "Work Breakroom",
+    "file": "assets/gallery/033_work-breakroom.jpg"
+  },
+  {
+    "id": 34,
+    "title": "Mocha Slip",
+    "file": "assets/gallery/034_mocha-slip.jpg"
+  },
+  {
+    "id": 35,
+    "title": "Spotify Ad",
+    "file": "assets/gallery/035_spotify-ad.jpg"
+  },
+  {
+    "id": 36,
+    "title": "Shake It For Me",
+    "file": "assets/gallery/036_shake-it-for-me.jpg"
+  },
+  {
+    "id": 37,
+    "title": "Misty Morning",
+    "file": "assets/gallery/037_misty-morning.jpg"
+  },
+  {
+    "id": 38,
+    "title": "Omelette On Paper",
+    "file": "assets/gallery/038_omelette-on_paper.jpg"
+  },
+  {
+    "id": 39,
+    "title": "Bird Mouth",
+    "file": "assets/gallery/039_bird-mouth.jpg"
+  },
+  {
+    "id": 40,
+    "title": "4Who",
+    "file": "assets/gallery/040_4Who.jpg"
+  },
+  {
+    "id": 41,
+    "title": "Joyous Protection",
+    "file": "assets/gallery/041_Joyous_Protection.jpg"
+  },
+  {
+    "id": 42,
+    "title": "Made U A Bird",
+    "file": "assets/gallery/042_made-u-a-bird.jpg"
+  },
+  {
+    "id": 43,
+    "title": "Dog Drawing",
+    "file": "assets/gallery/043_dog-drawing.jpg"
+  },
+  {
+    "id": 44,
+    "title": "Smitty Pixels Mussel Heart",
+    "file": "assets/gallery/044_Smitty-pixels-mussel-heart.jpg"
+  },
+  {
+    "id": 45,
+    "title": "Hans",
+    "file": "assets/gallery/045_Hans.jpg"
+  },
+  {
+    "id": 46,
+    "title": "Blip Vision Pizza Reach",
+    "file": "assets/gallery/046_blip-vision-pizza-reach.jpg"
+  },
+  {
+    "id": 47,
+    "title": "Lake Excursion Ad",
+    "file": "assets/gallery/047_lake-excursion-ad.jpg"
+  },
+  {
+    "id": 48,
+    "title": "Sand",
+    "file": "assets/gallery/048_Sand.jpg"
+  },
+  {
+    "id": 49,
+    "title": "Floating Boxer Ad",
+    "file": "assets/gallery/049_floating-boxer-ad.jpg"
+  },
+  {
+    "id": 50,
+    "title": "Peter Griffin Tribute",
+    "file": "assets/gallery/050_peter-griffin-tribute.jpg"
+  },
+  {
+    "id": 51,
+    "title": "Imagen",
+    "file": "assets/gallery/051_imagen.jpg"
+  },
+  {
+    "id": 52,
+    "title": "Spew",
+    "file": "assets/gallery/052_spew.jpg"
+  },
+  {
+    "id": 53,
+    "title": "Purple Smile",
+    "file": "assets/gallery/053_purple-smile.jpg"
+  },
+  {
+    "id": 54,
+    "title": "Smitty Ocean Storm",
+    "file": "assets/gallery/054_Smitty-ocean-storm.jpg"
+  },
+  {
+    "id": 55,
+    "title": "Liberal Lawn Sign",
+    "file": "assets/gallery/055_liberal-lawn-sign.jpg"
+  },
+  {
+    "id": 56,
+    "title": "Smitty Cow",
+    "file": "assets/gallery/056_smitty-cow.jpg"
+  },
+  {
+    "id": 57,
+    "title": "Ancient Predators",
+    "file": "assets/gallery/057_ancient-predators.jpg"
+  },
+  {
+    "id": 58,
+    "title": "Hey Guy Tv",
+    "file": "assets/gallery/058_hey-guy-tv.jpg"
+  },
+  {
+    "id": 59,
+    "title": "Yellow Guy Cute",
+    "file": "assets/gallery/059_yellow-guy-cute.jpg"
+  },
+  {
+    "id": 60,
+    "title": "Smitty Blackbox Sigil Tee",
+    "file": "assets/gallery/060_Smitty-BlackBox_Sigil_Tee.png"
+  },
+  {
+    "id": 61,
+    "title": "Annoyeornej",
+    "file": "assets/gallery/061_annoyeornej.jpg"
+  },
+  {
+    "id": 62,
+    "title": "Dogandghostthings",
+    "file": "assets/gallery/062_dogandghostthings.jpg"
+  },
+  {
+    "id": 63,
+    "title": "Thin Blue Line",
+    "file": "assets/gallery/063_thin-blue-line.jpg"
+  },
+  {
+    "id": 64,
+    "title": "Space Planet",
+    "file": "assets/gallery/064_Space-planet.jpg"
+  },
+  {
+    "id": 65,
+    "title": "Messages From God",
+    "file": "assets/gallery/065_messages-from-God.jpg"
+  },
+  {
+    "id": 66,
+    "title": "Beach Video",
+    "file": "assets/gallery/066_beach-video.jpg"
+  },
+  {
+    "id": 67,
+    "title": "Grafeetee",
+    "file": "assets/gallery/067_grafeetee.jpg"
+  },
+  {
+    "id": 68,
+    "title": "Sf Penguin 1",
+    "file": "assets/gallery/068_SF-penguin-1.jpg"
+  },
+  {
+    "id": 69,
+    "title": "Penguin 2",
+    "file": "assets/gallery/069_penguin-2.jpg"
+  },
+  {
+    "id": 70,
+    "title": "Sf Beach Photo Drawn Eyebrows",
+    "file": "assets/gallery/070_SF_beach_photo_drawn_eyebrows.jpg"
+  },
+  {
+    "id": 71,
+    "title": "Yellow Ball Face",
+    "file": "assets/gallery/071_yellow-ball-face.jpg"
+  },
+  {
+    "id": 72,
+    "title": "Evil Purple Pixelated Face",
+    "file": "assets/gallery/072_evil-purple-pixelated-face.jpg"
+  },
+  {
+    "id": 73,
+    "title": "Fancy",
+    "file": "assets/gallery/073_fancy.jpg"
+  },
+  {
+    "id": 74,
+    "title": "Cow Flag",
+    "file": "assets/gallery/074_cow-flag.jpg"
+  },
+  {
+    "id": 75,
+    "title": "The Big Man",
+    "file": "assets/gallery/075_the-big-man.jpg"
+  },
+  {
+    "id": 76,
+    "title": "Consumer Sculpture",
+    "file": "assets/gallery/076_consumer-sculpture.jpg"
+  },
+  {
+    "id": 77,
+    "title": "Green Guy With Wings",
+    "file": "assets/gallery/077_green-guy-with-wings.jpg"
+  },
+  {
+    "id": 78,
+    "title": "Pointy World Car Fire",
+    "file": "assets/gallery/078_pointy-world-car-fire.jpg"
+  },
+  {
+    "id": 79,
+    "title": "Paint Red House",
+    "file": "assets/gallery/079_paint-red-house.jpg"
+  },
+  {
+    "id": 80,
+    "title": "The Harbinger",
+    "file": "assets/gallery/080_the-harbinger.jpg"
+  },
+  {
+    "id": 81,
+    "title": "Monkey Full Body",
+    "file": "assets/gallery/081_monkey-full-body.jpg"
+  },
+  {
+    "id": 82,
+    "title": "Now Watch Me Whip",
+    "file": "assets/gallery/082_now-watch-me-whip.jpg"
+  },
+  {
+    "id": 83,
+    "title": "Luv Graffiti Shirt Ad",
+    "file": "assets/gallery/083_luv-graffiti-shirt-ad.jpg"
+  },
+  {
+    "id": 84,
+    "title": "Sf Mini Drawing Red",
+    "file": "assets/gallery/084_sf-mini-drawing-red.jpg"
+  },
+  {
+    "id": 85,
+    "title": "Painting With A Bed",
+    "file": "assets/gallery/085_painting-with-a-bed.jpg"
+  },
+  {
+    "id": 86,
+    "title": "Person With Mask Behind",
+    "file": "assets/gallery/086_person-with-mask-behind.jpg"
+  },
+  {
+    "id": 87,
+    "title": "Photo Turned Drawing Creatureguy",
+    "file": "assets/gallery/087_photo-turned-drawing-creatureg.jpg"
+  },
+  {
+    "id": 88,
+    "title": "Goblin Drawing",
+    "file": "assets/gallery/088_goblin-drawing.jpg"
+  },
+  {
+    "id": 89,
+    "title": "Snapchat Athlete Gun Woman Boogers",
+    "file": "assets/gallery/089_snapchat-athlete-gun-woman-boo.jpg"
+  },
+  {
+    "id": 90,
+    "title": "Smitty Shirt Handmade",
+    "file": "assets/gallery/090_smitty-shirt-handmade.jpg"
+  },
+  {
+    "id": 91,
+    "title": "Painted Smitty Red",
+    "file": "assets/gallery/091_painted-smitty-red.jpg"
+  },
+  {
+    "id": 92,
+    "title": "Three Creatures",
+    "file": "assets/gallery/092_three-creatures.jpg"
+  },
+  {
+    "id": 93,
+    "title": "Saxophone Fight",
+    "file": "assets/gallery/093_saxophone-fight.jpg"
+  },
+  {
+    "id": 94,
+    "title": "Escapism By Medication",
+    "file": "assets/gallery/094_escapism-by-medication.jpg"
+  },
+  {
+    "id": 95,
+    "title": "Minnesota Fish Painting",
+    "file": "assets/gallery/095_Minnesota-fish-painting.jpg"
+  },
+  {
+    "id": 96,
+    "title": "Dr Coach Incubation",
+    "file": "assets/gallery/096_dr-coach-incubation.jpg"
+  },
+  {
+    "id": 97,
+    "title": "Ascetic Sebring Ad",
+    "file": "assets/gallery/097_Ascetic_Sebring_ad.jpg"
+  },
+  {
+    "id": 98,
+    "title": "Hairy Guy Drawing",
+    "file": "assets/gallery/098_hairy-guy-drawing.jpg"
+  },
+  {
+    "id": 99,
+    "title": "Lake Blue Violet",
+    "file": "assets/gallery/099_lake-blue-violet.jpg"
+  },
+  {
+    "id": 100,
+    "title": "Orange Stick Figure",
+    "file": "assets/gallery/100_orange-stick-figure.jpg"
+  },
+  {
+    "id": 101,
+    "title": "Green Beanie Ad",
+    "file": "assets/gallery/101_green-beanie-ad.jpg"
+  },
+  {
+    "id": 102,
+    "title": "Person On Fire",
+    "file": "assets/gallery/102_person-on-fire.jpg"
+  },
+  {
+    "id": 103,
+    "title": "Painting Red Abstract",
+    "file": "assets/gallery/103_painting-red-abstract.jpg"
+  },
+  {
+    "id": 104,
+    "title": "Clown Fast Food",
+    "file": "assets/gallery/104_clown-fast-food.jpg"
+  },
+  {
+    "id": 105,
+    "title": "Shirt Ad Flight",
+    "file": "assets/gallery/105_shirt-ad-flight.jpg"
+  },
+  {
+    "id": 106,
+    "title": "Simple Drawing Flower",
+    "file": "assets/gallery/106_simple-drawing-flower.jpg"
+  },
+  {
+    "id": 107,
+    "title": "Framed Sf Animal 2",
+    "file": "assets/gallery/107_framed-sf-animal-2.jpg"
+  },
+  {
+    "id": 108,
+    "title": "Darling Actor Drawing",
+    "file": "assets/gallery/108_darling-actor-drawing.jpg"
+  },
+  {
+    "id": 109,
+    "title": "Beekeeper",
+    "file": "assets/gallery/109_beekeeper.jpg"
+  },
+  {
+    "id": 110,
+    "title": "Run Your Shit 1",
+    "file": "assets/gallery/110_run-your-shit-1.jpg"
+  },
+  {
+    "id": 111,
+    "title": "Run Your Shit 2",
+    "file": "assets/gallery/111_run-your-shit-2.jpg"
+  },
+  {
+    "id": 112,
+    "title": "Hundred Percent Can",
+    "file": "assets/gallery/112_hundred-percent-can.jpg"
+  },
+  {
+    "id": 113,
+    "title": "Early Memorial 2",
+    "file": "assets/gallery/113_early-memorial-2.jpg"
+  },
+  {
+    "id": 114,
+    "title": "Cheetah In Space",
+    "file": "assets/gallery/114_cheetah-in-space.jpg"
+  },
+  {
+    "id": 115,
+    "title": "Shrefflo Ocean Cap Ad",
+    "file": "assets/gallery/115_Shrefflo-ocean-cap-ad.jpg"
+  },
+  {
+    "id": 116,
+    "title": "Cartoon Ampersand Face",
+    "file": "assets/gallery/116_cartoon-ampersand-face.jpg"
+  },
+  {
+    "id": 117,
+    "title": "Painted Sheet Mouse Shapes",
+    "file": "assets/gallery/117_painted-sheet-mouse-shapes.jpg"
+  },
+  {
+    "id": 118,
+    "title": "Orange Kitchen Visions",
+    "file": "assets/gallery/118_orange-kitchen-visions.jpg"
+  },
+  {
+    "id": 119,
+    "title": "Intense Face Clown",
+    "file": "assets/gallery/119_intense-face-clown.jpg"
+  },
+  {
+    "id": 120,
+    "title": "Yoda Smoking Weed",
+    "file": "assets/gallery/120_yoda-smoking-weed.jpg"
+  },
+  {
+    "id": 121,
+    "title": "Agressive Defensive Stance",
+    "file": "assets/gallery/121_Agressive-Defensive-Stance.png"
+  },
+  {
+    "id": 122,
+    "title": "Meg Chain Sf Crate Challenge",
+    "file": "assets/gallery/122_meg-chain-sf-crate-challenge.jpg"
+  },
+  {
+    "id": 123,
+    "title": "Bird",
+    "file": "assets/gallery/123_Bird.jpg"
+  },
+  {
+    "id": 124,
+    "title": "Gaiter Mask Dr Coach Ad",
+    "file": "assets/gallery/124_gaiter-mask-dr-coach-ad.jpg"
+  },
+  {
+    "id": 125,
+    "title": "Tissue",
+    "file": "assets/gallery/125_tissue.jpg"
+  },
+  {
+    "id": 126,
+    "title": "Older Bald Drawing",
+    "file": "assets/gallery/126_older-bald-drawing.jpg"
+  },
+  {
+    "id": 127,
+    "title": "Selfie In The Woods",
+    "file": "assets/gallery/127_selfie-in-the-woods.jpg"
+  },
+  {
+    "id": 128,
+    "title": "Curly Hair Low Res Guy",
+    "file": "assets/gallery/128_curly-hair-low-res-guy.jpg"
+  },
+  {
+    "id": 129,
+    "title": "Winter 2022 Ad",
+    "file": "assets/gallery/129_winter-2022-ad.jpg"
+  },
+  {
+    "id": 130,
+    "title": "Dr Coach Full Face",
+    "file": "assets/gallery/130_dr-coach-full-face.jpg"
+  },
+  {
+    "id": 131,
+    "title": "Auto Shop Nightmare",
+    "file": "assets/gallery/131_Auto-shop-nightmare.jpg"
+  },
+  {
+    "id": 132,
+    "title": "Pink Slime Thing",
+    "file": "assets/gallery/132_pink-slime-thing.jpg"
+  },
+  {
+    "id": 133,
+    "title": "2 Hands Drawing At Once",
+    "file": "assets/gallery/133_2-hands-drawing-at-once.jpg"
+  },
+  {
+    "id": 134,
+    "title": "No Weather Data",
+    "file": "assets/gallery/134_no-weather-data.jpg"
+  },
+  {
+    "id": 135,
+    "title": "Most Famous Cover",
+    "file": "assets/gallery/135_Most-Famous-cover.jpg"
+  },
+  {
+    "id": 136,
+    "title": "Big Party Weather",
+    "file": "assets/gallery/136_big-party-weather.jpg"
+  },
+  {
+    "id": 137,
+    "title": "Piano Chase",
+    "file": "assets/gallery/137_piano-chase.jpg"
+  },
+  {
+    "id": 138,
+    "title": "Tiffin Spacelint Render1",
+    "file": "assets/gallery/138_Tiffin_Spacelint_render1.jpg"
+  },
+  {
+    "id": 139,
+    "title": "Chloe Bailey Portrait",
+    "file": "assets/gallery/139_Chloe-Bailey-portrait.jpg"
+  },
+  {
+    "id": 140,
+    "title": "Pre Watered Drawing",
+    "file": "assets/gallery/140_pre-watered-drawing.jpg"
+  },
+  {
+    "id": 141,
+    "title": "Rat Ymca",
+    "file": "assets/gallery/141_rat-ymca.jpg"
+  },
+  {
+    "id": 142,
+    "title": "Est Fni First Cover",
+    "file": "assets/gallery/142_est-fni-first-cover.jpg"
+  },
+  {
+    "id": 143,
+    "title": "Scooby Fan",
+    "file": "assets/gallery/143_scooby-fan.jpg"
+  },
+  {
+    "id": 144,
+    "title": "Coach Nun",
+    "file": "assets/gallery/144_coach-nun.jpg"
+  },
+  {
+    "id": 145,
+    "title": "Smitty 0 Bigman Shirt",
+    "file": "assets/gallery/145_smitty-0-bigman-shirt.jpg"
+  },
+  {
+    "id": 146,
+    "title": "I Love Watching You",
+    "file": "assets/gallery/146_i-love-watching-you.jpg"
+  },
+  {
+    "id": 147,
+    "title": "Smitty Qr Code",
+    "file": "assets/gallery/147_smitty-qr-code.jpg"
+  },
+  {
+    "id": 148,
+    "title": "Smittys First Appearance",
+    "file": "assets/gallery/148_smittys-first-appearance.jpg"
+  },
+  {
+    "id": 149,
+    "title": "Harbinger Smitty Live Action",
+    "file": "assets/gallery/149_Harbinger-Smitty-Live-Action.jpg"
+  },
+  {
+    "id": 150,
+    "title": "Smitty Colorful Mask Edit",
+    "file": "assets/gallery/150_129_smitty-colorful-mask-edit.jpg"
+  },
+  {
+    "id": 151,
+    "title": "Smitty Crouching Disco Colors",
+    "file": "assets/gallery/151_smitty-crouching-disco-colors.jpg"
+  },
+  {
+    "id": 152,
+    "title": "2019 Red Phone Face Drawing",
+    "file": "assets/gallery/152_2019-red-phone-face-drawing.jpg"
+  },
+  {
+    "id": 153,
+    "title": "Smitty Face Headshot New",
+    "file": "assets/gallery/153_smitty-face-headshot-new.jpg"
+  },
+  {
+    "id": 154,
+    "title": "Shrefflo Store 2025 Ad",
+    "file": "assets/gallery/154_Shrefflo-store-2025-ad.jpg"
+  },
+  {
+    "id": 155,
+    "title": "Shrefflo Symbol",
+    "file": "assets/gallery/155_shrefflo-symbol.gif"
+  }
+]
