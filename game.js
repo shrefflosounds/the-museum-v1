@@ -6285,14 +6285,9 @@
 
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
-        const wasLocked = this.isPointerLocked;
         this.requestNativeOrBrowserLock();
 
         if (e.button === 0) {
-          if (!wasLocked) {
-            // First click after unpause / window focus re-locks pointer without discharging the weapon
-            return;
-          }
           this.shootPistol();
         } else if (e.button === 2) {
           this.isAiming = true;
