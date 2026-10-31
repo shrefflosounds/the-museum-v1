@@ -737,27 +737,33 @@ body.game-playing #game-container {
 /* ========================================================
    START BUBBLES, OPTIONS & SETTINGS MODALS
    ======================================================== */
+.start-box {
+  max-width: 440px;
+  padding: 32px 36px 36px;
+  text-align: center;
+}
+
 .start-bubbles-row {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin-bottom: 18px;
+  gap: 14px;
+  margin-bottom: 22px;
 }
 
 .start-bubble-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  background: rgba(30, 41, 59, 0.7);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 20px;
+  justify-content: center;
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.20);
+  border-radius: 24px;
   color: #cbd5e1;
   font-family: 'Inter', sans-serif;
   font-size: 11px;
   font-weight: 700;
-  letter-spacing: 1px;
+  letter-spacing: 1.2px;
   text-transform: uppercase;
-  padding: 7px 16px;
+  padding: 8px 20px;
   cursor: pointer;
   transition: all 0.2s ease;
   backdrop-filter: blur(8px);
@@ -765,10 +771,10 @@ body.game-playing #game-container {
 
 .start-bubble-btn:hover {
   background: rgba(51, 65, 85, 0.95);
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.45);
   color: #fff;
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .start-bubble-btn:active {
@@ -778,7 +784,7 @@ body.game-playing #game-container {
 .smitty-mode-bar {
   display: flex;
   gap: 12px;
-  margin-bottom: 18px;
+  margin-bottom: 14px;
   width: 100%;
 }
 
@@ -786,8 +792,8 @@ body.game-playing #game-container {
   flex: 1;
   padding: 12px 14px;
   border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(15, 23, 42, 0.70);
   color: #94a3b8;
   font-family: 'Inter', sans-serif;
   font-size: 13px;
@@ -796,21 +802,13 @@ body.game-playing #game-container {
   cursor: pointer;
   transition: all 0.2s ease;
   display: flex;
-  flex-direction: column;
+  justify-content: center;
   align-items: center;
-  gap: 3px;
-}
-
-.smitty-mode-btn small {
-  font-size: 11px;
-  font-weight: 400;
-  opacity: 0.85;
-  letter-spacing: 0.3px;
 }
 
 .smitty-mode-btn:hover {
-  background: rgba(30, 41, 59, 0.8);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(255, 255, 255, 0.30);
 }
 
 .smitty-mode-btn.active.mode-on {
@@ -827,9 +825,17 @@ body.game-playing #game-container {
   box-shadow: 0 0 16px rgba(56, 189, 248, 0.25);
 }
 
-.options-box, .settings-box {
+.options-box {
   position: relative;
-  max-width: 580px;
+  max-width: 440px;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.settings-box {
+  position: relative;
+  max-width: 500px;
+  padding: 28px 32px;
   text-align: left;
 }
 

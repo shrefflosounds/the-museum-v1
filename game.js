@@ -5567,10 +5567,19 @@
       this.dom.winRestartBtn.addEventListener('click', restart);
 
       const onLockChange = () => {
+        const wasLocked = this.isPointerLocked;
         this.isPointerLocked = !!(document.pointerLockElement === this.canvas || document.pointerLockElement);
         this.lastClientX = null;
         this.lastClientY = null;
         this.skipNextMouseMove = true;
+
+        // If pointer lock was lost while actively playing and no menu is open, pause the game
+        if (wasLocked && !this.isPointerLocked) {
+          if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
+              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused) {
+            this.pauseGame();
+          }
+        }
       };
 
       document.addEventListener('pointerlockchange', onLockChange);
@@ -5820,14 +5829,25 @@
       ctx.fillText(T('map.current_level', 'CURRENT LEVEL: FLOOR {number} OF 4', { number: this.playerFloor + 1 }), 14, 22);
     }
 
+    pauseGame() {
+      if (this.isPaused) return;
+      this.isPaused = true;
+      this.releaseNativeOrBrowserLock();
+      this.dom.pauseModal.classList.remove('hidden');
+    }
+
+    resumeGame() {
+      if (!this.isPaused) return;
+      this.isPaused = false;
+      this.dom.pauseModal.classList.add('hidden');
+      this.requestNativeOrBrowserLock();
+    }
+
     togglePause() {
-      this.isPaused = !this.isPaused;
       if (this.isPaused) {
-        this.releaseNativeOrBrowserLock();
-        this.dom.pauseModal.classList.remove('hidden');
+        this.resumeGame();
       } else {
-        this.dom.pauseModal.classList.add('hidden');
-        this.requestNativeOrBrowserLock();
+        this.pauseGame();
       }
     }
 
@@ -5878,16 +5898,16 @@
       this.smittyEnabled = !!enabled;
       this.updateSmittyModeUI();
 
-      if (this.ambientLight && this.hemiLight && this.daytimeSunLight) {
+      if (this.ambientLight && this.hemiLight) {
         if (!this.smittyEnabled) {
-          // Daytime Gallery Tour: Warm daylight ambient lighting throughout the museum
-          this.ambientLight.color.setHex(0xfff5ea);
-          this.ambientLight.intensity = 1.35;
-          this.hemiLight.color.setHex(0xdbeafe);
-          this.hemiLight.groundColor.setHex(0xfef3c7);
-          this.hemiLight.intensity = 0.85;
-          this.daytimeSunLight.visible = true;
-          this.renderer.toneMappingExposure = 1.25;
+          // Daytime Museum Tour: Natural warm gallery illumination, soft ceiling bounce
+          this.ambientLight.color.setHex(0x9a8f82);
+          this.ambientLight.intensity = 0.62;
+          this.hemiLight.color.setHex(0xc8bdaf);
+          this.hemiLight.groundColor.setHex(0x5a483a);
+          this.hemiLight.intensity = 0.35;
+          if (this.daytimeSunLight) this.daytimeSunLight.visible = false;
+          this.renderer.toneMappingExposure = 0.98;
 
           if (this.smittyMesh) {
             this.smittyMesh.visible = false;
@@ -5896,7 +5916,7 @@
             this.smittyXrayGroup.visible = false;
           }
           if (this.dom.vignetteOverlay) {
-            this.dom.vignetteOverlay.style.opacity = '0.08';
+            this.dom.vignetteOverlay.style.opacity = '0.04';
           }
           this.audio.setHeartbeatBpm(0);
         } else {
@@ -5906,7 +5926,7 @@
           this.hemiLight.color.setHex(0x4a5a78);
           this.hemiLight.groundColor.setHex(0x1a1612);
           this.hemiLight.intensity = 0.30;
-          this.daytimeSunLight.visible = false;
+          if (this.daytimeSunLight) this.daytimeSunLight.visible = false;
           this.renderer.toneMappingExposure = 1.0;
 
           if (this.dom.vignetteOverlay) {
@@ -5944,9 +5964,9 @@
 
       if (this.dom.optionsModeDesc) {
         if (this.smittyEnabled) {
-          this.dom.optionsModeDesc.innerHTML = '<strong>SMITTY: ON</strong> — Classic survival horror experience. Smitty stalks the dark corridors. You must recover all 13 relics to unlock the exit doors while surviving.';
+          this.dom.optionsModeDesc.textContent = (window.GameText && window.GameText.t('options.desc_on')) || 'Survival mode. Smitty is active.';
         } else {
-          this.dom.optionsModeDesc.innerHTML = '<strong>SMITTY: OFF</strong> — Peaceful Daytime Museum Tour. Bright daylight lighting throughout the galleries, no monster, and no death. Explore all 136 curated artworks at your leisure!';
+          this.dom.optionsModeDesc.textContent = (window.GameText && window.GameText.t('options.desc_off')) || 'Tour mode. Lights on, no monster.';
         }
       }
     }

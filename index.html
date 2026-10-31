@@ -83,48 +83,19 @@
 
   <!-- Start Screen Modal -->
   <div id="start-screen" class="modal-overlay">
-    <div class="modal-box">
-      <!-- Options & Settings Top Bubbles -->
+    <div class="modal-box start-box">
+      <!-- Options & Settings Bubbles -->
       <div class="start-bubbles-row">
-        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Open Game Options">
-          <span class="bubble-icon">⚙️</span> OPTIONS
-        </button>
-        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="Open Controls & Spectator Guide">
-          <span class="bubble-icon">🎮</span> SETTINGS &amp; SPECTATOR
-        </button>
+        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Options" data-text="bubble.options">OPTIONS</button>
+        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="Settings &amp; Controls" data-text="bubble.settings">SETTINGS</button>
       </div>
 
       <h1 class="horror-title" data-text="start.title">THE MUSEUM</h1>
-      <div class="lore-text" style="text-align: center;">
-        <p data-text="start.goal">Recover all 13 relics to unlock main door</p>
+      <div class="lore-text">
+        <p data-text="start.goal">Recover all 13 relics to unlock the exit.</p>
       </div>
 
-      <div class="controls-grid">
-        <div class="ctrl-col" data-html-text="start.control1"><strong>WASD</strong>: Move</div>
-        <div class="ctrl-col" data-html-text="start.control2"><strong>MOUSE</strong>: Smooth Look / Aim</div>
-        <div class="ctrl-col" data-html-text="start.control3"><strong>E</strong>: Examine Art / Relic</div>
-        <div class="ctrl-col" data-html-text="start.control4"><strong>LEFT CLICK</strong>: Fire Pistol</div>
-        <div class="ctrl-col" data-html-text="start.control5"><strong>RIGHT CLICK</strong>: Aim Sights</div>
-        <div class="ctrl-col" data-html-text="start.control6"><strong>SHIFT</strong>: Sprint</div>
-        <div class="ctrl-col" data-html-text="start.control7"><strong>F</strong>: Flashlight</div>
-        <div class="ctrl-col" data-html-text="start.control8"><strong>TAB</strong>: Map, Inventory &amp; Cursor</div>
-        <div class="ctrl-col" data-html-text="start.control9"><strong>SPACE</strong>: Jump</div>
-        <div class="ctrl-col" data-html-text="start.control10"><strong>C / CTRL</strong>: Crouch / Sneak</div>
-      </div>
-
-      <!-- Startup Option: Smitty ON / Smitty OFF -->
-      <div class="smitty-mode-bar">
-        <button id="smitty-on-btn" class="smitty-mode-btn active mode-on" type="button" title="Classic Survival Horror with Smitty stalking the halls">
-          <span class="mode-title">👹 SMITTY: ON</span>
-          <small>Survival Horror Stalker</small>
-        </button>
-        <button id="smitty-off-btn" class="smitty-mode-btn mode-off" type="button" title="Peaceful Daytime Museum Tour: No monster, no death, beautifully lit in daytime">
-          <span class="mode-title">☀️ SMITTY: OFF</span>
-          <small>Daytime Gallery Tour (No Death)</small>
-        </button>
-      </div>
-
-      <button id="start-btn" class="museum-btn" data-text="start.button">ENTER THE MUSEUM [CLICK TO PLAY]</button>
+      <button id="start-btn" class="museum-btn" data-text="start.button">ENTER THE MUSEUM</button>
     </div>
   </div>
 
@@ -132,34 +103,21 @@
   <div id="options-modal" class="modal-overlay hidden">
     <div class="modal-box options-box">
       <button id="options-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
-      <h2 class="horror-title">GAME OPTIONS</h2>
-      <p class="modal-sub" style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Customize your museum exploration experience:</p>
+      <h2 class="horror-title" data-text="options.title">OPTIONS</h2>
 
       <div class="options-section">
-        <label class="option-label">EXHIBITION &amp; SMITTY MODE</label>
         <div class="smitty-mode-bar">
           <button id="options-smitty-on-btn" class="smitty-mode-btn active mode-on" type="button">
-            <span class="mode-title">👹 SMITTY: ON</span>
-            <small>Survival Horror Stalker</small>
+            <span class="mode-title" data-text="options.mode_on">Smitty: ON</span>
           </button>
           <button id="options-smitty-off-btn" class="smitty-mode-btn mode-off" type="button">
-            <span class="mode-title">☀️ SMITTY: OFF</span>
-            <small>Peaceful Daytime Tour</small>
+            <span class="mode-title" data-text="options.mode_off">Smitty: OFF</span>
           </button>
         </div>
-        <p id="options-mode-desc" class="option-desc">
-          <strong>SMITTY: ON</strong> — Classic survival horror experience. Smitty stalks the dimly-lit halls. You must recover all 13 relics to unlock the exit doors while evading or stunning the creature.
-        </p>
+        <p id="options-mode-desc" class="option-desc" data-text="options.desc_on">Survival mode. Smitty is active.</p>
       </div>
 
-      <div class="options-section">
-        <label class="option-label">DAYTIME GALLERY TOUR (SMITTY: OFF)</label>
-        <p class="option-desc">
-          When <strong>SMITTY: OFF</strong> is enabled, the museum is naturally and properly lit with warm ambient daylight as if open during regular museum hours. There is no monster, no damage, and no death. Enjoy viewing all 136 curated artworks at your leisure!
-        </p>
-      </div>
-
-      <button id="options-back-btn" class="museum-btn" type="button">SAVE &amp; RETURN</button>
+      <button id="options-back-btn" class="museum-btn" type="button" data-text="options.done">DONE</button>
     </div>
   </div>
 
@@ -167,38 +125,34 @@
   <div id="settings-modal" class="modal-overlay hidden">
     <div class="modal-box settings-box">
       <button id="settings-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
-      <h2 class="horror-title">SETTINGS &amp; CONTROLS</h2>
-      <p class="modal-sub" style="font-size: 13px; color: #94a3b8; margin-bottom: 16px;">Controls layout and spectator mode shortcuts:</p>
+      <h2 class="horror-title" data-text="settings.title">SETTINGS</h2>
 
       <div class="settings-card">
-        <h3 class="settings-card-title">🎥 SPECTATOR MODE</h3>
-        <p class="settings-card-desc">
-          Press <strong>`</strong> (Backquote / Tilde <strong>~</strong>) or <strong>F2</strong> anytime to toggle <strong>Spectator Mode</strong> on or off.
-        </p>
-        <ul class="settings-list">
-          <li><strong>` or ~ / F2</strong>: Toggle Spectator Mode</li>
-          <li><strong>N</strong>: Toggle Free-Flight No-Clip Mode (fly freely through walls; Space to ascend, C to descend)</li>
-          <li><strong>R</strong>: Toggle Smitty Detective X-Ray Wall Outline</li>
-        </ul>
-      </div>
-
-      <div class="settings-card">
-        <h3 class="settings-card-title">🕹️ EXPLORATION CONTROLS</h3>
+        <h3 class="settings-card-title" data-text="settings.controls_heading">CONTROLS</h3>
         <div class="controls-grid" style="margin-bottom: 0;">
-          <div class="ctrl-col"><strong>WASD</strong>: Move</div>
-          <div class="ctrl-col"><strong>MOUSE</strong>: Smooth Look / Aim</div>
-          <div class="ctrl-col"><strong>E</strong>: Examine Art / Relic</div>
-          <div class="ctrl-col"><strong>LEFT CLICK</strong>: Fire Pistol</div>
-          <div class="ctrl-col"><strong>RIGHT CLICK</strong>: Aim Sights</div>
-          <div class="ctrl-col"><strong>SHIFT</strong>: Sprint</div>
-          <div class="ctrl-col"><strong>F</strong>: Flashlight (with tactile hand tremor)</div>
-          <div class="ctrl-col"><strong>TAB</strong>: Map, Inventory &amp; Cursor</div>
-          <div class="ctrl-col"><strong>SPACE</strong>: Jump</div>
-          <div class="ctrl-col"><strong>C / CTRL</strong>: Crouch / Sneak (C avoids browser hotkeys)</div>
+          <div class="ctrl-col" data-text="ctrl.move">WASD: Move</div>
+          <div class="ctrl-col" data-text="ctrl.look">Mouse: Look</div>
+          <div class="ctrl-col" data-text="ctrl.interact">E: Interact</div>
+          <div class="ctrl-col" data-text="ctrl.flashlight">F: Flashlight</div>
+          <div class="ctrl-col" data-text="ctrl.sprint">Shift: Sprint</div>
+          <div class="ctrl-col" data-text="ctrl.crouch">C / Ctrl: Crouch</div>
+          <div class="ctrl-col" data-text="ctrl.jump">Space: Jump</div>
+          <div class="ctrl-col" data-text="ctrl.shoot">Left Click: Fire</div>
+          <div class="ctrl-col" data-text="ctrl.aim">Right Click: Aim</div>
+          <div class="ctrl-col" data-text="ctrl.map">Tab: Objectives</div>
         </div>
       </div>
 
-      <button id="settings-back-btn" class="museum-btn" type="button" style="margin-top: 14px;">RETURN</button>
+      <div class="settings-card" style="margin-top: 12px;">
+        <h3 class="settings-card-title" data-text="settings.spectator_heading">SPECTATOR MODE</h3>
+        <ul class="settings-list" style="margin: 0; padding-left: 18px;">
+          <li data-text="spec.toggle">` or F2: Toggle Spectator</li>
+          <li data-text="spec.fly">WASD: Fly (Space: Up / C: Down)</li>
+          <li data-text="spec.xray">X: Toggle X-Ray Vision</li>
+        </ul>
+      </div>
+
+      <button id="settings-back-btn" class="museum-btn" type="button" style="margin-top: 14px;" data-text="settings.done">DONE</button>
     </div>
   </div>
 

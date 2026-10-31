@@ -25,19 +25,40 @@ window_title = The Museum
 
 [ START SCREEN ]
 start.title = THE MUSEUM
-start.goal = Recover all 13 relics to unlock main door
-# Controls list (bold ok)
-start.control1 = **WASD**: Move
-start.control2 = **MOUSE**: Smooth Look / Aim
-start.control3 = **E**: Examine / Pick Up
-start.control4 = **LEFT CLICK**: Fire Pistol
-start.control5 = **RIGHT CLICK**: Aim Sight
-start.control6 = **SHIFT**: Sprint
-start.control7 = **F**: Flashlight
-start.control8 = **TAB**: Map & Objectives
-start.control9 = **SPACE**: Jump
-start.control10 = **CTRL**: Crouch / Sneak
-start.button = ENTER THE MUSEUM [CLICK TO PLAY]
+start.goal = Recover all 13 relics to unlock the exit.
+start.button = ENTER THE MUSEUM
+bubble.options = OPTIONS
+bubble.settings = SETTINGS
+
+
+[ OPTIONS ]
+options.title = OPTIONS
+options.mode_on = Smitty: ON
+options.mode_off = Smitty: OFF
+options.desc_on = Survival mode. Smitty is active.
+options.desc_off = Tour mode. Lights on, no monster.
+options.done = DONE
+
+
+[ SETTINGS & CONTROLS ]
+settings.title = SETTINGS
+settings.controls_heading = CONTROLS
+ctrl.move = WASD: Move
+ctrl.look = Mouse: Look
+ctrl.interact = E: Interact
+ctrl.flashlight = F: Flashlight
+ctrl.sprint = Shift: Sprint
+ctrl.crouch = C / Ctrl: Crouch
+ctrl.jump = Space: Jump
+ctrl.shoot = Left Click: Fire
+ctrl.aim = Right Click: Aim
+ctrl.map = Tab: Objectives
+
+settings.spectator_heading = SPECTATOR MODE
+spec.toggle = ` or F2: Toggle Spectator
+spec.fly = WASD: Fly (Space: Up / C: Down)
+spec.xray = X: Toggle X-Ray Vision
+settings.done = DONE
 
 
 [ HUD (ON SCREEN WHILE PLAYING) ]
@@ -185,9 +206,9 @@ art_popup.default_room = EXHIBIT
 
 
 [ PAUSE SCREEN (ESC) ]
-pause.title = EXHIBITION PAUSED
-pause.text = The Museum
-pause.button = RESUME EXPLORATION
+pause.title = PAUSED
+pause.text = Press ESC or click Resume to continue.
+pause.button = RESUME
 
 
 [ GAME OVER SCREEN ]
