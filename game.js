@@ -2443,6 +2443,9 @@
 
       this.playerVelocity = new THREE.Vector3();
       this.smittyStalkFreezeTimer = 0;
+      this.lastChaseStingerTime = 0;
+      this.smittySawPlayerStairsTimer = 0;
+      this.timeSincePlayerSeenInStalk = 0;
       this.smittySearchStage = 'NAV';
       this.smittySearchScanTimer = 0;
       this.smittyInspectTimer = 0;
@@ -5477,9 +5480,16 @@
       window.addEventListener('keydown', (e) => {
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
         const isKeyN = (e.code === 'KeyN' || (e.key && e.key.toLowerCase() === 'n'));
+        const isSpectatorToggle = (
+          e.code === 'Backquote' ||
+          e.key === '`' ||
+          e.key === '~' ||
+          e.code === 'F2' ||
+          (isCmdOrCtrl && isKeyN)
+        );
 
-        // Spectator Mode toggle: Command + N / Ctrl + N
-        if (isCmdOrCtrl && isKeyN) {
+        // Spectator Mode toggle: Backquote (` or ~) / F2 (replaces Cmd+N so Chrome does not open a new tab/window)
+        if (isSpectatorToggle) {
           e.preventDefault();
           if (this.gameStarted) {
             this.toggleSpectatorMode();
@@ -6147,7 +6157,7 @@
         this.updateSpectatorBadge();
 
         this.showSystemNotification(
-          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (N: NO-CLIP, R: X-RAY, CMD+N: EXIT)')
+          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (` OR ~: EXIT, N: NO-CLIP, R: X-RAY)')
         );
       } else {
         // Disengage no-clip and X-ray if active when exiting spectator mode
@@ -6599,8 +6609,26 @@
           1.45
         );
       } else {
-        this.smittyState = 'CHASE';
-        this.playSmittyAnimation('Run');
+        this.enterSmittyChase('damage');
+      }
+    }
+
+    enterSmittyChase(triggerType = 'sight') {
+      const wasInChase = (this.smittyState === 'CHASE');
+      this.smittyState = 'CHASE';
+      this.playSmittyAnimation('Run');
+
+      const now = performance.now() / 1000;
+      if (!this.lastChaseStingerTime) this.lastChaseStingerTime = 0;
+
+      // Only play the intense jumpscare stinger if transitioning into CHASE
+      // AND enforce a 15-second cooldown so rapid re-acquiring / re-locking never repeats the stinger
+      if (!wasInChase && (now - this.lastChaseStingerTime > 15.0)) {
+        this.lastChaseStingerTime = now;
+        this.audio.playJumpscareStinger();
+      } else if (!wasInChase) {
+        // Subtle growl on quick re-lock rather than ear-blasting repetitive jumpscare stingers
+        this.audio.playSmittyGrowl();
       }
     }
 
@@ -6617,11 +6645,7 @@
         const playerFootY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
         const vertDist = Math.abs(playerFootY - this.smittyPos.y);
 
-        if (!isChase) {
-          // When patrolling / investigating / stalking, require both inside stairwell within ~4.5m vertical
-          if (!isStairSmitty || !isStairPlayer) return false;
-          if (vertDist > 4.5) return false;
-        } else {
+        if (isChase) {
           // In CHASE: tenaciously track the player up/down the stairs!
           // Stairwells have open shafts allowing vertical line of sight across all floors
           if (isStairSmitty && isStairPlayer) {
@@ -6631,6 +6655,25 @@
             if (vertDist > 6.0) return false;
           } else {
             // Different floors separated by solid floor slabs and not in/at stairwell
+            return false;
+          }
+        } else {
+          // NOT in chase: Smitty CANNOT detect the player if not on the same floor,
+          // UNLESS Smitty saw the player run down/up stairs, or directly catches sight of player on the stairs
+          const playerIsOnStairs = isStairPlayer || (this.playerStairState && this.playerStairState.active !== null);
+          const sawPlayerUseStairs = (this.smittySawPlayerStairsTimer > 0);
+
+          if (!sawPlayerUseStairs && !playerIsOnStairs) {
+            return false;
+          }
+
+          // Must be directly in/at the stairwell with direct open flight view
+          if (!isNearStairSmitty || !isNearStairPlayer) {
+            return false;
+          }
+
+          // Only within direct visual range of adjacent stair flight (< 4.2m)
+          if (vertDist > 4.2) {
             return false;
           }
         }
@@ -6701,6 +6744,12 @@
 
     alertSmittySound(soundPos, soundFloor, radius, isImmediateChase = false) {
       if (this.isSpectatorMode || this.smittyState === 'DEAD' || this.smittyState === 'RESPAWNING' || !this.gameStarted) return;
+
+      // Smitty CANNOT hear or detect sounds from another floor unless he is ALREADY in CHASE
+      if (soundFloor !== this.smittyFloor && this.smittyState !== 'CHASE') {
+        return;
+      }
+
       const isStairSound = this.isInStairwell(soundPos) || this.isNearStairwell(soundPos);
       const isStairSmitty = this.isInStairwell(this.smittyPos) || this.isNearStairwell(this.smittyPos);
       const floorDiff = Math.abs(soundFloor - this.smittyFloor);
@@ -6730,13 +6779,11 @@
         this.graceTimer = 0;
 
         if (isImmediateChase) {
-          this.smittyState = 'CHASE';
+          this.enterSmittyChase('sound');
           this.lastKnownPlayerPos.set(soundPos.x, soundFloor * CONFIG.FLOOR_HEIGHT, soundPos.z);
           this.lastKnownPlayerFloor = soundFloor;
           this.timeSincePlayerSeen = 0;
           this.smittyPath = [];
-          this.playSmittyAnimation('Run');
-          this.audio.playSmittyGrowl();
         } else if (this.smittyState === 'CHASE' || this.smittyState === 'STALK') {
           // Keep tracking footsteps even if visual LOS broke around a corner or onto stairs
           this.lastKnownPlayerPos.set(soundPos.x, soundFloor * CONFIG.FLOOR_HEIGHT, soundPos.z);
@@ -6993,6 +7040,9 @@
       if (this.graceTimer > 0) {
         this.graceTimer -= delta;
       }
+      if (this.smittySawPlayerStairsTimer > 0) {
+        this.smittySawPlayerStairsTimer -= delta;
+      }
 
       const dist3D = this.smittyPos.distanceTo(this.playerPos);
 
@@ -7041,6 +7091,12 @@
         this.lastKnownPlayerFloor = this.playerFloor;
         this.timeSincePlayerSeen = 0;
 
+        // If player is on or entering stairs while visible to Smitty, record that Smitty saw them take stairs
+        const playerOnOrAtStair = this.isInStairwell(this.playerPos) || this.isNearStairwell(this.playerPos) || (this.playerStairState && this.playerStairState.active !== null);
+        if (playerOnOrAtStair) {
+          this.smittySawPlayerStairsTimer = 7.0;
+        }
+
         if (
           this.smittyState === 'PATROL' ||
           this.smittyState === 'PATROL_DANCE' ||
@@ -7049,14 +7105,13 @@
           this.smittyState === 'SEARCH'
         ) {
           if (dist3D < 11 || this.isSprinting) {
-            this.smittyState = 'CHASE';
-            this.playSmittyAnimation('Run');
-            this.audio.playJumpscareStinger();
+            this.enterSmittyChase('sight');
           } else {
             this.smittyState = 'STALK';
             this.playSmittyAnimation('Walk');
             this.audio.playSmittyGrowl();
             this.smittyStalkFreezeTimer = 0;
+            this.timeSincePlayerSeenInStalk = 0;
           }
         }
       } else {
@@ -7102,12 +7157,12 @@
         const canRush = canSeePlayer && (this.smittyFloor === this.playerFloor) && this.hasClearNavPath(this.smittyPos, targetPos, this.smittyFloor, 0.45);
         this.moveSmittyAlongGraph(targetPos, targetFl, speed, delta, canRush);
 
-        // When line of sight is lost, switch to SEARCH only after reaching the destination floor & spot,
+        // When line of sight is lost, switch to SEARCH only after reaching the destination floor & spot with hysteresis,
         // or after prolonged relentless pursuit (14.0 seconds)
         if (!canSeePlayer) {
           const distToLastKnown = Math.hypot(this.lastKnownPlayerPos.x - this.smittyPos.x, this.lastKnownPlayerPos.z - this.smittyPos.z);
           const reachedTargetFloor = (this.smittyFloor === this.lastKnownPlayerFloor);
-          if ((reachedTargetFloor && distToLastKnown < 1.8) || this.timeSincePlayerSeen > 14.0) {
+          if ((reachedTargetFloor && distToLastKnown < 1.8 && this.timeSincePlayerSeen > 2.5) || this.timeSincePlayerSeen > 14.0) {
             this.smittyState = 'SEARCH';
             this.smittySearchTimer = 8.5;
             this.smittySearchStage = 'NAV';
@@ -7148,9 +7203,7 @@
 
           // If held in the beam for > 1.3s or player gets within 8.5m: Lunge into CHASE!
           if (this.smittyStalkFreezeTimer > 1.3 || dist3D < 8.5) {
-            this.smittyState = 'CHASE';
-            this.playSmittyAnimation('Run');
-            this.audio.playJumpscareStinger();
+            this.enterSmittyChase('stalk_freeze');
           }
         } else {
           this.smittyStalkFreezeTimer = Math.max(0, (this.smittyStalkFreezeTimer || 0) - delta * 2);
@@ -7164,14 +7217,18 @@
           this.moveSmittyAlongGraph(this.playerPos, this.playerFloor, speed, delta, canRush);
 
           if (dist3D < 9.5 || this.isSprinting) {
-            this.smittyState = 'CHASE';
-            this.playSmittyAnimation('Run');
-            this.audio.playJumpscareStinger();
+            this.enterSmittyChase('stalk_proximity');
           } else if (!canSeePlayer) {
-            this.smittyState = 'SEARCH';
-            this.smittySearchTimer = 8.5;
-            this.smittySearchStage = 'NAV';
-            this.playSmittyAnimation('Walk');
+            this.timeSincePlayerSeenInStalk = (this.timeSincePlayerSeenInStalk || 0) + delta;
+            if (this.timeSincePlayerSeenInStalk > 2.0) {
+              this.smittyState = 'SEARCH';
+              this.smittySearchTimer = 8.5;
+              this.smittySearchStage = 'NAV';
+              this.playSmittyAnimation('Walk');
+              this.timeSincePlayerSeenInStalk = 0;
+            }
+          } else {
+            this.timeSincePlayerSeenInStalk = 0;
           }
         }
       } else if (this.smittyState === 'SEARCH') {
