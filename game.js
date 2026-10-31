@@ -2450,12 +2450,20 @@
       this.smittySearchScanTimer = 0;
       this.smittyInspectTimer = 0;
 
+      this.smittyEnabled = true;
+      this.smittyHasBeenShot = false;
+      this.leftHandShakeTimer = 0;
+      this.isObjectiveModalOpen = false;
+      this.isOptionsModalOpen = false;
+      this.isSettingsModalOpen = false;
+
       this.dom = {
         startScreen: document.getElementById('start-screen'),
         startBtn: document.getElementById('start-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
         objModal: document.getElementById('objective-modal'),
+        objectiveCloseBtn: document.getElementById('objective-close-btn'),
         floorplanCanvas: document.getElementById('floorplan-canvas'),
         gameOverModal: document.getElementById('game-over-modal'),
         restartBtn: document.getElementById('restart-btn'),
@@ -2466,6 +2474,20 @@
         artModalTitle: document.getElementById('art-modal-title'),
         artModalWing: document.getElementById('art-modal-wing'),
         artCloseBtn: document.getElementById('art-close-btn'),
+        optionsModal: document.getElementById('options-modal'),
+        optionsBubbleBtn: document.getElementById('options-bubble-btn'),
+        optionsCloseBtn: document.getElementById('options-close-btn'),
+        optionsBackBtn: document.getElementById('options-back-btn'),
+        settingsModal: document.getElementById('settings-modal'),
+        settingsBubbleBtn: document.getElementById('settings-bubble-btn'),
+        settingsCloseBtn: document.getElementById('settings-close-btn'),
+        settingsBackBtn: document.getElementById('settings-back-btn'),
+        smittyOnBtn: document.getElementById('smitty-on-btn'),
+        smittyOffBtn: document.getElementById('smitty-off-btn'),
+        optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
+        optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
+        optionsModeDesc: document.getElementById('options-mode-desc'),
+        vignetteOverlay: document.getElementById('vignette-overlay'),
         roomIndicator: document.getElementById('room-indicator'),
         floorIndicator: document.getElementById('floor-indicator'),
         spectatorIndicator: document.getElementById('spectator-indicator'),
@@ -2500,6 +2522,7 @@
       this.spawnAmmoPickups();
       this.loadSmittyModel();
       this.setupEventListeners();
+      this.updateSmittyModeUI();
       this.animate();
     }
 
@@ -2524,11 +2547,17 @@
       this.renderer.toneMappingExposure = 1.0;
 
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
-      const ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
-      this.scene.add(ambientLight);
+      this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
+      this.scene.add(this.ambientLight);
 
-      const hemiLight = new THREE.HemisphereLight(0x4a5a78, 0x1a1612, 0.30);
-      this.scene.add(hemiLight);
+      this.hemiLight = new THREE.HemisphereLight(0x4a5a78, 0x1a1612, 0.30);
+      this.scene.add(this.hemiLight);
+
+      // Warm directional sunlight used when daytime mode (Smitty: OFF) is active
+      this.daytimeSunLight = new THREE.DirectionalLight(0xfff7ed, 0.95);
+      this.daytimeSunLight.position.set(20, 45, 15);
+      this.daytimeSunLight.visible = false;
+      this.scene.add(this.daytimeSunLight);
 
       // Flashlight SpotLight attached to player camera (starts OFF until player presses F)
       this.flashlight = new THREE.SpotLight(0xfff6e8, 0, 38, Math.PI / 4.4, 0.42, 1.05);
@@ -3460,7 +3489,7 @@
       };
 
       // Helper: Vanity Suite with Recessed Sinks & Mirrors
-      const buildVanitySuite = (vx, vz, width, mirrorZOffset, isFacingSouth) => {
+      const buildVanitySuite = (vx, vz, width, mirrorZOffset, wallDirZ) => {
         const group = new THREE.Group();
         group.position.set(vx, y0, vz);
 
@@ -3474,29 +3503,74 @@
         counter.position.set(0, 0.84, 0);
         group.add(counter);
 
-        // 2 Under-mount porcelain washbasins with sensor faucets
+        // Under-mount recessed porcelain washbasins with directional sensor faucets & soap dispensers
         const sinkSpacing = width * 0.26;
-        [-sinkSpacing, sinkSpacing].forEach((ox) => {
-          const basin = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.08, 0.44), porcelainMat);
-          basin.position.set(ox, 0.85, 0);
-          group.add(basin);
+        const basinDarkMat = new THREE.MeshLambertMaterial({ color: 0xdde3ea });
+        const drainHoleMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
 
-          // Chrome swan-neck sensor faucet
-          const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.02, 0.24, 10), chromeMat);
-          stem.position.set(ox, 0.98, isFacingSouth ? 0.22 : -0.22);
+        [-sinkSpacing, sinkSpacing].forEach((ox) => {
+          // Outer drop-in porcelain basin rim
+          const rim = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.46), porcelainMat);
+          rim.position.set(ox, 0.87, 0);
+          group.add(rim);
+
+          // Inner sunken basin cavity bowl
+          const bowl = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.07, 0.36), basinDarkMat);
+          bowl.position.set(ox, 0.835, 0);
+          group.add(bowl);
+
+          // Polished chrome drain flange & central hole
+          const drainFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 16), chromeMat);
+          drainFlange.position.set(ox, 0.872, 0);
+          group.add(drainFlange);
+
+          const drainHole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.010, 12), drainHoleMat);
+          drainHole.position.set(ox, 0.874, 0);
+          group.add(drainHole);
+
+          // Modern chrome gooseneck faucet mounted at the BACK of the counter (near wall), curving FORWARD over the basin
+          // Base escutcheon plate
+          const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.015, 12), chromeMat);
+          faucetBase.position.set(ox, 0.878, wallDirZ * 0.20);
+          group.add(faucetBase);
+
+          // Vertical riser stem
+          const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.16, 12), chromeMat);
+          stem.position.set(ox, 0.965, wallDirZ * 0.20);
           group.add(stem);
 
-          const spout = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.02, 0.14), chromeMat);
-          spout.position.set(ox, 1.08, isFacingSouth ? 0.15 : -0.15);
-          group.add(spout);
+          // Arched gooseneck horizontal pipe extending forward towards basin center
+          const archSpout = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.022, 0.14), chromeMat);
+          archSpout.position.set(ox, 1.055, wallDirZ * 0.13);
+          group.add(archSpout);
+
+          // Downward water aerator spout nozzle directly over the basin
+          const spoutTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.05, 10), chromeMat);
+          spoutTip.position.set(ox, 1.025, wallDirZ * 0.06);
+          group.add(spoutTip);
+
+          // Single-lever mixer handle on side of faucet
+          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.065, 8), chromeMat);
+          handle.rotation.x = Math.PI / 4;
+          handle.position.set(ox + 0.038, 0.98, wallDirZ * 0.20);
+          group.add(handle);
+
+          // Chrome countertop push soap dispenser next to sink
+          const soapBase = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.08, 12), chromeMat);
+          soapBase.position.set(ox + 0.22, 0.91, wallDirZ * 0.18);
+          group.add(soapBase);
+
+          const soapPump = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.05), chromeMat);
+          soapPump.position.set(ox + 0.22, 0.96, wallDirZ * (0.18 - 0.02));
+          group.add(soapPump);
 
           // Polished wall mirror with brass frame
-          const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.74, 1.25, 0.03), mirrorMat);
+          const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.76, 1.30, 0.03), mirrorMat);
           mirror.position.set(ox, 1.75, mirrorZOffset);
           group.add(mirror);
 
-          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.78, 1.29, 0.02), woodMat);
-          frame.position.set(ox, 1.75, mirrorZOffset - (isFacingSouth ? -0.01 : 0.01));
+          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.80, 1.34, 0.02), woodMat);
+          frame.position.set(ox, 1.75, mirrorZOffset - wallDirZ * 0.01);
           group.add(frame);
         });
 
@@ -3514,47 +3588,78 @@
           const uGroup = new THREE.Group();
           uGroup.position.set(ux, y0, zWall);
 
-          // Urinal body
-          const body = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.72, 0.32), porcelainMat);
-          body.position.set(0, 0.76, -0.16);
-          uGroup.add(body);
+          // Vitreous china back wall plate
+          const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.92, 0.05), porcelainMat);
+          backPlate.position.set(0, 0.95, -0.025);
+          uGroup.add(backPlate);
 
-          // Rim contour
-          const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.14, 0.30, 12), porcelainMat);
-          rim.position.set(0, 0.65, -0.18);
-          uGroup.add(rim);
+          // Contoured side privacy wings
+          const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.68, 0.26), porcelainMat);
+          leftWing.position.set(-0.20, 0.92, -0.15);
+          uGroup.add(leftWing);
 
-          // Sloan chrome flushometer pipe & handle
-          const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.40, 8), chromeMat);
-          pipe.position.set(0, 1.30, -0.10);
+          const rightWing = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.68, 0.26), porcelainMat);
+          rightWing.position.set(0.20, 0.92, -0.15);
+          uGroup.add(rightWing);
+
+          // Projected lower bowl & basin
+          const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.12, 0.26, 16), porcelainMat);
+          bowl.position.set(0, 0.65, -0.18);
+          uGroup.add(bowl);
+
+          // Chrome beehive strainer drain in bowl
+          const strainer = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.01, 12), chromeMat);
+          strainer.position.set(0, 0.60, -0.18);
+          uGroup.add(strainer);
+
+          // Sloan Chrome Flushometer Valve
+          const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42, 10), chromeMat);
+          pipe.position.set(0, 1.50, -0.06);
           uGroup.add(pipe);
 
-          const valve = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.08, 0.08), chromeMat);
-          valve.position.set(0, 1.30, -0.10);
+          const coupling = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.06, 10), chromeMat);
+          coupling.position.set(0, 1.44, -0.06);
+          uGroup.add(coupling);
+
+          const valve = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.07, 0.07), chromeMat);
+          valve.position.set(0, 1.58, -0.06);
           uGroup.add(valve);
+
+          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.09, 8), chromeMat);
+          handle.rotation.z = Math.PI / 2;
+          handle.position.set(-0.08, 1.58, -0.06);
+          uGroup.add(handle);
 
           this.scene.add(uGroup);
         });
 
-        // Urinal privacy screen partition between urinals
-        const screen = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.20, 0.55), stallMat);
-        screen.position.set(1.3, y0 + 1.10, zWall - 0.28);
+        // Urinal privacy screen partition between urinals with chrome wall brackets
+        const screen = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.25, 0.65), stallMat);
+        screen.position.set(1.3, y0 + 1.15, zWall - 0.33);
         this.scene.add(screen);
+
+        const bracketTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.06), chromeMat);
+        bracketTop.position.set(1.3, y0 + 1.60, zWall - 0.03);
+        this.scene.add(bracketTop);
+
+        const bracketBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.08, 0.06), chromeMat);
+        bracketBot.position.set(1.3, y0 + 0.70, zWall - 0.03);
+        this.scene.add(bracketBot);
       };
 
       // BUILD MEN'S RESTROOM (NORTH: z = -14.0 .. -10.0)
       // Stalls on West side
       buildStallBank(-13.8, -10.2, -12.0, -12.9, -11.1);
-      // Vanity on North wall
-      buildVanitySuite(1.4, -13.62, 2.8, -0.32, true);
+      // Vanity on North wall (wallDirZ = -1, wall is to the north)
+      buildVanitySuite(1.4, -13.62, 2.8, -0.32, -1);
       // Urinals on South divider wall
       buildUrinals(-10.05);
 
       // BUILD WOMEN'S RESTROOM (SOUTH: z = -10.0 .. -6.0)
       // Stalls on West side
       buildStallBank(-9.8, -6.2, -8.0, -8.9, -7.1);
-      // Vanity on South wall
-      buildVanitySuite(1.4, -6.38, 2.8, 0.32, false);
+      // Vanity on South wall (wallDirZ = 1, wall is to the south)
+      buildVanitySuite(1.4, -6.38, 2.8, 0.32, 1);
 
       // Colliders for Restrooms
       this.colliders.push(
@@ -5126,7 +5231,7 @@
             this.smittyMesh = gltf.scene;
             this.smittyMesh.position.copy(this.smittyPos);
             this.smittyMesh.position.y += 0.05;
-            this.smittyMesh.visible = this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor);
+            this.smittyMesh.visible = !this.smittyEnabled ? false : (this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor));
             this.smittyMesh.scale.set(1.2, 1.2, 1.2);
 
             this.smittyBones = {};
@@ -5241,6 +5346,10 @@
             // Set Smitty to walk animation as he peruses toward his first patrol room
             this.playSmittyAnimation('Walk');
             this.pickNextPatrolNode();
+            if (!this.smittyEnabled) {
+              if (this.smittyMesh) this.smittyMesh.visible = false;
+              if (this.smittyXrayGroup) this.smittyXrayGroup.visible = false;
+            }
           },
           (err) => console.error('Smitty parse error:', err)
         );
@@ -5262,7 +5371,7 @@
       if (this.smittyMesh) {
         this.smittyMesh.position.copy(this.smittyPos);
         this.smittyMesh.position.y += 0.05;
-        this.smittyMesh.visible = this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor);
+        this.smittyMesh.visible = !this.smittyEnabled ? false : (this.isSmittyXray ? true : (this.smittyFloor === this.playerFloor));
       }
       this.pickNextPatrolNode();
     }
@@ -5363,6 +5472,7 @@
         this.gameStarted = true;
         this.startTime = Date.now();
         this.audio.init();
+        this.setSmittyMode(this.smittyEnabled);
         this.showFloorNotification(this.playerFloor);
         this.requestNativeOrBrowserLock();
       });
@@ -5378,8 +5488,73 @@
         this.closeArtModal();
       });
 
+      // Start Screen Options & Settings Bubbles
+      if (this.dom.optionsBubbleBtn) {
+        this.dom.optionsBubbleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openOptionsModal();
+        });
+      }
+      if (this.dom.optionsCloseBtn) {
+        this.dom.optionsCloseBtn.addEventListener('click', () => this.closeOptionsModal());
+      }
+      if (this.dom.optionsBackBtn) {
+        this.dom.optionsBackBtn.addEventListener('click', () => this.closeOptionsModal());
+      }
+      if (this.dom.optionsModal) {
+        this.dom.optionsModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.optionsModal) this.closeOptionsModal();
+        });
+      }
+
+      if (this.dom.settingsBubbleBtn) {
+        this.dom.settingsBubbleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openSettingsModal();
+        });
+      }
+      if (this.dom.settingsCloseBtn) {
+        this.dom.settingsCloseBtn.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.dom.settingsBackBtn) {
+        this.dom.settingsBackBtn.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.dom.settingsModal) {
+        this.dom.settingsModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.settingsModal) this.closeSettingsModal();
+        });
+      }
+
+      // Smitty Mode Toggles: Survival Horror vs Daytime Museum Tour
+      const handleSmittyToggle = (enabled) => {
+        this.setSmittyMode(enabled);
+      };
+
+      if (this.dom.smittyOnBtn) this.dom.smittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
+      if (this.dom.smittyOffBtn) this.dom.smittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
+      if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
+      if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
+
+      // Objective Modal Close Button & Backdrop Click
+      if (this.dom.objectiveCloseBtn) {
+        this.dom.objectiveCloseBtn.addEventListener('click', () => this.closeObjectiveModal());
+      }
+      if (this.dom.objModal) {
+        this.dom.objModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.objModal) this.closeObjectiveModal();
+        });
+      }
+
+      // Browser safety: prevent accidental page unload during active gameplay
+      window.addEventListener('beforeunload', (e) => {
+        if (this.gameStarted && !this.isGameOver && !this.isVictory) {
+          e.preventDefault();
+          e.returnValue = '';
+        }
+      });
+
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isPaused && !this.isGameOver && !this.isVictory) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
           this.requestNativeOrBrowserLock();
         }
       });
@@ -5418,7 +5593,7 @@
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt) {
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) {
           this.lastClientX = null;
           this.lastClientY = null;
           return;
@@ -5459,7 +5634,7 @@
       });
 
       window.addEventListener('mousedown', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt) return;
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
         this.requestNativeOrBrowserLock();
 
         if (e.button === 0) {
@@ -5487,6 +5662,11 @@
           e.code === 'F2' ||
           (isCmdOrCtrl && isKeyN)
         );
+
+        // Prevent browser tab close (Ctrl+W on Windows/Linux or Cmd+W) while crouching and holding W
+        if (isCmdOrCtrl && (e.code === 'KeyW' || (e.key && e.key.toLowerCase() === 'w'))) {
+          e.preventDefault();
+        }
 
         // Spectator Mode toggle: Backquote (` or ~) / F2 (replaces Cmd+N so Chrome does not open a new tab/window)
         if (isSpectatorToggle) {
@@ -5516,8 +5696,7 @@
           if (this.gameStarted) this.togglePause();
         } else if (e.code === 'Tab') {
           if (this.gameStarted) {
-            this.drawFloorplanMinimap();
-            this.dom.objModal.classList.remove('hidden');
+            this.toggleObjectiveModal();
           }
         } else if (e.code === 'KeyF') {
           if (this.gameStarted) this.toggleFlashlight();
@@ -5532,12 +5711,20 @@
         } else if (e.code === 'KeyE') {
           if (this.isExaminingArt) {
             this.closeArtModal();
+          } else if (this.isObjectiveModalOpen) {
+            this.closeObjectiveModal();
           } else if (this.gameStarted) {
             this.interact();
           }
         } else if (e.code === 'Escape') {
           if (this.isExaminingArt) {
             this.closeArtModal();
+          } else if (this.isObjectiveModalOpen) {
+            this.closeObjectiveModal();
+          } else if (this.isOptionsModalOpen) {
+            this.closeOptionsModal();
+          } else if (this.isSettingsModalOpen) {
+            this.closeSettingsModal();
           } else if (this.gameStarted) {
             this.togglePause();
           }
@@ -5551,9 +5738,6 @@
       window.addEventListener('keyup', (e) => {
         if (!e.metaKey) e.preventDefault();
         this.keys[e.code] = false;
-        if (e.code === 'Tab') {
-          this.dom.objModal.classList.add('hidden');
-        }
       });
 
       window.addEventListener('resize', () => {
@@ -5647,10 +5831,131 @@
       }
     }
 
+    openObjectiveModal() {
+      this.isObjectiveModalOpen = true;
+      this.releaseNativeOrBrowserLock();
+      this.drawFloorplanMinimap();
+      this.dom.objModal.classList.remove('hidden');
+    }
+
+    closeObjectiveModal() {
+      this.isObjectiveModalOpen = false;
+      this.dom.objModal.classList.add('hidden');
+      if (this.gameStarted && !this.isExaminingArt && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
+        this.requestNativeOrBrowserLock();
+      }
+    }
+
+    toggleObjectiveModal() {
+      if (this.isObjectiveModalOpen) {
+        this.closeObjectiveModal();
+      } else {
+        this.openObjectiveModal();
+      }
+    }
+
+    openOptionsModal() {
+      this.isOptionsModalOpen = true;
+      this.dom.optionsModal.classList.remove('hidden');
+    }
+
+    closeOptionsModal() {
+      this.isOptionsModalOpen = false;
+      this.dom.optionsModal.classList.add('hidden');
+    }
+
+    openSettingsModal() {
+      this.isSettingsModalOpen = true;
+      this.dom.settingsModal.classList.remove('hidden');
+    }
+
+    closeSettingsModal() {
+      this.isSettingsModalOpen = false;
+      this.dom.settingsModal.classList.add('hidden');
+    }
+
+    setSmittyMode(enabled) {
+      this.smittyEnabled = !!enabled;
+      this.updateSmittyModeUI();
+
+      if (this.ambientLight && this.hemiLight && this.daytimeSunLight) {
+        if (!this.smittyEnabled) {
+          // Daytime Gallery Tour: Warm daylight ambient lighting throughout the museum
+          this.ambientLight.color.setHex(0xfff5ea);
+          this.ambientLight.intensity = 1.35;
+          this.hemiLight.color.setHex(0xdbeafe);
+          this.hemiLight.groundColor.setHex(0xfef3c7);
+          this.hemiLight.intensity = 0.85;
+          this.daytimeSunLight.visible = true;
+          this.renderer.toneMappingExposure = 1.25;
+
+          if (this.smittyMesh) {
+            this.smittyMesh.visible = false;
+          }
+          if (this.smittyXrayGroup) {
+            this.smittyXrayGroup.visible = false;
+          }
+          if (this.dom.vignetteOverlay) {
+            this.dom.vignetteOverlay.style.opacity = '0.08';
+          }
+          this.audio.setHeartbeatBpm(0);
+        } else {
+          // Survival Horror Mode: Dark atmospheric lighting
+          this.ambientLight.color.setHex(0x2d3648);
+          this.ambientLight.intensity = 0.50;
+          this.hemiLight.color.setHex(0x4a5a78);
+          this.hemiLight.groundColor.setHex(0x1a1612);
+          this.hemiLight.intensity = 0.30;
+          this.daytimeSunLight.visible = false;
+          this.renderer.toneMappingExposure = 1.0;
+
+          if (this.dom.vignetteOverlay) {
+            this.dom.vignetteOverlay.style.opacity = '';
+          }
+        }
+      }
+    }
+
+    updateSmittyModeUI() {
+      const onBtns = [this.dom.smittyOnBtn, this.dom.optionsSmittyOnBtn];
+      const offBtns = [this.dom.smittyOffBtn, this.dom.optionsSmittyOffBtn];
+
+      onBtns.forEach((btn) => {
+        if (!btn) return;
+        if (this.smittyEnabled) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+        } else {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        }
+      });
+
+      offBtns.forEach((btn) => {
+        if (!btn) return;
+        if (!this.smittyEnabled) {
+          btn.classList.add('active');
+          btn.setAttribute('aria-pressed', 'true');
+        } else {
+          btn.classList.remove('active');
+          btn.setAttribute('aria-pressed', 'false');
+        }
+      });
+
+      if (this.dom.optionsModeDesc) {
+        if (this.smittyEnabled) {
+          this.dom.optionsModeDesc.innerHTML = '<strong>SMITTY: ON</strong> — Classic survival horror experience. Smitty stalks the dark corridors. You must recover all 13 relics to unlock the exit doors while surviving.';
+        } else {
+          this.dom.optionsModeDesc.innerHTML = '<strong>SMITTY: OFF</strong> — Peaceful Daytime Museum Tour. Bright daylight lighting throughout the galleries, no monster, and no death. Explore all 136 curated artworks at your leisure!';
+        }
+      }
+    }
+
     toggleFlashlight() {
       this.flashlightOn = !this.flashlightOn;
       this.flashlight.intensity = this.flashlightOn ? 1.65 : 0;
       this.audio.playFlashlightClick();
+      this.leftHandShakeTimer = 0.35; // Tactile hand tremor/shake when toggling flashlight
     }
 
     openArtModal(painting) {
@@ -5823,7 +6128,7 @@
         return;
       }
 
-      const isCrouching = !!(this.keys['ControlLeft'] || this.keys['ControlRight']);
+      const isCrouching = !!(this.keys['KeyC'] || this.keys['ControlLeft'] || this.keys['ControlRight']);
       this.isCrouching = isCrouching;
 
       const wantsSprint = (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
@@ -5861,6 +6166,11 @@
           this.playerPos.x += _tempMoveDir.x * moveSpeed * stepDt;
           this.playerPos.z += _tempMoveDir.z * moveSpeed * stepDt;
           this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor);
+        }
+
+        if (isNaN(this.playerPos.x) || isNaN(this.playerPos.z)) {
+          this.playerPos.x = oldPx;
+          this.playerPos.z = oldPz;
         }
 
         if (delta > 0.0001) {
@@ -6187,7 +6497,7 @@
       }
 
       // If turning on X-ray, ensure Smitty's mesh is visible even across different floors
-      if (this.isSmittyXray && this.smittyMesh && this.smittyState !== 'DEAD') {
+      if (this.isSmittyXray && this.smittyMesh && this.smittyState !== 'DEAD' && this.smittyEnabled) {
         this.smittyMesh.visible = true;
       }
 
@@ -6312,6 +6622,21 @@
       if (this.isAiming) {
         targetX -= 0.04;
         targetY -= 0.08;
+      }
+
+      // Tactile hand tremor/shake upon toggling flashlight on or off
+      if (this.leftHandShakeTimer > 0) {
+        this.leftHandShakeTimer = Math.max(0, this.leftHandShakeTimer - delta);
+        const shakeT = this.leftHandShakeTimer / 0.35; // 1 down to 0
+        const freq = 52.0;
+        const shakeX = Math.sin(this.leftHandShakeTimer * freq) * 0.024 * shakeT;
+        const shakeY = Math.cos(this.leftHandShakeTimer * freq * 1.3) * 0.020 * shakeT;
+        const shakeRotZ = Math.sin(this.leftHandShakeTimer * freq * 0.9) * 0.09 * shakeT;
+        const shakeRotX = Math.cos(this.leftHandShakeTimer * freq * 1.1) * 0.07 * shakeT;
+        targetX += shakeX;
+        targetY += shakeY;
+        targetRotX += shakeRotX;
+        targetRotZ += shakeRotZ;
       }
 
       // Reaching & grabbing animation for relics and pickups (Pose 3 from user reference screenshot)
@@ -6577,7 +6902,14 @@
     damageSmitty(amount, hitPoint = null, shotDir = null) {
       this.audio.playSmittyGrowl();
       this.smittyHp -= amount;
-      this.smittyStunTimer = 1.2;
+
+      // Smitty only freezes/stuns upon the very first shot
+      if (!this.smittyHasBeenShot) {
+        this.smittyHasBeenShot = true;
+        this.smittyStunTimer = 1.2;
+      } else {
+        this.smittyStunTimer = 0;
+      }
 
       const bloodOrigin = hitPoint || new THREE.Vector3(this.smittyPos.x, this.smittyPos.y + 1.35, this.smittyPos.z);
       this.spawnLiquidBlood(bloodOrigin, shotDir, 38);
@@ -6916,6 +7248,11 @@
     updateSmitty(delta) {
       if (!this.gameStarted) return;
       if (!this.smittyMesh) return;
+      if (!this.smittyEnabled) {
+        this.smittyMesh.visible = false;
+        if (this.smittyXrayGroup) this.smittyXrayGroup.visible = false;
+        return;
+      }
 
       if (this.smittyState === 'DEAD') {
         this.audio.setHeartbeatBpm(45);
@@ -7011,6 +7348,7 @@
           this.smittyHp = CONFIG.SMITTY.MAX_HP;
           this.smittyState = 'PATROL';
           this.smittyStunTimer = 0;
+          this.smittyHasBeenShot = false;
           this.audio.playSmittyGrowl();
           this.playSmittyAnimation('Walk');
           this.pickNextPatrolNode();
@@ -7383,6 +7721,7 @@
     }
 
     attackPlayer() {
+      if (!this.smittyEnabled) return;
       this.playSmittyAnimation('Attack');
       this.audio.playSmittyGrowl();
 
@@ -7407,6 +7746,7 @@
     }
 
     triggerGameOver() {
+      if (!this.smittyEnabled) return;
       this.isGameOver = true;
       this.releaseNativeOrBrowserLock();
 
