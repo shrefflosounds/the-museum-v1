@@ -6114,7 +6114,6 @@
         this.audio.init();
         this.setSmittyMode(this.smittyEnabled);
         this.showFloorNotification(this.playerFloor);
-        this.showRelicNotification();
         this.updateHud();
         this.requestNativeOrBrowserLock();
       });
@@ -7086,6 +7085,15 @@
           this.dom.relicNotification.style.transform = 'translateX(-50%) scale(1.0)';
         }
       }, 220);
+
+      if (this.relicNotificationTimeout) {
+        clearTimeout(this.relicNotificationTimeout);
+      }
+      this.relicNotificationTimeout = setTimeout(() => {
+        if (this.dom.relicNotification) {
+          this.dom.relicNotification.classList.remove('visible');
+        }
+      }, 4000);
     }
 
     showSystemNotification(text, duration = 3000) {

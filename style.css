@@ -3,6 +3,14 @@
    Minimalist Modern Atmospheric Museum CSS
    ======================================================== */
 
+@font-face {
+  font-family: 'Caryn';
+  src: url('assets/fonts/Caryn.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -220,28 +228,27 @@ body.game-playing #game-container {
   display: none !important;
 }
 
-/* Relic Pickup / Objective Banner: Top-Center Ellipse Badge */
+/* Relic Pickup / Objective Banner: Red Oval Badge (Only visible upon pickup) */
 #relic-notification {
   position: absolute;
-  top: 14px;
+  top: 16px;
   left: 50%;
-  transform: translateX(-50%);
-  width: min(580px, 50vw);
-  height: clamp(38px, 4.2vw, 50px);
-  background: url('assets/ui/hud_relic_bg.png') center center / 100% 100% no-repeat;
+  transform: translateX(-50%) scale(0.95);
+  padding: 8px 40px;
+  background: #780000;
+  border-radius: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
   font-size: clamp(16px, 1.8vw, 22px);
-  font-weight: 700;
-  letter-spacing: 2px;
+  font-weight: normal;
+  letter-spacing: 1.5px;
   color: #ffffff;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7);
-  opacity: 1;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+  opacity: 0;
   pointer-events: none;
-  transition: transform 0.22s ease-out;
+  transition: opacity 0.35s ease-out, transform 0.35s ease-out;
   z-index: 15;
   text-align: center;
   white-space: nowrap;
@@ -249,6 +256,7 @@ body.game-playing #game-container {
 
 #relic-notification.visible {
   opacity: 1;
+  transform: translateX(-50%) scale(1.0);
 }
 
 /* System / Spectator Mode Notification */
@@ -257,10 +265,9 @@ body.game-playing #game-container {
   top: 72px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: 'Papyrus', 'Apple Chancery', 'Cinzel', cursive, serif;
-  font-style: italic;
+  font-family: 'Caryn', 'Papyrus', 'Cinzel', cursive, serif;
   font-size: 14px;
-  font-weight: 700;
+  font-weight: normal;
   letter-spacing: 2px;
   color: #38bdf8;
   background: rgba(15, 23, 42, 0.88);
@@ -282,18 +289,19 @@ body.game-playing #game-container {
   opacity: 1;
 }
 
-/* Bottom-Left Status Readout (Health & Sprint Cloud) */
+/* Bottom-Left Status Readout (Feathered Grey Cloud) */
 .hud-status-left {
   position: absolute;
-  bottom: 24px;
-  left: 24px;
-  width: 242px;
-  height: 140px;
-  background: url('assets/ui/hud_health_bg.png') center center / 100% 100% no-repeat;
+  bottom: 22px;
+  left: 22px;
+  width: 220px;
+  padding: 18px 26px 14px 26px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(128, 128, 128, 0.88) 0%, rgba(115, 115, 115, 0.80) 58%, rgba(90, 90, 90, 0.40) 80%, rgba(80, 80, 80, 0) 100%);
+  border-radius: 40px;
+  box-shadow: 0 0 28px rgba(120, 120, 120, 0.45);
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 24px 34px 18px 34px;
   pointer-events: none;
   z-index: 15;
 }
@@ -311,31 +319,28 @@ body.game-playing #game-container {
 }
 
 .hud-status-left .hud-label {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
-  font-size: 19px;
-  font-weight: 700;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 21px;
+  font-weight: normal;
   letter-spacing: 1.5px;
   color: #ffffff;
   line-height: 1;
 }
 
 .hud-label-sprint {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
-  font-size: 19px;
-  font-weight: 700;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 21px;
+  font-weight: normal;
   letter-spacing: 1.5px;
   color: #ffffff;
-  margin-top: 4px;
+  margin-top: 5px;
   line-height: 1;
 }
 
 #health-value {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
-  font-size: 32px;
-  font-weight: 700;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 34px;
+  font-weight: normal;
   color: #790000;
   line-height: 1;
 }
@@ -346,7 +351,8 @@ body.game-playing #game-container {
   background: #242930;
   border-radius: 2px;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 3px;
+  margin-bottom: 2px;
 }
 
 #health-fill {
@@ -363,7 +369,7 @@ body.game-playing #game-container {
   background: #242930;
   border-radius: 2px;
   overflow: hidden;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 #stamina-fill {
@@ -377,11 +383,13 @@ body.game-playing #game-container {
 /* Bottom-Right Ammo Readout (Feathered Black Oval) */
 .hud-status-right {
   position: absolute;
-  bottom: 24px;
-  right: 24px;
-  width: 242px;
-  height: 140px;
-  background: url('assets/ui/hud_ammo_bg.png') center center / 100% 100% no-repeat;
+  bottom: 22px;
+  right: 22px;
+  width: 220px;
+  height: 110px;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.88) 58%, rgba(0, 0, 0, 0.40) 80%, rgba(0, 0, 0, 0) 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.7);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -398,30 +406,26 @@ body.game-playing #game-container {
 }
 
 .hud-status-right .hud-label {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
-  font-size: 30px;
-  font-weight: 700;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 32px;
+  font-weight: normal;
   letter-spacing: 2px;
   color: #008800;
   line-height: 1;
 }
 
 #ammo-value {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
   font-size: 38px;
-  font-weight: 700;
+  font-weight: normal;
   color: #008800;
   letter-spacing: 1px;
   line-height: 1;
 }
 
 #reload-warning {
-  font-family: 'Papyrus', 'Apple Chancery', 'Bradley Hand', 'Cinzel', cursive, serif;
-  font-style: italic;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
   font-size: 11px;
-  font-weight: 700;
   letter-spacing: 1.5px;
   color: #ef4444;
   margin-top: 4px;
