@@ -4019,95 +4019,157 @@
         buildToilet(-3.35, toiletZ2, 0);
       };
 
-      // Helper: Vanity Suite with Recessed Sinks & Mirrors
-      const buildVanitySuite = (vx, vz, width, mirrorZOffset, wallDirZ) => {
+      // Helper: Modern Luxury Vanity Suite with Recessed Rectangular Sinks & Deck-Mounted Matte Black Faucets
+      const buildVanitySuite = (vx, vz, width, wallDirZ) => {
         const group = new THREE.Group();
         group.position.set(vx, y0, vz);
 
+        const forwardDir = -wallDirZ; // Direction from wall into the room (+1 for Men's, -1 for Women's)
+        const counterDepth = 0.62;
+        const counterH = 0.85;
+
         // Espresso wood vanity cabinet
-        const cabinet = new THREE.Mesh(new THREE.BoxGeometry(width, 0.82, 0.64), woodMat);
-        cabinet.position.set(0, 0.41, 0);
+        const cabinet = new THREE.Mesh(new THREE.BoxGeometry(width, 0.80, 0.58), woodMat);
+        cabinet.position.set(0, 0.40, forwardDir * 0.02);
         group.add(cabinet);
 
-        // Quartz vanity countertop with bullnose bevel
-        const counter = new THREE.Mesh(new THREE.BoxGeometry(width + 0.08, 0.06, 0.70), tileMat);
-        counter.position.set(0, 0.84, 0);
+        // Dark quartz / graphite vanity countertop
+        const counterMat = new THREE.MeshLambertMaterial({ color: 0x1e242b });
+        const counter = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.05, counterDepth), counterMat);
+        counter.position.set(0, counterH - 0.025, 0);
         group.add(counter);
 
-        // Under-mount recessed porcelain washbasins with directional sensor faucets & soap dispensers
+        // 4-inch backsplash against the wall
+        const backsplash = new THREE.Mesh(new THREE.BoxGeometry(width + 0.04, 0.10, 0.02), counterMat);
+        backsplash.position.set(0, counterH + 0.05, wallDirZ * (counterDepth / 2 - 0.01));
+        group.add(backsplash);
+
+        // Modern Matte Black Faucet & Drain Materials (matching reference design)
+        const faucetMat = new THREE.MeshPhongMaterial({
+          color: 0x1a1a1c,
+          specular: 0x555558,
+          shininess: 45
+        });
+        const basinInnerMat = new THREE.MeshLambertMaterial({ color: 0xedf2f7 });
+        const drainMat = new THREE.MeshLambertMaterial({ color: 0x111827 });
+        const mirrorMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, roughness: 0.05, metalness: 0.95 });
+
         const sinkSpacing = width * 0.26;
-        const basinDarkMat = new THREE.MeshLambertMaterial({ color: 0xdde3ea });
-        const drainHoleMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+
+        // Deck positions (measured from wall face: wallDirZ * (counterDepth / 2))
+        // Faucet is mounted on the counter deck behind the basin, with clean clearance from the backsplash!
+        const wallFaceZ = wallDirZ * (counterDepth / 2);
+        const faucetZ = wallFaceZ + forwardDir * 0.10;
+        const basinCenterZ = wallFaceZ + forwardDir * 0.36;
+        const mirrorZ = wallFaceZ + forwardDir * 0.012;
 
         [-sinkSpacing, sinkSpacing].forEach((ox) => {
-          // Outer drop-in porcelain basin rim
-          const rim = new THREE.Mesh(new THREE.BoxGeometry(0.58, 0.04, 0.46), porcelainMat);
-          rim.position.set(ox, 0.87, 0);
-          group.add(rim);
+          // --- 1. RECESSED RECTANGULAR SINK BASIN (True under-mount / drop-in cavity) ---
+          const basinW = 0.52;
+          const basinL = 0.36;
+          const basinFloorY = 0.72;
+          const basinRimY = counterH;
 
-          // Inner sunken basin cavity bowl
-          const bowl = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.07, 0.36), basinDarkMat);
-          bowl.position.set(ox, 0.835, 0);
-          group.add(bowl);
+          // Sunken bottom floor of basin
+          const basinFloor = new THREE.Mesh(new THREE.BoxGeometry(basinW - 0.02, 0.02, basinL - 0.02), basinInnerMat);
+          basinFloor.position.set(ox, basinFloorY + 0.01, basinCenterZ);
+          group.add(basinFloor);
 
-          // Polished chrome drain flange & central hole
-          const drainFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.008, 16), chromeMat);
-          drainFlange.position.set(ox, 0.872, 0);
+          // Inner vertical basin walls (creating the sunken rectangular box)
+          // Back inner wall
+          const backWall = new THREE.Mesh(new THREE.BoxGeometry(basinW, basinRimY - basinFloorY, 0.02), basinInnerMat);
+          backWall.position.set(ox, (basinFloorY + basinRimY) / 2, basinCenterZ - forwardDir * (basinL / 2 - 0.01));
+          group.add(backWall);
+
+          // Front inner wall
+          const frontWall = new THREE.Mesh(new THREE.BoxGeometry(basinW, basinRimY - basinFloorY, 0.02), basinInnerMat);
+          frontWall.position.set(ox, (basinFloorY + basinRimY) / 2, basinCenterZ + forwardDir * (basinL / 2 - 0.01));
+          group.add(frontWall);
+
+          // Left inner wall
+          const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.02, basinRimY - basinFloorY, basinL), basinInnerMat);
+          leftWall.position.set(ox - (basinW / 2 - 0.01), (basinFloorY + basinRimY) / 2, basinCenterZ);
+          group.add(leftWall);
+
+          // Right inner wall
+          const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.02, basinRimY - basinFloorY, basinL), basinInnerMat);
+          rightWall.position.set(ox + (basinW / 2 - 0.01), (basinFloorY + basinRimY) / 2, basinCenterZ);
+          group.add(rightWall);
+
+          // Top perimeter lip / bevel
+          const basinBezel = new THREE.Mesh(new THREE.BoxGeometry(basinW + 0.04, 0.01, basinL + 0.04), basinInnerMat);
+          basinBezel.position.set(ox, basinRimY + 0.005, basinCenterZ);
+          group.add(basinBezel);
+
+          // Drain flange & perforated strainer at the bottom center of the basin
+          const drainFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.006, 16), faucetMat);
+          drainFlange.position.set(ox, basinFloorY + 0.022, basinCenterZ);
           group.add(drainFlange);
 
-          const drainHole = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.010, 12), drainHoleMat);
-          drainHole.position.set(ox, 0.874, 0);
+          const drainHole = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.008, 12), drainMat);
+          drainHole.position.set(ox, basinFloorY + 0.024, basinCenterZ);
           group.add(drainHole);
 
-          // Modern chrome gooseneck faucet mounted at the BACK of the counter (near wall), curving FORWARD over the basin
-          // Base escutcheon plate
-          const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.032, 0.015, 12), chromeMat);
-          faucetBase.position.set(ox, 0.878, wallDirZ * 0.20);
+          // --- 2. SLEEK MODERN MATTE BLACK FAUCET WITH WATER HANDLE (Reference design) ---
+          // Faucet Base / Escutcheon mounted ON THE COUNTERTOP DECK behind the basin
+          const faucetBase = new THREE.Mesh(new THREE.CylinderGeometry(0.028, 0.030, 0.014, 16), faucetMat);
+          faucetBase.position.set(ox, counterH + 0.007, faucetZ);
           group.add(faucetBase);
 
-          // Vertical riser stem
-          const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.16, 12), chromeMat);
-          stem.position.set(ox, 0.965, wallDirZ * 0.20);
-          group.add(stem);
+          // Vertical riser post / column
+          const riser = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.18, 16), faucetMat);
+          riser.position.set(ox, counterH + 0.014 + 0.09, faucetZ);
+          group.add(riser);
 
-          // Arched gooseneck horizontal pipe extending forward towards basin center
-          const archSpout = new THREE.Mesh(new THREE.BoxGeometry(0.022, 0.022, 0.14), chromeMat);
-          archSpout.position.set(ox, 1.055, wallDirZ * 0.13);
-          group.add(archSpout);
+          // Horizontal rectangular spout extending forward over the basin
+          const spoutLength = 0.17;
+          const spout = new THREE.Mesh(new THREE.BoxGeometry(0.026, 0.018, spoutLength), faucetMat);
+          spout.position.set(ox, counterH + 0.17, faucetZ + forwardDir * (spoutLength / 2 - 0.01));
+          group.add(spout);
 
-          // Downward water aerator spout nozzle directly over the basin
-          const spoutTip = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.05, 10), chromeMat);
-          spoutTip.position.set(ox, 1.025, wallDirZ * 0.06);
-          group.add(spoutTip);
+          // Downward water aerator outlet nozzle at the end of the spout
+          const aerator = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.025, 12), faucetMat);
+          aerator.position.set(ox, counterH + 0.15, faucetZ + forwardDir * (spoutLength - 0.025));
+          group.add(aerator);
 
-          // Single-lever mixer handle on side of faucet
-          const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.065, 8), chromeMat);
-          handle.rotation.x = Math.PI / 4;
-          handle.position.set(ox + 0.038, 0.98, wallDirZ * 0.20);
-          group.add(handle);
+          // Single-lever mixer handle on top of the faucet riser (tilt lever)
+          const handleHub = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.024, 14), faucetMat);
+          handleHub.position.set(ox, counterH + 0.20, faucetZ);
+          group.add(handleHub);
 
-          // Chrome countertop push soap dispenser next to sink
-          const soapBase = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.08, 12), chromeMat);
-          soapBase.position.set(ox + 0.22, 0.91, wallDirZ * 0.18);
+          const handleLever = new THREE.Mesh(new THREE.BoxGeometry(0.020, 0.010, 0.08), faucetMat);
+          handleLever.position.set(ox, counterH + 0.21, faucetZ + forwardDir * 0.025);
+          group.add(handleLever);
+
+          // --- 3. MATCHING DECK-MOUNTED SOAP DISPENSER ---
+          // Mounted beside the faucet on the back deck (ox + 0.18)
+          const soapBase = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.022, 0.06, 14), faucetMat);
+          soapBase.position.set(ox + 0.18, counterH + 0.03, faucetZ);
           group.add(soapBase);
 
-          const soapPump = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.016, 0.05), chromeMat);
-          soapPump.position.set(ox + 0.22, 0.96, wallDirZ * (0.18 - 0.02));
-          group.add(soapPump);
+          const soapSpout = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.05), faucetMat);
+          soapSpout.position.set(ox + 0.18, counterH + 0.07, faucetZ + forwardDir * 0.02);
+          group.add(soapSpout);
 
-          // Polished wall mirror with brass frame
-          const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.76, 1.30, 0.03), mirrorMat);
-          mirror.position.set(ox, 1.75, mirrorZOffset);
+          // --- 4. FLUSH WALL MIRROR & VANITY LIGHTING ---
+          // Mirror mounted directly on the wall face
+          const mirror = new THREE.Mesh(new THREE.BoxGeometry(0.72, 1.25, 0.02), mirrorMat);
+          mirror.position.set(ox, 1.70, mirrorZ);
           group.add(mirror);
 
-          const frame = new THREE.Mesh(new THREE.BoxGeometry(0.80, 1.34, 0.02), woodMat);
-          frame.position.set(ox, 1.75, mirrorZOffset - wallDirZ * 0.01);
-          group.add(frame);
+          const mirrorFrame = new THREE.Mesh(new THREE.BoxGeometry(0.76, 1.29, 0.01), woodMat);
+          mirrorFrame.position.set(ox, 1.70, mirrorZ - forwardDir * 0.008);
+          group.add(mirrorFrame);
+
+          // Modern linear LED vanity sconce bar above the mirror
+          const sconceBar = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.035, 0.06), faucetMat);
+          sconceBar.position.set(ox, 2.38, mirrorZ + forwardDir * 0.03);
+          group.add(sconceBar);
         });
 
-        // Wall-mounted stainless steel hand dryer
-        const dryer = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.35, 0.18), chromeMat);
-        dryer.position.set(width / 2 + 0.25, 1.30, 0);
+        // Stainless steel automatic hand dryer on the side wall
+        const dryer = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.34, 0.16), faucetMat);
+        dryer.position.set(width / 2 + 0.22, 1.28, forwardDir * 0.05);
         group.add(dryer);
 
         this.scene.add(group);
@@ -4115,16 +4177,18 @@
 
       // Helper: Men's Commercial Vitreous China Urinals
       const buildUrinals = (zWall) => {
+        // Divider wall north face is at zWall = -10.20
+        // Urinals hang on this wall and project into Men's restroom in the -Z direction
         [0.6, 2.0].forEach((ux) => {
           const uGroup = new THREE.Group();
           uGroup.position.set(ux, y0, zWall);
 
-          // Vitreous china back wall plate
-          const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.92, 0.05), porcelainMat);
-          backPlate.position.set(0, 0.95, -0.025);
+          // Vitreous china back wall plate flush against wall face
+          const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.92, 0.04), porcelainMat);
+          backPlate.position.set(0, 0.95, -0.02);
           uGroup.add(backPlate);
 
-          // Contoured side privacy wings
+          // Contoured side privacy wings projecting in -Z direction
           const leftWing = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.68, 0.26), porcelainMat);
           leftWing.position.set(-0.20, 0.92, -0.15);
           uGroup.add(leftWing);
@@ -4133,7 +4197,7 @@
           rightWing.position.set(0.20, 0.92, -0.15);
           uGroup.add(rightWing);
 
-          // Projected lower bowl & basin
+          // Projected lower bowl & basin projecting in -Z direction
           const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.12, 0.26, 16), porcelainMat);
           bowl.position.set(0, 0.65, -0.18);
           uGroup.add(bowl);
@@ -4143,7 +4207,7 @@
           strainer.position.set(0, 0.60, -0.18);
           uGroup.add(strainer);
 
-          // Sloan Chrome Flushometer Valve
+          // Sloan Chrome Flushometer Valve mounted above bowl
           const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.42, 10), chromeMat);
           pipe.position.set(0, 1.50, -0.06);
           uGroup.add(pipe);
@@ -4181,29 +4245,29 @@
       // BUILD MEN'S RESTROOM (NORTH: z = -14.0 .. -10.0)
       // Stalls on West side
       buildStallBank(-13.8, -10.2, -12.0, -12.9, -11.1);
-      // Vanity on North wall (wallDirZ = -1, wall is to the north)
-      buildVanitySuite(1.4, -13.62, 2.8, -0.32, -1);
-      // Urinals on South divider wall
-      buildUrinals(-10.05);
+      // Vanity on North wall face (z = -13.80, wallDirZ = -1, counter center vz = -13.49)
+      buildVanitySuite(1.4, -13.49, 2.8, -1);
+      // Urinals on South divider wall face (z = -10.20)
+      buildUrinals(-10.20);
 
       // BUILD WOMEN'S RESTROOM (SOUTH: z = -10.0 .. -6.0)
       // Stalls on West side
       buildStallBank(-9.8, -6.2, -8.0, -8.9, -7.1);
-      // Vanity on South wall (wallDirZ = 1, wall is to the south)
-      buildVanitySuite(1.4, -6.38, 2.8, 0.32, 1);
+      // Vanity on South wall face (z = -6.20, wallDirZ = 1, counter center vz = -6.51)
+      buildVanitySuite(1.4, -6.51, 2.8, 1);
 
       // Colliders for Restrooms
       this.colliders.push(
         // Men's stalls & toilets
         { type: 'box', floor: fl, minX: -3.8, maxX: -1.75, minZ: -13.85, maxZ: -10.15 },
         // Men's vanity
-        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -14.0, maxZ: -13.2 },
+        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -13.85, maxZ: -13.15 },
         // Men's urinals
-        { type: 'box', floor: fl, minX: 0.3, maxX: 2.3, minZ: -10.4, maxZ: -10.0 },
+        { type: 'box', floor: fl, minX: 0.3, maxX: 2.3, minZ: -10.6, maxZ: -10.15 },
         // Women's stalls & toilets
         { type: 'box', floor: fl, minX: -3.8, maxX: -1.75, minZ: -9.85, maxZ: -6.15 },
         // Women's vanity
-        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -6.8, maxZ: -6.0 }
+        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -6.85, maxZ: -6.15 }
       );
     }
 
