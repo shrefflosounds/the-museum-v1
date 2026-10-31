@@ -172,7 +172,7 @@ map.subtitle = Recover all {total} relics to unlock the main door:
 # Tag shown next to a relic once you have it
 map.recovered_tag = ✓ RECOVERED
 relic.undiscovered = Undiscovered
-hud.relic_notification = RELIC RECOVERED: {obtained}/{total} ({remaining} LEFT)
+hud.relic_notification = relic found: {obtained}/{total} ({remaining} to go)
 # Top-left of the mini map. {number} = floor number
 map.current_level = CURRENT LEVEL: FLOOR {number} OF 4
 map.close_hint = Release or Press [Tab] to close map

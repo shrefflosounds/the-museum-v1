@@ -6114,6 +6114,8 @@
         this.audio.init();
         this.setSmittyMode(this.smittyEnabled);
         this.showFloorNotification(this.playerFloor);
+        this.showRelicNotification();
+        this.updateHud();
         this.requestNativeOrBrowserLock();
       });
 
@@ -7074,19 +7076,16 @@
       const remaining = Math.max(0, total - obtained);
       this.dom.relicNotification.textContent = T(
         'hud.relic_notification',
-        'RELIC RECOVERED: {obtained}/{total} ({remaining} LEFT)',
+        'relic found: {obtained}/{total} ({remaining} to go)',
         { obtained, total, remaining }
       );
       this.dom.relicNotification.classList.add('visible');
-
-      if (this.relicNotificationTimeout) {
-        clearTimeout(this.relicNotificationTimeout);
-      }
-      this.relicNotificationTimeout = setTimeout(() => {
+      this.dom.relicNotification.style.transform = 'translateX(-50%) scale(1.06)';
+      setTimeout(() => {
         if (this.dom.relicNotification) {
-          this.dom.relicNotification.classList.remove('visible');
+          this.dom.relicNotification.style.transform = 'translateX(-50%) scale(1.0)';
         }
-      }, 3800);
+      }, 220);
     }
 
     showSystemNotification(text, duration = 3000) {
@@ -8481,7 +8480,7 @@
         }
       }
       this.dom.staminaFill.style.width = `${Math.min(100, Math.max(0, this.stamina))}%`;
-      this.dom.ammoValue.textContent = `${this.ammoInMag} / ${this.reserveAmmo}`;
+      this.dom.ammoValue.textContent = `${this.ammoInMag}/${this.reserveAmmo}`;
     }
 
     animate() {
