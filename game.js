@@ -3046,6 +3046,7 @@
       };
 
       window.game = this;
+      this.floorLights = [[], [], [], []];
 
       console.log('%c[THE MUSEUM]%c Ready', 'color:#00ff88;font-weight:bold;background:#111;padding:3px 6px;border-radius:3px', 'color:#fff;background:#222;padding:3px 6px');
 
@@ -3437,6 +3438,7 @@
         const pl = new THREE.PointLight(lightColor, lightInt, 18);
         pl.position.set(lx, y0 + ceilH - 0.35, lz);
         this.scene.add(pl);
+        if (this.floorLights[fl]) this.floorLights[fl].push(pl);
       });
     }
 
@@ -3817,6 +3819,7 @@
       const chanLight = new THREE.PointLight(chanColor, fl === 3 ? 0.45 : 0.60, 14.0);
       chanLight.position.set(cx, y0 + ceilH - 1.3, 30.5);
       this.scene.add(chanLight);
+      if (this.floorLights[fl]) this.floorLights[fl].push(chanLight);
     }
 
     createRealisticRestrooms(fl, y0, mats) {
@@ -3853,6 +3856,8 @@
       const wFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
       wFix.position.set(0, y0 + 5.10, -8.0);
       this.scene.add(wFix);
+
+      if (this.floorLights[fl]) this.floorLights[fl].push(mLight, wLight);
 
       // 3. CERAMIC WAINSCOTING PANELS ON PERIMETER WALLS (height 2.2m)
       const wainscotBack = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 7.96), wainscotMat);
@@ -4334,6 +4339,7 @@
           const bLight = new THREE.PointLight(0xffe8a3, 0.35, 3.8);
           bLight.position.set(-0.6, y0 + 1.2, cz);
           this.scene.add(bLight);
+          if (this.floorLights[fl]) this.floorLights[fl].push(bLight);
         });
 
         // West Wall Perimeter Bookcase (x = -3.55, z: -5.4..1.4)
@@ -4456,6 +4462,7 @@
         const deskLight = new THREE.PointLight(0xffdf88, 0.45, 4.5);
         deskLight.position.set(0.70, 1.15, 0.35);
         deskGroup.add(deskLight);
+        if (this.floorLights[fl]) this.floorLights[fl].push(deskLight);
 
         this.scene.add(deskGroup);
 
@@ -4752,11 +4759,10 @@
         shininess: 38
       });
       const planeGeomCache = new Map();
-      const hBarGeomCache = new Map();
-      const vBarGeomCache = new Map();
+      const frameGeomCache = new Map();
       const plaqueGeom = new THREE.PlaneGeometry(0.85, 0.22);
-      const border = 0.09;
-      const depth = 0.05;
+      const border = 0.08;
+      const depth = 0.04;
 
       const floorNames = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
 
@@ -4790,29 +4796,13 @@
           const key = `${art.w}_${art.h}`;
           if (!planeGeomCache.has(key)) {
             planeGeomCache.set(key, new THREE.PlaneGeometry(art.w, art.h));
-            hBarGeomCache.set(key, new THREE.BoxGeometry(art.w + border * 2, border, depth));
-            vBarGeomCache.set(key, new THREE.BoxGeometry(border, art.h, depth));
+            frameGeomCache.set(key, new THREE.BoxGeometry(art.w + border * 2, art.h + border * 2, depth));
           }
 
-          // 4 non-overlapping perimeter molding bars (zero geometry behind the canvas -> zero Z-fighting!)
-          const hBarGeom = hBarGeomCache.get(key);
-          const vBarGeom = vBarGeomCache.get(key);
-
-          const topBar = new THREE.Mesh(hBarGeom, frameMat);
-          topBar.position.set(0, art.h / 2 + border / 2, 0);
-          group.add(topBar);
-
-          const botBar = new THREE.Mesh(hBarGeom, frameMat);
-          botBar.position.set(0, -art.h / 2 - border / 2, 0);
-          group.add(botBar);
-
-          const leftBar = new THREE.Mesh(vBarGeom, frameMat);
-          leftBar.position.set(-art.w / 2 - border / 2, 0, 0);
-          group.add(leftBar);
-
-          const rightBar = new THREE.Mesh(vBarGeom, frameMat);
-          rightBar.position.set(art.w / 2 + border / 2, 0, 0);
-          group.add(rightBar);
+          // Single unified museum frame backboard (reduces draw calls by 4x per painting!)
+          const frameMesh = new THREE.Mesh(frameGeomCache.get(key), frameMat);
+          frameMesh.position.set(0, 0, 0);
+          group.add(frameMesh);
 
           const canvasMesh = new THREE.Mesh(
             planeGeomCache.get(key),
@@ -4824,7 +4814,7 @@
               polygonOffsetUnits: -2
             })
           );
-          canvasMesh.position.z = 0.01;
+          canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
           this.texLoader.load(
@@ -4848,7 +4838,7 @@
               polygonOffsetUnits: -2
             })
           );
-          plaqueMesh.position.set(0, -art.h / 2 - border - 0.14, 0.01);
+          plaqueMesh.position.set(0, -art.h / 2 - border - 0.14, depth / 2 + 0.005);
           group.add(plaqueMesh);
 
           this.scene.add(group);
@@ -4866,6 +4856,7 @@
           });
         });
       }
+      this.updateRelicFloorVisibility();
     }
 
     // --- 3D MULTI-FLOOR NAVIGATION GRAPH (BFS/DIJKSTRA STALKER ROUTING) ---
@@ -5721,6 +5712,7 @@
         }
         if (r.glowLight) {
           r.glowLight.intensity = show ? 0.45 : 0;
+          r.glowLight.visible = show;
         }
       }
       for (let p of this.ammoPickups) {
@@ -5730,6 +5722,7 @@
         }
         if (p.glowLight) {
           p.glowLight.intensity = show ? 0.55 : 0;
+          p.glowLight.visible = show;
         }
       }
       // Major Performance Optimization: cull all paintings on inactive floors
@@ -5738,6 +5731,17 @@
         for (let p of this.paintings) {
           if (p.mesh) {
             p.mesh.visible = (p.floor === this.playerFloor);
+          }
+        }
+      }
+      // Light Culling: Turn off point lights on inactive floors to eliminate GPU fragment shader overload!
+      if (this.floorLights) {
+        for (let f = 0; f < 4; f++) {
+          const isCurFloor = (f === this.playerFloor);
+          if (this.floorLights[f]) {
+            for (let l of this.floorLights[f]) {
+              l.visible = isCurFloor;
+            }
           }
         }
       }
@@ -6045,6 +6049,7 @@
 
     requestNativeOrBrowserLock() {
       if (!this.gameStarted || this.isExaminingArt || this.isPaused || this.isGameOver || this.isVictory) return;
+      document.documentElement.classList.add('game-playing');
       document.body.classList.add('game-playing');
       try {
         if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.pointerLock) {
@@ -6061,6 +6066,7 @@
     }
 
     releaseNativeOrBrowserLock() {
+      document.documentElement.classList.remove('game-playing');
       document.body.classList.remove('game-playing');
       this.lastClientX = null;
       this.lastClientY = null;
@@ -6278,9 +6284,14 @@
 
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
+        const wasLocked = this.isPointerLocked;
         this.requestNativeOrBrowserLock();
 
         if (e.button === 0) {
+          if (!wasLocked) {
+            // First click after unpause / window focus re-locks pointer without discharging the weapon
+            return;
+          }
           this.shootPistol();
         } else if (e.button === 2) {
           this.isAiming = true;
@@ -8487,18 +8498,37 @@
         this.updateSmittyHeadBone(delta);
 
         const time = performance.now() * 0.002;
+
+        // Dynamic distance culling for paintings: only render artworks within 36m fog envelope on current floor
+        if (this.paintings) {
+          const px = this.playerPos.x;
+          const pz = this.playerPos.z;
+          for (let p of this.paintings) {
+            if (p.floor !== this.playerFloor) {
+              if (p.mesh.visible) p.mesh.visible = false;
+            } else {
+              const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
+              p.mesh.visible = (dSq < 1296); // 36m * 36m
+            }
+          }
+        }
+
         this.relics.forEach((r) => {
           if (!r.collected && r.floor === this.playerFloor && r.mesh) {
-            // Distance culling: only render & animate relics within 38m (maximum museum fog range).
-            // Prevents rendering 500k-1.5M polygon relics across opposite wings through multiple walls.
+            // Distance culling: only render & animate relics within 22m (room/hall envelope).
+            // Eliminates rendering 500k-1.5M polygon relics across opposite wings through multiple walls.
             const dSq = (r.x - this.playerPos.x) ** 2 + (r.z - this.playerPos.z) ** 2;
-            const inRange = dSq < 1444; // 38m * 38m
+            const inRange = dSq < 484; // 22m * 22m
             r.mesh.visible = inRange;
             if (inRange) {
               r.mesh.rotation.y = time * 0.8;
               r.mesh.position.y = r.y + Math.sin(time * 2.2) * 0.035;
-              if (r.glowLight) r.glowLight.intensity = (dSq < 625) ? 0.45 : 0;
+              if (r.glowLight) {
+                r.glowLight.visible = true;
+                r.glowLight.intensity = (dSq < 256) ? 0.45 : 0;
+              }
             } else if (r.glowLight) {
+              r.glowLight.visible = false;
               r.glowLight.intensity = 0;
             }
           }
