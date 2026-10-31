@@ -429,6 +429,9 @@
 
     playSmittyGrowl() {
       if (!this.ctx) return;
+      const nowAudio = performance.now() / 1000;
+      if (this.lastGrowlTime && (nowAudio - this.lastGrowlTime < 4.0)) return;
+      this.lastGrowlTime = nowAudio;
       const customSrc = this.playCustom('smitty_growl.wav', null, 1.20);
       if (customSrc) {
         this.activeMonsterSources.push(customSrc);
@@ -463,6 +466,9 @@
 
     playJumpscareStinger() {
       if (!this.ctx) return;
+      const nowAudio = performance.now() / 1000;
+      if (this.lastStingerAudioTime && (nowAudio - this.lastStingerAudioTime < 12.0)) return;
+      this.lastStingerAudioTime = nowAudio;
       const customSrc = this.playCustom('jumpscare_stinger.wav', null, 1.52);
       if (customSrc) {
         this.activeMonsterSources.push(customSrc);
@@ -1628,10 +1634,10 @@
     "id": 6,
     "floor": 0,
     "title": "Curator S Assets",
-    "file": "assets/gallery/006_Curator_s_Assets.png",
+    "file": "assets/gallery/006_Curator_s_Assets.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.392
+    "h": 1.391
   },
   {
     "id": 7,
@@ -2105,7 +2111,7 @@
     "id": 59,
     "floor": 1,
     "title": "Smitty Blackbox Sigil Tee",
-    "file": "assets/gallery/060_Smitty-BlackBox_Sigil_Tee.png",
+    "file": "assets/gallery/060_Smitty-BlackBox_Sigil_Tee.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2654,7 +2660,7 @@
     "id": 120,
     "floor": 3,
     "title": "Agressive Defensive Stance",
-    "file": "assets/gallery/121_Agressive-Defensive-Stance.png",
+    "file": "assets/gallery/121_Agressive-Defensive-Stance.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 1.639
@@ -3051,6 +3057,7 @@
       this.buildLeftHandViewmodel();
       this.spawnRelics();
       this.spawnAmmoPickups();
+      this.updateRelicFloorVisibility();
       this.loadSmittyModel();
       this.setupEventListeners();
       this.updateSmittyModeUI();
@@ -5725,6 +5732,15 @@
           p.glowLight.intensity = show ? 0.55 : 0;
         }
       }
+      // Major Performance Optimization: cull all paintings on inactive floors
+      // Only render artworks on the player's current floor, eliminating hundreds of draw calls & texture lookups!
+      if (this.paintings) {
+        for (let p of this.paintings) {
+          if (p.mesh) {
+            p.mesh.visible = (p.floor === this.playerFloor);
+          }
+        }
+      }
     }
 
     spawnAmmoPickups() {
@@ -7586,6 +7602,7 @@
     enterSmittyChase(triggerType = 'sight') {
       const wasInChase = (this.smittyState === 'CHASE');
       this.smittyState = 'CHASE';
+      this.smittyChaseMinDuration = 4.5; // Stay locked in chase for at least 4.5 seconds to prevent rapid flickering
       this.playSmittyAnimation('Run');
 
       const now = performance.now() / 1000;
@@ -7596,8 +7613,8 @@
       if (!wasInChase && (now - this.lastChaseStingerTime > 15.0)) {
         this.lastChaseStingerTime = now;
         this.audio.playJumpscareStinger();
-      } else if (!wasInChase) {
-        // Subtle growl on quick re-lock rather than ear-blasting repetitive jumpscare stingers
+      } else if (!wasInChase && (now - (this.lastChaseGrowlTime || 0) > 6.0)) {
+        this.lastChaseGrowlTime = now;
         this.audio.playSmittyGrowl();
       }
     }
@@ -7720,6 +7737,16 @@
         return;
       }
 
+      // Wall acoustic obstruction: solid museum walls (like bathroom or gallery walls) block footstep sounds.
+      // Only gunshots (isImmediateChase = true) penetrate walls!
+      if (!isImmediateChase && soundFloor === this.smittyFloor) {
+        const hasAcousticLOS = this.hasClearNavPath(soundPos, this.smittyPos, soundFloor, 0.05);
+        if (!hasAcousticLOS) {
+          // Footsteps on the other side of a solid wall cannot be heard by Smitty
+          return;
+        }
+      }
+
       const isStairSound = this.isInStairwell(soundPos) || this.isNearStairwell(soundPos);
       const isStairSmitty = this.isInStairwell(this.smittyPos) || this.isNearStairwell(this.smittyPos);
       const floorDiff = Math.abs(soundFloor - this.smittyFloor);
@@ -7761,11 +7788,14 @@
           // Refresh chase persistence so Smitty doesn't give up while player is running on stairs!
           this.timeSincePlayerSeen = Math.min(this.timeSincePlayerSeen, 2.0);
         } else {
+          const wasPatrol = (this.smittyState === 'PATROL' || this.smittyState === 'PATROL_DANCE' || this.smittyState === 'PATROL_INSPECT');
           this.smittyState = 'INVESTIGATE';
           this.smittySearchTimer = 8.0;
           this.smittyPath = []; // Clear stale waypoint path so Smitty redirects immediately
           this.playSmittyAnimation('Walk');
-          this.audio.playSmittyGrowl();
+          if (wasPatrol) {
+            this.audio.playSmittyGrowl();
+          }
 
           // Immediately swivel towards the sound origin
           if (this.smittyMesh && this.smittyFloor === soundFloor) {
@@ -8101,12 +8131,15 @@
           this.playSmittyAnimation('Walk');
           return;
         }
+        if (this.smittyChaseMinDuration > 0) {
+          this.smittyChaseMinDuration -= delta;
+        }
         const speed = CONFIG.SMITTY.CHASE_SPEED;
 
-        // Periodic predator snarls/growls during extended pursuit
+        // Periodic predator snarls/growls during extended pursuit (enforce minimum 6s cooldown)
         this.smittyChaseGrowlTimer = (this.smittyChaseGrowlTimer || 0) - delta;
         if (this.smittyChaseGrowlTimer <= 0) {
-          this.smittyChaseGrowlTimer = 4.5 + Math.random() * 3.5;
+          this.smittyChaseGrowlTimer = 6.0 + Math.random() * 4.0;
           this.audio.playSmittyGrowl();
         }
 
@@ -8134,11 +8167,11 @@
         this.moveSmittyAlongGraph(targetPos, targetFl, speed, delta, canRush);
 
         // When line of sight is lost, switch to SEARCH only after reaching the destination floor & spot with hysteresis,
-        // or after prolonged relentless pursuit (14.0 seconds)
-        if (!canSeePlayer) {
+        // or after prolonged pursuit AND after minimum chase duration has elapsed
+        if (!canSeePlayer && (this.smittyChaseMinDuration <= 0)) {
           const distToLastKnown = Math.hypot(this.lastKnownPlayerPos.x - this.smittyPos.x, this.lastKnownPlayerPos.z - this.smittyPos.z);
           const reachedTargetFloor = (this.smittyFloor === this.lastKnownPlayerFloor);
-          if ((reachedTargetFloor && distToLastKnown < 1.8 && this.timeSincePlayerSeen > 2.5) || this.timeSincePlayerSeen > 14.0) {
+          if ((reachedTargetFloor && distToLastKnown < 1.8 && this.timeSincePlayerSeen > 3.0) || this.timeSincePlayerSeen > 12.0) {
             this.smittyState = 'SEARCH';
             this.smittySearchTimer = 8.5;
             this.smittySearchStage = 'NAV';

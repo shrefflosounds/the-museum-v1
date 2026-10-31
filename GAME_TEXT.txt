@@ -256,7 +256,7 @@ art.004 = Iwanttolivebythesea
 # image: 005_frenchhouse.jpg
 art.005 = Frenchhouse
 
-# image: 006_Curator_s_Assets.png
+# image: 006_Curator_s_Assets.jpg
 art.006 = Curator S Assets
 
 # image: 007_painting-grey-face.jpg
@@ -415,7 +415,7 @@ art.057 = Hey Guy Tv
 # image: 059_yellow-guy-cute.jpg
 art.058 = Yellow Guy Cute
 
-# image: 060_Smitty-BlackBox_Sigil_Tee.png
+# image: 060_Smitty-BlackBox_Sigil_Tee.jpg
 art.059 = Smitty Blackbox Sigil Tee
 
 # image: 061_annoyeornej.jpg
@@ -598,7 +598,7 @@ art.118 = Intense Face Clown
 # image: 120_yoda-smoking-weed.jpg
 art.119 = Yoda Smoking Weed
 
-# image: 121_Agressive-Defensive-Stance.png
+# image: 121_Agressive-Defensive-Stance.jpg
 art.120 = Agressive Defensive Stance
 
 # image: 122_meg-chain-sf-crate-challenge.jpg
