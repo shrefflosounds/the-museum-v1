@@ -51,7 +51,9 @@ html.pointer-locked *,
 body.pointer-locked,
 body.pointer-locked *,
 body.pointer-locked #game-canvas,
-body.pointer-locked #game-container {
+body.pointer-locked #game-container,
+body.game-playing #game-canvas,
+body.game-playing #game-container {
   cursor: none !important;
 }
 

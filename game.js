@@ -6500,8 +6500,10 @@
         this.isPointerLocked = false;
         document.documentElement.classList.remove('pointer-locked');
         document.body.classList.remove('pointer-locked');
-        document.documentElement.classList.remove('game-playing');
-        document.body.classList.remove('game-playing');
+        if (this.isPaused || !this.gameStarted) {
+          document.documentElement.classList.remove('game-playing');
+          document.body.classList.remove('game-playing');
+        }
         this.lastClientX = null;
         this.lastClientY = null;
       });
@@ -6525,13 +6527,6 @@
 
         if (this.isNativeLocked) return;
 
-        // Gate camera rotation strictly to active pointer lock so cursor does not untether while unlocked
-        if (!this.isPointerLocked) {
-          this.lastClientX = null;
-          this.lastClientY = null;
-          return;
-        }
-
         let rawMx = e.movementX ?? e.mozMovementX ?? e.webkitMovementX ?? 0;
         let rawMy = e.movementY ?? e.mozMovementY ?? e.webkitMovementY ?? 0;
         if (rawMx === 0 && rawMy === 0 && this.lastClientX !== null && this.lastClientY !== null) {
@@ -6547,10 +6542,9 @@
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
 
-        // If pointer lock is not active, this click acquires lock without firing weapon
+        // Ensure browser lock is requested if not locked, without blocking gameplay action
         if (!this.isPointerLocked && !this.isNativeLocked) {
           this.requestNativeOrBrowserLock();
-          return;
         }
 
         if (e.button === 0) {
@@ -6742,6 +6736,8 @@
     pauseGame() {
       if (this.isPaused) return;
       this.isPaused = true;
+      document.documentElement.classList.remove('game-playing');
+      document.body.classList.remove('game-playing');
       this.releaseNativeOrBrowserLock();
       this.dom.pauseModal.classList.remove('hidden');
     }
@@ -6750,6 +6746,8 @@
       this.isPaused = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
+      document.documentElement.classList.add('game-playing');
+      document.body.classList.add('game-playing');
       if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
