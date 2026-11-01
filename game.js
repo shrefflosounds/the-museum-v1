@@ -6335,7 +6335,6 @@
         this.dom.pauseModal.addEventListener('click', (e) => {
           if (e.target === this.dom.pauseModal) {
             e.stopPropagation();
-            this.resumeGame();
           }
         });
       }
@@ -6385,11 +6384,7 @@
         this.dom.optionsModal.addEventListener('click', (e) => {
           if (e.target === this.dom.optionsModal) {
             e.stopPropagation();
-            if (this.gameStarted) {
-              this.resumeGame();
-            } else {
-              this.closeOptionsModal();
-            }
+            this.closeOptionsModal();
           }
         });
       }
@@ -6410,11 +6405,7 @@
         this.dom.settingsModal.addEventListener('click', (e) => {
           if (e.target === this.dom.settingsModal) {
             e.stopPropagation();
-            if (this.gameStarted) {
-              this.resumeGame();
-            } else {
-              this.closeSettingsModal();
-            }
+            this.closeSettingsModal();
           }
         });
       }
@@ -6657,7 +6648,10 @@
           } else if (this.isSettingsModalOpen) {
             this.closeSettingsModal();
           } else if (this.gameStarted) {
-            this.togglePause(true);
+            // Escape only pauses the game, never unpauses
+            if (!this.isPaused) {
+              this.pauseGame();
+            }
           }
         }
       });
@@ -6759,7 +6753,7 @@
       this.dom.pauseModal.classList.remove('hidden');
     }
 
-    resumeGame(fromEscapeKey = false) {
+    resumeGame() {
       this.isPaused = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
@@ -6769,23 +6763,11 @@
       if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
-      
-      if (fromEscapeKey) {
-        // Defer lock request by 40ms so the browser finishes its native Escape keydown handling before requesting pointer lock
-        setTimeout(() => {
-          if (!this.isPaused && this.gameStarted && !this.isPointerLocked && !this.isNativeLocked) {
-            this.requestNativeOrBrowserLock();
-          }
-        }, 40);
-      } else {
-        this.requestNativeOrBrowserLock();
-      }
+      this.requestNativeOrBrowserLock();
     }
 
-    togglePause(fromEscapeKey = false) {
-      if (this.isPaused) {
-        this.resumeGame(fromEscapeKey);
-      } else {
+    togglePause() {
+      if (!this.isPaused) {
         this.pauseGame();
       }
     }
