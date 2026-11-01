@@ -6248,7 +6248,16 @@
         const el = this.canvas || document.body;
         if (el && el.requestPointerLock) {
           const p = el.requestPointerLock();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+              if (document.body && document.body.requestPointerLock && el !== document.body) {
+                try {
+                  const p2 = document.body.requestPointerLock();
+                  if (p2 && typeof p2.catch === 'function') p2.catch(() => {});
+                } catch (e2) {}
+              }
+            });
+          }
         }
       } catch (e) {}
     }
@@ -6319,14 +6328,13 @@
 
       this.dom.resumeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        this.dom.pauseModal.classList.add('hidden');
-        this.isPaused = false;
-        this.requestNativeOrBrowserLock();
+        this.resumeGame();
       });
 
       if (this.dom.pauseModal) {
         this.dom.pauseModal.addEventListener('click', (e) => {
           if (e.target === this.dom.pauseModal) {
+            e.stopPropagation();
             this.resumeGame();
           }
         });
@@ -6367,7 +6375,14 @@
       }
       if (this.dom.optionsModal) {
         this.dom.optionsModal.addEventListener('click', (e) => {
-          if (e.target === this.dom.optionsModal) this.closeOptionsModal();
+          if (e.target === this.dom.optionsModal) {
+            e.stopPropagation();
+            if (this.isPaused) {
+              this.resumeGame();
+            } else {
+              this.closeOptionsModal();
+            }
+          }
         });
       }
 
@@ -6385,7 +6400,14 @@
       }
       if (this.dom.settingsModal) {
         this.dom.settingsModal.addEventListener('click', (e) => {
-          if (e.target === this.dom.settingsModal) this.closeSettingsModal();
+          if (e.target === this.dom.settingsModal) {
+            e.stopPropagation();
+            if (this.isPaused) {
+              this.resumeGame();
+            } else {
+              this.closeSettingsModal();
+            }
+          }
         });
       }
 
@@ -6442,6 +6464,10 @@
         if (this.isPointerLocked) {
           document.documentElement.classList.add('pointer-locked');
           document.body.classList.add('pointer-locked');
+          if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
+          if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
+          if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
+          this.isPaused = false;
         } else {
           document.documentElement.classList.remove('pointer-locked');
           document.body.classList.remove('pointer-locked');
@@ -6716,9 +6742,6 @@
       this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
-      if (this.canvas) {
-        try { this.canvas.focus(); } catch (e) {}
-      }
       this.requestNativeOrBrowserLock();
     }
 
