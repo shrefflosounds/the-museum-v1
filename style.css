@@ -46,12 +46,6 @@ html, body {
   display: block;
 }
 
-html.game-playing,
-html.game-playing *,
-body.game-playing,
-body.game-playing *,
-body.game-playing #game-canvas,
-body.game-playing #game-container,
 html.pointer-locked,
 html.pointer-locked *,
 body.pointer-locked,

@@ -6292,6 +6292,13 @@
         this.lastClientX = null;
         this.lastClientY = null;
         this.skipNextMouseMove = true;
+        if (this.isNativeLocked) {
+          document.documentElement.classList.add('pointer-locked');
+          document.body.classList.add('pointer-locked');
+        } else {
+          document.documentElement.classList.remove('pointer-locked');
+          document.body.classList.remove('pointer-locked');
+        }
       };
 
       window._onNativeMouseLook = (dx, dy) => {
@@ -6316,6 +6323,14 @@
         this.isPaused = false;
         this.requestNativeOrBrowserLock();
       });
+
+      if (this.dom.pauseModal) {
+        this.dom.pauseModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.pauseModal) {
+            this.resumeGame();
+          }
+        });
+      }
 
       if (this.dom.pauseOptionsBtn) {
         this.dom.pauseOptionsBtn.addEventListener('click', (e) => {
@@ -6404,7 +6419,9 @@
 
       window.addEventListener('click', () => {
         if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
-          this.requestNativeOrBrowserLock();
+          if (!this.isPointerLocked && !this.isNativeLocked) {
+            this.requestNativeOrBrowserLock();
+          }
         }
       });
 
@@ -6447,6 +6464,8 @@
         this.isPointerLocked = false;
         document.documentElement.classList.remove('pointer-locked');
         document.body.classList.remove('pointer-locked');
+        document.documentElement.classList.remove('game-playing');
+        document.body.classList.remove('game-playing');
         this.lastClientX = null;
         this.lastClientY = null;
       });
@@ -6470,6 +6489,13 @@
 
         if (this.isNativeLocked) return;
 
+        // Gate camera rotation strictly to active pointer lock so cursor does not untether while unlocked
+        if (!this.isPointerLocked) {
+          this.lastClientX = null;
+          this.lastClientY = null;
+          return;
+        }
+
         let rawMx = e.movementX ?? e.mozMovementX ?? e.webkitMovementX ?? 0;
         let rawMy = e.movementY ?? e.mozMovementY ?? e.webkitMovementY ?? 0;
         if (rawMx === 0 && rawMy === 0 && this.lastClientX !== null && this.lastClientY !== null) {
@@ -6485,7 +6511,11 @@
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
 
-        this.requestNativeOrBrowserLock();
+        // If pointer lock is not active, this click acquires lock without firing weapon
+        if (!this.isPointerLocked && !this.isNativeLocked) {
+          this.requestNativeOrBrowserLock();
+          return;
+        }
 
         if (e.button === 0) {
           this.shootPistol();
@@ -6542,14 +6572,6 @@
         this.keys[e.code] = true;
         if (e.repeat) return;
 
-        // Auto re-acquire pointer lock on active movement/gameplay keys if unlocked
-        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked &&
-            !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen) {
-          if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyC', 'ControlLeft'].includes(e.code)) {
-            this.requestNativeOrBrowserLock();
-          }
-        }
-
         if (e.code === 'KeyP') {
           if (this.gameStarted) this.togglePause();
         } else if (e.code === 'Tab') {
@@ -6599,10 +6621,6 @@
 
       window.addEventListener('keyup', (e) => {
         this.keys[e.code] = false;
-        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked &&
-            !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen) {
-          this.requestNativeOrBrowserLock();
-        }
       });
 
       window.addEventListener('resize', () => {
