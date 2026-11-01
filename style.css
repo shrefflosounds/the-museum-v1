@@ -46,6 +46,12 @@ html, body {
   display: block;
 }
 
+html.game-playing,
+html.game-playing *,
+body.game-playing,
+body.game-playing *,
+body.game-playing #game-canvas,
+body.game-playing #game-container,
 html.pointer-locked,
 html.pointer-locked *,
 body.pointer-locked,
@@ -55,41 +61,18 @@ body.pointer-locked #game-container {
   cursor: none !important;
 }
 
-.click-to-resume-prompt {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  z-index: 1200;
-  padding: 16px 38px;
-  background-color: rgba(14, 18, 28, 0.92);
-  background-image: url('assets/ui_blobs/blob_blue.png');
-  background-size: 100% 100%;
-  background-repeat: no-repeat;
-  background-position: center;
-  color: #f1f5f9;
-  font-family: 'Caryn', 'Papyrus', cursive, serif;
-  font-size: 24px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  text-align: center;
-  pointer-events: auto;
-  cursor: pointer;
-  filter: drop-shadow(0 6px 22px rgba(0, 0, 0, 0.7));
-  border-radius: 40px;
-  user-select: none;
-  animation: pulse-resume 1.8s infinite ease-in-out;
+/* Modals always restore the cursor when open */
+.modal-overlay:not(.hidden),
+.modal-overlay:not(.hidden) * {
+  cursor: default !important;
 }
 
-@keyframes pulse-resume {
-  0%, 100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.95;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.04);
-    opacity: 1;
-  }
+.modal-overlay:not(.hidden) button,
+.modal-overlay:not(.hidden) .museum-btn,
+.modal-overlay:not(.hidden) .smitty-mode-btn,
+.modal-overlay:not(.hidden) .close-btn,
+.modal-overlay:not(.hidden) .start-bubble-btn {
+  cursor: pointer !important;
 }
 
 /* ========================================================

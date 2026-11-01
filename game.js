@@ -3025,7 +3025,6 @@
         smittyOffBtn: document.getElementById('smitty-off-btn'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
         optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
-        clickToResumePrompt: document.getElementById('click-to-resume-prompt'),
         vignetteOverlay: document.getElementById('vignette-overlay'),
         roomIndicator: document.getElementById('room-indicator'),
         floorIndicator: document.getElementById('floor-indicator'),
@@ -6106,15 +6105,7 @@
         const el = this.canvas || document.body;
         if (el && el.requestPointerLock) {
           const p = el.requestPointerLock();
-          if (p && typeof p.catch === 'function') {
-            p.catch(() => {
-              if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked) {
-                if (this.dom.clickToResumePrompt) {
-                  this.dom.clickToResumePrompt.classList.remove('hidden');
-                }
-              }
-            });
-          }
+          if (p && typeof p.catch === 'function') p.catch(() => {});
         }
       } catch (e) {}
     }
@@ -6124,9 +6115,6 @@
       document.body.classList.remove('game-playing');
       document.documentElement.classList.remove('pointer-locked');
       document.body.classList.remove('pointer-locked');
-      if (this.dom.clickToResumePrompt) {
-        this.dom.clickToResumePrompt.classList.add('hidden');
-      }
       this.lastClientX = null;
       this.lastClientY = null;
       try {
@@ -6205,13 +6193,6 @@
       this.dom.artCloseBtn.addEventListener('click', () => {
         this.closeArtModal();
       });
-
-      if (this.dom.clickToResumePrompt) {
-        this.dom.clickToResumePrompt.addEventListener('click', (e) => {
-          e.stopPropagation();
-          this.requestNativeOrBrowserLock();
-        });
-      }
 
       // Start Screen Options & Settings Bubbles
       if (this.dom.optionsBubbleBtn) {
@@ -6301,9 +6282,6 @@
         if (this.isPointerLocked) {
           document.documentElement.classList.add('pointer-locked');
           document.body.classList.add('pointer-locked');
-          if (this.dom.clickToResumePrompt) {
-            this.dom.clickToResumePrompt.classList.add('hidden');
-          }
         } else {
           document.documentElement.classList.remove('pointer-locked');
           document.body.classList.remove('pointer-locked');
@@ -6328,11 +6306,6 @@
         document.body.classList.remove('pointer-locked');
         this.lastClientX = null;
         this.lastClientY = null;
-        if (this.gameStarted && !this.isPaused && !this.isNativeLocked) {
-          if (this.dom.clickToResumePrompt) {
-            this.dom.clickToResumePrompt.classList.remove('hidden');
-          }
-        }
       });
 
       window.addEventListener('mouseleave', () => {
@@ -6354,20 +6327,6 @@
 
         if (this.isNativeLocked) return;
 
-        // If pointer lock is not active, do not rotate the camera with untethered cursor movements
-        if (!this.isPointerLocked) {
-          this.lastClientX = null;
-          this.lastClientY = null;
-          return;
-        }
-
-        if (this.skipNextMouseMove) {
-          this.skipNextMouseMove = false;
-          this.lastClientX = e.clientX;
-          this.lastClientY = e.clientY;
-          return;
-        }
-
         let rawMx = e.movementX ?? e.mozMovementX ?? e.webkitMovementX ?? 0;
         let rawMy = e.movementY ?? e.mozMovementY ?? e.webkitMovementY ?? 0;
         if (rawMx === 0 && rawMy === 0 && this.lastClientX !== null && this.lastClientY !== null) {
@@ -6382,14 +6341,6 @@
 
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
-
-        if (!this.isPointerLocked && !this.isNativeLocked) {
-          this.requestNativeOrBrowserLock();
-          if (this.dom.clickToResumePrompt) {
-            this.dom.clickToResumePrompt.classList.add('hidden');
-          }
-          return;
-        }
 
         this.requestNativeOrBrowserLock();
 
@@ -6448,6 +6399,14 @@
         this.keys[e.code] = true;
         if (e.repeat) return;
 
+        // Auto re-acquire pointer lock on active movement/gameplay keys if unlocked
+        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked &&
+            !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen) {
+          if (['KeyW', 'KeyA', 'KeyS', 'KeyD', 'Space', 'ShiftLeft', 'ShiftRight', 'KeyC', 'ControlLeft'].includes(e.code)) {
+            this.requestNativeOrBrowserLock();
+          }
+        }
+
         if (e.code === 'KeyP') {
           if (this.gameStarted) this.togglePause();
         } else if (e.code === 'Tab') {
@@ -6474,7 +6433,7 @@
           }
         } else if (e.code === 'Escape') {
           e.preventDefault();
-          if (performance.now() - (this.lastPointerLockExitTime || 0) < 350) {
+          if (performance.now() - (this.lastPointerLockExitTime || 0) < 300) {
             return;
           }
           if (this.isExaminingArt) {
@@ -6492,12 +6451,15 @@
       });
 
       window.addEventListener('keypress', (e) => {
-        if (!e.metaKey) e.preventDefault();
+        if (!e.metaKey && ['Space'].includes(e.code)) e.preventDefault();
       });
 
       window.addEventListener('keyup', (e) => {
-        if (!e.metaKey) e.preventDefault();
         this.keys[e.code] = false;
+        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked &&
+            !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen) {
+          this.requestNativeOrBrowserLock();
+        }
       });
 
       window.addEventListener('resize', () => {
@@ -6593,14 +6555,10 @@
       this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
+      if (this.canvas) {
+        try { this.canvas.focus(); } catch (e) {}
+      }
       this.requestNativeOrBrowserLock();
-      setTimeout(() => {
-        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked) {
-          if (this.dom.clickToResumePrompt) {
-            this.dom.clickToResumePrompt.classList.remove('hidden');
-          }
-        }
-      }, 60);
     }
 
     togglePause() {
