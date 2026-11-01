@@ -137,6 +137,7 @@ def sync():
 
         pattern = r"const RELIC_TYPES = \[[\s\S]*?\];"
         new_content = re.sub(pattern, js_relics, content, count=1)
+        new_content = re.sub(r'TOTAL_RELICS:\s*\d+,', f'TOTAL_RELICS: {len(relics_list)},', new_content, count=1)
         if new_content != content:
             with open(GAME_JS_PATH, 'w') as f:
                 f.write(new_content)
@@ -146,6 +147,9 @@ def sync():
     if os.path.exists(GAME_TEXT_PATH):
         with open(GAME_TEXT_PATH, 'r') as f:
             gt_content = f.read()
+
+        gt_content = re.sub(r'start\.goal\s*=\s*Recover all \d+ relics', f'start.goal = Recover all {len(relics_list)} relics', gt_content)
+        gt_content = re.sub(r'# Names of the \d+ relics', f'# Names of the {len(relics_list)} relics', gt_content)
 
         lines = gt_content.splitlines()
         new_lines = []
@@ -165,7 +169,20 @@ def sync():
 
         with open(GAME_TEXT_PATH, 'w') as f:
             f.write('\n'.join(new_lines) + '\n')
-        print(f"Updated relic names in GAME_TEXT.txt")
+        print(f"Updated relic names and count in GAME_TEXT.txt")
+
+    # Update index.html
+    INDEX_HTML_PATH = os.path.join(PROJECT_DIR, 'index.html')
+    if os.path.exists(INDEX_HTML_PATH):
+        with open(INDEX_HTML_PATH, 'r') as f:
+            html_content = f.read()
+        html_content = re.sub(r'Recover all \d+ relics to unlock the exit\.', f'Recover all {len(relics_list)} relics to unlock the exit.', html_content)
+        html_content = re.sub(r'Recover all \d+ relics to unlock the main door:', f'Recover all {len(relics_list)} relics to unlock the main door:', html_content)
+        html_content = re.sub(r'/ \d+<\/span><\/p>', f'/ {len(relics_list)}</span></p>', html_content)
+        html_content = re.sub(r'All \d+ Relics Recovered!', f'All {len(relics_list)} Relics Recovered!', html_content)
+        with open(INDEX_HTML_PATH, 'w') as f:
+            f.write(html_content)
+        print(f"Updated relic counts in index.html")
 
     print(f"\n=== SYNC COMPLETE: {len(relics_list)} ACTIVE RELICS IN THE MUSEUM ===")
 

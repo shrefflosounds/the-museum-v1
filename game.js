@@ -594,7 +594,7 @@
 
   // --- CONFIGURATION ---
   const CONFIG = {
-    TOTAL_RELICS: 13,
+    TOTAL_RELICS: 14,
     FLOOR_HEIGHT: 5.2,
     NUM_FLOORS: 4,
     AMMO_PICKUP: {
@@ -5841,6 +5841,11 @@
       const mapSub = document.getElementById('map-subtitle') || document.querySelector('.checklist-sub');
       if (mapSub) {
         mapSub.textContent = T('map.subtitle', `Recover all ${CONFIG.TOTAL_RELICS} relics to unlock the main door:`, { total: CONFIG.TOTAL_RELICS });
+      }
+
+      const startGoalEl = document.querySelector('[data-text="start.goal"]');
+      if (startGoalEl) {
+        startGoalEl.textContent = T('start.goal', `Recover all ${CONFIG.TOTAL_RELICS} relics to unlock the exit.`, { total: CONFIG.TOTAL_RELICS });
       }
     }
 

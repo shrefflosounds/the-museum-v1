@@ -25,7 +25,7 @@ window_title = The Museum
 
 [ START SCREEN ]
 start.title = THE MUSEUM
-start.goal = Recover all 13 relics to unlock the exit.
+start.goal = Recover all 14 relics to unlock the exit.
 start.button = ENTER THE MUSEUM
 bubble.options = OPTIONS
 bubble.settings = SETTINGS
@@ -130,7 +130,7 @@ plaque.subtitle = SHREFFLO MUSEUM ARCHIVE
 
 
 [ RELICS ]
-# Names of the 13 relics (from your 3D models in "Models for game relics")
+# Names of the 14 relics (from your 3D models in "Models for game relics")
 relic.1.name = Ascetic Sebring
 relic.2.name = Black Nose
 relic.3.name = Chicken Leg
