@@ -6359,6 +6359,14 @@
       this.dom.artCloseBtn.addEventListener('click', () => {
         this.closeArtModal();
       });
+      if (this.dom.artModal) {
+        this.dom.artModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.artModal) {
+            e.stopPropagation();
+            this.closeArtModal();
+          }
+        });
+      }
 
       // Start Screen Options & Settings Bubbles
       if (this.dom.optionsBubbleBtn) {
@@ -6377,7 +6385,7 @@
         this.dom.optionsModal.addEventListener('click', (e) => {
           if (e.target === this.dom.optionsModal) {
             e.stopPropagation();
-            if (this.isPaused) {
+            if (this.gameStarted) {
               this.resumeGame();
             } else {
               this.closeOptionsModal();
@@ -6402,7 +6410,7 @@
         this.dom.settingsModal.addEventListener('click', (e) => {
           if (e.target === this.dom.settingsModal) {
             e.stopPropagation();
-            if (this.isPaused) {
+            if (this.gameStarted) {
               this.resumeGame();
             } else {
               this.closeSettingsModal();
@@ -6468,6 +6476,8 @@
           if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
           if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
           this.isPaused = false;
+          this.isOptionsModalOpen = false;
+          this.isSettingsModalOpen = false;
         } else {
           document.documentElement.classList.remove('pointer-locked');
           document.body.classList.remove('pointer-locked');
@@ -6737,9 +6747,10 @@
     }
 
     resumeGame() {
-      if (!this.isPaused) return;
       this.isPaused = false;
-      this.dom.pauseModal.classList.add('hidden');
+      this.isOptionsModalOpen = false;
+      this.isSettingsModalOpen = false;
+      if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
       this.requestNativeOrBrowserLock();
@@ -6786,6 +6797,8 @@
       this.dom.optionsModal.classList.add('hidden');
       if (this.isPaused) {
         this.dom.pauseModal.classList.remove('hidden');
+      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+        this.requestNativeOrBrowserLock();
       }
     }
 
@@ -6799,6 +6812,8 @@
       this.dom.settingsModal.classList.add('hidden');
       if (this.isPaused) {
         this.dom.pauseModal.classList.remove('hidden');
+      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+        this.requestNativeOrBrowserLock();
       }
     }
 
