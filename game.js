@@ -3061,6 +3061,9 @@
       this.spawnAmmoPickups();
       this.updateRelicFloorVisibility();
       this.loadSmittyModel();
+      if (this.renderer && this.scene && this.camera) {
+        this.renderer.compile(this.scene, this.camera);
+      }
       this.setupEventListeners();
       this.updateSmittyModeUI();
       this.animate();
@@ -3436,7 +3439,8 @@
         fix.position.set(lx, y0 + ceilH - 0.06, lz);
         this.scene.add(fix);
 
-        const pl = new THREE.PointLight(lightColor, lightInt, 18);
+        const pl = new THREE.PointLight(lightColor, fl === this.playerFloor ? lightInt : 0, 18);
+        pl._origIntensity = lightInt;
         pl.position.set(lx, y0 + ceilH - 0.35, lz);
         this.scene.add(pl);
         if (this.floorLights[fl]) this.floorLights[fl].push(pl);
@@ -3817,7 +3821,9 @@
       this.scene.add(chanGroup);
 
       const chanColor = fl === 3 ? 0xff4422 : (fl === 1 ? 0xffdf99 : 0xfffae6);
-      const chanLight = new THREE.PointLight(chanColor, fl === 3 ? 0.45 : 0.60, 14.0);
+      const chanInt = fl === 3 ? 0.45 : 0.60;
+      const chanLight = new THREE.PointLight(chanColor, fl === this.playerFloor ? chanInt : 0, 14.0);
+      chanLight._origIntensity = chanInt;
       chanLight.position.set(cx, y0 + ceilH - 1.3, 30.5);
       this.scene.add(chanLight);
       if (this.floorLights[fl]) this.floorLights[fl].push(chanLight);
@@ -3848,7 +3854,8 @@
 
       // 2. CEILING RECESSED LIGHTS & GLOWING FIXTURES
       // Men's ceiling light (z = -12.0)
-      const mLight = new THREE.PointLight(0xfffaed, 0.75, 9.0);
+      const mLight = new THREE.PointLight(0xfffaed, fl === this.playerFloor ? 0.75 : 0, 9.0);
+      mLight._origIntensity = 0.75;
       mLight.position.set(0, y0 + 3.8, -12.0);
       this.scene.add(mLight);
       const mFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
@@ -3856,7 +3863,8 @@
       this.scene.add(mFix);
 
       // Women's ceiling light (z = -8.0)
-      const wLight = new THREE.PointLight(0xfffaed, 0.75, 9.0);
+      const wLight = new THREE.PointLight(0xfffaed, fl === this.playerFloor ? 0.75 : 0, 9.0);
+      wLight._origIntensity = 0.75;
       wLight.position.set(0, y0 + 3.8, -8.0);
       this.scene.add(wLight);
       const wFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
@@ -4476,7 +4484,8 @@
             maxZ: cz + 0.85
           });
 
-          const bLight = new THREE.PointLight(0xffe8a3, 0.35, 3.8);
+          const bLight = new THREE.PointLight(0xffe8a3, fl === this.playerFloor ? 0.35 : 0, 3.8);
+          bLight._origIntensity = 0.35;
           bLight.position.set(-0.6, y0 + 1.2, cz);
           this.scene.add(bLight);
           if (this.floorLights[fl]) this.floorLights[fl].push(bLight);
@@ -4599,7 +4608,8 @@
         deskGroup.add(bShade);
 
         // Warm reading lamp point light
-        const deskLight = new THREE.PointLight(0xffdf88, 0.45, 4.5);
+        const deskLight = new THREE.PointLight(0xffdf88, fl === this.playerFloor ? 0.45 : 0, 4.5);
+        deskLight._origIntensity = 0.45;
         deskLight.position.set(0.70, 1.15, 0.35);
         deskGroup.add(deskLight);
         if (this.floorLights[fl]) this.floorLights[fl].push(deskLight);
@@ -4963,6 +4973,9 @@
               tex.colorSpace = THREE.SRGBColorSpace;
               canvasMesh.material.map = tex;
               canvasMesh.material.needsUpdate = true;
+              if (this.renderer) {
+                this.renderer.initTexture(tex);
+              }
             },
             undefined,
             () => {}
@@ -5857,7 +5870,7 @@
         }
         if (r.glowLight) {
           r.glowLight.intensity = show ? 0.45 : 0;
-          r.glowLight.visible = show;
+          r.glowLight.visible = true;
         }
       }
       for (let p of this.ammoPickups) {
@@ -5866,8 +5879,8 @@
           p.mesh.visible = show;
         }
         if (p.glowLight) {
-          p.glowLight.intensity = show ? 0.55 : 0;
-          p.glowLight.visible = show;
+          p.glowLight.intensity = show ? 0.75 : 0;
+          p.glowLight.visible = true;
         }
       }
       // Major Performance Optimization: cull all paintings on inactive floors
@@ -5879,13 +5892,15 @@
           }
         }
       }
-      // Light Culling: Turn off point lights on inactive floors to eliminate GPU fragment shader overload!
+      // Light Culling: Modulate intensity instead of toggling .visible!
+      // NEVER toggle .visible on PointLights because Three.js triggers a complete WebGL shader recompilation!
       if (this.floorLights) {
         for (let f = 0; f < 4; f++) {
           const isCurFloor = (f === this.playerFloor);
           if (this.floorLights[f]) {
             for (let l of this.floorLights[f]) {
-              l.visible = isCurFloor;
+              l.visible = true;
+              l.intensity = isCurFloor ? (l._origIntensity ?? 0.5) : 0;
             }
           }
         }
@@ -5911,13 +5926,14 @@
         group.position.set(loc.x, loc.baseY, loc.z);
 
         // Immediate lightweight placeholder while GLB loads
-        const placeholderMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.35 });
+        const placeholderMat = new THREE.MeshLambertMaterial({ color: 0x22c55e, emissive: 0x16a34a, emissiveIntensity: 0.45 });
         const placeholder = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.28), placeholderMat);
         placeholder.position.y = 0.12;
         group.add(placeholder);
 
-        // Warm amber tactical glow kept directly in scene with constant visibility so Three.js shader light count never changes
-        const glow = new THREE.PointLight(0x38bdf8, (loc.floor === this.playerFloor) ? 0.55 : 0, 3.2);
+        // Radioactive shaky green tactical glow kept directly in scene with constant visibility so Three.js shader light count never changes
+        const glow = new THREE.PointLight(0x22ff55, (loc.floor === this.playerFloor) ? 0.80 : 0, 3.8);
+        glow._origIntensity = 0.80;
         glow.position.set(loc.x, loc.baseY + 0.22, loc.z);
         this.scene.add(glow);
 
@@ -5972,8 +5988,10 @@
                   const optMat = new THREE.MeshPhongMaterial({
                     map: oldMat.map || null,
                     color: oldMat.color || 0xffffff,
-                    specular: 0x333333,
-                    shininess: 30,
+                    emissive: 0x00cc44,
+                    emissiveIntensity: 0.22,
+                    specular: 0x44aa44,
+                    shininess: 35,
                     side: THREE.FrontSide
                   });
                   if (optMat.map) {
@@ -6013,16 +6031,31 @@
           // Only show pickup when on current floor
           const sameFloor = (p.floor === this.playerFloor);
           p.mesh.visible = sameFloor;
-          if (p.glowLight) p.glowLight.intensity = sameFloor ? 0.55 : 0;
+          if (p.glowLight) {
+            p.glowLight.visible = true;
+            if (sameFloor) {
+              const shake = (Math.random() - 0.5) * 0.24;
+              const flicker = Math.sin(time * 36.0 + p.id * 7.3) * 0.16 + Math.cos(time * 54.0 + p.id * 3.1) * 0.10;
+              p.glowLight.intensity = Math.max(0.25, 0.80 + flicker + shake);
+              p.glowLight.position.x = p.x + (Math.random() - 0.5) * 0.06;
+              p.glowLight.position.z = p.z + (Math.random() - 0.5) * 0.06;
+              p.glowLight.position.y = (p.mesh.position.y + 0.22) + (Math.random() - 0.5) * 0.04;
+            } else {
+              p.glowLight.intensity = 0;
+            }
+          }
         } else {
-          if (p.glowLight) p.glowLight.intensity = 0;
+          if (p.glowLight) {
+            p.glowLight.intensity = 0;
+            p.glowLight.visible = true;
+          }
           // 3-minute respawn countdown (180s)
           p.respawnTimer -= delta;
           if (p.respawnTimer <= 0) {
             p.active = true;
             const sameFloor = (p.floor === this.playerFloor);
             p.mesh.visible = sameFloor;
-            if (p.glowLight) p.glowLight.intensity = sameFloor ? 0.55 : 0;
+            if (p.glowLight) p.glowLight.intensity = sameFloor ? 0.80 : 0;
           }
         }
       }
@@ -6032,7 +6065,10 @@
       if (!pickup.active) return;
       pickup.active = false;
       pickup.mesh.visible = false;
-      if (pickup.glowLight) pickup.glowLight.intensity = 0;
+      if (pickup.glowLight) {
+        pickup.glowLight.intensity = 0;
+        pickup.glowLight.visible = true;
+      }
       pickup.respawnTimer = CONFIG.AMMO_PICKUP.RESPAWN_TIME; // 180 seconds = 3 minutes
 
       this.reserveAmmo += CONFIG.AMMO_PICKUP.AMMO_AMOUNT;
@@ -6319,6 +6355,9 @@
         this.dom.startScreen.classList.add('hidden');
         this.gameStarted = true;
         this.startTime = Date.now();
+        this.keys = {};
+        this.isSprinting = false;
+        this.stamina = CONFIG.PLAYER.MAX_STAMINA;
         this.audio.init();
         this.setSmittyMode(this.smittyEnabled);
         this.showFloorNotification(this.playerFloor);
@@ -6511,6 +6550,13 @@
       window.addEventListener('blur', () => {
         this.lastClientX = null;
         this.lastClientY = null;
+        this.keys = {};
+        this.isSprinting = false;
+      });
+
+      window.addEventListener('focus', () => {
+        this.keys = {};
+        this.isSprinting = false;
       });
 
       window.addEventListener('mousemove', (e) => {
@@ -6662,6 +6708,11 @@
 
       window.addEventListener('keyup', (e) => {
         this.keys[e.code] = false;
+        if (e.key === 'Shift') {
+          this.keys['ShiftLeft'] = false;
+          this.keys['ShiftRight'] = false;
+          this.isSprinting = false;
+        }
       });
 
       window.addEventListener('resize', () => {
@@ -6757,6 +6808,8 @@
       this.isPaused = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
+      this.keys = {};
+      this.isSprinting = false;
       this.lastResumeTime = performance.now();
       document.documentElement.classList.add('game-playing');
       document.body.classList.add('game-playing');
@@ -7071,10 +7124,20 @@
         return;
       }
 
+      _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
+      _tempRight.set(Math.cos(this.playerYaw), 0, -Math.sin(this.playerYaw));
+      _tempMoveDir.set(0, 0, 0);
+
+      if (this.keys['KeyW'] || this.keys['ArrowUp']) _tempMoveDir.add(_tempForward);
+      if (this.keys['KeyS'] || this.keys['ArrowDown']) _tempMoveDir.sub(_tempForward);
+      if (this.keys['KeyD'] || this.keys['ArrowRight']) _tempMoveDir.add(_tempRight);
+      if (this.keys['KeyA'] || this.keys['ArrowLeft']) _tempMoveDir.sub(_tempRight);
+
+      const isMoving = _tempMoveDir.lengthSq() > 0.001;
       const isCrouching = !!(this.keys['KeyC'] || this.keys['ControlLeft'] || this.keys['ControlRight']);
       this.isCrouching = isCrouching;
 
-      const wantsSprint = (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
+      const wantsSprint = isMoving && (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
       if (wantsSprint && this.stamina > 5) {
         this.isSprinting = true;
         this.stamina = Math.max(0, this.stamina - delta * 22);
@@ -7087,19 +7150,9 @@
         ? CONFIG.PLAYER.CROUCH_SPEED
         : (this.isSprinting ? CONFIG.PLAYER.SPRINT_SPEED : CONFIG.PLAYER.WALK_SPEED);
 
-      _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
-      _tempRight.set(Math.cos(this.playerYaw), 0, -Math.sin(this.playerYaw));
-      _tempMoveDir.set(0, 0, 0);
-
-      if (this.keys['KeyW'] || this.keys['ArrowUp']) _tempMoveDir.add(_tempForward);
-      if (this.keys['KeyS'] || this.keys['ArrowDown']) _tempMoveDir.sub(_tempForward);
-      if (this.keys['KeyD'] || this.keys['ArrowRight']) _tempMoveDir.add(_tempRight);
-      if (this.keys['KeyA'] || this.keys['ArrowLeft']) _tempMoveDir.sub(_tempRight);
-
       const oldPx = this.playerPos.x;
       const oldPz = this.playerPos.z;
 
-      const isMoving = _tempMoveDir.lengthSq() > 0.001;
       if (isMoving) {
         _tempMoveDir.normalize();
 

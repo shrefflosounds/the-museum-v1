@@ -55,7 +55,8 @@ ctrl.map = Tab: Objectives
 settings.spectator_heading = SPECTATOR MODE
 spec.toggle = ` or F2: Toggle Spectator
 spec.fly = WASD: Fly (Space: Up / C: Down)
-spec.xray = X: Toggle X-Ray Vision
+spec.noclip = N: Toggle No-Clip Mode
+spec.xray = R: Toggle X-Ray Vision
 settings.done = DONE
 
 
@@ -205,7 +206,7 @@ art_popup.default_room = EXHIBIT
 
 [ PAUSE SCREEN (ESC) ]
 pause.title = PAUSED
-pause.text = Press ESC or click Resume to continue.
+pause.text = Click Resume to continue.
 pause.button = RESUME
 
 
