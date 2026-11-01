@@ -6485,6 +6485,10 @@
 
         // If pointer lock was lost while actively playing and no menu is open, pause the game
         if (wasLocked && !this.isPointerLocked) {
+          // Suppress re-pausing immediately after unpausing (transient browser lock exit)
+          if (performance.now() - (this.lastResumeTime || 0) < 400) {
+            return;
+          }
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
               !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused) {
             this.pauseGame();
@@ -6602,6 +6606,19 @@
         this.keys[e.code] = true;
         if (e.repeat) return;
 
+        // Ensure pointer lock is re-acquired immediately whenever player touches any movement/action key after unpausing
+        const isMovementOrActionKey = (
+          e.code === 'KeyW' || e.code === 'KeyA' || e.code === 'KeyS' || e.code === 'KeyD' ||
+          e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' ||
+          e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight'
+        );
+        if (isMovementOrActionKey && this.gameStarted && !this.isPaused && !this.isExaminingArt &&
+            !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isGameOver && !this.isVictory) {
+          if (!this.isPointerLocked && !this.isNativeLocked) {
+            this.requestNativeOrBrowserLock();
+          }
+        }
+
         if (e.code === 'KeyP') {
           if (this.gameStarted) this.togglePause();
         } else if (e.code === 'Tab') {
@@ -6640,7 +6657,7 @@
           } else if (this.isSettingsModalOpen) {
             this.closeSettingsModal();
           } else if (this.gameStarted) {
-            this.togglePause();
+            this.togglePause(true);
           }
         }
       });
@@ -6742,21 +6759,32 @@
       this.dom.pauseModal.classList.remove('hidden');
     }
 
-    resumeGame() {
+    resumeGame(fromEscapeKey = false) {
       this.isPaused = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
+      this.lastResumeTime = performance.now();
       document.documentElement.classList.add('game-playing');
       document.body.classList.add('game-playing');
       if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
-      this.requestNativeOrBrowserLock();
+      
+      if (fromEscapeKey) {
+        // Defer lock request by 40ms so the browser finishes its native Escape keydown handling before requesting pointer lock
+        setTimeout(() => {
+          if (!this.isPaused && this.gameStarted && !this.isPointerLocked && !this.isNativeLocked) {
+            this.requestNativeOrBrowserLock();
+          }
+        }, 40);
+      } else {
+        this.requestNativeOrBrowserLock();
+      }
     }
 
-    togglePause() {
+    togglePause(fromEscapeKey = false) {
       if (this.isPaused) {
-        this.resumeGame();
+        this.resumeGame(fromEscapeKey);
       } else {
         this.pauseGame();
       }
