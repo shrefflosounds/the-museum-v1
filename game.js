@@ -3025,7 +3025,7 @@
         smittyOffBtn: document.getElementById('smitty-off-btn'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
         optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
-        optionsModeDesc: document.getElementById('options-mode-desc'),
+        clickToResumePrompt: document.getElementById('click-to-resume-prompt'),
         vignetteOverlay: document.getElementById('vignette-overlay'),
         roomIndicator: document.getElementById('room-indicator'),
         floorIndicator: document.getElementById('floor-indicator'),
@@ -6106,7 +6106,15 @@
         const el = this.canvas || document.body;
         if (el && el.requestPointerLock) {
           const p = el.requestPointerLock();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
+          if (p && typeof p.catch === 'function') {
+            p.catch(() => {
+              if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked) {
+                if (this.dom.clickToResumePrompt) {
+                  this.dom.clickToResumePrompt.classList.remove('hidden');
+                }
+              }
+            });
+          }
         }
       } catch (e) {}
     }
@@ -6114,6 +6122,11 @@
     releaseNativeOrBrowserLock() {
       document.documentElement.classList.remove('game-playing');
       document.body.classList.remove('game-playing');
+      document.documentElement.classList.remove('pointer-locked');
+      document.body.classList.remove('pointer-locked');
+      if (this.dom.clickToResumePrompt) {
+        this.dom.clickToResumePrompt.classList.add('hidden');
+      }
       this.lastClientX = null;
       this.lastClientY = null;
       try {
@@ -6122,7 +6135,9 @@
         }
       } catch (e) {}
       try {
-        if (document.exitPointerLock) document.exitPointerLock();
+        if (document.exitPointerLock && (document.pointerLockElement || this.isPointerLocked)) {
+          document.exitPointerLock();
+        }
       } catch (e) {}
     }
 
@@ -6190,6 +6205,13 @@
       this.dom.artCloseBtn.addEventListener('click', () => {
         this.closeArtModal();
       });
+
+      if (this.dom.clickToResumePrompt) {
+        this.dom.clickToResumePrompt.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.requestNativeOrBrowserLock();
+        });
+      }
 
       // Start Screen Options & Settings Bubbles
       if (this.dom.optionsBubbleBtn) {
@@ -6276,11 +6298,23 @@
         this.lastClientY = null;
         this.skipNextMouseMove = true;
 
+        if (this.isPointerLocked) {
+          document.documentElement.classList.add('pointer-locked');
+          document.body.classList.add('pointer-locked');
+          if (this.dom.clickToResumePrompt) {
+            this.dom.clickToResumePrompt.classList.add('hidden');
+          }
+        } else {
+          document.documentElement.classList.remove('pointer-locked');
+          document.body.classList.remove('pointer-locked');
+        }
+
         // If pointer lock was lost while actively playing and no menu is open, pause the game
         if (wasLocked && !this.isPointerLocked) {
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
               !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused) {
             this.pauseGame();
+            this.lastPointerLockExitTime = performance.now();
           }
         }
       };
@@ -6290,8 +6324,15 @@
       document.addEventListener('webkitpointerlockchange', onLockChange);
       document.addEventListener('pointerlockerror', () => {
         this.isPointerLocked = false;
+        document.documentElement.classList.remove('pointer-locked');
+        document.body.classList.remove('pointer-locked');
         this.lastClientX = null;
         this.lastClientY = null;
+        if (this.gameStarted && !this.isPaused && !this.isNativeLocked) {
+          if (this.dom.clickToResumePrompt) {
+            this.dom.clickToResumePrompt.classList.remove('hidden');
+          }
+        }
       });
 
       window.addEventListener('mouseleave', () => {
@@ -6313,6 +6354,13 @@
 
         if (this.isNativeLocked) return;
 
+        // If pointer lock is not active, do not rotate the camera with untethered cursor movements
+        if (!this.isPointerLocked) {
+          this.lastClientX = null;
+          this.lastClientY = null;
+          return;
+        }
+
         if (this.skipNextMouseMove) {
           this.skipNextMouseMove = false;
           this.lastClientX = e.clientX;
@@ -6320,24 +6368,11 @@
           return;
         }
 
-        let rawMx = 0;
-        let rawMy = 0;
-
-        if (this.isPointerLocked) {
-          rawMx = e.movementX ?? e.mozMovementX ?? e.webkitMovementX ?? 0;
-          rawMy = e.movementY ?? e.mozMovementY ?? e.webkitMovementY ?? 0;
-          if (rawMx === 0 && rawMy === 0 && this.lastClientX !== null && this.lastClientY !== null) {
-            rawMx = e.clientX - this.lastClientX;
-            rawMy = e.clientY - this.lastClientY;
-          }
-        } else {
-          if (this.lastClientX !== null && this.lastClientY !== null) {
-            rawMx = e.clientX - this.lastClientX;
-            rawMy = e.clientY - this.lastClientY;
-          } else if (e.movementX !== undefined && (e.movementX !== 0 || e.movementY !== 0)) {
-            rawMx = e.movementX;
-            rawMy = e.movementY;
-          }
+        let rawMx = e.movementX ?? e.mozMovementX ?? e.webkitMovementX ?? 0;
+        let rawMy = e.movementY ?? e.mozMovementY ?? e.webkitMovementY ?? 0;
+        if (rawMx === 0 && rawMy === 0 && this.lastClientX !== null && this.lastClientY !== null) {
+          rawMx = e.clientX - this.lastClientX;
+          rawMy = e.clientY - this.lastClientY;
         }
 
         this.lastClientX = e.clientX;
@@ -6347,6 +6382,15 @@
 
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
+
+        if (!this.isPointerLocked && !this.isNativeLocked) {
+          this.requestNativeOrBrowserLock();
+          if (this.dom.clickToResumePrompt) {
+            this.dom.clickToResumePrompt.classList.add('hidden');
+          }
+          return;
+        }
+
         this.requestNativeOrBrowserLock();
 
         if (e.button === 0) {
@@ -6429,6 +6473,10 @@
             this.interact();
           }
         } else if (e.code === 'Escape') {
+          e.preventDefault();
+          if (performance.now() - (this.lastPointerLockExitTime || 0) < 350) {
+            return;
+          }
           if (this.isExaminingArt) {
             this.closeArtModal();
           } else if (this.isObjectiveModalOpen) {
@@ -6543,7 +6591,16 @@
       if (!this.isPaused) return;
       this.isPaused = false;
       this.dom.pauseModal.classList.add('hidden');
+      if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
+      if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
       this.requestNativeOrBrowserLock();
+      setTimeout(() => {
+        if (this.gameStarted && !this.isPaused && !this.isPointerLocked && !this.isNativeLocked) {
+          if (this.dom.clickToResumePrompt) {
+            this.dom.clickToResumePrompt.classList.remove('hidden');
+          }
+        }
+      }, 60);
     }
 
     togglePause() {
@@ -6670,14 +6727,6 @@
           btn.setAttribute('aria-pressed', 'false');
         }
       });
-
-      if (this.dom.optionsModeDesc) {
-        if (this.smittyEnabled) {
-          this.dom.optionsModeDesc.textContent = (window.GameText && window.GameText.t('options.desc_on')) || 'Survival mode. Smitty is active.';
-        } else {
-          this.dom.optionsModeDesc.textContent = (window.GameText && window.GameText.t('options.desc_off')) || 'Tour mode. Lights on, no monster.';
-        }
-      }
     }
 
     toggleFlashlight() {

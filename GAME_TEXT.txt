@@ -35,8 +35,6 @@ bubble.settings = SETTINGS
 options.title = OPTIONS
 options.mode_on = Smitty: ON
 options.mode_off = Smitty: OFF
-options.desc_on = Survival mode. Smitty is active.
-options.desc_off = Tour mode. Lights on, no monster.
 options.done = DONE
 
 
@@ -66,6 +64,7 @@ hud.health_label = HEALTH
 hud.sprint_label = SPRINT
 hud.ammo_label = AMMO
 hud.reload_warning = PRESS [R] TO RELOAD
+hud.click_to_resume = CLICK TO RESUME
 hud.interact_prompt = PRESS [E] TO INTERACT
 # Prompt when standing next to a relic. {relic} = the relic name
 hud.prompt_take_relic = [E] TAKE RELIC: {relic}

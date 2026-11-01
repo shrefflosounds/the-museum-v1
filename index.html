@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Museum v1</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=535">
+  <link rel="stylesheet" href="style.css?v=536">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -35,6 +35,9 @@
 
     <!-- Interactive Prompt -->
     <div id="interact-prompt" class="hidden" data-text="hud.interact_prompt">PRESS [E] TO INTERACT</div>
+
+    <!-- Click to Resume Prompt -->
+    <div id="click-to-resume-prompt" class="click-to-resume-prompt hidden" data-text="hud.click_to_resume">CLICK TO RESUME</div>
 
     <!-- Small Non-Intrusive Floor Indicator in Corner -->
     <div id="floor-indicator">1ST FLOOR</div>
@@ -114,7 +117,6 @@
             <span class="mode-title" data-text="options.mode_off">Smitty: OFF</span>
           </button>
         </div>
-        <p id="options-mode-desc" class="option-desc" data-text="options.desc_on">Survival mode. Smitty is active.</p>
       </div>
 
       <button id="options-back-btn" class="museum-btn" type="button" data-text="options.done">DONE</button>
@@ -251,6 +253,6 @@
   <script src="libs/GLTFLoader.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=507"></script>
-  <script src="game.js?v=535"></script>
+  <script src="game.js?v=536"></script>
 </body>
 </html>
