@@ -3827,8 +3827,13 @@
       const tileMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
       const floorTileMat = new THREE.MeshLambertMaterial({ color: 0xd1d5db });
       const wainscotMat = new THREE.MeshLambertMaterial({ color: 0xe5e7eb });
-      const porcelainMat = new THREE.MeshPhongMaterial({ color: 0xfcfcfc, specular: 0xffffff, shininess: 120 });
-      const seatMat = new THREE.MeshLambertMaterial({ color: 0x111827 });
+      const porcelainMat = new THREE.MeshPhongMaterial({ color: 0xf5f5f7, specular: 0xcccccc, shininess: 85 });
+      const seatMat = new THREE.MeshPhongMaterial({ color: 0xe8e8ea, specular: 0x999999, shininess: 60 });
+      const waterMat = new THREE.MeshPhongMaterial({ color: 0x1e3a5f, specular: 0xffffff, shininess: 140, transparent: true, opacity: 0.85 });
+      const dispenserCasingMat = new THREE.MeshPhongMaterial({ color: 0x181a1d, specular: 0x555555, shininess: 80 });
+      const paperRollMat = new THREE.MeshLambertMaterial({ color: 0xf6f6f3 });
+      const paperTailMat = new THREE.MeshLambertMaterial({ color: 0xffffff, side: THREE.DoubleSide });
+      const pipeMat = new THREE.MeshLambertMaterial({ color: 0xa1a6af });
       const chromeMat = new THREE.MeshPhongMaterial({ color: 0xf1f5f9, specular: 0xffffff, shininess: 160 });
       const stallMat = new THREE.MeshLambertMaterial({ color: 0x334155 });
       const headrailMat = new THREE.MeshPhongMaterial({ color: 0x94a3b8, specular: 0xffffff, shininess: 140 });
@@ -3908,53 +3913,186 @@
       createRestroomDoorway(-12.0, 'MEN • RESTROOM', true);
       createRestroomDoorway(-8.0, 'WOMEN • RESTROOM', false);
 
-      // 5. HELPER: REALISTIC COMMERCIAL TOILET
+      // 5. HELPER: REALISTIC AMERICAN COMMERCIAL TOILET & DUAL JUMBO DISPENSER (Matching User Reference)
       // Positioned against West perimeter wall (x = -3.76), facing East into stall with rotY = Math.PI / 2
-      const buildToilet = (tx, tz, rotY) => {
+      const buildToilet = (tx, tz, rotY, wallDistX = 0.88) => {
         const group = new THREE.Group();
         group.position.set(tx, y0, tz);
         group.rotation.y = rotY;
 
-        // Pedestal base
-        const base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.26, 0.52), porcelainMat);
-        base.position.set(0, 0.13, 0.04);
-        group.add(base);
+        // 1. BASE FOOT: Contoured porcelain footprint resting flat on the tile floor
+        const baseFoot = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.52), porcelainMat);
+        baseFoot.position.set(0, 0.03, 0.04);
+        group.add(baseFoot);
 
-        // Elongated porcelain bowl
-        const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.15, 0.22, 16), porcelainMat);
-        bowl.position.set(0, 0.32, 0.15);
-        group.add(bowl);
+        const baseFootFront = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.06, 16), porcelainMat);
+        baseFootFront.position.set(0, 0.03, 0.20);
+        group.add(baseFootFront);
 
-        // Commercial contoured open-front seat ring
-        const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.035, 16), seatMat);
-        seat.position.set(0, 0.44, 0.15);
-        group.add(seat);
+        // Porcelain floor bolt caps on left and right sides
+        [-0.14, 0.14].forEach((bx) => {
+          const boltCap = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.025, 12), porcelainMat);
+          boltCap.position.set(bx, 0.07, 0.02);
+          group.add(boltCap);
+        });
 
-        // Slim flush water tank against back wall (local -Z)
-        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.18), porcelainMat);
-        tank.position.set(0, 0.66, -0.16);
+        // 2. PEDESTAL & MOLDED S-TRAPWAY: Contoured ceramic column connecting foot to bowl
+        const trapway = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.26, 16), porcelainMat);
+        trapway.position.set(0, 0.18, 0.08);
+        group.add(trapway);
+
+        // Rear pedestal shelf
+        const rearPedestal = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.22), porcelainMat);
+        rearPedestal.position.set(0, 0.21, -0.10);
+        group.add(rearPedestal);
+
+        // 3. PORCELAIN BOWL (Elongated commercial oval with hollow interior)
+        const outerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.14, 0.18, 20), porcelainMat);
+        outerBowl.position.set(0, 0.33, 0.16);
+        group.add(outerBowl);
+
+        // Bowl rim lip (rounded top ledge)
+        const bowlRim = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.20, 0.04, 20), porcelainMat);
+        bowlRim.position.set(0, 0.40, 0.16);
+        group.add(bowlRim);
+
+        // Inner bowl cavity (hollow recession inside)
+        const innerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.08, 0.15, 16), porcelainMat);
+        innerBowl.position.set(0, 0.34, 0.16);
+        group.add(innerBowl);
+
+        // Water surface inside bowl
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.01, 16), waterMat);
+        water.position.set(0, 0.28, 0.16);
+        group.add(water);
+
+        // 4. COMMERCIAL OPEN-FRONT TOILET SEAT (Matching reference image: white U-shaped with open front gap!)
+        const seatThickness = 0.025;
+        const seatY = 0.43;
+
+        // Left seat prong
+        const leftProng = new THREE.Mesh(new THREE.BoxGeometry(0.065, seatThickness, 0.34), seatMat);
+        leftProng.position.set(-0.13, seatY, 0.16);
+        group.add(leftProng);
+
+        // Right seat prong
+        const rightProng = new THREE.Mesh(new THREE.BoxGeometry(0.065, seatThickness, 0.34), seatMat);
+        rightProng.position.set(0.13, seatY, 0.16);
+        group.add(rightProng);
+
+        // Rounded front tips (leaving a distinct 8cm open gap in front, exactly like Image 2!)
+        const leftTip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, seatThickness, 12), seatMat);
+        leftTip.position.set(-0.13, seatY, 0.33);
+        group.add(leftTip);
+
+        const rightTip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, seatThickness, 12), seatMat);
+        rightTip.position.set(0.13, seatY, 0.33);
+        group.add(rightTip);
+
+        // Rear hinge bridge connecting the two prongs behind the opening
+        const rearBridge = new THREE.Mesh(new THREE.BoxGeometry(0.32, seatThickness, 0.08), seatMat);
+        rearBridge.position.set(0, seatY, 0.01);
+        group.add(rearBridge);
+
+        // Chrome seat hinge bolts fastening to the bowl's back ledge
+        [-0.08, 0.08].forEach((hx) => {
+          const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.035, 12), chromeMat);
+          hinge.position.set(hx, 0.44, -0.04);
+          group.add(hinge);
+        });
+
+        // 5. PORCELAIN WATER TANK & LID (Mounted flush against back wall: local -Z)
+        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.19), porcelainMat);
+        tank.position.set(0, 0.64, -0.18);
         group.add(tank);
 
-        // Tank lid
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.20), porcelainMat);
-        lid.position.set(0, 0.89, -0.16);
+        // Tank lid with beveled overhang
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.035, 0.21), porcelainMat);
+        lid.position.set(0, 0.84, -0.18);
         group.add(lid);
 
-        // Chrome flush trip lever on side of tank
-        const lever = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), chromeMat);
-        lever.position.set(-0.24, 0.82, -0.14);
-        group.add(lever);
+        // Front-left chrome flush trip lever handle (as in Image 2)
+        const leverMount = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.025, 12), chromeMat);
+        leverMount.rotation.x = Math.PI / 2;
+        leverMount.position.set(-0.19, 0.77, -0.075);
+        group.add(leverMount);
 
-        // Wall grab bar mounted flush along side stall divider panel
-        const grabBar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.70, 8), chromeMat);
-        grabBar.position.set(0.46, 0.82, 0.05);
-        grabBar.rotation.x = Math.PI / 2;
-        group.add(grabBar);
+        const leverHandle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.014, 0.018), chromeMat);
+        leverHandle.position.set(-0.23, 0.77, -0.06);
+        group.add(leverHandle);
 
-        // Toilet paper dispenser on side stall divider panel below grab bar
-        const tp = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.12, 0.22), chromeMat);
-        tp.position.set(0.46, 0.60, 0.08);
-        group.add(tp);
+        // 6. COMMERCIAL DUAL JUMBO-ROLL DISPENSER (Flush on side wall at wallDistX, matching Image 2)
+        const dispW = 0.52; // Width along the wall (Z axis)
+        const dispH = 0.27; // Height
+        const dispD = 0.13; // Depth outward into the stall (X axis)
+        const dispY = 0.78; // Reach height
+        const dispZ = 0.22; // Centered forward of tank, alongside bowl
+        const wallX = wallDistX; // Back of dispenser is flush with wallX
+
+        const dispGroup = new THREE.Group();
+        dispGroup.position.set(wallX - dispD / 2, dispY, dispZ);
+
+        // Main central body of dispenser
+        const dispBody = new THREE.Mesh(new THREE.BoxGeometry(dispD, dispH, 0.26), dispenserCasingMat);
+        dispGroup.add(dispBody);
+
+        // Rounded cylindrical ends (front and back along Z) giving the stadium/capsule shape
+        const endRadius = dispH / 2;
+        [-0.13, 0.13].forEach((ez) => {
+          const roundEnd = new THREE.Mesh(new THREE.CylinderGeometry(endRadius, endRadius, dispD, 20), dispenserCasingMat);
+          roundEnd.rotation.z = Math.PI / 2;
+          roundEnd.position.set(0, 0, ez);
+          dispGroup.add(roundEnd);
+        });
+
+        // Flush wall mounting backplate
+        const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.015, dispH + 0.01, dispW + 0.01), dispenserCasingMat);
+        backPlate.position.set(dispD / 2, 0, 0);
+        dispGroup.add(backPlate);
+
+        // Dual circular inspection windows on front face (showing the 2 jumbo rolls inside)
+        const windowRadius = 0.075;
+        [-0.12, 0.12].forEach((wz) => {
+          const winDisc = new THREE.Mesh(new THREE.CylinderGeometry(windowRadius, windowRadius, 0.005, 18), new THREE.MeshBasicMaterial({ color: 0x0a0c0e }));
+          winDisc.rotation.z = Math.PI / 2;
+          winDisc.position.set(-dispD / 2 - 0.002, 0, wz);
+          dispGroup.add(winDisc);
+
+          const rollMesh = new THREE.Mesh(new THREE.CylinderGeometry(windowRadius * 0.85, windowRadius * 0.85, 0.006, 16), paperRollMat);
+          rollMesh.rotation.z = Math.PI / 2;
+          rollMesh.position.set(-dispD / 2 - 0.003, 0, wz);
+          dispGroup.add(rollMesh);
+        });
+
+        // Keyhole lock mechanism at bottom center
+        const lockLatch = new THREE.Mesh(new THREE.BoxGeometry(0.01, 0.02, 0.035), chromeMat);
+        lockLatch.position.set(-dispD / 2 - 0.003, -dispH / 2 + 0.03, 0);
+        dispGroup.add(lockLatch);
+
+        // Two white paper strips hanging down from the bottom dispenser slots (as in Image 2!)
+        const paperTailLeft = new THREE.Mesh(new THREE.PlaneGeometry(0.10, 0.13), paperTailMat);
+        paperTailLeft.rotation.y = Math.PI / 2;
+        paperTailLeft.position.set(-0.02, -dispH / 2 - 0.065, -0.12);
+        dispGroup.add(paperTailLeft);
+
+        const paperTailRight = new THREE.Mesh(new THREE.PlaneGeometry(0.10, 0.17), paperTailMat);
+        paperTailRight.rotation.y = Math.PI / 2 + 0.08;
+        paperTailRight.position.set(-0.02, -dispH / 2 - 0.085, 0.12);
+        dispGroup.add(paperTailRight);
+
+        group.add(dispGroup);
+
+        // 7. CORNER PLUMBING DRAIN/VENT STACK (as seen in Image 2)
+        const pipeH = 2.4;
+        const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, pipeH, 16), pipeMat);
+        pipe.position.set(wallX - 0.06, pipeH / 2, -0.22);
+        group.add(pipe);
+
+        [0.70, 1.35].forEach((py) => {
+          const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.05, 16), pipeMat);
+          collar.position.set(wallX - 0.06, py, -0.22);
+          group.add(collar);
+        });
 
         this.scene.add(group);
       };
