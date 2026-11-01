@@ -599,7 +599,7 @@
     NUM_FLOORS: 4,
     AMMO_PICKUP: {
       RESPAWN_TIME: 180.0, // 3 minutes respawn timer
-      AMMO_AMOUNT: 24
+      AMMO_AMOUNT: 5
     },
     PLAYER: {
       WALK_SPEED: 5.0,
@@ -615,8 +615,8 @@
       MAX_STAMINA: 100
     },
     WEAPON: {
-      MAG_CAPACITY: 12,
-      RESERVE_AMMO: 36,
+      MAG_CAPACITY: 5,
+      RESERVE_AMMO: 5,
       FIRE_RATE: 0.22,
       DAMAGE: 35
     },
@@ -5759,49 +5759,27 @@
         { floor: 3, x: -10.0, z: 14.0, baseY: 3 * H + 1.15 }
       ];
 
-      const boxMat = new THREE.MeshLambertMaterial({ color: 0x364832 }); // Tactical olive drab
-      const lidMat = new THREE.MeshLambertMaterial({ color: 0x222e20 });
-      const latchMat = new THREE.MeshLambertMaterial({ color: 0x1a202c });
-      const brassMat = new THREE.MeshLambertMaterial({ color: 0xdfb15b }); // Brass cartridges
+      this.gltfLoader = this.gltfLoader || new THREE.GLTFLoader();
 
       AMMO_LOCS.forEach((loc, idx) => {
         const group = new THREE.Group();
         group.position.set(loc.x, loc.baseY, loc.z);
 
-        // Ammunition can body
-        const canBody = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 0.16), boxMat);
-        group.add(canBody);
-
-        // Canister lid
-        const canLid = new THREE.Mesh(new THREE.BoxGeometry(0.33, 0.035, 0.17), lidMat);
-        canLid.position.y = 0.10;
-        group.add(canLid);
-
-        // Side carry latch
-        const latch = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.08, 0.03), latchMat);
-        latch.position.set(0.165, 0.02, 0);
-        group.add(latch);
-
-        // Two bright 9mm brass cartridges floating above the tin
-        const round1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.07, 8), brassMat);
-        round1.position.set(-0.06, 0.18, 0);
-        round1.rotation.z = Math.PI / 6;
-        group.add(round1);
-
-        const round2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.07, 8), brassMat);
-        round2.position.set(0.06, 0.18, 0);
-        round2.rotation.z = -Math.PI / 6;
-        group.add(round2);
+        // Immediate lightweight placeholder while GLB loads
+        const placeholderMat = new THREE.MeshLambertMaterial({ color: 0x38bdf8, emissive: 0x0284c7, emissiveIntensity: 0.35 });
+        const placeholder = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.22, 0.28), placeholderMat);
+        placeholder.position.y = 0.12;
+        group.add(placeholder);
 
         // Warm amber tactical glow kept directly in scene with constant visibility so Three.js shader light count never changes
-        const glow = new THREE.PointLight(0xf59e0b, (loc.floor === this.playerFloor) ? 0.55 : 0, 3.2);
+        const glow = new THREE.PointLight(0x38bdf8, (loc.floor === this.playerFloor) ? 0.55 : 0, 3.2);
         glow.position.set(loc.x, loc.baseY + 0.22, loc.z);
         this.scene.add(glow);
 
         group.visible = (loc.floor === this.playerFloor);
         this.scene.add(group);
 
-        this.ammoPickups.push({
+        const pickupEntry = {
           id: idx + 1,
           floor: loc.floor,
           x: loc.x,
@@ -5811,7 +5789,72 @@
           glowLight: glow,
           active: true,
           respawnTimer: 0
-        });
+        };
+        this.ammoPickups.push(pickupEntry);
+
+        // Load cushioning.glb as the 3D ammo pickup model
+        const ammoCacheKey = window._ASSET_VERSION || Date.now();
+        this.gltfLoader.load(
+          `assets/cushioning.glb?v=${ammoCacheKey}`,
+          (gltf) => {
+            if (!pickupEntry.active) return;
+            const model = gltf.scene;
+            model.updateMatrixWorld(true);
+
+            // Compute exact bounding box and center
+            const box = new THREE.Box3().setFromObject(model);
+            const size = new THREE.Vector3();
+            box.getSize(size);
+            const center = new THREE.Vector3();
+            box.getCenter(center);
+
+            const maxAxis = Math.max(size.x, size.y, size.z) || 1.0;
+            const targetDim = 0.52; // 52cm uniform scale for comfortable world visibility
+            const scale = targetDim / maxAxis;
+            model.scale.set(scale, scale, scale);
+
+            // Center horizontally and vertically around local origin
+            model.position.set(-center.x * scale, -center.y * scale + 0.12, -center.z * scale);
+
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.frustumCulled = true;
+                if (child.geometry) {
+                  child.geometry.computeBoundingSphere();
+                }
+                const oldMat = child.material;
+                if (oldMat) {
+                  const optMat = new THREE.MeshPhongMaterial({
+                    map: oldMat.map || null,
+                    color: oldMat.color || 0xffffff,
+                    specular: 0x333333,
+                    shininess: 30,
+                    side: THREE.FrontSide
+                  });
+                  if (optMat.map) {
+                    optMat.map.generateMipmaps = true;
+                    optMat.map.minFilter = THREE.LinearMipmapLinearFilter;
+                    optMat.map.magFilter = THREE.LinearFilter;
+                  }
+                  child.material = optMat;
+                }
+                child.matrixAutoUpdate = false;
+                child.updateMatrix();
+              }
+            });
+            model.matrixAutoUpdate = false;
+            model.updateMatrix();
+
+            if (placeholder.parent) {
+              group.remove(placeholder);
+            }
+            group.add(model);
+          },
+          undefined,
+          (err) => {
+            console.warn('Could not load cushioning.glb for ammo pickup', err);
+          }
+        );
       });
     }
 
@@ -7005,7 +7048,7 @@
         if (pickup.active && pickup.floor === this.playerFloor) {
           const d = Math.hypot(this.playerPos.x - pickup.x, this.playerPos.z - pickup.z);
           if (d < 2.5) {
-            this.setInteractPrompt('[E] TAKE 9MM AMMO (+24 ROUNDS)');
+            this.setInteractPrompt(`[E] TAKE AMMO (+${CONFIG.AMMO_PICKUP.AMMO_AMOUNT} ROUNDS)`);
             this.focusedPainting = null;
             return;
           }
