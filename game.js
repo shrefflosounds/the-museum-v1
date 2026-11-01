@@ -2999,6 +2999,8 @@
         startBtn: document.getElementById('start-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
+        pauseOptionsBtn: document.getElementById('pause-options-btn'),
+        pauseSettingsBtn: document.getElementById('pause-settings-btn'),
         objModal: document.getElementById('objective-modal'),
         objectiveCloseBtn: document.getElementById('objective-close-btn'),
         floorplanCanvas: document.getElementById('floorplan-canvas'),
@@ -3907,51 +3909,52 @@
       createRestroomDoorway(-12.0, 'MEN • RESTROOM', true);
       createRestroomDoorway(-8.0, 'WOMEN • RESTROOM', false);
 
-      // 5. HELPER: REALISTIC TOILET (positioned against back wall at x = -3.8)
+      // 5. HELPER: REALISTIC COMMERCIAL TOILET
+      // Positioned against West perimeter wall (x = -3.76), facing East into stall with rotY = Math.PI / 2
       const buildToilet = (tx, tz, rotY) => {
         const group = new THREE.Group();
         group.position.set(tx, y0, tz);
         group.rotation.y = rotY;
 
         // Pedestal base
-        const base = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.24, 0.54), porcelainMat);
-        base.position.set(0, 0.12, 0.06);
+        const base = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.26, 0.52), porcelainMat);
+        base.position.set(0, 0.13, 0.04);
         group.add(base);
 
         // Elongated porcelain bowl
         const bowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.15, 0.22, 16), porcelainMat);
-        bowl.position.set(0, 0.31, 0.14);
+        bowl.position.set(0, 0.32, 0.15);
         group.add(bowl);
 
-        // Contoured commercial seat ring
-        const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.04, 16), seatMat);
-        seat.position.set(0, 0.43, 0.14);
+        // Commercial contoured open-front seat ring
+        const seat = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.21, 0.035, 16), seatMat);
+        seat.position.set(0, 0.44, 0.15);
         group.add(seat);
 
-        // Porcelain flush tank against wall
-        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.48, 0.22), porcelainMat);
-        tank.position.set(0, 0.68, -0.16);
+        // Slim flush water tank against back wall (local -Z)
+        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.44, 0.18), porcelainMat);
+        tank.position.set(0, 0.66, -0.16);
         group.add(tank);
 
         // Tank lid
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.05, 0.24), porcelainMat);
-        lid.position.set(0, 0.93, -0.16);
+        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.04, 0.20), porcelainMat);
+        lid.position.set(0, 0.89, -0.16);
         group.add(lid);
 
-        // Chrome flush trip lever
-        const lever = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.02, 0.02), chromeMat);
-        lever.position.set(-0.25, 0.85, -0.16);
+        // Chrome flush trip lever on side of tank
+        const lever = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 0.02), chromeMat);
+        lever.position.set(-0.24, 0.82, -0.14);
         group.add(lever);
 
-        // Wall grab bar
+        // Wall grab bar mounted flush along side stall divider panel
         const grabBar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.70, 8), chromeMat);
-        grabBar.position.set(0.48, 0.85, 0.08);
+        grabBar.position.set(0.46, 0.82, 0.05);
         grabBar.rotation.x = Math.PI / 2;
         group.add(grabBar);
 
-        // Dual toilet paper dispenser
-        const tp = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.14, 0.28), chromeMat);
-        tp.position.set(0.48, 0.65, 0.12);
+        // Toilet paper dispenser on side stall divider panel below grab bar
+        const tp = new THREE.Mesh(new THREE.BoxGeometry(0.10, 0.12, 0.22), chromeMat);
+        tp.position.set(0.46, 0.60, 0.08);
         group.add(tp);
 
         this.scene.add(group);
@@ -4026,9 +4029,9 @@
         pil2.position.set(-1.80, y0 + 1.10, zSouth - 0.15);
         this.scene.add(pil2);
 
-        // Mount toilets flush against back wall
-        buildToilet(-3.35, toiletZ1, 0);
-        buildToilet(-3.35, toiletZ2, 0);
+        // Mount toilets flush against back wall: tank against West perimeter wall (x = -3.76), facing East into stall
+        buildToilet(-3.45, toiletZ1, Math.PI / 2);
+        buildToilet(-3.45, toiletZ2, Math.PI / 2);
       };
 
       // Helper: Modern Luxury Vanity Suite with Recessed Rectangular Sinks & Deck-Mounted Matte Black Faucets
@@ -6168,6 +6171,22 @@
         this.requestNativeOrBrowserLock();
       });
 
+      if (this.dom.pauseOptionsBtn) {
+        this.dom.pauseOptionsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.dom.pauseModal.classList.add('hidden');
+          this.openOptionsModal();
+        });
+      }
+
+      if (this.dom.pauseSettingsBtn) {
+        this.dom.pauseSettingsBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.dom.pauseModal.classList.add('hidden');
+          this.openSettingsModal();
+        });
+      }
+
       this.dom.artCloseBtn.addEventListener('click', () => {
         this.closeArtModal();
       });
@@ -6566,6 +6585,9 @@
     closeOptionsModal() {
       this.isOptionsModalOpen = false;
       this.dom.optionsModal.classList.add('hidden');
+      if (this.isPaused) {
+        this.dom.pauseModal.classList.remove('hidden');
+      }
     }
 
     openSettingsModal() {
@@ -6576,6 +6598,9 @@
     closeSettingsModal() {
       this.isSettingsModalOpen = false;
       this.dom.settingsModal.classList.add('hidden');
+      if (this.isPaused) {
+        this.dom.pauseModal.classList.remove('hidden');
+      }
     }
 
     setSmittyMode(enabled) {

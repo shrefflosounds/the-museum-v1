@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Museum v1</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=533">
+  <link rel="stylesheet" href="style.css?v=535">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -207,10 +207,14 @@
 
   <!-- Pause Modal -->
   <div id="pause-modal" class="modal-overlay hidden">
-    <div class="modal-box">
+    <div class="modal-box pause-box">
       <h2 class="horror-title" data-text="pause.title">EXHIBITION PAUSED</h2>
-      <p data-text="pause.text">Smitty is stalking the gallery corridors outside...</p>
-      <button id="resume-btn" class="museum-btn" data-text="pause.button">RESUME EXPLORATION</button>
+      <p class="pause-sub" data-text="pause.text">Smitty is stalking the gallery corridors outside...</p>
+      <div class="pause-actions-list">
+        <button id="resume-btn" class="museum-btn" data-text="pause.button">RESUME EXPLORATION</button>
+        <button id="pause-options-btn" class="museum-btn pause-opt-btn" type="button" data-text="bubble.options">OPTIONS</button>
+        <button id="pause-settings-btn" class="museum-btn pause-opt-btn" type="button" data-text="bubble.settings">SETTINGS &amp; CONTROLS</button>
+      </div>
     </div>
   </div>
 
@@ -247,6 +251,6 @@
   <script src="libs/GLTFLoader.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=507"></script>
-  <script src="game.js?v=534"></script>
+  <script src="game.js?v=535"></script>
 </body>
 </html>
