@@ -4104,8 +4104,8 @@
         rightJamb.position.set(4.0, y0 + frameH / 2, doorZ + 1.0);
         this.scene.add(rightJamb);
 
-        // Commercial aluminum overhead track operator housing
-        const trackHeader = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 2.16), doorAlumMat);
+        // Commercial aluminum overhead track operator housing (spans drywall opening x: 3.78..4.22)
+        const trackHeader = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.18, 2.16), doorAlumMat);
         trackHeader.position.set(4.0, y0 + frameH - 0.09, doorZ);
         this.scene.add(trackHeader);
 
@@ -4114,15 +4114,15 @@
         floorGuide.position.set(4.0, y0 + 0.01, doorZ);
         this.scene.add(floorGuide);
 
-        // Dual motion sensor housings mounted above door
-        const sensorLEDMat = new THREE.MeshBasicMaterial({ color: 0x0088ff });
-        [-0.19, 0.19].forEach((ox) => {
-          const pod = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.22), sensorPodMat);
-          pod.position.set(4.0 + ox, y0 + frameH + 0.04, doorZ);
+        // Dual motion sensor housings mounted directly on vertical faces of track header (no drywall intersection)
+        const sensorLEDMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        [-0.235, 0.235].forEach((ox) => {
+          const pod = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.22), sensorPodMat);
+          pod.position.set(4.0 + ox, y0 + frameH - 0.09, doorZ);
           this.scene.add(pod);
 
-          const led = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.04), sensorLEDMat);
-          led.position.set(4.0 + ox * 1.08, y0 + frameH + 0.04, doorZ);
+          const led = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.012, 0.04), sensorLEDMat);
+          led.position.set(4.0 + ox + (ox > 0 ? 0.016 : -0.016), y0 + frameH - 0.09, doorZ);
           this.scene.add(led);
         });
 
@@ -4222,112 +4222,137 @@
       createSlidingRestroomDoor(-12.0, 'MEN • RESTROOM', true);
       createSlidingRestroomDoor(-8.0, 'WOMEN • RESTROOM', false);
 
-      // 5. HELPER: REALISTIC AMERICAN COMMERCIAL TOILET & DUAL JUMBO DISPENSER (Matching User Reference)
+      // 5. HELPER: REALISTIC AMERICAN COMMERCIAL ONE-PIECE TOILET (Matching Reference Image 4)
       // Positioned against West perimeter wall (x = -3.76), facing East into stall with rotY = Math.PI / 2
       const buildToilet = (tx, tz, rotY, wallDistX = 0.88) => {
         const group = new THREE.Group();
         group.position.set(tx, y0, tz);
         group.rotation.y = rotY;
 
-        // 1. BASE FOOT: Contoured porcelain footprint resting flat on the tile floor
-        const baseFoot = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.06, 0.52), porcelainMat);
-        baseFoot.position.set(0, 0.03, 0.04);
-        group.add(baseFoot);
+        // 1. SKIRTED PEDESTAL FOOTPRINT: Smooth, curved modern base resting flat on the tile floor
+        const footBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.19, 0.08, 24), porcelainMat);
+        footBase.scale.set(1.0, 1.0, 1.45);
+        footBase.position.set(0, 0.04, 0.08);
+        group.add(footBase);
 
-        const baseFootFront = new THREE.Mesh(new THREE.CylinderGeometry(0.17, 0.17, 0.06, 16), porcelainMat);
-        baseFootFront.position.set(0, 0.03, 0.20);
-        group.add(baseFootFront);
+        // Skirted waist column tapering up to the bowl (smooth monolithic shroud)
+        const skirtWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.175, 0.22, 24), porcelainMat);
+        skirtWaist.scale.set(0.95, 1.0, 1.35);
+        skirtWaist.position.set(0, 0.19, 0.06);
+        group.add(skirtWaist);
 
-        // Porcelain floor bolt caps on left and right sides
-        [-0.14, 0.14].forEach((bx) => {
-          const boltCap = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.018, 0.025, 12), porcelainMat);
-          boltCap.position.set(bx, 0.07, 0.02);
+        // Porcelain floor bolt caps on left and right sides of the skirt
+        [-0.155, 0.155].forEach((bx) => {
+          const boltCap = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.017, 0.024, 12), porcelainMat);
+          boltCap.position.set(bx, 0.09, 0.04);
           group.add(boltCap);
         });
 
-        // 2. PEDESTAL & MOLDED S-TRAPWAY: Contoured ceramic column connecting foot to bowl
-        const trapway = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.12, 0.26, 16), porcelainMat);
-        trapway.position.set(0, 0.18, 0.08);
-        group.add(trapway);
-
-        // Rear pedestal shelf
-        const rearPedestal = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.38, 0.22), porcelainMat);
-        rearPedestal.position.set(0, 0.21, -0.10);
-        group.add(rearPedestal);
-
-        // 3. PORCELAIN BOWL (Elongated commercial oval with hollow interior)
-        const outerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.14, 0.18, 20), porcelainMat);
-        outerBowl.position.set(0, 0.33, 0.16);
+        // 2. ELONGATED VITREOUS CHINA BOWL
+        const outerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.15, 0.18, 28), porcelainMat);
+        outerBowl.scale.set(1.0, 1.0, 1.35);
+        outerBowl.position.set(0, 0.35, 0.14);
         group.add(outerBowl);
 
-        // Bowl rim lip (rounded top ledge)
-        const bowlRim = new THREE.Mesh(new THREE.CylinderGeometry(0.215, 0.20, 0.04, 20), porcelainMat);
-        bowlRim.position.set(0, 0.40, 0.16);
+        // Molded bowl rim (smooth rounded top perimeter)
+        const bowlRim = new THREE.Mesh(new THREE.CylinderGeometry(0.21, 0.20, 0.035, 28), porcelainMat);
+        bowlRim.scale.set(1.0, 1.0, 1.35);
+        bowlRim.position.set(0, 0.41, 0.14);
         group.add(bowlRim);
 
-        // Inner bowl cavity (hollow recession inside)
-        const innerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.08, 0.15, 16), porcelainMat);
-        innerBowl.position.set(0, 0.34, 0.16);
+        // Inner hollow bowl cavity
+        const innerBowl = new THREE.Mesh(new THREE.CylinderGeometry(0.165, 0.09, 0.15, 24), porcelainMat);
+        innerBowl.scale.set(0.95, 1.0, 1.35);
+        innerBowl.position.set(0, 0.35, 0.14);
         group.add(innerBowl);
 
-        // Water surface inside bowl
-        const water = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.10, 0.01, 16), waterMat);
-        water.position.set(0, 0.28, 0.16);
+        // Water pool inside bowl
+        const water = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.01, 20), waterMat);
+        water.scale.set(0.95, 1.0, 1.30);
+        water.position.set(0, 0.30, 0.14);
         group.add(water);
 
-        // 4. COMMERCIAL OPEN-FRONT TOILET SEAT (Matching reference image: white U-shaped with open front gap!)
-        const seatThickness = 0.025;
-        const seatY = 0.43;
+        // 3. CONTOURED CLOSED-FRONT SEAT (Matching Image 4: contoured oval with inner opening, down)
+        const seatShape = new THREE.Shape();
+        seatShape.absellipse(0, 0, 0.19, 0.24, 0, Math.PI * 2, false, 0);
+        const seatHole = new THREE.Path();
+        seatHole.absellipse(0, 0.015, 0.118, 0.168, 0, Math.PI * 2, true, 0);
+        seatShape.holes.push(seatHole);
 
-        // Left seat prong
-        const leftProng = new THREE.Mesh(new THREE.BoxGeometry(0.065, seatThickness, 0.34), seatMat);
-        leftProng.position.set(-0.13, seatY, 0.16);
-        group.add(leftProng);
+        const seatGeom = new THREE.ExtrudeGeometry(seatShape, {
+          depth: 0.022,
+          bevelEnabled: true,
+          bevelSegments: 3,
+          steps: 1,
+          bevelSize: 0.008,
+          bevelThickness: 0.008
+        });
+        const seatMesh = new THREE.Mesh(seatGeom, seatMat);
+        seatMesh.rotation.x = Math.PI / 2;
+        seatMesh.position.set(0, 0.435, 0.13);
+        group.add(seatMesh);
 
-        // Right seat prong
-        const rightProng = new THREE.Mesh(new THREE.BoxGeometry(0.065, seatThickness, 0.34), seatMat);
-        rightProng.position.set(0.13, seatY, 0.16);
-        group.add(rightProng);
-
-        // Rounded front tips (leaving a distinct 8cm open gap in front, exactly like Image 2!)
-        const leftTip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, seatThickness, 12), seatMat);
-        leftTip.position.set(-0.13, seatY, 0.33);
-        group.add(leftTip);
-
-        const rightTip = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, seatThickness, 12), seatMat);
-        rightTip.position.set(0.13, seatY, 0.33);
-        group.add(rightTip);
-
-        // Rear hinge bridge connecting the two prongs behind the opening
-        const rearBridge = new THREE.Mesh(new THREE.BoxGeometry(0.32, seatThickness, 0.08), seatMat);
-        rearBridge.position.set(0, seatY, 0.01);
-        group.add(rearBridge);
-
-        // Chrome seat hinge bolts fastening to the bowl's back ledge
+        // Chrome hinge posts connecting seat and lid to the rear bowl shelf
         [-0.08, 0.08].forEach((hx) => {
-          const hinge = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.035, 12), chromeMat);
-          hinge.position.set(hx, 0.44, -0.04);
-          group.add(hinge);
+          const hingePost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.038, 14), chromeMat);
+          hingePost.position.set(hx, 0.445, -0.06);
+          group.add(hingePost);
+
+          const hingeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14), chromeMat);
+          hingeCap.position.set(hx, 0.465, -0.06);
+          group.add(hingCap);
         });
 
-        // 5. PORCELAIN WATER TANK & LID (Mounted flush against back wall: local -Z)
-        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.38, 0.19), porcelainMat);
-        tank.position.set(0, 0.64, -0.18);
+        // 4. OPEN UPRIGHT TOILET LID (Matching Image 4: upright, leaning gently back against the tank at -8 deg)
+        const lidShape = new THREE.Shape();
+        lidShape.absellipse(0, 0, 0.195, 0.245, 0, Math.PI * 2, false, 0);
+        const lidGeom = new THREE.ExtrudeGeometry(lidShape, {
+          depth: 0.018,
+          bevelEnabled: true,
+          bevelSegments: 3,
+          steps: 1,
+          bevelSize: 0.008,
+          bevelThickness: 0.008
+        });
+        const lidMesh = new THREE.Mesh(lidGeom, seatMat);
+        // Pivot at hinge level, tilted back by ~8 degrees against front of tank
+        lidMesh.rotation.x = -Math.PI * 0.045;
+        lidMesh.position.set(0, 0.46, -0.05);
+        group.add(lidMesh);
+
+        // Dual rubber bumpers on underside of lid (facing forward when lid is upright)
+        [-0.10, 0.10].forEach((bx) => {
+          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.010, 12), sensorPodMat);
+          bumper.rotation.x = Math.PI / 2;
+          bumper.position.set(bx, 0.64, -0.038);
+          group.add(bumper);
+        });
+
+        // 5. STREAMLINED VITREOUS CHINA WATER TANK & LID
+        const tank = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.38, 0.18), porcelainMat);
+        tank.position.set(0, 0.65, -0.16);
         group.add(tank);
 
-        // Tank lid with beveled overhang
-        const lid = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.035, 0.21), porcelainMat);
-        lid.position.set(0, 0.84, -0.18);
-        group.add(lid);
+        // Rounded side panels for tank
+        [-0.22, 0.22].forEach((tx) => {
+          const tRound = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.38, 16), porcelainMat);
+          tRound.position.set(tx, 0.65, -0.16);
+          group.add(tRound);
+        });
 
-        // Front-left chrome flush trip lever handle (as in Image 2)
-        const leverMount = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.025, 12), chromeMat);
-        leverMount.rotation.x = Math.PI / 2;
-        leverMount.position.set(-0.19, 0.77, -0.075);
+        // Tank lid with smooth beveled edge
+        const lidTop = new THREE.Mesh(new THREE.BoxGeometry(0.47, 0.035, 0.20), porcelainMat);
+        lidTop.position.set(0, 0.85, -0.16);
+        group.add(lidTop);
+
+        // Chrome flush trip lever handle on left side of tank (as in Image 4)
+        const leverMount = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.022, 12), chromeMat);
+        leverMount.rotation.z = Math.PI / 2;
+        leverMount.position.set(-0.24, 0.79, -0.12);
         group.add(leverMount);
 
-        const leverHandle = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.014, 0.018), chromeMat);
-        leverHandle.position.set(-0.23, 0.77, -0.06);
+        const leverHandle = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.016, 0.075), chromeMat);
+        leverHandle.position.set(-0.252, 0.79, -0.09);
         group.add(leverHandle);
 
         // 6. COMMERCIAL DUAL JUMBO-ROLL DISPENSER (Flush on side wall at wallDistX, matching Image 2)
@@ -4612,15 +4637,47 @@
           handleLever.position.set(ox, counterH + 0.21, faucetZ + forwardDir * 0.025);
           group.add(handleLever);
 
-          // --- 3. MATCHING DECK-MOUNTED SOAP DISPENSER ---
-          // Mounted beside the faucet on the back deck (ox + 0.18)
-          const soapBase = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.022, 0.06, 14), faucetMat);
-          soapBase.position.set(ox + 0.18, counterH + 0.03, faucetZ);
-          group.add(soapBase);
+          // --- 3. COMMERCIAL TOUCHLESS AUTOMATIC SOAP DISPENSER ---
+          // Seamless commercial electronic dispenser beside the faucet on the back deck (ox + 0.18)
+          const dispX = ox + 0.18;
 
-          const soapSpout = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.05), faucetMat);
-          soapSpout.position.set(ox + 0.18, counterH + 0.07, faucetZ + forwardDir * 0.02);
+          // Circular escutcheon base flange flush against deck surface
+          const soapFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.028, 0.010, 16), faucetMat);
+          soapFlange.position.set(dispX, counterH + 0.005, faucetZ);
+          group.add(soapFlange);
+
+          // Tapered vertical riser body
+          const soapBody = new THREE.Mesh(new THREE.CylinderGeometry(0.019, 0.023, 0.08, 16), faucetMat);
+          soapBody.position.set(dispX, counterH + 0.05, faucetZ);
+          group.add(soapBody);
+
+          // Upper collar cap
+          const soapCap = new THREE.Mesh(new THREE.SphereGeometry(0.019, 14, 10, 0, Math.PI * 2, 0, Math.PI / 2), faucetMat);
+          soapCap.position.set(dispX, counterH + 0.09, faucetZ);
+          group.add(soapCap);
+
+          // Curved forward swan-neck spout reaching over the sink bowl
+          const soapSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.012, 0.075, 14), faucetMat);
+          soapSpout.rotation.x = forwardDir * 0.55;
+          soapSpout.position.set(dispX, counterH + 0.088, faucetZ + forwardDir * 0.030);
           group.add(soapSpout);
+
+          // Downward discharge nozzle tip
+          const soapNozzle = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.008, 0.018, 12), faucetMat);
+          soapNozzle.position.set(dispX, counterH + 0.068, faucetZ + forwardDir * 0.052);
+          group.add(soapNozzle);
+
+          // Optical infrared proximity sensor window underneath spout nozzle
+          const sensorEyeMat = new THREE.MeshBasicMaterial({ color: 0x111827 });
+          const sensorEye = new THREE.Mesh(new THREE.CylinderGeometry(0.0035, 0.0035, 0.004, 10), sensorEyeMat);
+          sensorEye.position.set(dispX, counterH + 0.060, faucetZ + forwardDir * 0.046);
+          group.add(sensorEye);
+
+          // Status LED indicator dot on top of dispenser head
+          const ledDispMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+          const statusLed = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.003, 0.003, 10), ledDispMat);
+          statusLed.position.set(dispX, counterH + 0.106, faucetZ);
+          group.add(statusLed);
 
           // --- 4. FLUSH WALL MIRROR & VANITY LIGHTING ---
           // Mirror mounted directly on the wall face
