@@ -9229,20 +9229,9 @@
         this.flashlight.intensity = 1.65;
       }
 
-      this.smittyFootstepTimer -= delta;
-      if (this.smittyFootstepTimer <= 0) {
-        if (this.smittyState === 'CHASE') {
-          this.smittyFootstepInterval = 0.28; // Rapid aggressive chase pounding
-        } else if (this.smittyState === 'STALK') {
-          this.smittyFootstepInterval = 0.72; // Slow, deliberate heavy stalking
-        } else {
-          this.smittyFootstepInterval = 0.60;
-        }
-        this.smittyFootstepTimer = this.smittyFootstepInterval;
-        if (dist3D < 38) {
-          this.audio.playSmittyFootstep(dist3D);
-        }
-      }
+      // Record Smitty coordinate before movement to verify actual ground locomotion
+      const prevSmittyX = this.smittyPos.x;
+      const prevSmittyZ = this.smittyPos.z;
 
       if (this.smittyStunTimer > 0) {
         this.smittyStunTimer -= delta;
@@ -9517,6 +9506,31 @@
         } else {
           this.moveSmittyAlongGraph(goalNode, goalNode.floor, speed, delta, false);
         }
+      }
+
+      // Smitty Footstep Audio: Strictly emit footsteps when Smitty is actively traversing the ground
+      const movedDist = Math.hypot(this.smittyPos.x - prevSmittyX, this.smittyPos.z - prevSmittyZ);
+      const isWalkingAnim = (this.currentActionName === 'Walk' || this.currentActionName === 'Run');
+      const isSmittyLocomoting = isWalkingAnim && (movedDist > 0.005) && (this.smittyStunTimer <= 0) && (this.smittyState !== 'DEAD');
+
+      if (isSmittyLocomoting) {
+        this.smittyFootstepTimer -= delta;
+        if (this.smittyFootstepTimer <= 0) {
+          if (this.smittyState === 'CHASE') {
+            this.smittyFootstepInterval = 0.28; // Rapid aggressive chase pounding
+          } else if (this.smittyState === 'STALK') {
+            this.smittyFootstepInterval = 0.72; // Slow, deliberate heavy stalking
+          } else {
+            this.smittyFootstepInterval = 0.60;
+          }
+          this.smittyFootstepTimer = this.smittyFootstepInterval;
+          if (dist3D < 38) {
+            this.audio.playSmittyFootstep(dist3D);
+          }
+        }
+      } else {
+        // Not walking — hold timer primed so when he begins walking, the first step occurs naturally
+        this.smittyFootstepTimer = Math.min(this.smittyFootstepTimer, 0.25);
       }
     }
 
