@@ -4345,9 +4345,15 @@
           group.add(hingeCap);
         });
 
-        // 4. OPEN UPRIGHT TOILET LID (Matching Image 4: upright, leaning gently back against the tank at -8 deg)
+        // 4. OPEN UPRIGHT TOILET LID (Matching realistic proportion: lid stands tall up to the upper half of tank)
         const lidShape = new THREE.Shape();
-        lidShape.absellipse(0, 0, 0.195, 0.245, 0, Math.PI * 2, false, 0);
+        lidShape.moveTo(-0.165, 0);
+        lidShape.lineTo(-0.175, 0.22);
+        lidShape.bezierCurveTo(-0.175, 0.40, -0.09, 0.46, 0, 0.46);
+        lidShape.bezierCurveTo(0.09, 0.46, 0.175, 0.40, 0.175, 0.22);
+        lidShape.lineTo(0.165, 0);
+        lidShape.bezierCurveTo(0.12, -0.015, -0.12, -0.015, -0.165, 0);
+
         const lidGeom = new THREE.ExtrudeGeometry(lidShape, {
           depth: 0.018,
           bevelEnabled: true,
@@ -4357,16 +4363,16 @@
           bevelThickness: 0.008
         });
         const lidMesh = new THREE.Mesh(lidGeom, seatMat);
-        // Pivot at hinge level, tilted back by ~8 degrees against front of tank
-        lidMesh.rotation.x = -Math.PI * 0.045;
-        lidMesh.position.set(0, 0.46, -0.05);
+        // Pivot at hinge level (y = 0.445, z = -0.06), leaning back ~7.5 degrees against front of tank
+        lidMesh.rotation.x = -Math.PI * 0.042;
+        lidMesh.position.set(0, 0.445, -0.06);
         group.add(lidMesh);
 
-        // Dual rubber bumpers on underside of lid (facing forward when lid is upright)
-        [-0.10, 0.10].forEach((bx) => {
-          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.009, 0.010, 12), sensorPodMat);
+        // Dual rubber bumpers on underside of lid (facing forward when lid is upright, located near upper curve)
+        [-0.095, 0.095].forEach((bx) => {
+          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.008, 12), sensorPodMat);
           bumper.rotation.x = Math.PI / 2;
-          bumper.position.set(bx, 0.64, -0.038);
+          bumper.position.set(bx, 0.77, -0.038);
           group.add(bumper);
         });
 
@@ -7457,7 +7463,7 @@
 
       window.addEventListener('keydown', (e) => {
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
-        const isKeyN = (e.code === 'KeyN' || (e.key && e.key.toLowerCase() === 'n'));
+        const isKeyB = (e.code === 'KeyB' || (e.key && e.key.toLowerCase() === 'b'));
         const isKeyV = (e.code === 'KeyV' || (e.key && e.key.toLowerCase() === 'v'));
         const isKeyH = (e.code === 'KeyH' || (e.key && e.key.toLowerCase() === 'h'));
         const isSpectatorToggle = (
@@ -7465,7 +7471,7 @@
           e.key === '`' ||
           e.key === '~' ||
           e.code === 'F2' ||
-          (isCmdOrCtrl && isKeyN)
+          (isCmdOrCtrl && isKeyB)
         );
 
         // Prevent browser tab close (Ctrl+W on Windows/Linux or Cmd+W) while crouching and holding W
@@ -7484,7 +7490,7 @@
 
         // In Spectator Mode:
         if (this.isSpectatorMode && !isCmdOrCtrl) {
-          // No-Clip Mode toggle: pressing 'V'
+          // Flight / No-Clip Mode toggle: pressing 'V'
           if (isKeyV) {
             e.preventDefault();
             if (this.gameStarted) {
@@ -7493,8 +7499,8 @@
             return;
           }
 
-          // Curator/Smitty Red Outline toggle: pressing 'N'
-          if (isKeyN) {
+          // Curator Red Outline toggle: pressing 'B'
+          if (isKeyB) {
             e.preventDefault();
             if (this.gameStarted) {
               this.toggleSmittyXray();
@@ -8499,8 +8505,8 @@
         this.updateSpectatorBadge();
 
         this.showSystemNotification(
-          T('hud.spectator_enabled', 'SPECTATOR MODE (`: EXIT • V: NO-CLIP • N: OUTLINE • H: HUD)'),
-          4000
+          T('hud.spectator_enabled', 'Spectator Controls: V - Flight, B - Curator Outline, H - HUD'),
+          10000
         );
       } else {
         // Disengage no-clip, X-ray, and unhide HUD/arms if active when exiting spectator mode
