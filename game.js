@@ -1,6 +1,6 @@
 /**
- * THE MUSEUM — FOUR-STORY FORBES LIBRARY & MUSEUM EDITION
- * Photorealistic multi-floor architectural layout based on the Forbes Library floorplan,
+ * THE MUSEUM — FOUR-STORY EXHIBITION EDITION
+ * Photorealistic multi-floor architectural layout,
  * featuring 4 interconnected floors, dual 4-story U-stairwells, 136 curated gallery artworks,
  * realistic Web Audio synthesis, and a multi-floor graph-navigating Stalker AI.
  */
@@ -3056,7 +3056,7 @@
       this.flashlightOn = false;
       this.muzzleLight = null;
 
-      // Player State: Spawns on 1st Floor South Hosmer Gallery facing North (-Z) down the grand promenade
+      // Player State: Spawns on 1st Floor South Gallery facing North (-Z) down the grand promenade
       this.playerPos = new THREE.Vector3(-10.0, CONFIG.PLAYER.CAMERA_HEIGHT, 22.0);
       this.playerFloor = 0;
       this.playerStairState = { active: null, baseFloor: 0 };
@@ -3075,7 +3075,7 @@
       this.skipNextMouseMove = false;
       this.lastClientX = null;
       this.lastClientY = null;
-      this.currentRoom = T('hud.room_format', '{floor} • {area}', { floor: T('floor.1', '1ST FLOOR'), area: T('area.hosmer_gallery', 'HOSMER GALLERY') });
+      this.currentRoom = T('hud.room_format', '{floor} • {area}', { floor: T('floor.1', '1ST FLOOR'), area: T('area.buffoon_gallery', 'BUFFOON GALLERY') });
 
       // Weapon State
       this.ammoInMag = CONFIG.WEAPON.MAG_CAPACITY;
@@ -3267,7 +3267,7 @@
       console.log('%c[THE MUSEUM]%c Ready', 'color:#00ff88;font-weight:bold;background:#111;padding:3px 6px;border-radius:3px', 'color:#fff;background:#222;padding:3px 6px');
 
       this.initThree();
-      this.buildForbesMuseum();
+      this.buildMuseum();
       this.buildNavGraph();
       this.randomizeSmittySpawn();
       this.buildWeaponViewmodel();
@@ -3368,7 +3368,7 @@
       });
     }
 
-    buildForbesMuseum() {
+    buildMuseum() {
       // Load photorealistic internet-sourced textures from assets/textures/
       const mats = {
         floorMarble: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/marble_floor.jpg', 18, 18, 0xd8dce2),
@@ -3392,9 +3392,9 @@
       mats.wallBrick.polygonOffsetFactor = -1;
       mats.wallBrick.polygonOffsetUnits = -1;
 
-      // Build all 4 floors of the Forbes Library & Museum
+      // Build all 4 floors of the Museum
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
-        this.buildSingleForbesFloor(fl, mats);
+        this.buildSingleFloor(fl, mats);
       }
 
       // Build the two continuous 4-story U-stairwells (Stairwell N and Stairwell SW)
@@ -3404,7 +3404,7 @@
       this.populateCuratedArtworks(mats);
     }
 
-    buildSingleForbesFloor(fl, mats) {
+    buildSingleFloor(fl, mats) {
       const y0 = fl * CONFIG.FLOOR_HEIGHT;
       const h = CONFIG.FLOOR_HEIGHT;
       const ceilH = h - 0.06; // 5.14m ceiling height leaves a 6cm structural plenum below the next floor
@@ -3428,13 +3428,13 @@
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
       // 1. West Wing Slab (x: -36..-16, z: -6..18)
       this.createSlab(-26, y0, 6, 20.0, 24.0, floorMat, mats.ceiling, ceilH);
-      // 2. Coolidge Office Slab (x: -34..-24, z: 18..28)
+      // 2. West Office Slab (x: -34..-24, z: 18..28)
       this.createSlab(-29, y0, 23, 10.0, 10.0, mats.floorDarkWood, mats.ceiling, ceilH);
-      // 3. Hosmer Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
+      // 3. Main Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
       this.createSlab(-10, y0, 5, 12.0, 46.0, floorMat, mats.ceiling, ceilH);
       // 4. Central Core South of Stairwell N (x: -4..4, z: -14..28)
       this.createSlab(0, y0, 7, 8.0, 42.0, floorMat, mats.ceiling, ceilH);
-      // 5. Hampshire Room for Local History Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
+      // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
@@ -3450,27 +3450,27 @@
       // Convention: Z-walls own the 0.4x0.4 corner pillars; X-walls butt flush against the ±X faces of Z-walls (x1+0.2 .. x2-0.2).
       // Zero overlapping volumes, zero coplanar faces, zero corner gaps!
 
-      // A. WEST WING: CALVIN COOLIDGE PRESIDENTIAL MUSEUM (x: -36..-16, z: -6..18)
+      // A. WEST WING: EXHIBITION GALLERY (x: -36..-16, z: -6..18)
       this.createWall(-36, yc, 6, t, wallH, 24.4, mainWallMat, true, fl);         // -6.2..18.2
       this.createWall(-26, yc, -6, 19.6, wallH, t, mainWallMat, true, fl);        // -35.8..-16.2
       this.createWall(-26, yc, -5.0, 3.6, wallH, 1.4, accentWallMat, true, fl);   // -5.7..-4.3 (flush against z=-5.8)
       // South wall of West Wing (z = 18, x: -35.8..-16.2) with 2 doorways:
-      // Door 1 into Coolidge Office: x = -31.5..-28.5; Door 2 into SW Stairwell Landing: x = -21.5..-18.5
+      // Door 1 into West Office: x = -31.5..-28.5; Door 2 into SW Stairwell Landing: x = -21.5..-18.5
       this.createWall(-33.65, yc, 18, 4.3, wallH, t, mainWallMat, true, fl);      // -35.8..-31.5
       this.createWall(-25.0, ycFull, 18, 7.0, h, t, mainWallMat, true, fl);       // -28.5..-21.5 (borders SW Stairwell)
       this.createWall(-17.35, ycFull, 18, 2.3, h, t, mainWallMat, true, fl);      // -18.5..-16.2 (borders SW Stairwell)
       this.createLintel(-30.0, y0, 18, 3.0, t, ceilH, mainWallMat);
       this.createLintel(-20.0, y0, 18, 3.0, t, ceilH, mainWallMat);
 
-      // B. COOLIDGE OFFICE (x: -34..-24, z: 18..28)
+      // B. WEST OFFICE (x: -34..-24, z: 18..28)
       this.createWall(-34, yc, 23.2, t, wallH, 10.0, accentWallMat, true, fl);    // 18.2..28.2
       this.createWall(-29, yc, 28, 9.6, wallH, t, accentWallMat, true, fl);       // -33.8..-24.2
-      // East wall of Coolidge Office (x = -24, z: 18.2..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
+      // East wall of West Office (x = -24, z: 18.2..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
       this.createWall(-24, ycFull, 18.4, t, h, 0.4, accentWallMat, true, fl);     // North jamb (18.2..18.6)
       this.createWall(-24, ycFull, 24.5, t, h, 7.4, accentWallMat, true, fl);     // South segment (20.8..28.2)
       this.createLintelZ(-24, y0, 19.7, t, 2.2, ceilH, accentWallMat);
 
-      // C. HOSMER GALLERY & NORTH MAGAZINE ALCOVE (x: -16..-4, z: -18..28)
+      // C. MAIN GALLERY & NORTH MAGAZINE ALCOVE (x: -16..-4, z: -18..28)
       // Entire x = -16 wall from z = -18.2 to 28.2 (disjoint collinear segments):
       this.createWall(-16, yc, -10.85, t, wallH, 14.7, mainWallMat, true, fl);    // -18.2..-3.5
       this.createLintelZ(-16, y0, -2.0, t, 3.0, ceilH, mainWallMat);              // -3.5..-0.5
@@ -3486,7 +3486,7 @@
       this.createWall(-14.8, yc, -6, 2.0, wallH, t, mainWallMat, true, fl);       // -15.8..-13.8
       this.createWall(-5.2, yc, -6, 2.0, wallH, t, mainWallMat, true, fl);        // -6.2..-4.2
 
-      // South wall of Hosmer Gallery (z = 28, x: -15.8..-4.2)
+      // South wall of Main Gallery (z = 28, x: -15.8..-4.2)
       if (fl === 0) {
         this.createWall(-14.1, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);     // -15.8..-12.4
         this.createWall(-5.9, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);      // -7.6..-4.2
@@ -3497,7 +3497,7 @@
       }
 
       // Entire x = -4 wall from z = -40.2 to 28.2 (disjoint collinear segments):
-      this.createWall(-4, yc, -33.1, t, wallH, 14.2, mainWallMat, true, fl);      // -40.2..-26.0 (Hampshire Room West)
+      this.createWall(-4, yc, -33.1, t, wallH, 14.2, mainWallMat, true, fl);      // -40.2..-26.0 (North Gallery West)
       this.createWall(-4, ycFull, -21.4, t, h, 9.2, mainWallMat, true, fl);       // -26.0..-16.8 (Stairwell N West shaft)
       this.createLintelZ(-4, y0, -15.4, t, 2.8, ceilH, mainWallMat);              // -16.8..-14.0 (Stairwell N West door)
       this.createWall(-4, yc, -5.75, t, wallH, 16.5, mainWallMat, true, fl);      // -14.0..2.5
@@ -3535,7 +3535,7 @@
       // South wall of South Cross-Passage (z = 28, x: -3.8..11.8)
       this.createWall(4.0, yc, 28, 15.6, wallH, t, mainWallMat, true, fl);        // -3.8..11.8
 
-      // E. HAMPSHIRE ROOM FOR LOCAL HISTORY (x: -4..28, z: -40..-26 + North Bay x: 6..18, z: -42..-40)
+      // E. NORTH GALLERY (x: -4..28, z: -40..-26 + North Bay x: 6..18, z: -42..-40)
       this.createWall(1.0, yc, -40, 9.6, wallH, t, mainWallMat, true, fl);        // -3.8..5.8
       this.createWall(23.0, yc, -40, 9.6, wallH, t, mainWallMat, true, fl);       // 18.2..27.8
       this.createWall(6, yc, -41.0, t, wallH, 2.4, mainWallMat, true, fl);        // -42.2..-39.8
@@ -3595,12 +3595,12 @@
 
       // Room header signage above major doorways (offset 6cm from wall face with polygonOffset)
       const westSignTitle = fl === 0 ? T('sign.west_room.floor1', 'CLASSICAL ANTIQUITIES')
-                          : fl === 1 ? T('sign.west_room.floor2', 'CALVIN COOLIDGE MUSEUM')
+                          : fl === 1 ? T('sign.west_room.floor2', 'COOL DUDE CENTRAL')
                           : fl === 2 ? T('sign.west_room.floor3', 'SURREALISM SALON')
                           : T('sign.west_room.floor4', 'QUARANTINED ART VAULT');
       this.createRoomSign(-15.72, y0 + 3.85, 6.0, Math.PI / 2, westSignTitle, flTitle);
 
-      const neSignTitle = fl === 1 ? T('sign.north_room.floor2', 'HAMPSHIRE ROOM • LOCAL HISTORY')
+      const neSignTitle = fl === 1 ? T('sign.north_room.floor2', 'LOCAL HISTORY')
                         : fl === 3 ? T('sign.north_room.floor4', 'RESTRICTED RELIQUARY VAULT')
                         : T('sign.north_room.floor1_and_3', 'SPECIAL COLLECTIONS ARCHIVE');
       this.createRoomSign(12.0, y0 + 3.85, -25.72, 0, neSignTitle, flTitle);
@@ -3610,7 +3610,7 @@
       this.createExhibitionPlinth(-26, y0, 12, 2.4, 1.1, 2.4, fl < 3);
       this.createMuseumBench(-26, y0, 6);
 
-      // Coolidge Office / SW Office Desk (x: -29, z: 24)
+      // West Office / SW Office Desk (x: -29, z: 24)
       this.createInfoDesk(-29, y0, 24, mats.mahogany);
 
       // Restroom Suites & Archival Laboratories (Central Service Core z: -14..-6)
@@ -3619,11 +3619,11 @@
       // Period Study & Research Library (Central Core z: -6..2)
       this.createRealisticStudyRoom(fl, y0, mats);
 
-      // Hosmer Gallery Benches (x: -10, z: 0 and z: 14)
+      // Main Gallery Benches (x: -10, z: 0 and z: 14)
       this.createMuseumBench(-10, y0, 0);
       this.createMuseumBench(-10, y0, 14);
 
-      // Hampshire Room Display Plinths (x: 12, z: -39 and x: 4, z: -33 and x: 20, z: -33)
+      // North Gallery Display Plinths (x: 12, z: -39 and x: 4, z: -33 and x: 20, z: -33)
       this.createExhibitionPlinth(12, y0, -39, 2.2, 1.1, 2.2, fl === 3);
       this.createMuseumBench(12, y0, -33);
 
@@ -3637,10 +3637,6 @@
       this.createCircularReferenceDesk(23, y0, 22, mats.mahogany, fl);
 
       // Distinct Floor-Specific Atmospheric Ceiling Lamps & Spotlights
-      // Floor 0: Classical Antiquities Gallery — crisp white halogen (3200K)
-      // Floor 1: Presidential Archives — warm amber gaslight (2700K)
-      // Floor 2: Surrealist Salon — moody cyan/moonlight gallery (4500K)
-      // Floor 3: Quarantined Art Vault — eerie emergency crimson
       const lightColor = fl === 0 ? 0xf4f4f4
                        : fl === 1 ? 0xffd27d
                        : fl === 2 ? 0x93c5fd
@@ -3648,8 +3644,8 @@
       const lightInt = fl === 3 ? 0.48 : 0.42;
       const roomLightCoords = [
         [-26, 6],   // West Wing
-        [-10, 6],   // Hosmer Gallery
-        [12, -33],  // Hampshire Room
+        [-10, 6],   // Main Gallery
+        [12, -33],  // North Gallery
         [15, -10],  // East Main Hall Stacks Aisle
         [18, 24]    // South-East Media Wing
       ];
@@ -3676,7 +3672,7 @@
       const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
 
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
-      // Note: Outer shaft walls at x=-4, x=4, z=-26 are built per-floor in buildSingleForbesFloor (full height h)
+      // Note: Outer shaft walls at x=-4, x=4, z=-26 are built per-floor in buildSingleFloor (full height h)
       // Center divider wall between West flight and East flight (x = 0, z: -23.2..-16.8)
       this.createWall(0, midY, -20.0, 0.34, totalH, 6.4, mats.wallConcrete, true, 'all');
       // Roof over Stairwell N (exact 8.0 x 12.0 shaft bounds — zero overlap with adjacent ceilings)
@@ -4919,6 +4915,7 @@
       const bookGreenMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
       const bookGoldMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
       const feltMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
+      const inkGlassMat = new THREE.MeshPhongMaterial({ color: 0x0f172a, specular: 0xffffff, shininess: 100 });
 
       // --- REUSABLE 3D ASSET BUILDERS ---
 
@@ -5502,7 +5499,7 @@
 
       } else if (fl === 1) {
         // =========================================================================
-        // FLOOR 1: CALVIN COOLIDGE PRESIDENTIAL STUDY SUITE
+        // FLOOR 1: EXECUTIVE STUDY SUITE
         // =========================================================================
 
         const deskGroup = new THREE.Group();
@@ -5544,7 +5541,7 @@
           pedBody.position.set(px, 0.37, 0);
           deskGroup.add(pedBody);
 
-          // 3 Paneled Drawers facing the President (West side, looking East)
+          // 3 Paneled Drawers facing the desk user (West side, looking East)
           for (let d = 0; d < 3; d++) {
             const dy = 0.16 + d * 0.18;
             const drawerFace = new THREE.Mesh(new THREE.BoxGeometry(0.76, 0.15, 0.02), darkWoodMat);
@@ -5588,13 +5585,13 @@
         const deskAcc = buildDeskAccessories(-0.75, 0.78, 0.10);
         deskGroup.add(deskAcc);
 
-        // Stack of presidential leather-bound volumes
+        // Stack of vintage leather-bound volumes
         const bookStack = buildBookStack(0.82, 0.78, 0.25, 0.15);
         deskGroup.add(bookStack);
 
         this.scene.add(deskGroup);
 
-        // Stately Executive Swivel Chair for the President behind the desk
+        // Stately Executive Swivel Chair behind the desk
         const execChair = buildExecutiveLeatherChair(-0.6, y0, -3.1, 0);
         this.scene.add(execChair);
 
@@ -6007,7 +6004,7 @@
         shininess: 12
       });
 
-      // Forbes Library carved limestone portal arch materials
+      // Museum carved limestone portal arch materials
       const stoneMat = new THREE.MeshPhongMaterial({
         color: 0xe2ded6,
         specular: 0x1f1f1f,
@@ -6386,68 +6383,68 @@
         const y = fl * CONFIG.FLOOR_HEIGHT;
         const fn = {};
 
-        // 1. HOSMER GALLERY SPINE (x: -10, z: -16 to 26) with bench flanking bypasses
-        fn.hosmer_n16 = addNode(-10.0, y, -16.0, fl, 'hosmer_n16');
-        fn.hosmer_n10 = addNode(-10.0, y, -10.0, fl, 'hosmer_n10');
-        fn.hosmer_n2  = addNode(-10.0, y,  -2.0, fl, 'hosmer_n2');
+        // 1. MAIN GALLERY SPINE (x: -10, z: -16 to 26) with bench flanking bypasses
+        fn.gallery_n16 = addNode(-10.0, y, -16.0, fl, 'gallery_n16');
+        fn.gallery_n10 = addNode(-10.0, y, -10.0, fl, 'gallery_n10');
+        fn.gallery_n2  = addNode(-10.0, y,  -2.0, fl, 'gallery_n2');
         // Flank North Bench at (-10, 0)
-        fn.hosmer_b0_w = addNode(-13.0, y,   0.0, fl, 'hosmer_b0_w');
-        fn.hosmer_b0_e = addNode( -7.0, y,   0.0, fl, 'hosmer_b0_e');
-        fn.hosmer_p2   = addNode(-10.0, y,   2.0, fl, 'hosmer_p2');
-        fn.hosmer_p6   = addNode(-10.0, y,   6.0, fl, 'hosmer_p6');
-        fn.hosmer_p10  = addNode(-10.0, y,  10.0, fl, 'hosmer_p10');
+        fn.gallery_b0_w = addNode(-13.0, y,   0.0, fl, 'gallery_b0_w');
+        fn.gallery_b0_e = addNode( -7.0, y,   0.0, fl, 'gallery_b0_e');
+        fn.gallery_p2   = addNode(-10.0, y,   2.0, fl, 'gallery_p2');
+        fn.gallery_p6   = addNode(-10.0, y,   6.0, fl, 'gallery_p6');
+        fn.gallery_p10  = addNode(-10.0, y,  10.0, fl, 'gallery_p10');
         // Flank South Bench at (-10, 14)
-        fn.hosmer_b14_w= addNode(-13.0, y,  14.0, fl, 'hosmer_b14_w');
-        fn.hosmer_b14_e= addNode( -7.0, y,  14.0, fl, 'hosmer_b14_e');
-        fn.hosmer_p18  = addNode(-10.0, y,  18.0, fl, 'hosmer_p18');
-        fn.hosmer_p22  = addNode(-10.0, y,  22.0, fl, 'hosmer_p22');
-        fn.hosmer_p26  = addNode(-10.0, y,  26.0, fl, 'hosmer_p26');
+        fn.gallery_b14_w= addNode(-13.0, y,  14.0, fl, 'gallery_b14_w');
+        fn.gallery_b14_e= addNode( -7.0, y,  14.0, fl, 'gallery_b14_e');
+        fn.gallery_p18  = addNode(-10.0, y,  18.0, fl, 'gallery_p18');
+        fn.gallery_p22  = addNode(-10.0, y,  22.0, fl, 'gallery_p22');
+        fn.gallery_p26  = addNode(-10.0, y,  26.0, fl, 'gallery_p26');
 
-        connect(fn.hosmer_n16, fn.hosmer_n10);
-        connect(fn.hosmer_n10, fn.hosmer_n2);
+        connect(fn.gallery_n16, fn.gallery_n10);
+        connect(fn.gallery_n10, fn.gallery_n2);
 
         // North Bench bypass:
-        connect(fn.hosmer_n2, fn.hosmer_b0_w);
-        connect(fn.hosmer_n2, fn.hosmer_b0_e);
-        connect(fn.hosmer_b0_w, fn.hosmer_p2);
-        connect(fn.hosmer_b0_e, fn.hosmer_p2);
+        connect(fn.gallery_n2, fn.gallery_b0_w);
+        connect(fn.gallery_n2, fn.gallery_b0_e);
+        connect(fn.gallery_b0_w, fn.gallery_p2);
+        connect(fn.gallery_b0_e, fn.gallery_p2);
 
-        connect(fn.hosmer_p2,  fn.hosmer_p6);
-        connect(fn.hosmer_p6,  fn.hosmer_p10);
+        connect(fn.gallery_p2,  fn.gallery_p6);
+        connect(fn.gallery_p6,  fn.gallery_p10);
 
         // South Bench bypass:
-        connect(fn.hosmer_p10, fn.hosmer_b14_w);
-        connect(fn.hosmer_p10, fn.hosmer_b14_e);
-        connect(fn.hosmer_b14_w, fn.hosmer_p18);
-        connect(fn.hosmer_b14_e, fn.hosmer_p18);
+        connect(fn.gallery_p10, fn.gallery_b14_w);
+        connect(fn.gallery_p10, fn.gallery_b14_e);
+        connect(fn.gallery_b14_w, fn.gallery_p18);
+        connect(fn.gallery_b14_e, fn.gallery_p18);
 
-        connect(fn.hosmer_p18, fn.hosmer_p22);
-        connect(fn.hosmer_p22, fn.hosmer_p26);
+        connect(fn.gallery_p18, fn.gallery_p22);
+        connect(fn.gallery_p22, fn.gallery_p26);
 
         // 2. WEST WING (x: -36..-16, z: -6..18)
-        // Three dedicated doorways into Hosmer with approach, portal, and inner nodes
+        // Three dedicated doorways into Main Gallery with approach, portal, and inner nodes
         // Door North at z = -2.0
-        fn.doorW_N_hos = addNode(-12.5, y, -2.0, fl, 'doorW_N_hos');
+        fn.doorW_N_gal = addNode(-12.5, y, -2.0, fl, 'doorW_N_gal');
         fn.doorW_N_mid = addNode(-16.0, y, -2.0, fl, 'doorW_N_mid');
         fn.doorW_N_in  = addNode(-19.5, y, -2.0, fl, 'doorW_N_in');
-        connect(fn.hosmer_n2, fn.doorW_N_hos);
-        connect(fn.doorW_N_hos, fn.doorW_N_mid);
+        connect(fn.gallery_n2, fn.doorW_N_gal);
+        connect(fn.doorW_N_gal, fn.doorW_N_mid);
         connect(fn.doorW_N_mid, fn.doorW_N_in);
 
         // Door Center at z = 6.0
-        fn.doorW_C_hos = addNode(-12.5, y, 6.0, fl, 'doorW_C_hos');
+        fn.doorW_C_gal = addNode(-12.5, y, 6.0, fl, 'doorW_C_gal');
         fn.doorW_C_mid = addNode(-16.0, y, 6.0, fl, 'doorW_C_mid');
         fn.doorW_C_in  = addNode(-19.5, y, 6.0, fl, 'doorW_C_in');
-        connect(fn.hosmer_p6, fn.doorW_C_hos);
-        connect(fn.doorW_C_hos, fn.doorW_C_mid);
+        connect(fn.gallery_p6, fn.doorW_C_gal);
+        connect(fn.doorW_C_gal, fn.doorW_C_mid);
         connect(fn.doorW_C_mid, fn.doorW_C_in);
 
         // Door South at z = 14.0
-        fn.doorW_S_hos = addNode(-12.5, y, 14.0, fl, 'doorW_S_hos');
+        fn.doorW_S_gal = addNode(-12.5, y, 14.0, fl, 'doorW_S_gal');
         fn.doorW_S_mid = addNode(-16.0, y, 14.0, fl, 'doorW_S_mid');
         fn.doorW_S_in  = addNode(-19.5, y, 14.0, fl, 'doorW_S_in');
-        connect(fn.hosmer_b14_w, fn.doorW_S_hos);
-        connect(fn.doorW_S_hos, fn.doorW_S_mid);
+        connect(fn.gallery_b14_w, fn.doorW_S_gal);
+        connect(fn.doorW_S_gal, fn.doorW_S_mid);
         connect(fn.doorW_S_mid, fn.doorW_S_in);
 
         // West Wing Aisles: East Aisle (x = -20.5), Middle Plinth Cross (z = -3.5, 6, 15.5), Deep West Aisle (x = -32.0)
@@ -6486,54 +6483,54 @@
         connect(fn.west_e_p15, fn.west_mid_s);
         connect(fn.west_mid_s, fn.west_w_p15);
 
-        // 3. COOLIDGE OFFICE (x: -34..-24, z: 18..28)
+        // 3. WEST OFFICE (x: -34..-24, z: 18..28)
         // Door from West Wing at x = -30.0, z = 18.0
-        fn.doorCool_w_n = addNode(-30.0, y, 16.0, fl, 'doorCool_w_n');
-        fn.doorCool_w_m = addNode(-30.0, y, 18.0, fl, 'doorCool_w_m');
-        fn.doorCool_w_s = addNode(-30.0, y, 20.0, fl, 'doorCool_w_s');
-        connect(fn.west_w_p15, fn.doorCool_w_n);
-        connect(fn.doorCool_w_n, fn.doorCool_w_m);
-        connect(fn.doorCool_w_m, fn.doorCool_w_s);
+        fn.doorWOff_w_n = addNode(-30.0, y, 16.0, fl, 'doorWOff_w_n');
+        fn.doorWOff_w_m = addNode(-30.0, y, 18.0, fl, 'doorWOff_w_m');
+        fn.doorWOff_w_s = addNode(-30.0, y, 20.0, fl, 'doorWOff_w_s');
+        connect(fn.west_w_p15, fn.doorWOff_w_n);
+        connect(fn.doorWOff_w_n, fn.doorWOff_w_m);
+        connect(fn.doorWOff_w_m, fn.doorWOff_w_s);
 
         // Pathway inside office passes in front of desk at z = 21.0
-        fn.coolOffice_front = addNode(-29.0, y, 21.0, fl, 'coolOffice_front');
-        fn.coolOffice_side  = addNode(-26.0, y, 24.0, fl, 'coolOffice_side');
-        connect(fn.doorCool_w_s, fn.coolOffice_front);
-        connect(fn.coolOffice_front, fn.coolOffice_side);
+        fn.wOffice_front = addNode(-29.0, y, 21.0, fl, 'wOffice_front');
+        fn.wOffice_side  = addNode(-26.0, y, 24.0, fl, 'wOffice_side');
+        connect(fn.doorWOff_w_s, fn.wOffice_front);
+        connect(fn.wOffice_front, fn.wOffice_side);
 
-        // Door between Coolidge Office and SW Stairwell at x = -24.0, z = 19.7
-        fn.doorCool_st_w = addNode(-26.0, y, 19.7, fl, 'doorCool_st_w');
-        fn.doorCool_st_m = addNode(-24.0, y, 19.7, fl, 'doorCool_st_m');
-        fn.doorCool_st_e = addNode(-22.0, y, 19.7, fl, 'doorCool_st_e');
-        connect(fn.coolOffice_front, fn.doorCool_st_w);
-        connect(fn.doorCool_st_w, fn.doorCool_st_m);
-        connect(fn.doorCool_st_m, fn.doorCool_st_e);
+        // Door between West Office and SW Stairwell at x = -24.0, z = 19.7
+        fn.doorWOff_st_w = addNode(-26.0, y, 19.7, fl, 'doorWOff_st_w');
+        fn.doorWOff_st_m = addNode(-24.0, y, 19.7, fl, 'doorWOff_st_m');
+        fn.doorWOff_st_e = addNode(-22.0, y, 19.7, fl, 'doorWOff_st_e');
+        connect(fn.wOffice_front, fn.doorWOff_st_w);
+        connect(fn.doorWOff_st_w, fn.doorWOff_st_m);
+        connect(fn.doorWOff_st_m, fn.doorWOff_st_e);
 
         // 4. SW STAIRWELL LANDING (x: -24..-16, z: 18..28)
         fn.stairSWLand = addNode(-20.0, y, 19.7, fl, 'stairSWLand');
-        connect(fn.doorCool_st_e, fn.stairSWLand);
+        connect(fn.doorWOff_st_e, fn.stairSWLand);
 
-        // Door between SW Stairwell Landing and Hosmer at x = -16.0, z = 19.7
-        fn.doorSW_hos_w = addNode(-18.0, y, 19.7, fl, 'doorSW_hos_w');
-        fn.doorSW_hos_m = addNode(-16.0, y, 19.7, fl, 'doorSW_hos_m');
-        fn.doorSW_hos_e = addNode(-13.5, y, 19.7, fl, 'doorSW_hos_e');
-        connect(fn.stairSWLand, fn.doorSW_hos_w);
-        connect(fn.doorSW_hos_w, fn.doorSW_hos_m);
-        connect(fn.doorSW_hos_m, fn.doorSW_hos_e);
-        connect(fn.doorSW_hos_e, fn.hosmer_p18);
-        connect(fn.doorSW_hos_e, fn.hosmer_p22);
+        // Door between SW Stairwell Landing and Main Gallery at x = -16.0, z = 19.7
+        fn.doorSW_gal_w = addNode(-18.0, y, 19.7, fl, 'doorSW_gal_w');
+        fn.doorSW_gal_m = addNode(-16.0, y, 19.7, fl, 'doorSW_gal_m');
+        fn.doorSW_gal_e = addNode(-13.5, y, 19.7, fl, 'doorSW_gal_e');
+        connect(fn.stairSWLand, fn.doorSW_gal_w);
+        connect(fn.doorSW_gal_w, fn.doorSW_gal_m);
+        connect(fn.doorSW_gal_m, fn.doorSW_gal_e);
+        connect(fn.doorSW_gal_e, fn.gallery_p18);
+        connect(fn.doorSW_gal_e, fn.gallery_p22);
 
         // 5. STAIRWELL NORTH LANDING (x: -4..4, z: -26..-14)
         fn.stairNLand = addNode(0.0, y, -15.4, fl, 'stairNLand');
 
-        // Door from Hosmer to Stairwell N at x = -4.0, z = -15.4
-        fn.doorSN_hos_w = addNode(-7.0, y, -15.4, fl, 'doorSN_hos_w');
-        fn.doorSN_hos_m = addNode(-4.0, y, -15.4, fl, 'doorSN_hos_m');
-        fn.doorSN_hos_e = addNode(-1.8, y, -15.4, fl, 'doorSN_hos_e');
-        connect(fn.hosmer_n16, fn.doorSN_hos_w);
-        connect(fn.doorSN_hos_w, fn.doorSN_hos_m);
-        connect(fn.doorSN_hos_m, fn.doorSN_hos_e);
-        connect(fn.doorSN_hos_e, fn.stairNLand);
+        // Door from Main Gallery to Stairwell N at x = -4.0, z = -15.4
+        fn.doorSN_gal_w = addNode(-7.0, y, -15.4, fl, 'doorSN_gal_w');
+        fn.doorSN_gal_m = addNode(-4.0, y, -15.4, fl, 'doorSN_gal_m');
+        fn.doorSN_gal_e = addNode(-1.8, y, -15.4, fl, 'doorSN_gal_e');
+        connect(fn.gallery_n16, fn.doorSN_gal_w);
+        connect(fn.doorSN_gal_w, fn.doorSN_gal_m);
+        connect(fn.doorSN_gal_m, fn.doorSN_gal_e);
+        connect(fn.doorSN_gal_e, fn.stairNLand);
 
         // Door from Stairwell N to East Main Hall at x = 4.0, z = -15.4
         fn.doorSN_east_w = addNode(1.8, y, -15.4, fl, 'doorSN_east_w');
@@ -6544,27 +6541,27 @@
         connect(fn.doorSN_east_m, fn.doorSN_east_e);
 
         // 6. CENTRAL CROSS-HALLWAY (x: -4..4, z: 2.5..7.5, center z = 5.0)
-        fn.cross_w_hos = addNode(-6.5, y, 5.0, fl, 'cross_w_hos');
+        fn.cross_w_gal = addNode(-6.5, y, 5.0, fl, 'cross_w_gal');
         fn.cross_w_mid = addNode(-4.0, y, 5.0, fl, 'cross_w_mid');
         fn.cross_center= addNode( 0.0, y, 5.0, fl, 'cross_center');
         fn.cross_e_mid = addNode( 4.0, y, 5.0, fl, 'cross_e_mid');
         fn.cross_e_east= addNode( 6.5, y, 5.0, fl, 'cross_e_east');
-        connect(fn.hosmer_p6, fn.cross_w_hos);
-        connect(fn.cross_w_hos, fn.cross_w_mid);
+        connect(fn.gallery_p6, fn.cross_w_gal);
+        connect(fn.cross_w_gal, fn.cross_w_mid);
         connect(fn.cross_w_mid, fn.cross_center);
         connect(fn.cross_center, fn.cross_e_mid);
         connect(fn.cross_e_mid, fn.cross_e_east);
 
         // 7. SOUTH CROSS-PASSAGE (x: -4..4, z: 22.0)
-        fn.crossS_w_hos = addNode(-6.5, y, 22.0, fl, 'crossS_w_hos');
+        fn.crossS_w_gal = addNode(-6.5, y, 22.0, fl, 'crossS_w_gal');
         fn.crossS_w_mid = addNode(-4.0, y, 22.0, fl, 'crossS_w_mid');
         fn.crossS_center= addNode( 0.0, y, 22.0, fl, 'crossS_center');
         fn.crossS_e_mid = addNode( 4.0, y, 22.0, fl, 'crossS_e_mid');
         fn.crossS_e_se  = addNode( 6.5, y, 22.0, fl, 'crossS_e_se');
-        connect(fn.hosmer_p22, fn.crossS_w_hos);
-        connect(fn.crossS_w_hos, fn.crossS_w_mid);
-        connect(fn.crossS_w_mid, fn.crossS_center);
-        connect(fn.crossS_center, fn.crossS_e_mid);
+        connect(fn.gallery_p22, fn.crossS_w_gal);
+        connect(fn.crossS_w_gal, fn.crossS_w_mid);
+        connect(fn.crossS_w_mid, fn.cross_center);
+        connect(fn.cross_center, fn.crossS_e_mid);
         connect(fn.crossS_e_mid, fn.crossS_e_se);
 
         // 8. EAST MAIN HALL (x: 4..28, z: -26..18)
@@ -6630,52 +6627,52 @@
         connect(fn.east_c_p10, fn.east_c_p15);
         connect(fn.east_w_p15, fn.east_c_p15);
 
-        // 9. HAMPSHIRE ROOM (x: -4..28, z: -40..-26)
+        // 9. NORTH GALLERY (x: -4..28, z: -40..-26)
         // West Doorway at z = -26, x = 6.0
-        fn.doorHamp_w_s = addNode(6.0, y, -23.0, fl, 'doorHamp_w_s');
-        fn.doorHamp_w_m = addNode(6.0, y, -26.0, fl, 'doorHamp_w_m');
-        fn.doorHamp_w_n = addNode(6.0, y, -29.0, fl, 'doorHamp_w_n');
-        connect(fn.east_w_n24, fn.doorHamp_w_s);
-        connect(fn.doorHamp_w_s, fn.doorHamp_w_m);
-        connect(fn.doorHamp_w_m, fn.doorHamp_w_n);
+        fn.doorNGal_w_s = addNode(6.0, y, -23.0, fl, 'doorNGal_w_s');
+        fn.doorNGal_w_m = addNode(6.0, y, -26.0, fl, 'doorNGal_w_m');
+        fn.doorNGal_w_n = addNode(6.0, y, -29.0, fl, 'doorNGal_w_n');
+        connect(fn.east_w_n24, fn.doorNGal_w_s);
+        connect(fn.doorNGal_w_s, fn.doorNGal_w_m);
+        connect(fn.doorNGal_w_m, fn.doorNGal_w_n);
 
         // East Doorway at z = -26, x = 18.2
-        fn.doorHamp_e_s = addNode(18.2, y, -23.0, fl, 'doorHamp_e_s');
-        fn.doorHamp_e_m = addNode(18.2, y, -26.0, fl, 'doorHamp_e_m');
-        fn.doorHamp_e_n = addNode(18.2, y, -29.0, fl, 'doorHamp_e_n');
-        connect(fn.east_e_n24, fn.doorHamp_e_s);
-        connect(fn.doorHamp_e_s, fn.doorHamp_e_m);
-        connect(fn.doorHamp_e_m, fn.doorHamp_e_n);
+        fn.doorNGal_e_s = addNode(18.2, y, -23.0, fl, 'doorNGal_e_s');
+        fn.doorNGal_e_m = addNode(18.2, y, -26.0, fl, 'doorNGal_e_m');
+        fn.doorNGal_e_n = addNode(18.2, y, -29.0, fl, 'doorNGal_e_n');
+        connect(fn.east_e_n24, fn.doorNGal_e_s);
+        connect(fn.doorNGal_e_s, fn.doorNGal_e_m);
+        connect(fn.doorNGal_e_m, fn.doorNGal_e_n);
 
-        // Hampshire Room Internal Grid with bench flanking bypasses
-        fn.hamp_w_n33 = addNode( 2.0, y, -33.0, fl, 'hamp_w_n33');
-        fn.hamp_c_n30 = addNode(12.0, y, -30.0, fl, 'hamp_c_n30');
-        // Flank Hampshire Room Bench at (12, -33)
-        fn.hamp_b_w   = addNode( 8.5, y, -33.0, fl, 'hamp_b_w');
-        fn.hamp_b_e   = addNode(15.5, y, -33.0, fl, 'hamp_b_e');
-        fn.hamp_c_n35 = addNode(12.0, y, -35.0, fl, 'hamp_c_n35');
-        fn.hamp_e_n33 = addNode(22.0, y, -33.0, fl, 'hamp_e_n33');
+        // North Gallery Internal Grid with bench flanking bypasses
+        fn.nGal_w_n33 = addNode( 2.0, y, -33.0, fl, 'nGal_w_n33');
+        fn.nGal_c_n30 = addNode(12.0, y, -30.0, fl, 'nGal_c_n30');
+        // Flank North Gallery Bench at (12, -33)
+        fn.nGal_b_w   = addNode( 8.5, y, -33.0, fl, 'nGal_b_w');
+        fn.nGal_b_e   = addNode(15.5, y, -33.0, fl, 'nGal_b_e');
+        fn.nGal_c_n35 = addNode(12.0, y, -35.0, fl, 'nGal_c_n35');
+        fn.nGal_e_n33 = addNode(22.0, y, -33.0, fl, 'nGal_e_n33');
 
         // Flanking the plinth at (12, -39) safely
-        fn.hamp_plinth_w = addNode( 7.0, y, -39.0, fl, 'hamp_plinth_w');
-        fn.hamp_plinth_e = addNode(17.0, y, -39.0, fl, 'hamp_plinth_e');
+        fn.nGal_plinth_w = addNode( 7.0, y, -39.0, fl, 'nGal_plinth_w');
+        fn.nGal_plinth_e = addNode(17.0, y, -39.0, fl, 'nGal_plinth_e');
 
-        connect(fn.doorHamp_w_n, fn.hamp_w_n33);
-        connect(fn.doorHamp_w_n, fn.hamp_c_n30);
-        connect(fn.doorHamp_e_n, fn.hamp_c_n30);
-        connect(fn.doorHamp_e_n, fn.hamp_e_n33);
+        connect(fn.doorNGal_w_n, fn.nGal_w_n33);
+        connect(fn.doorNGal_w_n, fn.nGal_c_n30);
+        connect(fn.doorNGal_e_n, fn.nGal_c_n30);
+        connect(fn.doorNGal_e_n, fn.nGal_e_n33);
 
-        connect(fn.hamp_w_n33, fn.hamp_b_w);
-        connect(fn.hamp_e_n33, fn.hamp_b_e);
+        connect(fn.nGal_w_n33, fn.nGal_b_w);
+        connect(fn.nGal_e_n33, fn.nGal_b_e);
 
         // Bench bypass connections
-        connect(fn.hamp_c_n30, fn.hamp_b_w);
-        connect(fn.hamp_c_n30, fn.hamp_b_e);
-        connect(fn.hamp_b_w, fn.hamp_c_n35);
-        connect(fn.hamp_b_e, fn.hamp_c_n35);
+        connect(fn.nGal_c_n30, fn.nGal_b_w);
+        connect(fn.nGal_c_n30, fn.nGal_b_e);
+        connect(fn.nGal_b_w, fn.nGal_c_n35);
+        connect(fn.nGal_b_e, fn.nGal_c_n35);
 
-        connect(fn.hamp_c_n35, fn.hamp_plinth_w);
-        connect(fn.hamp_c_n35, fn.hamp_plinth_e);
+        connect(fn.nGal_c_n35, fn.nGal_plinth_w);
+        connect(fn.nGal_c_n35, fn.nGal_plinth_e);
 
         // Restrooms & Study Room (Central Core x: -4..4, z: -14..2)
         fn.doorMens_e      = addNode(4.0, y, -12.0, fl, 'doorMens_e');
@@ -8245,10 +8242,10 @@
       drawRoomBox(-36, -6, -16, 18, T('map.label.west_museum', 'WEST MUSEUM'));
       drawRoomBox(-34, 18, -24, 28, T('map.label.west_office', 'OFFICE'));
       drawRoomBox(-24, 18, -16, 28, T('map.label.stair_a', 'STAIR A'), true);
-      drawRoomBox(-16, -18, -4, 28, T('map.label.hosmer_gallery', 'HOSMER GALLERY'));
+      drawRoomBox(-16, -18, -4, 28, T('map.label.buffoon_gallery', 'BUFFOON GALLERY'));
       drawRoomBox(-4, -26, 4, -14, T('map.label.stair_b', 'STAIR B'), true);
       drawRoomBox(-4, -14, 4, 2, T('map.label.study_wc', 'STUDY/WC'));
-      drawRoomBox(-4, -40, 28, -26, T('map.label.hampshire_room', 'HAMPSHIRE ROOM'));
+      drawRoomBox(-4, -40, 28, -26, T('map.label.north_gallery', 'NORTH GALLERY'));
       drawRoomBox(4, -26, 28, 18, T('map.label.arts_music_stacks', 'ARTS & MUSIC STACKS'));
       drawRoomBox(19, 8, 33, 18, T('map.label.east_office', 'OFFICE'));
       drawRoomBox(4, 18, 28, 28, T('map.label.media_wing', 'MEDIA WING'));
@@ -10647,7 +10644,11 @@
     }
   }
 
-  window.addEventListener('DOMContentLoaded', () => {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', () => {
+      window.gameInstance = new MuseumGame();
+    });
+  } else {
     window.gameInstance = new MuseumGame();
-  });
+  }
 })();

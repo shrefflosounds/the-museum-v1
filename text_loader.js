@@ -77,7 +77,7 @@
 
   // Room name shown at the top of the screen when the game starts
   var room = document.getElementById('room-indicator');
-  if (room) room.textContent = t('hud.room_format', '{floor} • {area}', { floor: t('floor.1', '1ST FLOOR'), area: t('area.hosmer_gallery', 'HOSMER GALLERY') });
+  if (room) room.textContent = t('hud.room_format', '{floor} • {area}', { floor: t('floor.1', '1ST FLOOR'), area: t('area.buffoon_gallery', 'BUFFOON GALLERY') });
 
   // "✓ RECOVERED" tag on the map checklist
   if (has('map.recovered_tag')) {

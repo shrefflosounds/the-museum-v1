@@ -7,7 +7,7 @@
 
 ## What Is Live
 
-- **Forbes Museum 4-Story Architecture:** Realistic floorplan, dual 4-story U-stairwells, and ambient gallery spaces.
+- **Museum 4-Story Architecture:** Realistic floorplan, dual 4-story U-stairwells, and ambient gallery spaces.
 - **Curator AI:** Multi-floor graph-navigating stalker entity with sightlines, bench flanking, search behavior, and custom audio.
 - **Relic Scavenger Quest:** 14 randomized relic pedestals and plinths, floor checklists, and emergency exit unlock.
 - **Gallery Artwork System:** 136 curated paintings with [E] artwork lightboxes and live Neocities artist links.

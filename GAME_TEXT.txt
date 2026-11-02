@@ -116,7 +116,7 @@ floor.4 = 4TH FLOOR
 
 
 [ ROOM NAMES (TOP OF SCREEN AS YOU WALK AROUND) ]
-area.hosmer_gallery = BUFFOON GALLERY
+area.buffoon_gallery = BUFFOON GALLERY
 area.magazines_alcove = YELLOW CREATURE'S ALCOVE
 area.stairwell_a = SOUTH-WEST STAIRWELL A
 area.stairwell_b = NORTH-CENTRAL STAIRWELL B
@@ -204,10 +204,10 @@ map.close_hint = Release or Press [Tab] to close map
 map.label.west_museum = WEST MUSEUM
 map.label.west_office = OFFICE
 map.label.stair_a = STAIR A
-map.label.hosmer_gallery = HOSMER GALLERY
+map.label.buffoon_gallery = BUFFOON GALLERY
 map.label.stair_b = STAIR B
 map.label.study_wc = STUDY/WC
-map.label.hampshire_room = HAMPSHIRE ROOM
+map.label.north_gallery = NORTH GALLERY
 map.label.arts_music_stacks = ARTS & MUSIC STACKS
 map.label.east_office = OFFICE
 map.label.media_wing = MEDIA WING
