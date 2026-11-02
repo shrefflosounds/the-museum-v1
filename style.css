@@ -972,15 +972,33 @@ body.game-playing #game-container {
 .about-card {
   background: radial-gradient(ellipse at 50% 50%, rgba(20, 27, 40, 0.85) 0%, rgba(15, 23, 42, 0.60) 80%, rgba(15, 23, 42, 0) 100%);
   border-radius: 20px;
-  padding: 22px 24px;
+  padding: 24px 26px;
   border: 1px solid rgba(255, 255, 255, 0.08);
   font-family: 'Caryn', 'Papyrus', cursive, serif;
   text-align: center;
   box-sizing: border-box;
 }
 
+.about-icon-wrap {
+  margin: 0 auto 14px auto;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.about-icon {
+  width: 64px;
+  height: 64px;
+  display: block;
+  object-fit: contain;
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
 .about-lead {
-  font-size: 15px;
+  font-size: 16px;
   color: #cbd5e1;
   margin-bottom: 12px;
   line-height: 1.45;

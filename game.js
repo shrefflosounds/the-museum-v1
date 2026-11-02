@@ -8,7 +8,7 @@
 (() => {
   'use strict';
 
-  const APP_VERSION = 'm00000-001';
+  const APP_VERSION = 'v1.1.0';
   window.APP_VERSION = APP_VERSION;
 
   // --- EDITABLE GAME TEXT (loaded from GAME_TEXT.txt by text_loader.js) ---

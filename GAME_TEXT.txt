@@ -47,8 +47,9 @@ options.done = DONE
 
 [ ABOUT ]
 about.title = ABOUT
+about.description = **The Museum** - An interactive art exhibit
 about.byline = By Smitty Fantastic, built with Antigravity.
-about.build = Build m00000-001
+about.build = Version 1.1.0 (Build 110)
 about.done = DONE
 
 
