@@ -4841,13 +4841,13 @@
         // Men's stalls & toilets
         { type: 'box', floor: fl, minX: -3.8, maxX: -1.75, minZ: -13.85, maxZ: -10.15 },
         // Men's vanity
-        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -13.85, maxZ: -13.15 },
+        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -13.85, maxZ: -13.15, minY: y0, maxY: y0 + 0.90 },
         // Men's urinals
         { type: 'box', floor: fl, minX: 0.3, maxX: 2.3, minZ: -10.6, maxZ: -10.15 },
         // Women's stalls & toilets
         { type: 'box', floor: fl, minX: -3.8, maxX: -1.75, minZ: -9.85, maxZ: -6.15 },
         // Women's vanity
-        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -6.85, maxZ: -6.15 }
+        { type: 'box', floor: fl, minX: -0.1, maxX: 2.9, minZ: -6.85, maxZ: -6.15, minY: y0, maxY: y0 + 0.90 }
       );
     }
 
@@ -4901,7 +4901,9 @@
             minX: -2.4,
             maxX: 1.2,
             minZ: cz - 0.85,
-            maxZ: cz + 0.85
+            maxZ: cz + 0.85,
+            minY: y0,
+            maxY: y0 + 0.85
           });
         });
 
@@ -4930,7 +4932,9 @@
           minX: 2.0,
           maxX: 3.2,
           minZ: 0.6,
-          maxZ: 1.4
+          maxZ: 1.4,
+          minY: y0,
+          maxY: y0 + 1.30
         });
       } else if (fl === 1) {
         // --- FLOOR 1: CALVIN COOLIDGE PRESIDENTIAL STUDY SUITE ---
@@ -4951,8 +4955,8 @@
         this.scene.add(execChair);
 
         this.colliders.push(
-          { type: 'box', floor: fl, minX: -2.3, maxX: 1.1, minZ: -3.0, maxZ: -1.0 },
-          { type: 'box', floor: fl, minX: -3.0, maxX: -2.2, minZ: -2.4, maxZ: -1.6 }
+          { type: 'box', floor: fl, minX: -2.3, maxX: 1.1, minZ: -3.0, maxZ: -1.0, minY: y0, maxY: y0 + 0.85 },
+          { type: 'box', floor: fl, minX: -3.0, maxX: -2.2, minZ: -2.4, maxZ: -1.6, minY: y0, maxY: y0 + 1.20 }
         );
       } else {
         // --- FLOOR 3: HISTORIC ARCHIVES & CURATOR VAULT ---
@@ -5029,8 +5033,8 @@
         this.scene.add(chair);
 
         this.colliders.push(
-          { type: 'box', floor: fl, minX: -3.3, maxX: -2.3, minZ: -3.8, maxZ: -0.3 },
-          { type: 'box', floor: fl, minX: -0.7, maxX: 1.9, minZ: -2.8, maxZ: -1.2 }
+          { type: 'box', floor: fl, minX: -3.3, maxX: -2.3, minZ: -3.8, maxZ: -0.3, minY: y0, maxY: y0 + 1.35 },
+          { type: 'box', floor: fl, minX: -0.7, maxX: 1.9, minZ: -2.8, maxZ: -1.2, minY: y0, maxY: y0 + 0.82 }
         );
       }
     }
@@ -5093,7 +5097,9 @@
             minX: cx - 0.5,
             maxX: cx + 0.5,
             minZ: cz - 0.3,
-            maxZ: cz + 0.3
+            maxZ: cz + 0.3,
+            minY: y0,
+            maxY: y0 + 0.90
           });
         });
       } else {
@@ -5123,7 +5129,9 @@
         floor: floor,
         x: x,
         z: z,
-        radius: 1.6
+        radius: 1.6,
+        minY: y,
+        maxY: y + 1.15
       });
     }
 
@@ -5159,7 +5167,7 @@
 
       this.scene.add(benchGroup);
 
-      // Solid physical obstacle collider for the bench across its floor
+      // Solid physical obstacle collider for the bench across its floor (height: 0.65m)
       const fl = Math.round(y / CONFIG.FLOOR_HEIGHT);
       this.colliders.push({
         type: 'box',
@@ -5167,7 +5175,9 @@
         minX: x - 1.54,
         maxX: x + 1.54,
         minZ: z - 0.54,
-        maxZ: z + 0.54
+        maxZ: z + 0.54,
+        minY: y,
+        maxY: y + 0.65
       });
     }
 
@@ -5216,7 +5226,9 @@
         minX: x - w / 2,
         maxX: x + w / 2,
         minZ: z - d / 2,
-        maxZ: z + d / 2
+        maxZ: z + d / 2,
+        minY: y,
+        maxY: y + h
       });
 
       if (hasStanchions) {
@@ -5274,7 +5286,9 @@
         minX: x - 1.4,
         maxX: x + 1.4,
         minZ: z - 0.65,
-        maxZ: z + 0.65
+        maxZ: z + 0.65,
+        minY: y,
+        maxY: y + 1.15
       });
     }
 
@@ -5289,7 +5303,9 @@
         minX: x - w / 2,
         maxX: x + w / 2,
         minZ: z - d / 2,
-        maxZ: z + d / 2
+        maxZ: z + d / 2,
+        minY: y,
+        maxY: y + h
       });
     }
 
@@ -7868,7 +7884,8 @@
         for (let s = 0; s < subSteps; s++) {
           this.playerPos.x += _tempMoveDir.x * moveSpeed * stepDt;
           this.playerPos.z += _tempMoveDir.z * moveSpeed * stepDt;
-          this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor);
+          const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+          this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation);
         }
 
         if (isNaN(this.playerPos.x) || isNaN(this.playerPos.z)) {
@@ -7906,16 +7923,6 @@
         this.audio.playMarbleFootstep();
       }
 
-      if (!this.isGrounded) {
-        this.jumpVelocity -= CONFIG.PLAYER.GRAVITY * delta;
-        this.jumpOffset += this.jumpVelocity * delta;
-        if (this.jumpOffset <= 0) {
-          this.jumpOffset = 0;
-          this.jumpVelocity = 0;
-          this.isGrounded = true;
-        }
-      }
-
       const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor);
       if (elev.floor !== this.playerFloor) {
         this.playerFloor = elev.floor;
@@ -7924,10 +7931,15 @@
         this.playerFloor = elev.floor;
       }
 
+      // Check platform standing surface (benches, plinths, desks, crates)
+      const platformSurfaceY = this.getPlatformSurfaceY(this.playerPos.x, this.playerPos.z, this.playerFloor);
+      const groundY = Math.max(elev.y, platformSurfaceY);
+
       const targetEyeH = isCrouching ? CONFIG.PLAYER.CROUCH_HEIGHT : CONFIG.PLAYER.CAMERA_HEIGHT;
       this.currentCamHeight = THREE.MathUtils.lerp(this.currentCamHeight, targetEyeH, Math.min(1, delta * 12));
 
-      const targetCamY = elev.y + this.currentCamHeight;
+      const targetCamY = groundY + this.currentCamHeight;
+
       if (this.isFalling) {
         this.fallVelocity = (this.fallVelocity || 0) + CONFIG.PLAYER.GRAVITY * 1.5 * delta;
         this.playerPos.y -= this.fallVelocity * delta;
@@ -7938,8 +7950,32 @@
           this.isGrounded = true;
           this.audio.playMarbleFootstep();
         }
+      } else if (!this.isGrounded) {
+        this.jumpVelocity -= CONFIG.PLAYER.GRAVITY * delta;
+        this.jumpOffset += this.jumpVelocity * delta;
+        const currentFootY = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+        if (currentFootY <= groundY) {
+          // Landed on floor or platform!
+          this.jumpOffset = 0;
+          this.jumpVelocity = 0;
+          this.isGrounded = true;
+          this.playerPos.y = targetCamY;
+          this.audio.playMarbleFootstep();
+        }
       } else {
-        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * 14));
+        // Player is grounded. Check if they walked off an elevated edge (e.g. walked off bench or crate to floor below)
+        const currentFootY = this.playerPos.y - this.currentCamHeight;
+        if (!this.playerStairState.active && currentFootY > groundY + 0.18) {
+          // Walked off an edge into the air!
+          this.isGrounded = false;
+          this.jumpVelocity = 0;
+          this.jumpOffset = currentFootY - groundY;
+          this.playerPos.y = targetCamY;
+        } else {
+          // Smoothly adapt to stairs, slopes, or platform surface
+          this.jumpOffset = 0;
+          this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * 16));
+        }
       }
 
       this.trackCurrentRoom();
@@ -7965,11 +8001,36 @@
       this.updateHud();
     }
 
-    resolveCollisions(pos, radius, floorIdx) {
+    getPlatformSurfaceY(x, z, floorIdx) {
+      const y0 = floorIdx * CONFIG.FLOOR_HEIGHT;
+      let maxSurfaceY = y0;
+      for (let i = 0; i < this.colliders.length; i++) {
+        const c = this.colliders[i];
+        if (c.floor !== 'all' && c.floor !== floorIdx) continue;
+        if (c.maxY === undefined) continue;
+        if (c.type === 'box') {
+          if (x >= c.minX && x <= c.maxX && z >= c.minZ && z <= c.maxZ) {
+            if (c.maxY > maxSurfaceY) maxSurfaceY = c.maxY;
+          }
+        } else if (c.type === 'cylinder') {
+          const dx = x - c.x;
+          const dz = z - c.z;
+          if (dx * dx + dz * dz <= c.radius * c.radius) {
+            if (c.maxY > maxSurfaceY) maxSurfaceY = c.maxY;
+          }
+        }
+      }
+      return maxSurfaceY;
+    }
+
+    resolveCollisions(pos, radius, floorIdx, footElevation = -999) {
       for (let iter = 0; iter < 3; iter++) {
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
           if (c.floor !== 'all' && c.floor !== floorIdx) continue;
+
+          // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
+          if (c.maxY !== undefined && footElevation >= (c.maxY - 0.12)) continue;
 
           if (c.type === 'box') {
             if (c.minX === c.maxX || c.minZ === c.maxZ) continue;
