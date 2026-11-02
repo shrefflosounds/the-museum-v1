@@ -5725,25 +5725,41 @@
         const y = fl * CONFIG.FLOOR_HEIGHT;
         const fn = {};
 
-        // 1. HOSMER GALLERY SPINE (x: -10, z: -16 to 26)
+        // 1. HOSMER GALLERY SPINE (x: -10, z: -16 to 26) with bench flanking bypasses
         fn.hosmer_n16 = addNode(-10.0, y, -16.0, fl, 'hosmer_n16');
         fn.hosmer_n10 = addNode(-10.0, y, -10.0, fl, 'hosmer_n10');
         fn.hosmer_n2  = addNode(-10.0, y,  -2.0, fl, 'hosmer_n2');
-        fn.hosmer_p2  = addNode(-10.0, y,   2.0, fl, 'hosmer_p2');
-        fn.hosmer_p6  = addNode(-10.0, y,   6.0, fl, 'hosmer_p6');
-        fn.hosmer_p10 = addNode(-10.0, y,  10.0, fl, 'hosmer_p10');
-        fn.hosmer_p14 = addNode(-10.0, y,  14.0, fl, 'hosmer_p14');
-        fn.hosmer_p18 = addNode(-10.0, y,  18.0, fl, 'hosmer_p18');
-        fn.hosmer_p22 = addNode(-10.0, y,  22.0, fl, 'hosmer_p22');
-        fn.hosmer_p26 = addNode(-10.0, y,  26.0, fl, 'hosmer_p26');
+        // Flank North Bench at (-10, 0)
+        fn.hosmer_b0_w = addNode(-13.0, y,   0.0, fl, 'hosmer_b0_w');
+        fn.hosmer_b0_e = addNode( -7.0, y,   0.0, fl, 'hosmer_b0_e');
+        fn.hosmer_p2   = addNode(-10.0, y,   2.0, fl, 'hosmer_p2');
+        fn.hosmer_p6   = addNode(-10.0, y,   6.0, fl, 'hosmer_p6');
+        fn.hosmer_p10  = addNode(-10.0, y,  10.0, fl, 'hosmer_p10');
+        // Flank South Bench at (-10, 14)
+        fn.hosmer_b14_w= addNode(-13.0, y,  14.0, fl, 'hosmer_b14_w');
+        fn.hosmer_b14_e= addNode( -7.0, y,  14.0, fl, 'hosmer_b14_e');
+        fn.hosmer_p18  = addNode(-10.0, y,  18.0, fl, 'hosmer_p18');
+        fn.hosmer_p22  = addNode(-10.0, y,  22.0, fl, 'hosmer_p22');
+        fn.hosmer_p26  = addNode(-10.0, y,  26.0, fl, 'hosmer_p26');
 
         connect(fn.hosmer_n16, fn.hosmer_n10);
         connect(fn.hosmer_n10, fn.hosmer_n2);
-        connect(fn.hosmer_n2,  fn.hosmer_p2);
+
+        // North Bench bypass:
+        connect(fn.hosmer_n2, fn.hosmer_b0_w);
+        connect(fn.hosmer_n2, fn.hosmer_b0_e);
+        connect(fn.hosmer_b0_w, fn.hosmer_p2);
+        connect(fn.hosmer_b0_e, fn.hosmer_p2);
+
         connect(fn.hosmer_p2,  fn.hosmer_p6);
         connect(fn.hosmer_p6,  fn.hosmer_p10);
-        connect(fn.hosmer_p10, fn.hosmer_p14);
-        connect(fn.hosmer_p14, fn.hosmer_p18);
+
+        // South Bench bypass:
+        connect(fn.hosmer_p10, fn.hosmer_b14_w);
+        connect(fn.hosmer_p10, fn.hosmer_b14_e);
+        connect(fn.hosmer_b14_w, fn.hosmer_p18);
+        connect(fn.hosmer_b14_e, fn.hosmer_p18);
+
         connect(fn.hosmer_p18, fn.hosmer_p22);
         connect(fn.hosmer_p22, fn.hosmer_p26);
 
@@ -5769,7 +5785,7 @@
         fn.doorW_S_hos = addNode(-12.5, y, 14.0, fl, 'doorW_S_hos');
         fn.doorW_S_mid = addNode(-16.0, y, 14.0, fl, 'doorW_S_mid');
         fn.doorW_S_in  = addNode(-19.5, y, 14.0, fl, 'doorW_S_in');
-        connect(fn.hosmer_p14, fn.doorW_S_hos);
+        connect(fn.hosmer_b14_w, fn.doorW_S_hos);
         connect(fn.doorW_S_hos, fn.doorW_S_mid);
         connect(fn.doorW_S_mid, fn.doorW_S_in);
 
@@ -5970,10 +5986,13 @@
         connect(fn.doorHamp_e_s, fn.doorHamp_e_m);
         connect(fn.doorHamp_e_m, fn.doorHamp_e_n);
 
-        // Hampshire Room Internal Grid
+        // Hampshire Room Internal Grid with bench flanking bypasses
         fn.hamp_w_n33 = addNode( 2.0, y, -33.0, fl, 'hamp_w_n33');
         fn.hamp_c_n30 = addNode(12.0, y, -30.0, fl, 'hamp_c_n30');
-        fn.hamp_c_n34 = addNode(12.0, y, -34.0, fl, 'hamp_c_n34');
+        // Flank Hampshire Room Bench at (12, -33)
+        fn.hamp_b_w   = addNode( 8.5, y, -33.0, fl, 'hamp_b_w');
+        fn.hamp_b_e   = addNode(15.5, y, -33.0, fl, 'hamp_b_e');
+        fn.hamp_c_n35 = addNode(12.0, y, -35.0, fl, 'hamp_c_n35');
         fn.hamp_e_n33 = addNode(22.0, y, -33.0, fl, 'hamp_e_n33');
 
         // Flanking the plinth at (12, -39) safely
@@ -5985,12 +6004,17 @@
         connect(fn.doorHamp_e_n, fn.hamp_c_n30);
         connect(fn.doorHamp_e_n, fn.hamp_e_n33);
 
-        connect(fn.hamp_w_n33, fn.hamp_c_n34);
-        connect(fn.hamp_c_n30, fn.hamp_c_n34);
-        connect(fn.hamp_e_n33, fn.hamp_c_n34);
+        connect(fn.hamp_w_n33, fn.hamp_b_w);
+        connect(fn.hamp_e_n33, fn.hamp_b_e);
 
-        connect(fn.hamp_c_n34, fn.hamp_plinth_w);
-        connect(fn.hamp_c_n34, fn.hamp_plinth_e);
+        // Bench bypass connections
+        connect(fn.hamp_c_n30, fn.hamp_b_w);
+        connect(fn.hamp_c_n30, fn.hamp_b_e);
+        connect(fn.hamp_b_w, fn.hamp_c_n35);
+        connect(fn.hamp_b_e, fn.hamp_c_n35);
+
+        connect(fn.hamp_c_n35, fn.hamp_plinth_w);
+        connect(fn.hamp_c_n35, fn.hamp_plinth_e);
 
         // Restrooms & Study Room (Central Core x: -4..4, z: -14..2)
         fn.doorMens_e      = addNode(4.0, y, -12.0, fl, 'doorMens_e');
@@ -8846,6 +8870,15 @@
         const c = this.colliders[i];
         if (c.floor !== 'all' && c.floor !== this.smittyFloor && c.floor !== this.playerFloor) continue;
         if (c.type === 'box') {
+          // Low obstacles (benches with height <= 0.75m) do not block sight when player is standing
+          if (c.maxY !== undefined) {
+            const fl = c.floor === 'all' ? this.smittyFloor : c.floor;
+            const y0 = fl * CONFIG.FLOOR_HEIGHT;
+            const obstacleHeight = c.maxY - y0;
+            if (obstacleHeight <= 0.75 && !this.isCrouching) {
+              continue; // Smitty sees clearly over bench tops
+            }
+          }
           if (lineIntersectsBox(x0, z0, x1, z1, c.minX, c.maxX, c.minZ, c.maxZ)) {
             return false;
           }
@@ -8965,8 +8998,9 @@
             this.smittyPathIndex++;
             targetNode = this.smittyPath[this.smittyPathIndex];
           } else {
-            // Reached last waypoint. Check if direct path to goalPos is completely clear on same floor
-            if (goalFloor === this.smittyFloor && this.hasClearNavPath(this.smittyPos, goalPos, this.smittyFloor, 0.48)) {
+            // Reached last waypoint. If within striking range of player (even on a bench/platform) or path is clear, close in directly
+            const distToGoal = Math.hypot(this.smittyPos.x - goalPos.x, this.smittyPos.z - goalPos.z);
+            if (goalFloor === this.smittyFloor && (distToGoal <= CONFIG.SMITTY.ATTACK_RANGE + 0.35 || this.hasClearNavPath(this.smittyPos, goalPos, this.smittyFloor, 0.48))) {
               targetNode = goalPos;
             } else {
               // Goal is behind a corner; replan next frame
