@@ -28,6 +28,13 @@
       this.stepToggle = false;
       this.customBuffers = {};
       this.activeMonsterSources = [];
+      this.gameplayActive = false;
+      this.menuMusicActive = false;
+      this.pendingMenuMusic = false;
+      this.menuMusicSource = null;
+      this.menuMusicGain = null;
+      this.roomToneSource = null;
+      this.roomToneGain = null;
     }
 
     init() {
@@ -64,8 +71,9 @@
       const files = [
         'player_footstep.wav', 'smitty_footstep.wav', 'weapon_shot.wav',
         'weapon_empty_click.wav', 'weapon_reload.wav', 'flashlight_click.wav',
-        'relic_chime.wav', 'lockdown_disengaged.wav', 'smitty_growl.wav',
-        'jumpscare_stinger.wav', 'heartbeat_pulse.wav', 'room_tone_ambience.wav'
+        'relic_chime.wav', 'lockdown_disengaged.wav', 'lockdown_disengaged_death_scream.wav',
+        'smitty_growl.wav', 'jumpscare_stinger.wav', 'heartbeat_pulse.wav',
+        'room_tone_ambience.wav', 'MainMenu-byR3E4.wav'
       ];
       const audioVer = window._ASSET_VERSION || Date.now();
       for (const name of files) {
@@ -77,6 +85,11 @@
               this.customBuffers[name] = buf;
               if (name === 'room_tone_ambience.wav') {
                 this.startRoomTone();
+              }
+              if (name === 'MainMenu-byR3E4.wav') {
+                if (this.menuMusicActive || this.pendingMenuMusic) {
+                  this.playMenuMusic();
+                }
               }
             }, () => {});
           }
@@ -148,11 +161,12 @@
         src.buffer = this.customBuffers['room_tone_ambience.wav'];
         src.loop = true;
         const gain = this.ctx.createGain();
-        gain.gain.value = 0.56; // Boosted by +60% (from 0.35)
+        gain.gain.value = this.gameplayActive ? 0.56 : 0.0001; // Silent during menus
         src.connect(gain);
         gain.connect(this.masterGain);
         src.start();
         this.roomToneSource = src;
+        this.roomToneGain = gain;
         return;
       }
       if (!this.noiseBuffer) return;
@@ -166,18 +180,123 @@
       filter.frequency.value = 68;
 
       const gain = this.ctx.createGain();
-      gain.gain.value = 0.18; // Boosted by +60% (from 0.11)
+      gain.gain.value = this.gameplayActive ? 0.18 : 0.0001; // Silent during menus
 
       src.connect(filter);
       filter.connect(gain);
       gain.connect(this.masterGain);
       src.start();
       this.roomToneSource = src;
+      this.roomToneGain = gain;
+    }
+
+    startGameplayAudio() {
+      this.gameplayActive = true;
+      if (!this.roomToneSource) {
+        this.startRoomTone();
+      } else if (this.roomToneGain && this.ctx) {
+        const now = this.ctx.currentTime;
+        const targetVol = (this.customBuffers && this.customBuffers['room_tone_ambience.wav']) ? 0.56 : 0.18;
+        this.roomToneGain.gain.cancelScheduledValues(now);
+        this.roomToneGain.gain.setValueAtTime(this.roomToneGain.gain.value, now);
+        this.roomToneGain.gain.linearRampToValueAtTime(targetVol, now + 0.3);
+      }
+    }
+
+    pauseGameplayAudio() {
+      this.gameplayActive = false;
+      if (this.roomToneGain && this.ctx) {
+        const now = this.ctx.currentTime;
+        this.roomToneGain.gain.cancelScheduledValues(now);
+        this.roomToneGain.gain.setValueAtTime(this.roomToneGain.gain.value, now);
+        this.roomToneGain.gain.linearRampToValueAtTime(0.0001, now + 0.2);
+      }
+    }
+
+    resumeGameplayAudio() {
+      this.gameplayActive = true;
+      if (!this.roomToneSource) {
+        this.startRoomTone();
+      } else if (this.roomToneGain && this.ctx) {
+        const now = this.ctx.currentTime;
+        const targetVol = (this.customBuffers && this.customBuffers['room_tone_ambience.wav']) ? 0.56 : 0.18;
+        this.roomToneGain.gain.cancelScheduledValues(now);
+        this.roomToneGain.gain.setValueAtTime(this.roomToneGain.gain.value, now);
+        this.roomToneGain.gain.linearRampToValueAtTime(targetVol, now + 0.3);
+      }
+    }
+
+    playMenuMusic() {
+      this.menuMusicActive = true;
+      if (!this.ctx) {
+        this.init();
+      }
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+
+      const buf = this.customBuffers['MainMenu-byR3E4.wav'];
+      if (!buf) {
+        this.pendingMenuMusic = true;
+        return;
+      }
+      this.pendingMenuMusic = false;
+
+      if (this.menuMusicSource && this.menuMusicGain) {
+        const now = this.ctx.currentTime;
+        this.menuMusicGain.gain.cancelScheduledValues(now);
+        this.menuMusicGain.gain.setValueAtTime(this.menuMusicGain.gain.value, now);
+        this.menuMusicGain.gain.linearRampToValueAtTime(1.0, now + 0.25);
+        return;
+      }
+
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(1.0, this.ctx.currentTime + 0.25);
+
+      src.connect(gain);
+      gain.connect(this.masterGain);
+
+      src.start();
+      this.menuMusicSource = src;
+      this.menuMusicGain = gain;
+    }
+
+    fadeOutMenuMusic(duration = 0.45) {
+      this.menuMusicActive = false;
+      this.pendingMenuMusic = false;
+      if (!this.menuMusicSource || !this.menuMusicGain || !this.ctx) {
+        return;
+      }
+
+      const now = this.ctx.currentTime;
+      const currentGain = this.menuMusicGain.gain.value;
+      this.menuMusicGain.gain.cancelScheduledValues(now);
+      this.menuMusicGain.gain.setValueAtTime(currentGain, now);
+      this.menuMusicGain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+      const oldSource = this.menuMusicSource;
+      const oldGain = this.menuMusicGain;
+      this.menuMusicSource = null;
+      this.menuMusicGain = null;
+
+      setTimeout(() => {
+        try {
+          oldSource.stop();
+          oldSource.disconnect();
+          oldGain.disconnect();
+        } catch (e) {}
+      }, duration * 1000 + 50);
     }
 
     startHeartbeatLoop() {
       const beat = () => {
-        if (this.initialized && this.ctx && this.ctx.state === 'running') {
+        if (this.initialized && this.gameplayActive && this.ctx && this.ctx.state === 'running') {
           if (this.currentBpm > 65) {
             const intensity = Math.min(1.0, (this.currentBpm - 60) / 110);
             this.triggerThump(0, 52, 0.42 * intensity);
@@ -409,7 +528,8 @@
 
     playLockdownDisengaged() {
       if (!this.ctx) return;
-      if (this.playCustom('lockdown_disengaged.wav', null, 1.36)) return;
+      if (this.playCustom('lockdown_disengaged_death_scream.wav', null, 1.36) ||
+          this.playCustom('lockdown_disengaged.wav', null, 1.36)) return;
       const now = this.ctx.currentTime;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
@@ -425,6 +545,13 @@
       if (this.reverbNode) gain.connect(this.reverbNode);
       osc.start(now);
       osc.stop(now + 1.0);
+    }
+
+    playSmittyDeath() {
+      if (!this.ctx) return;
+      if (this.playCustom('lockdown_disengaged_death_scream.wav', null, 1.55) ||
+          this.playCustom('lockdown_disengaged.wav', null, 1.55)) return;
+      this.playLockdownDisengaged();
     }
 
     playSmittyGrowl() {
@@ -2918,6 +3045,9 @@
       this.navAdj = [];
       this.exitDoors = null;
       this.exitUnlocked = false;
+      this.exitDoorsOpening = false;
+      this.leftDoorPivot = null;
+      this.rightDoorPivot = null;
       this.focusedPainting = null;
 
       // Smitty Horror AI State: Spawns on 4th Floor (floor 3) in the North-East Restricted Reliquary
@@ -3042,8 +3172,7 @@
         deathKeys: document.getElementById('death-keys'),
         deathShots: document.getElementById('death-shots'),
         deathHits: document.getElementById('death-hits'),
-        winTime: document.getElementById('win-time'),
-        winAccuracy: document.getElementById('win-accuracy')
+        winTime: document.getElementById('win-time')
       };
 
       window.game = this;
@@ -3066,6 +3195,8 @@
       }
       this.setupEventListeners();
       this.updateSmittyModeUI();
+      this.audio.init();
+      this.audio.playMenuMusic();
       this.animate();
     }
 
@@ -3267,8 +3398,8 @@
       if (fl === 0) {
         this.createWall(-14.1, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);     // -15.8..-12.4
         this.createWall(-5.9, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);      // -7.6..-4.2
-        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat);             // -12.4..-7.6
-        this.createExitDoors(-10.0, 0, 28);
+        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat, 4.68);       // High lintel above grand stone arch
+        this.createExitDoors(-10.0, 0, 28, mats);
       } else {
         this.createWall(-10, yc, 28, 11.6, wallH, t, mainWallMat, true, fl);      // -15.8..-4.2
       }
@@ -4862,27 +4993,281 @@
       });
     }
 
-    createExitDoors(x, y, z) {
+    createExitDoors(x, y, z, mats) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
 
-      const glassMat = new THREE.MeshLambertMaterial({
-        color: 0x1e3a5f,
-        transparent: true,
-        opacity: 0.65
+      // Photographic internet-accurate textures from the reference arched door (Image 3)
+      const doorLeftTex = this.texLoader.load('assets/textures/exit_door_left.jpg', (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+      });
+      const doorRightTex = this.texLoader.load('assets/textures/exit_door_right.jpg', (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+      });
+      const woodTex = this.texLoader.load('assets/textures/exit_doors_wood.jpg', (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+        t.wrapS = THREE.RepeatWrapping;
+        t.wrapT = THREE.RepeatWrapping;
       });
 
-      this.exitDoors = new THREE.Mesh(new THREE.BoxGeometry(4.8, 3.8, 0.18), glassMat);
-      this.exitDoors.position.set(0, 1.9, 0);
-      group.add(this.exitDoors);
+      // Rich antique dark oak wood materials with specular highlights
+      const doorLeftMat = new THREE.MeshPhongMaterial({
+        map: doorLeftTex,
+        color: 0xffffff,
+        specular: 0x33261a,
+        shininess: 18
+      });
+      const doorRightMat = new THREE.MeshPhongMaterial({
+        map: doorRightTex,
+        color: 0xffffff,
+        specular: 0x33261a,
+        shininess: 18
+      });
+      const darkOakMat = new THREE.MeshPhongMaterial({
+        map: woodTex,
+        color: 0x5a3e28,
+        specular: 0x221a10,
+        shininess: 12
+      });
 
-      const lockMat = new THREE.MeshBasicMaterial({ color: 0x991b1b });
-      this.exitLockMesh = new THREE.Mesh(new THREE.BoxGeometry(3.2, 0.18, 0.28), lockMat);
-      this.exitLockMesh.position.set(0, 1.9, -0.15);
-      group.add(this.exitLockMesh);
+      // Forbes Library carved limestone portal arch materials
+      const stoneMat = new THREE.MeshPhongMaterial({
+        color: 0xe2ded6,
+        specular: 0x1f1f1f,
+        shininess: 8
+      });
+      const stoneAccentMat = new THREE.MeshPhongMaterial({
+        color: 0xd0cbc2,
+        specular: 0x282828,
+        shininess: 10
+      });
+
+      // Antique dark bronze / wrought iron door hardware
+      const ironMat = new THREE.MeshPhongMaterial({
+        color: 0x1c1917,
+        specular: 0x887766,
+        shininess: 48
+      });
+
+      const doorW = 1.40;
+      const straightH = 3.10;
+      const totalH = 4.50;
+      const doorDepth = 0.09;
+
+      const extrudeSettings = {
+        depth: doorDepth,
+        bevelEnabled: true,
+        bevelThickness: 0.012,
+        bevelSize: 0.012,
+        bevelSegments: 2,
+        curveSegments: 36
+      };
+
+      // --- 1. LEFT DOOR LEAF (Pivots on outer left hinge: x = -1.40) ---
+      const leftShape = new THREE.Shape();
+      leftShape.moveTo(0, 0);
+      leftShape.lineTo(doorW, 0);
+      leftShape.lineTo(doorW, totalH);
+      leftShape.absarc(doorW, straightH, doorW, Math.PI / 2, Math.PI, false);
+      leftShape.lineTo(0, 0);
+
+      const leftGeom = new THREE.ExtrudeGeometry(leftShape, extrudeSettings);
+      leftGeom.translate(0, 0, -doorDepth / 2);
+
+      // Normalize UVs so photographic texture maps seamlessly [0, 1] across the door leaf
+      const leftPos = leftGeom.attributes.position;
+      const leftUv = leftGeom.attributes.uv;
+      for (let i = 0; i < leftPos.count; i++) {
+        const px = leftPos.getX(i);
+        const py = leftPos.getY(i);
+        leftUv.setXY(i, Math.max(0, Math.min(1, px / doorW)), Math.max(0, Math.min(1, py / totalH)));
+      }
+      leftUv.needsUpdate = true;
+
+      const leftDoorMesh = new THREE.Mesh(leftGeom, [doorLeftMat, darkOakMat]);
+
+      this.leftDoorPivot = new THREE.Group();
+      this.leftDoorPivot.position.set(-doorW, 0, 0);
+      this.leftDoorPivot.add(leftDoorMesh);
+
+      // --- 2. RIGHT DOOR LEAF (Pivots on outer right hinge: x = +1.40) ---
+      const rightShape = new THREE.Shape();
+      rightShape.moveTo(0, 0);
+      rightShape.lineTo(-doorW, 0);
+      rightShape.lineTo(-doorW, totalH);
+      rightShape.absarc(-doorW, straightH, doorW, Math.PI / 2, 0, true);
+      rightShape.lineTo(0, 0);
+
+      const rightGeom = new THREE.ExtrudeGeometry(rightShape, extrudeSettings);
+      rightGeom.translate(0, 0, -doorDepth / 2);
+
+      // Normalize UVs so photographic texture maps seamlessly [0, 1] across the right leaf
+      const rightPos = rightGeom.attributes.position;
+      const rightUv = rightGeom.attributes.uv;
+      for (let i = 0; i < rightPos.count; i++) {
+        const px = rightPos.getX(i);
+        const py = rightPos.getY(i);
+        rightUv.setXY(i, Math.max(0, Math.min(1, (px + doorW) / doorW)), Math.max(0, Math.min(1, py / totalH)));
+      }
+      rightUv.needsUpdate = true;
+
+      const rightDoorMesh = new THREE.Mesh(rightGeom, [doorRightMat, darkOakMat]);
+
+      this.rightDoorPivot = new THREE.Group();
+      this.rightDoorPivot.position.set(doorW, 0, 0);
+      this.rightDoorPivot.add(rightDoorMesh);
+
+      // --- 3. ASTRAGAL & CAST-IRON HARDWARE (Right Leaf) ---
+      // Vertical meeting stile astragal bead
+      const astragal = new THREE.Mesh(new THREE.BoxGeometry(0.045, totalH, 0.024), darkOakMat);
+      astragal.position.set(-doorW + 0.02, totalH / 2, -doorDepth / 2 - 0.01);
+      this.rightDoorPivot.add(astragal);
+
+      // Decorative cast-iron escutcheon backplate & handle (matching Image 3)
+      const escutcheon = new THREE.Mesh(new THREE.BoxGeometry(0.065, 0.44, 0.016), ironMat);
+      escutcheon.position.set(-doorW + 0.08, 1.35, -doorDepth / 2 - 0.012);
+      this.rightDoorPivot.add(escutcheon);
+
+      const handlePivot = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.05, 12), ironMat);
+      handlePivot.rotation.x = Math.PI / 2;
+      handlePivot.position.set(-doorW + 0.08, 1.40, -doorDepth / 2 - 0.035);
+      this.rightDoorPivot.add(handlePivot);
+
+      const handleGrip = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.02, 0.02), ironMat);
+      handleGrip.position.set(-doorW + 0.15, 1.40, -doorDepth / 2 - 0.06);
+      this.rightDoorPivot.add(handleGrip);
+
+      // Keyhole slot
+      const keyhole = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.035, 0.005), new THREE.MeshBasicMaterial({ color: 0x0a0a0a }));
+      keyhole.position.set(-doorW + 0.08, 1.25, -doorDepth / 2 - 0.022);
+      this.rightDoorPivot.add(keyhole);
+
+      // Heavy architectural iron hinges (outer edges)
+      for (const yHinge of [0.45, 1.80, 3.10]) {
+        // Left hinge
+        const lHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 12), ironMat);
+        lHinge.position.set(0.01, yHinge, -doorDepth / 2 - 0.005);
+        this.leftDoorPivot.add(lHinge);
+        // Right hinge
+        const rHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.16, 12), ironMat);
+        rHinge.position.set(-0.01, yHinge, -doorDepth / 2 - 0.005);
+        this.rightDoorPivot.add(rHinge);
+      }
+
+      group.add(this.leftDoorPivot);
+      group.add(this.rightDoorPivot);
+      this.exitDoors = group;
+
+      // --- 4. CARVED STONE ARCH SURROUND & PORTAL (Matching Image 3) ---
+      const portalGroup = new THREE.Group();
+
+      // Left Stone Jamb (x: -2.40 .. -1.40)
+      const leftPlinth = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.45, 0.54), stoneMat);
+      leftPlinth.position.set(-1.90, 0.225, 0);
+      portalGroup.add(leftPlinth);
+
+      const leftShaft = new THREE.Mesh(new THREE.BoxGeometry(1.00, 2.55, 0.48), stoneMat);
+      leftShaft.position.set(-1.90, 1.725, 0);
+      portalGroup.add(leftShaft);
+
+      const leftInnerReveal = new THREE.Mesh(new THREE.BoxGeometry(0.20, 2.55, 0.42), stoneAccentMat);
+      leftInnerReveal.position.set(-1.50, 1.725, -0.02);
+      portalGroup.add(leftInnerReveal);
+
+      const leftImpost = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.15, 0.54), stoneMat);
+      leftImpost.position.set(-1.90, 3.075, 0);
+      portalGroup.add(leftImpost);
+
+      // Right Stone Jamb (x: +1.40 .. +2.40)
+      const rightPlinth = new THREE.Mesh(new THREE.BoxGeometry(1.04, 0.45, 0.54), stoneMat);
+      rightPlinth.position.set(1.90, 0.225, 0);
+      portalGroup.add(rightPlinth);
+
+      const rightShaft = new THREE.Mesh(new THREE.BoxGeometry(1.00, 2.55, 0.48), stoneMat);
+      rightShaft.position.set(1.90, 1.725, 0);
+      portalGroup.add(rightShaft);
+
+      const rightInnerReveal = new THREE.Mesh(new THREE.BoxGeometry(0.20, 2.55, 0.42), stoneAccentMat);
+      rightInnerReveal.position.set(1.50, 1.725, -0.02);
+      portalGroup.add(rightInnerReveal);
+
+      const rightImpost = new THREE.Mesh(new THREE.BoxGeometry(1.08, 0.15, 0.54), stoneMat);
+      rightImpost.position.set(1.90, 3.075, 0);
+      portalGroup.add(rightImpost);
+
+      // Semicircular Stone Arch Ring (Inner R: 1.40m, Outer R: 1.85m)
+      const archShape = new THREE.Shape();
+      archShape.absarc(0, 0, 1.85, 0, Math.PI, false);
+      archShape.lineTo(-1.40, 0);
+      archShape.absarc(0, 0, 1.40, Math.PI, 0, true);
+      archShape.closePath();
+
+      const archGeom = new THREE.ExtrudeGeometry(archShape, {
+        depth: 0.46,
+        bevelEnabled: true,
+        bevelThickness: 0.018,
+        bevelSize: 0.018,
+        bevelSegments: 2,
+        curveSegments: 36
+      });
+      archGeom.translate(0, 0, -0.23);
+      const archMesh = new THREE.Mesh(archGeom, stoneMat);
+      archMesh.position.set(0, straightH, 0);
+      portalGroup.add(archMesh);
+
+      // Outer Arch Moulding Ring (Outer R: 1.98m)
+      const outerMouldShape = new THREE.Shape();
+      outerMouldShape.absarc(0, 0, 1.98, 0, Math.PI, false);
+      outerMouldShape.lineTo(-1.85, 0);
+      outerMouldShape.absarc(0, 0, 1.85, Math.PI, 0, true);
+      outerMouldShape.closePath();
+      const outerMouldGeom = new THREE.ExtrudeGeometry(outerMouldShape, { depth: 0.50, bevelEnabled: false, curveSegments: 36 });
+      outerMouldGeom.translate(0, 0, -0.25);
+      const outerMouldMesh = new THREE.Mesh(outerMouldGeom, stoneAccentMat);
+      outerMouldMesh.position.set(0, straightH, 0);
+      portalGroup.add(outerMouldMesh);
+
+      // Carved Keystone at Arch Apex (matching Image 3)
+      const keystone = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.44, 0.56), stoneAccentMat);
+      keystone.position.set(0, straightH + 1.85, 0);
+      portalGroup.add(keystone);
+
+      // Upper Spandrel Blocks (filling from arch ring up to lintel at y=4.68m)
+      const leftSpandrel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.55, 0.42), stoneMat);
+      leftSpandrel.position.set(-1.90, straightH + 0.775, 0);
+      portalGroup.add(leftSpandrel);
+
+      const rightSpandrel = new THREE.Mesh(new THREE.BoxGeometry(0.55, 1.55, 0.42), stoneMat);
+      rightSpandrel.position.set(1.90, straightH + 0.775, 0);
+      portalGroup.add(rightSpandrel);
+
+      group.add(portalGroup);
+
+      // --- 5. EXTERIOR STONE PORCH / STEPS (Outside museum at z > 28) ---
+      const porchStep1 = new THREE.Mesh(new THREE.BoxGeometry(4.8, 0.12, 1.8), stoneMat);
+      porchStep1.position.set(0, -0.06, 0.9);
+      group.add(porchStep1);
+
+      const porchStep2 = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.12, 1.4), stoneAccentMat);
+      porchStep2.position.set(0, -0.18, 1.9);
+      group.add(porchStep2);
+
+      // Subtle atmospheric exterior warm lantern glow outside the exit doors
+      const exitLantern = new THREE.PointLight(0xffecd0, 0.65, 8.5);
+      exitLantern.position.set(0, 3.6, 1.2);
+      group.add(exitLantern);
 
       this.scene.add(group);
-      this.exitDoorCollider = { type: 'box', floor: 0, minX: x - 2.4, maxX: x + 2.4, minZ: z - 0.35, maxZ: z + 0.35 };
+
+      // Solid impassable collider across the doors when locked
+      this.exitDoorCollider = {
+        type: 'box',
+        floor: 0,
+        minX: x - 1.45,
+        maxX: x + 1.45,
+        minZ: z - 0.35,
+        maxZ: z + 0.35
+      };
       this.colliders.push(this.exitDoorCollider);
     }
 
@@ -6332,6 +6717,20 @@
         this.applyMouseLook(dx, dy);
       };
 
+      const unlockAudio = () => {
+        if (this.audio) {
+          if (!this.audio.initialized) this.audio.init();
+          if (this.audio.ctx && this.audio.ctx.state === 'suspended') {
+            this.audio.ctx.resume().catch(() => {});
+          }
+          if (!this.gameStarted || this.isPaused || this.isVictory) {
+            this.audio.playMenuMusic();
+          }
+        }
+      };
+      window.addEventListener('pointerdown', unlockAudio);
+      window.addEventListener('keydown', unlockAudio);
+
       this.dom.startBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.dom.startScreen.classList.add('hidden');
@@ -6341,6 +6740,8 @@
         this.isSprinting = false;
         this.stamina = CONFIG.PLAYER.MAX_STAMINA;
         this.audio.init();
+        this.audio.startGameplayAudio();
+        this.audio.fadeOutMenuMusic(0.45);
         this.setSmittyMode(this.smittyEnabled);
         this.showFloorNotification(this.playerFloor);
         this.updateHud();
@@ -6482,6 +6883,7 @@
         this.skipNextMouseMove = true;
 
         if (this.isPointerLocked) {
+          const wasPaused = this.isPaused;
           document.documentElement.classList.add('pointer-locked');
           document.body.classList.add('pointer-locked');
           if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
@@ -6490,6 +6892,10 @@
           this.isPaused = false;
           this.isOptionsModalOpen = false;
           this.isSettingsModalOpen = false;
+          if (wasPaused && this.audio) {
+            this.audio.fadeOutMenuMusic(0.45);
+            this.audio.resumeGameplayAudio();
+          }
         } else {
           document.documentElement.classList.remove('pointer-locked');
           document.body.classList.remove('pointer-locked');
@@ -6784,6 +7190,10 @@
       document.body.classList.remove('game-playing');
       this.releaseNativeOrBrowserLock();
       this.dom.pauseModal.classList.remove('hidden');
+      if (this.audio) {
+        this.audio.pauseGameplayAudio();
+        this.audio.playMenuMusic();
+      }
     }
 
     resumeGame() {
@@ -6798,6 +7208,10 @@
       if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
+      if (this.audio) {
+        this.audio.fadeOutMenuMusic(0.45);
+        this.audio.resumeGameplayAudio();
+      }
       this.requestNativeOrBrowserLock();
     }
 
@@ -7005,15 +7419,9 @@
 
     unsealExitDoors() {
       this.exitUnlocked = true;
+      this.exitDoorsOpening = true;
       this.audio.playLockdownDisengaged();
 
-      if (this.exitDoors) {
-        this.exitDoors.rotation.y = -Math.PI / 2.2;
-        this.exitDoors.position.x = -2.2;
-      }
-      if (this.exitLockMesh) {
-        this.exitLockMesh.position.y = -10;
-      }
       if (this.exitDoorCollider) {
         this.exitDoorCollider.minX = 0;
         this.exitDoorCollider.maxX = 0;
@@ -7220,7 +7628,7 @@
       this.trackCurrentRoom();
       this.updateInteractionPrompt();
 
-      if (this.exitUnlocked && this.playerFloor === 0 && this.playerPos.z > 27.3 && Math.abs(this.playerPos.x + 10.0) < 2.6) {
+      if (this.exitUnlocked && this.playerFloor === 0 && this.playerPos.z > 27.8 && Math.abs(this.playerPos.x + 10.0) < 1.6) {
         this.triggerVictory();
       }
 
@@ -7903,6 +8311,7 @@
         this.smittyDeadTimer = 0;
         this.smittyFallAngle = 0.01;
         this.audio.stopLingeringMonsterAudio();
+        this.audio.playSmittyDeath();
         if (this.smittyMixer) {
           this.smittyMixer.stopAllAction();
         }
@@ -8774,15 +9183,16 @@
       const secs = elapsedSec % 60;
       this.dom.winTime.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 
-      const accuracy = this.shotsFired > 0 ? Math.round((this.shotsHit / this.shotsFired) * 100) : 0;
-      this.dom.winAccuracy.textContent = `${accuracy}%`;
-
       const allRelicsEl = document.querySelector('[data-text="victory.all_relics"]');
       if (allRelicsEl) {
         allRelicsEl.textContent = T('victory.all_relics', `All ${CONFIG.TOTAL_RELICS} Relics Recovered!`, { total: CONFIG.TOTAL_RELICS });
       }
 
       this.dom.victoryModal.classList.remove('hidden');
+      if (this.audio) {
+        this.audio.pauseGameplayAudio();
+        this.audio.playMenuMusic();
+      }
     }
 
     updateHud() {
@@ -8845,6 +9255,20 @@
             }
           }
         });
+      }
+
+      if (this.exitDoorsOpening && this.leftDoorPivot && this.rightDoorPivot) {
+        // Swing outward toward exterior porch (+Z)
+        const targetL = -Math.PI * 0.48;
+        const targetR = Math.PI * 0.48;
+        const step = Math.min(1.0, delta * 2.5);
+        this.leftDoorPivot.rotation.y = THREE.MathUtils.lerp(this.leftDoorPivot.rotation.y, targetL, step);
+        this.rightDoorPivot.rotation.y = THREE.MathUtils.lerp(this.rightDoorPivot.rotation.y, targetR, step);
+        if (Math.abs(this.leftDoorPivot.rotation.y - targetL) < 0.005) {
+          this.leftDoorPivot.rotation.y = targetL;
+          this.rightDoorPivot.rotation.y = targetR;
+          this.exitDoorsOpening = false;
+        }
       }
 
       this.renderer.render(this.scene, this.camera);

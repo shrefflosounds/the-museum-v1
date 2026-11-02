@@ -225,7 +225,6 @@ victory.title = YOU ESCAPED
 victory.text = You escaped
 victory.all_relics = All {total} Relics Recovered
 victory.time_label = Time Survived:
-victory.accuracy_label = Accuracy:
 victory.button = PLAY AGAIN
 
 
