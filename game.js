@@ -8002,8 +8002,16 @@
     }
 
     getPlatformSurfaceY(x, z, floorIdx) {
-      const y0 = floorIdx * CONFIG.FLOOR_HEIGHT;
-      let maxSurfaceY = y0;
+      // If player is inside or navigating a stairwell, elevation is governed exclusively by the stairwell solver
+      if (this.playerStairState && this.playerStairState.active) {
+        return 0;
+      }
+      if ((x >= -4.2 && x <= 4.2 && z >= -26.2 && z <= -13.8) ||
+          (x >= -24.2 && x <= -15.8 && z >= 17.8 && z <= 28.2)) {
+        return 0;
+      }
+
+      let maxSurfaceY = 0;
       for (let i = 0; i < this.colliders.length; i++) {
         const c = this.colliders[i];
         if (c.floor !== 'all' && c.floor !== floorIdx) continue;
