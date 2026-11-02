@@ -4300,7 +4300,7 @@
 
           const hingeCap = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.012, 14), chromeMat);
           hingeCap.position.set(hx, 0.465, -0.06);
-          group.add(hingCap);
+          group.add(hingeCap);
         });
 
         // 4. OPEN UPRIGHT TOILET LID (Matching Image 4: upright, leaning gently back against the tank at -8 deg)
