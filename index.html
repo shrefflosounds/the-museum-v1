@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Museum v1</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=576">
+  <link rel="stylesheet" href="style.css?v=578">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -83,10 +83,11 @@
   <!-- Start Screen Modal -->
   <div id="start-screen" class="modal-overlay">
     <div class="modal-box start-box">
-      <!-- Options & Settings Bubbles -->
+      <!-- Options & Controls Bubbles -->
       <div class="start-bubbles-row">
-        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Options" data-text="bubble.options">OPTIONS</button>
-        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="Settings &amp; Controls" data-text="bubble.settings">SETTINGS</button>
+        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Audio and Curator gameplay options" data-text="bubble.options">OPTIONS</button>
+        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="View keybinds and spectator mode controls" data-text="bubble.controls">CONTROLS</button>
+        <button id="about-bubble-btn" class="start-bubble-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about">ABOUT</button>
       </div>
 
       <h1 class="horror-title" data-text="start.title">THE MUSEUM</h1>
@@ -94,7 +95,8 @@
         <p data-text="start.goal">Recover all 14 relics to unlock the exit.</p>
       </div>
 
-      <button id="start-btn" class="museum-btn" data-text="start.button">ENTER THE MUSEUM</button>
+      <button id="start-btn" class="museum-btn" title="Enter the museum and begin the exhibition" data-text="start.button">ENTER THE MUSEUM</button>
+      <button id="start-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
     </div>
   </div>
 
@@ -107,10 +109,18 @@
       <div class="options-section">
         <div class="smitty-mode-bar">
           <button id="options-smitty-on-btn" class="smitty-mode-btn active mode-on" type="button">
-            <span class="mode-title" data-text="options.mode_on">Smitty: ON</span>
+            <span class="mode-title" data-text="options.curator_on">Curator: ON</span>
           </button>
           <button id="options-smitty-off-btn" class="smitty-mode-btn mode-off" type="button">
-            <span class="mode-title" data-text="options.mode_off">Smitty: OFF</span>
+            <span class="mode-title" data-text="options.curator_off">Curator: OFF</span>
+          </button>
+        </div>
+        <div class="smitty-mode-bar" style="margin-bottom: 0;">
+          <button id="options-music-on-btn" class="smitty-mode-btn active mode-on" type="button">
+            <span class="mode-title" data-text="options.music_on">Music: ON</span>
+          </button>
+          <button id="options-music-off-btn" class="smitty-mode-btn mode-off" type="button">
+            <span class="mode-title" data-text="options.music_off">Music: OFF</span>
           </button>
         </div>
       </div>
@@ -119,14 +129,14 @@
     </div>
   </div>
 
-  <!-- Settings & Spectator Modal -->
+  <!-- Controls & Spectator Modal -->
   <div id="settings-modal" class="modal-overlay hidden">
     <div class="modal-box settings-box">
       <button id="settings-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
-      <h2 class="horror-title" data-text="settings.title">SETTINGS</h2>
+      <h2 class="horror-title" data-text="controls.title">CONTROLS</h2>
 
       <div class="settings-card">
-        <h3 class="settings-card-title" data-text="settings.controls_heading">CONTROLS</h3>
+        <h3 class="settings-card-title" data-text="controls.heading">CONTROLS</h3>
         <div class="controls-grid" style="margin-bottom: 0;">
           <div class="ctrl-col" data-text="ctrl.move">WASD: Move</div>
           <div class="ctrl-col" data-text="ctrl.look">Mouse: Look</div>
@@ -146,12 +156,35 @@
         <ul class="settings-list" style="margin: 0; padding-left: 18px;">
           <li data-text="spec.toggle">` or F2: Toggle Spectator</li>
           <li data-text="spec.fly">WASD: Fly (Space: Up / C: Down)</li>
-          <li data-text="spec.noclip">N: Toggle No-Clip Mode</li>
-          <li data-text="spec.xray">R: Toggle X-Ray Vision</li>
+          <li data-text="spec.noclip">V: Toggle No-Clip Mode</li>
+          <li data-text="spec.outline">N: Toggle Curator Red Outline</li>
+          <li data-text="spec.hide_hud">H: Toggle Hide HUD &amp; Arms</li>
         </ul>
       </div>
 
-      <button id="settings-back-btn" class="museum-btn" type="button" style="margin-top: 14px;" data-text="settings.done">DONE</button>
+      <button id="settings-back-btn" class="museum-btn" type="button" style="margin-top: 14px;" data-text="controls.done">DONE</button>
+    </div>
+  </div>
+
+  <!-- About Exhibition Modal -->
+  <div id="about-modal" class="modal-overlay hidden">
+    <div class="modal-box about-box">
+      <button id="about-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
+      <h2 class="horror-title" data-text="about.title">ABOUT</h2>
+
+      <div class="about-card">
+        <p class="about-lead">
+          <img src="icon.png" alt="" width="32" height="32" style="vertical-align: middle; margin-right: 8px; border-radius: 4px;">
+          <strong style="color: #f1f5f9; font-size: 16px;">The Museum</strong> — A surreal first-person digital exhibition and survival horror labyrinth.
+        </p>
+        <p class="about-byline" data-text="about.byline">By Smitty Fantastic, built with Antigravity.</p>
+        <p class="about-build" id="about-build-tag" data-text="about.build">Build m00000-001</p>
+        <p class="about-links">
+          MIT License · <a href="NOTICES.txt" target="_blank" rel="noopener">NOTICES</a> · <a href="https://smittyfantastic.neocities.org/Gallery" target="_blank" rel="noopener">Gallery Archive</a>
+        </p>
+      </div>
+
+      <button id="about-back-btn" class="museum-btn" type="button" style="margin-top: 16px;" data-text="about.done">DONE</button>
     </div>
   </div>
 
@@ -211,9 +244,11 @@
       <h2 class="horror-title" data-text="pause.title">EXHIBITION PAUSED</h2>
       <p class="pause-sub" data-text="pause.text">Click Resume to continue.</p>
       <div class="pause-actions-list">
-        <button id="resume-btn" class="museum-btn" data-text="pause.button">RESUME EXPLORATION</button>
-        <button id="pause-options-btn" class="museum-btn pause-opt-btn" type="button" data-text="bubble.options">OPTIONS</button>
-        <button id="pause-settings-btn" class="museum-btn pause-opt-btn" type="button" data-text="bubble.settings">SETTINGS &amp; CONTROLS</button>
+        <button id="resume-btn" class="museum-btn" title="Return to exploring the museum" data-text="pause.button">RESUME EXPLORATION</button>
+        <button id="pause-options-btn" class="museum-btn pause-opt-btn" type="button" title="Audio and Curator gameplay options" data-text="bubble.options">OPTIONS</button>
+        <button id="pause-settings-btn" class="museum-btn pause-opt-btn" type="button" title="View keybinds and spectator mode controls" data-text="bubble.controls">CONTROLS</button>
+        <button id="pause-about-btn" class="museum-btn pause-opt-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about">ABOUT</button>
+        <button id="pause-quit-btn" class="museum-btn pause-opt-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit">QUIT</button>
       </div>
     </div>
   </div>
@@ -228,7 +263,8 @@
         <p><span data-text="gameover.shots_label">Shots Fired:</span> <span id="death-shots">0</span></p>
         <p><span data-text="gameover.hits_label">Smitty Hits:</span> <span id="death-hits">0</span></p>
       </div>
-      <button id="restart-btn" class="museum-btn" data-text="gameover.button">TRY AGAIN</button>
+      <button id="restart-btn" class="museum-btn" title="Restart exploration from the ground floor" data-text="gameover.button">TRY AGAIN</button>
+      <button id="gameover-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
     </div>
   </div>
 
@@ -241,7 +277,9 @@
         <p data-text="victory.all_relics">All 14 Relics Recovered!</p>
         <p><span data-text="victory.time_label">Time Survived:</span> <span id="win-time">0:00</span></p>
       </div>
-      <button id="win-restart-btn" class="museum-btn" data-text="victory.button">PLAY AGAIN</button>
+      <button id="win-restart-btn" class="museum-btn" title="Begin a new museum expedition" data-text="victory.button">PLAY AGAIN</button>
+      <button id="victory-about-btn" class="museum-btn pause-opt-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about" style="margin-top: 10px;">ABOUT</button>
+      <button id="victory-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 10px;">QUIT</button>
     </div>
   </div>
 
@@ -249,7 +287,7 @@
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
   <!-- Museum Game Engine -->
-  <script src="text_loader.js?v=576"></script>
-  <script src="game.js?v=576"></script>
+  <script src="text_loader.js?v=578"></script>
+  <script src="game.js?v=578"></script>
 </body>
 </html>

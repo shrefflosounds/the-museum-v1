@@ -141,6 +141,13 @@ body.game-playing #game-container {
   padding: 24px 32px;
 }
 
+#hud.hud-hidden {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
 /* Center Crosshair Reticle */
 #crosshair {
   position: absolute;
@@ -600,6 +607,17 @@ body.game-playing #game-container {
   transform: translateY(0) scale(1.0);
 }
 
+.menu-quit-btn {
+  color: #fca5a5;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+}
+
+.menu-quit-btn:hover {
+  color: #ffffff;
+  filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.65));
+  transform: translateY(-2px) scale(1.02);
+}
+
 /* ========================================================
    ARTWORK LIGHTBOX VIEWER
    ======================================================== */
@@ -942,6 +960,60 @@ body.game-playing #game-container {
   max-width: 500px;
   padding: 28px 32px;
   text-align: left;
+}
+
+.about-box {
+  position: relative;
+  max-width: 480px;
+  padding: 30px 34px;
+  text-align: center;
+}
+
+.about-card {
+  background: radial-gradient(ellipse at 50% 50%, rgba(20, 27, 40, 0.85) 0%, rgba(15, 23, 42, 0.60) 80%, rgba(15, 23, 42, 0) 100%);
+  border-radius: 20px;
+  padding: 22px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.about-lead {
+  font-size: 15px;
+  color: #cbd5e1;
+  margin-bottom: 12px;
+  line-height: 1.45;
+}
+
+.about-byline {
+  font-size: 14px;
+  color: #94a3b8;
+  margin-bottom: 8px;
+}
+
+.about-build {
+  font-size: 12px;
+  color: #64748b;
+  font-family: ui-monospace, Menlo, Monaco, monospace;
+  margin-bottom: 14px;
+  letter-spacing: 0.5px;
+}
+
+.about-links {
+  font-size: 13px;
+  color: #94a3b8;
+  margin-top: 10px;
+}
+
+.about-links a {
+  color: #38bdf8;
+  text-decoration: underline;
+  transition: color 0.18s ease;
+}
+
+.about-links a:hover {
+  color: #7dd3fc;
 }
 
 .options-section {

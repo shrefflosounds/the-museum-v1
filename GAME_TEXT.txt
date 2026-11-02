@@ -28,19 +28,37 @@ start.title = THE MUSEUM
 start.goal = Recover all 14 relics to unlock the exit.
 start.button = ENTER THE MUSEUM
 bubble.options = OPTIONS
-bubble.settings = SETTINGS
+bubble.controls = CONTROLS
+bubble.settings = CONTROLS
+bubble.about = ABOUT
+menu.quit = QUIT
 
 
 [ OPTIONS ]
 options.title = OPTIONS
-options.mode_on = Smitty: ON
-options.mode_off = Smitty: OFF
+options.mode_on = Curator: ON
+options.mode_off = Curator: OFF
+options.curator_on = Curator: ON
+options.curator_off = Curator: OFF
+options.music_on = Music: ON
+options.music_off = Music: OFF
 options.done = DONE
 
 
-[ SETTINGS & CONTROLS ]
-settings.title = SETTINGS
+[ ABOUT ]
+about.title = ABOUT
+about.byline = By Smitty Fantastic, built with Antigravity.
+about.build = Build m00000-001
+about.done = DONE
+
+
+[ CONTROLS ]
+controls.title = CONTROLS
+controls.heading = CONTROLS
+controls.done = DONE
+settings.title = CONTROLS
 settings.controls_heading = CONTROLS
+settings.done = DONE
 ctrl.move = WASD: Move
 ctrl.look = Mouse: Look
 ctrl.interact = E: Interact
@@ -55,8 +73,10 @@ ctrl.map = Tab: Objectives
 settings.spectator_heading = SPECTATOR MODE
 spec.toggle = ` or F2: Toggle Spectator
 spec.fly = WASD: Fly (Space: Up / C: Down)
-spec.noclip = N: Toggle No-Clip Mode
-spec.xray = R: Toggle X-Ray Vision
+spec.noclip = V: Toggle No-Clip Mode
+spec.outline = N: Toggle Curator Red Outline
+spec.xray = N: Toggle Curator Red Outline
+spec.hide_hud = H: Toggle Hide HUD & Arms
 settings.done = DONE
 
 
@@ -76,10 +96,14 @@ hud.exit_unlocked = LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!
 hud.room_format = {floor} • {area}
 hud.spectator_badge = SPECTATOR MODE
 hud.noclip_badge = SPECTATOR • NO-CLIP
-hud.spectator_enabled = SPECTATOR MODE ENABLED (PRESS N FOR NO-CLIP, CMD+N TO EXIT)
+hud.spectator_enabled = SPECTATOR MODE ENABLED (` OR ~: EXIT, V: NO-CLIP, N: OUTLINE, H: HIDE HUD)
 hud.spectator_disabled = SPECTATOR MODE DISABLED
-hud.noclip_enabled = NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, N TO EXIT)
+hud.noclip_enabled = NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, V TO EXIT)
 hud.noclip_disabled = NO-CLIP DISABLED
+hud.xray_enabled = CURATOR RED OUTLINE ENABLED
+hud.xray_disabled = CURATOR RED OUTLINE DISABLED
+hud.hud_hidden = HUD & ARMS HIDDEN (PRESS H TO RESTORE)
+hud.hud_shown = HUD & ARMS VISIBLE
 
 
 [ FLOOR NAMES ]

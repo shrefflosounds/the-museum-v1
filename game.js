@@ -8,6 +8,9 @@
 (() => {
   'use strict';
 
+  const APP_VERSION = 'm00000-001';
+  window.APP_VERSION = APP_VERSION;
+
   // --- EDITABLE GAME TEXT (loaded from GAME_TEXT.txt by text_loader.js) ---
   const T = (window.GameText && window.GameText.t) || ((key, fallback, vars) => {
     let s = fallback;
@@ -35,6 +38,7 @@
       this.menuMusicGain = null;
       this.roomToneSource = null;
       this.roomToneGain = null;
+      this.musicEnabled = (localStorage.getItem('the_museum_music') !== 'false');
     }
 
     init() {
@@ -226,7 +230,22 @@
       }
     }
 
+    setMusicEnabled(enabled) {
+      this.musicEnabled = !!enabled;
+      try {
+        localStorage.setItem('the_museum_music', this.musicEnabled ? 'true' : 'false');
+      } catch (e) {}
+      if (!this.musicEnabled) {
+        this.fadeOutMenuMusic(0.2);
+      }
+    }
+
     playMenuMusic() {
+      if (!this.musicEnabled) {
+        this.menuMusicActive = false;
+        this.pendingMenuMusic = false;
+        return;
+      }
       this.menuMusicActive = true;
       if (!this.ctx) {
         this.init();
@@ -3172,21 +3191,32 @@
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
+      this.isAboutModalOpen = false;
+      this.isSpectatorHudHidden = false;
+      this.isQuitting = false;
+      this.musicEnabled = (localStorage.getItem('the_museum_music') !== 'false');
 
       this.dom = {
+        hud: document.getElementById('hud'),
         startScreen: document.getElementById('start-screen'),
         startBtn: document.getElementById('start-btn'),
+        startQuitBtn: document.getElementById('start-quit-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
         pauseOptionsBtn: document.getElementById('pause-options-btn'),
         pauseSettingsBtn: document.getElementById('pause-settings-btn'),
+        pauseAboutBtn: document.getElementById('pause-about-btn'),
+        pauseQuitBtn: document.getElementById('pause-quit-btn'),
         objModal: document.getElementById('objective-modal'),
         objectiveCloseBtn: document.getElementById('objective-close-btn'),
         floorplanCanvas: document.getElementById('floorplan-canvas'),
         gameOverModal: document.getElementById('game-over-modal'),
         restartBtn: document.getElementById('restart-btn'),
+        gameoverQuitBtn: document.getElementById('gameover-quit-btn'),
         victoryModal: document.getElementById('victory-modal'),
         winRestartBtn: document.getElementById('win-restart-btn'),
+        victoryAboutBtn: document.getElementById('victory-about-btn'),
+        victoryQuitBtn: document.getElementById('victory-quit-btn'),
         artModal: document.getElementById('art-modal'),
         artModalImg: document.getElementById('art-modal-img'),
         artModalTitle: document.getElementById('art-modal-title'),
@@ -3200,10 +3230,17 @@
         settingsBubbleBtn: document.getElementById('settings-bubble-btn'),
         settingsCloseBtn: document.getElementById('settings-close-btn'),
         settingsBackBtn: document.getElementById('settings-back-btn'),
+        aboutModal: document.getElementById('about-modal'),
+        aboutBubbleBtn: document.getElementById('about-bubble-btn'),
+        aboutCloseBtn: document.getElementById('about-close-btn'),
+        aboutBackBtn: document.getElementById('about-back-btn'),
+        aboutBuildTag: document.getElementById('about-build-tag'),
         smittyOnBtn: document.getElementById('smitty-on-btn'),
         smittyOffBtn: document.getElementById('smitty-off-btn'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
         optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
+        optionsMusicOnBtn: document.getElementById('options-music-on-btn'),
+        optionsMusicOffBtn: document.getElementById('options-music-off-btn'),
         vignetteOverlay: document.getElementById('vignette-overlay'),
         roomIndicator: document.getElementById('room-indicator'),
         floorIndicator: document.getElementById('floor-indicator'),
@@ -3244,8 +3281,14 @@
       }
       this.setupEventListeners();
       this.updateSmittyModeUI();
+      this.updateMusicModeUI();
+      if (this.dom.aboutBuildTag) {
+        this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
+      }
       this.audio.init();
-      this.audio.playMenuMusic();
+      if (this.musicEnabled) {
+        this.audio.playMenuMusic();
+      }
       this.animate();
     }
 
@@ -7129,6 +7172,21 @@
         });
       }
 
+      if (this.dom.pauseAboutBtn) {
+        this.dom.pauseAboutBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.dom.pauseModal.classList.add('hidden');
+          this.openAboutModal();
+        });
+      }
+
+      if (this.dom.victoryAboutBtn) {
+        this.dom.victoryAboutBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openAboutModal();
+        });
+      }
+
       this.dom.artCloseBtn.addEventListener('click', () => {
         this.closeArtModal();
       });
@@ -7184,6 +7242,27 @@
         });
       }
 
+      if (this.dom.aboutBubbleBtn) {
+        this.dom.aboutBubbleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.openAboutModal();
+        });
+      }
+      if (this.dom.aboutCloseBtn) {
+        this.dom.aboutCloseBtn.addEventListener('click', () => this.closeAboutModal());
+      }
+      if (this.dom.aboutBackBtn) {
+        this.dom.aboutBackBtn.addEventListener('click', () => this.closeAboutModal());
+      }
+      if (this.dom.aboutModal) {
+        this.dom.aboutModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.aboutModal) {
+            e.stopPropagation();
+            this.closeAboutModal();
+          }
+        });
+      }
+
       // Smitty Mode Toggles: Survival Horror vs Daytime Museum Tour
       const handleSmittyToggle = (enabled) => {
         this.setSmittyMode(enabled);
@@ -7193,6 +7272,36 @@
       if (this.dom.smittyOffBtn) this.dom.smittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
       if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
+
+      // Music Mode Toggles
+      if (this.dom.optionsMusicOnBtn) {
+        this.dom.optionsMusicOnBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setMusicMode(true);
+        });
+      }
+      if (this.dom.optionsMusicOffBtn) {
+        this.dom.optionsMusicOffBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setMusicMode(false);
+        });
+      }
+
+      // Quit Buttons
+      const quitBtns = [
+        this.dom.startQuitBtn,
+        this.dom.pauseQuitBtn,
+        this.dom.gameoverQuitBtn,
+        this.dom.victoryQuitBtn
+      ];
+      quitBtns.forEach((btn) => {
+        if (btn) {
+          btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.quitGame();
+          });
+        }
+      });
 
       // Objective Modal Close Button & Backdrop Click
       if (this.dom.objectiveCloseBtn) {
@@ -7206,6 +7315,7 @@
 
       // Browser safety: prevent accidental page unload during active gameplay
       window.addEventListener('beforeunload', (e) => {
+        if (this.isQuitting) return;
         if (this.gameStarted && !this.isGameOver && !this.isVictory) {
           e.preventDefault();
           e.returnValue = '';
@@ -7213,7 +7323,7 @@
       });
 
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
           }
@@ -7241,9 +7351,11 @@
           if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
           if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
           if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
+          if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
           this.isPaused = false;
           this.isOptionsModalOpen = false;
           this.isSettingsModalOpen = false;
+          this.isAboutModalOpen = false;
           if (wasPaused && this.audio) {
             this.audio.fadeOutMenuMusic(0.45);
             this.audio.resumeGameplayAudio();
@@ -7260,7 +7372,7 @@
             return;
           }
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
-              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isPaused) {
+              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused) {
             this.pauseGame();
             this.lastPointerLockExitTime = performance.now();
           }
@@ -7300,7 +7412,7 @@
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) {
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) {
           this.lastClientX = null;
           this.lastClientY = null;
           return;
@@ -7321,7 +7433,7 @@
       });
 
       window.addEventListener('mousedown', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen) return;
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;
 
         // Ensure browser lock is requested if not locked, without blocking gameplay action
         if (!this.isPointerLocked && !this.isNativeLocked) {
@@ -7346,6 +7458,8 @@
       window.addEventListener('keydown', (e) => {
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
         const isKeyN = (e.code === 'KeyN' || (e.key && e.key.toLowerCase() === 'n'));
+        const isKeyV = (e.code === 'KeyV' || (e.key && e.key.toLowerCase() === 'v'));
+        const isKeyH = (e.code === 'KeyH' || (e.key && e.key.toLowerCase() === 'h'));
         const isSpectatorToggle = (
           e.code === 'Backquote' ||
           e.key === '`' ||
@@ -7368,13 +7482,34 @@
           return;
         }
 
-        // No-Clip Mode toggle: pressing 'N' while in Spectator Mode
-        if (this.isSpectatorMode && !isCmdOrCtrl && isKeyN) {
-          e.preventDefault();
-          if (this.gameStarted) {
-            this.toggleNoClipMode();
+        // In Spectator Mode:
+        if (this.isSpectatorMode && !isCmdOrCtrl) {
+          // No-Clip Mode toggle: pressing 'V'
+          if (isKeyV) {
+            e.preventDefault();
+            if (this.gameStarted) {
+              this.toggleNoClipMode();
+            }
+            return;
           }
-          return;
+
+          // Curator/Smitty Red Outline toggle: pressing 'N'
+          if (isKeyN) {
+            e.preventDefault();
+            if (this.gameStarted) {
+              this.toggleSmittyXray();
+            }
+            return;
+          }
+
+          // Hide HUD, examine/pickup notifications, and arms: pressing 'H'
+          if (isKeyH) {
+            e.preventDefault();
+            if (this.gameStarted) {
+              this.toggleSpectatorHud();
+            }
+            return;
+          }
         }
 
         if (!e.metaKey) {
@@ -7406,9 +7541,7 @@
           if (this.gameStarted) this.toggleFlashlight();
         } else if (e.code === 'KeyR') {
           if (this.gameStarted) {
-            if (this.isSpectatorMode) {
-              this.toggleSmittyXray();
-            } else {
+            if (!this.isSpectatorMode) {
               this.reloadPistol();
             }
           }
@@ -7433,6 +7566,8 @@
             this.closeOptionsModal();
           } else if (this.isSettingsModalOpen) {
             this.closeSettingsModal();
+          } else if (this.isAboutModalOpen) {
+            this.closeAboutModal();
           } else if (this.gameStarted) {
             // Escape only pauses the game, never unpauses
             if (!this.isPaused) {
@@ -7552,6 +7687,7 @@
       this.isPaused = false;
       this.isOptionsModalOpen = false;
       this.isSettingsModalOpen = false;
+      this.isAboutModalOpen = false;
       this.keys = {};
       this.isSprinting = false;
       this.lastResumeTime = performance.now();
@@ -7560,6 +7696,7 @@
       if (this.dom.pauseModal) this.dom.pauseModal.classList.add('hidden');
       if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
       if (this.dom.settingsModal) this.dom.settingsModal.classList.add('hidden');
+      if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
       if (this.audio) {
         this.audio.fadeOutMenuMusic(0.45);
         this.audio.resumeGameplayAudio();
@@ -7621,6 +7758,21 @@
       this.dom.settingsModal.classList.add('hidden');
       if (this.isPaused) {
         this.dom.pauseModal.classList.remove('hidden');
+      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+        this.requestNativeOrBrowserLock();
+      }
+    }
+
+    openAboutModal() {
+      this.isAboutModalOpen = true;
+      if (this.dom.aboutModal) this.dom.aboutModal.classList.remove('hidden');
+    }
+
+    closeAboutModal() {
+      this.isAboutModalOpen = false;
+      if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
+      if (this.isPaused) {
+        if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('hidden');
       } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
         this.requestNativeOrBrowserLock();
       }
@@ -7693,6 +7845,76 @@
           btn.setAttribute('aria-pressed', 'false');
         }
       });
+    }
+
+    setMusicMode(enabled) {
+      this.musicEnabled = !!enabled;
+      if (this.audio) {
+        this.audio.setMusicEnabled(this.musicEnabled);
+        if (this.musicEnabled && (!this.gameStarted || this.isPaused || this.isVictory)) {
+          this.audio.playMenuMusic();
+        }
+      }
+      this.updateMusicModeUI();
+    }
+
+    updateMusicModeUI() {
+      const onBtn = this.dom.optionsMusicOnBtn;
+      const offBtn = this.dom.optionsMusicOffBtn;
+      if (onBtn) {
+        if (this.musicEnabled) {
+          onBtn.classList.add('active');
+          onBtn.setAttribute('aria-pressed', 'true');
+        } else {
+          onBtn.classList.remove('active');
+          onBtn.setAttribute('aria-pressed', 'false');
+        }
+      }
+      if (offBtn) {
+        if (!this.musicEnabled) {
+          offBtn.classList.add('active');
+          offBtn.setAttribute('aria-pressed', 'true');
+        } else {
+          offBtn.classList.remove('active');
+          offBtn.setAttribute('aria-pressed', 'false');
+        }
+      }
+    }
+
+    openControlsModal() {
+      this.openSettingsModal();
+    }
+
+    closeControlsModal() {
+      this.closeSettingsModal();
+    }
+
+    quitGame() {
+      this.isQuitting = true;
+      try {
+        if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.quit) {
+          window.webkit.messageHandlers.quit.postMessage(true);
+        }
+      } catch (e) {}
+
+      try {
+        window.open('', '_self', '');
+      } catch (e) {}
+      try {
+        window.close();
+      } catch (e) {}
+      try {
+        self.close();
+      } catch (e) {}
+      try {
+        window.top.close();
+      } catch (e) {}
+
+      setTimeout(() => {
+        try {
+          window.location.href = 'about:blank';
+        } catch (e) {}
+      }, 150);
     }
 
     toggleFlashlight() {
@@ -8106,6 +8328,13 @@
     }
 
     setInteractPrompt(text) {
+      if (this.isSpectatorMode && this.isSpectatorHudHidden) {
+        if (this.dom.interactPrompt && !this.dom.interactPrompt.classList.contains('hidden')) {
+          this.dom.interactPrompt.classList.add('hidden');
+        }
+        this._currentPromptText = '';
+        return;
+      }
       if (text) {
         if (this._currentPromptText !== text) {
           this.dom.interactPrompt.textContent = text;
@@ -8183,6 +8412,7 @@
     showFloorNotification(floor) {
       this.updateRelicFloorVisibility();
       if (!this.dom.floorIndicator) return;
+      if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
       const names = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
       const text = names[floor] || `FLOOR ${floor + 1}`;
       this.dom.floorIndicator.textContent = text;
@@ -8199,6 +8429,7 @@
     }
 
     showRelicNotification() {
+      if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
       if (!this.dom.relicNotification) return;
       const obtained = this.relicsCollected;
       const total = CONFIG.TOTAL_RELICS;
@@ -8227,6 +8458,7 @@
     }
 
     showSystemNotification(text, duration = 3000) {
+      if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
       if (!this.dom.systemNotification) return;
       this.dom.systemNotification.textContent = text;
       this.dom.systemNotification.classList.add('visible');
@@ -8243,14 +8475,14 @@
 
     updateSpectatorBadge() {
       if (!this.dom.spectatorIndicator) return;
-      if (!this.isSpectatorMode) {
+      if (!this.isSpectatorMode || this.isSpectatorHudHidden) {
         this.dom.spectatorIndicator.classList.add('hidden');
         return;
       }
       this.dom.spectatorIndicator.classList.remove('hidden');
       const parts = ['SPECTATOR'];
       if (this.isNoClipMode) parts.push('NO-CLIP');
-      if (this.isSmittyXray) parts.push('X-RAY');
+      if (this.isSmittyXray) parts.push('OUTLINE');
       this.dom.spectatorIndicator.textContent = parts.join(' • ');
     }
 
@@ -8269,10 +8501,13 @@
         this.updateSpectatorBadge();
 
         this.showSystemNotification(
-          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (` OR ~: EXIT, N: NO-CLIP, R: X-RAY)')
+          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (` OR ~: EXIT, V: NO-CLIP, N: OUTLINE, H: HIDE HUD)')
         );
       } else {
-        // Disengage no-clip and X-ray if active when exiting spectator mode
+        // Disengage no-clip, X-ray, and unhide HUD/arms if active when exiting spectator mode
+        if (this.isSpectatorHudHidden) {
+          this.toggleSpectatorHud(false);
+        }
         if (this.isNoClipMode) {
           this.toggleNoClipMode(false);
         }
@@ -8307,11 +8542,11 @@
 
       if (this.isSmittyXray) {
         this.showSystemNotification(
-          T('hud.xray_enabled', 'SMITTY X-RAY OUTLINE ENABLED')
+          T('hud.xray_enabled', 'CURATOR RED OUTLINE ENABLED')
         );
       } else {
         this.showSystemNotification(
-          T('hud.xray_disabled', 'SMITTY X-RAY OUTLINE DISABLED')
+          T('hud.xray_disabled', 'CURATOR RED OUTLINE DISABLED')
         );
       }
     }
@@ -8326,7 +8561,7 @@
 
       if (this.isNoClipMode) {
         this.showSystemNotification(
-          T('hud.noclip_enabled', 'NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, N TO EXIT)')
+          T('hud.noclip_enabled', 'NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, V TO EXIT)')
         );
       } else {
         // Seamless drop to ground like Garry's Mod
@@ -8341,6 +8576,41 @@
 
         this.showSystemNotification(
           T('hud.noclip_disabled', 'NO-CLIP DISABLED')
+        );
+      }
+    }
+
+    toggleSpectatorHud(forceState) {
+      if (!this.isSpectatorMode && forceState !== false) return;
+      const targetState = (forceState !== undefined) ? !!forceState : !this.isSpectatorHudHidden;
+      if (this.isSpectatorHudHidden === targetState) return;
+      this.isSpectatorHudHidden = targetState;
+
+      if (this.dom.hud) {
+        if (this.isSpectatorHudHidden) {
+          this.dom.hud.classList.add('hud-hidden');
+        } else {
+          this.dom.hud.classList.remove('hud-hidden');
+        }
+      }
+
+      if (this.weaponRig) {
+        this.weaponRig.visible = !this.isSpectatorHudHidden;
+      }
+      if (this.leftArmRig) {
+        this.leftArmRig.visible = !this.isSpectatorHudHidden;
+      }
+
+      if (this.isSpectatorHudHidden) {
+        if (this.dom.interactPrompt) this.dom.interactPrompt.classList.add('hidden');
+        if (this.dom.relicNotification) this.dom.relicNotification.classList.remove('visible');
+        if (this.dom.systemNotification) this.dom.systemNotification.classList.remove('visible');
+        if (this.dom.floorIndicator) this.dom.floorIndicator.style.opacity = '0';
+        if (this.dom.spectatorIndicator) this.dom.spectatorIndicator.classList.add('hidden');
+      } else {
+        this.updateSpectatorBadge();
+        this.showSystemNotification(
+          T('hud.hud_shown', 'HUD & ARMS VISIBLE')
         );
       }
     }

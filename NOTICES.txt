@@ -1,0 +1,35 @@
+THE MUSEUM — THIRD-PARTY NOTICES & LICENSES
+
+This application bundles and builds upon the following open-source software, fonts, and assets:
+
+1. Three.js
+   Copyright © 2010-2026 three.js authors
+   License: MIT License
+   Source: https://github.com/mrdoob/three.js
+   Permission is hereby granted, free of charge, to any person obtaining a copy
+   of this software and associated documentation files (the "Software"), to deal
+   in the Software without restriction, including without limitation the rights
+   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   copies of the Software, and to permit persons to whom the Software is
+   furnished to do so, subject to the following conditions:
+   The above copyright notice and this permission notice shall be included in
+   all copies or substantial portions of the Software.
+
+2. GLTFLoader, TransformControls, BufferGeometryUtils (Three.js Addons)
+   Copyright © 2010-2026 three.js authors
+   License: MIT License
+   Source: https://github.com/mrdoob/three.js
+
+3. fflate
+   Copyright © 2020-2023 101arrowz
+   License: MIT License
+   Source: https://github.com/101arrowz/fflate
+
+4. Inter Font Family
+   Copyright © 2016-2024 The Inter Project Authors
+   License: SIL Open Font License, Version 1.1 (OFL)
+   Source: https://github.com/rsms/inter
+
+5. Original 3D Relic Models and Curated Exhibition Artworks
+   Created and curated by Smitty Fantastic
+   Archive: https://smittyfantastic.neocities.org/Gallery
