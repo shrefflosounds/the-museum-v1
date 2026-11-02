@@ -640,6 +640,54 @@
       if (this.reverbNode) gain.connect(this.reverbNode);
       src.start(now, 0, 0.9);
     }
+
+    playSlidingDoor() {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      if (this.lastDoorSlideAudio && (now - this.lastDoorSlideAudio < 0.75)) return;
+      this.lastDoorSlideAudio = now;
+
+      // Soft pneumatic sliding door whisper
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      const filter = this.ctx.createBiquadFilter();
+
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(110, now + 0.45);
+
+      filter.type = 'lowpass';
+      filter.frequency.setValueAtTime(320, now);
+
+      gain.gain.setValueAtTime(0.001, now);
+      gain.gain.linearRampToValueAtTime(0.05, now + 0.06);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
+
+      osc.connect(filter);
+      filter.connect(gain);
+      gain.connect(this.masterGain);
+
+      osc.start(now);
+      osc.stop(now + 0.52);
+
+      // Subtle mechanical pneumatic hiss
+      if (this.noiseBuffer) {
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = this.noiseBuffer;
+        const nFilter = this.ctx.createBiquadFilter();
+        nFilter.type = 'bandpass';
+        nFilter.frequency.setValueAtTime(950, now);
+        nFilter.Q.value = 1.2;
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(0.001, now);
+        nGain.gain.linearRampToValueAtTime(0.025, now + 0.05);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
+        noise.connect(nFilter);
+        nFilter.connect(nGain);
+        nGain.connect(this.masterGain);
+        noise.start(now, 0, 0.50);
+      }
+    }
   }
 
   // --- PHOTOREALISTIC TEXTURE LOADER & PLAQUE GENERATOR ---
@@ -3048,6 +3096,7 @@
       this.exitDoorsOpening = false;
       this.leftDoorPivot = null;
       this.rightDoorPivot = null;
+      this.slidingDoors = [];
       this.focusedPainting = null;
 
       // Smitty Horror AI State: Spawns on 4th Floor (floor 3) in the North-East Restricted Reliquary
@@ -3961,6 +4010,7 @@
     }
 
     createRealisticRestrooms(fl, y0, mats) {
+      const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
       const tileMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
       const floorTileMat = new THREE.MeshLambertMaterial({ color: 0xd1d5db });
       const wainscotMat = new THREE.MeshLambertMaterial({ color: 0xe5e7eb });
@@ -3977,6 +4027,32 @@
       const mirrorMat = new THREE.MeshPhongMaterial({ color: 0xbfdbfe, specular: 0xffffff, shininess: 180 });
       const woodMat = mats.mahogany;
       const brassMat = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
+
+      // Commercial sliding glass door materials
+      const slidingGlassMat = new THREE.MeshPhongMaterial({
+        color: 0xc8e6f0,
+        transparent: true,
+        opacity: 0.38,
+        specular: 0xffffff,
+        shininess: 140,
+        depthWrite: false
+      });
+      const doorAlumMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+      const frostedDecalMat = new THREE.MeshLambertMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.65,
+        depthWrite: false
+      });
+      const sensorPodMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        metalness: 0.5,
+        roughness: 0.5
+      });
 
       // 1. DEDICATED CERAMIC TILE FLOOR SLAB (covering wood floor across x: -3.8..3.8, z: -14.0..-6.0)
       const rFloor = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.05, 8.0), floorTileMat);
@@ -4013,44 +4089,138 @@
       wainscotMid.position.set(0, y0 + 1.1, -10.0);
       this.scene.add(wainscotMid);
 
-      // 4. RESTROOM ENTRANCE DOORWAYS (x = 4.0, z = -12.0 Men's, z = -8.0 Women's)
-      const createRestroomDoorway = (doorZ, signTitle, isMen) => {
-        const frameW = 0.12;
-        const frameH = 2.4;
-        const frameD = 0.35;
-        const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(frameD, frameH, frameW), woodMat);
-        leftJamb.position.set(3.95, y0 + frameH / 2, doorZ - 1.0);
+      // 4. RESTROOM ENTRANCE AUTOMATIC SLIDING GLASS DOORS (x = 4.0, z = -12.0 Men's, z = -8.0 Women's)
+      const createSlidingRestroomDoor = (doorZ, signTitle, isMen) => {
+        const frameW = 0.08;
+        const frameH = 2.40;
+        const frameD = 0.42;
+
+        // Recessed pocket jamb frames on North and South sides of doorway opening
+        const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(frameD, frameH, frameW), doorAlumMat);
+        leftJamb.position.set(4.0, y0 + frameH / 2, doorZ - 1.0);
         this.scene.add(leftJamb);
 
-        const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(frameD, frameH, frameW), woodMat);
-        rightJamb.position.set(3.95, y0 + frameH / 2, doorZ + 1.0);
+        const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(frameD, frameH, frameW), doorAlumMat);
+        rightJamb.position.set(4.0, y0 + frameH / 2, doorZ + 1.0);
         this.scene.add(rightJamb);
 
-        const lintelMesh = new THREE.Mesh(new THREE.BoxGeometry(frameD, 0.16, 2.0), woodMat);
-        lintelMesh.position.set(3.95, y0 + frameH - 0.08, doorZ);
-        this.scene.add(lintelMesh);
+        // Commercial aluminum overhead track operator housing
+        const trackHeader = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.18, 2.16), doorAlumMat);
+        trackHeader.position.set(4.0, y0 + frameH - 0.09, doorZ);
+        this.scene.add(trackHeader);
 
-        // Door hung nicely ajar (30 deg inward)
-        const doorGroup = new THREE.Group();
-        doorGroup.position.set(3.95, y0, doorZ - 0.94);
-        const doorPanel = new THREE.Mesh(new THREE.BoxGeometry(0.06, 2.3, 0.94), woodMat);
-        doorPanel.position.set(0, 1.15, 0.47);
-        doorGroup.add(doorPanel);
+        // Floor guide threshold groove
+        const floorGuide = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 2.08), doorAlumMat);
+        floorGuide.position.set(4.0, y0 + 0.01, doorZ);
+        this.scene.add(floorGuide);
 
-        // Brass push plate & handle
-        const plate = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.45, 0.12), brassMat);
-        plate.position.set(0, 1.10, 0.85);
-        doorGroup.add(plate);
+        // Dual motion sensor housings mounted above door
+        const sensorLEDMat = new THREE.MeshBasicMaterial({ color: 0x0088ff });
+        [-0.19, 0.19].forEach((ox) => {
+          const pod = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.22), sensorPodMat);
+          pod.position.set(4.0 + ox, y0 + frameH + 0.04, doorZ);
+          this.scene.add(pod);
 
-        doorGroup.rotation.y = isMen ? 0.40 : -0.40;
-        this.scene.add(doorGroup);
+          const led = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.012, 0.04), sensorLEDMat);
+          led.position.set(4.0 + ox * 1.08, y0 + frameH + 0.04, doorZ);
+          this.scene.add(led);
+        });
 
-        // Brass Room Plaque on hallway wall
-        this.createRoomSign(4.18, y0 + 1.65, doorZ + 1.35, Math.PI / 2, signTitle);
+        // Helper to construct one sliding glass door leaf (width: 1.04m, height: 2.26m)
+        const createLeaf = (isLeft) => {
+          const leafGroup = new THREE.Group();
+          const leafW = 1.04;
+          const leafH = 2.26;
+          const glassThick = 0.02;
+
+          // Main tempered glass panel
+          const glass = new THREE.Mesh(new THREE.BoxGeometry(glassThick, leafH, leafW), slidingGlassMat);
+          glass.position.set(0, leafH / 2, 0);
+          leafGroup.add(glass);
+
+          // Top & bottom aluminum rails
+          const railTop = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.025, 0.08, leafW), doorAlumMat);
+          railTop.position.set(0, leafH - 0.04, 0);
+          leafGroup.add(railTop);
+
+          const railBot = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.025, 0.12, leafW), doorAlumMat);
+          railBot.position.set(0, 0.06, 0);
+          leafGroup.add(railBot);
+
+          // Vertical perimeter stiles
+          const stileOuter = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.02, leafH, 0.045), doorAlumMat);
+          stileOuter.position.set(0, leafH / 2, isLeft ? -leafW / 2 + 0.0225 : leafW / 2 - 0.0225);
+          leafGroup.add(stileOuter);
+
+          const stileInner = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.015, leafH, 0.035), doorAlumMat);
+          stileInner.position.set(0, leafH / 2, isLeft ? leafW / 2 - 0.0175 : -leafW / 2 + 0.0175);
+          leafGroup.add(stileInner);
+
+          // Meeting edge rubber bumper
+          const bumper = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.005, leafH - 0.04, 0.015), sensorPodMat);
+          bumper.position.set(0, leafH / 2, isLeft ? leafW / 2 : -leafW / 2);
+          leafGroup.add(bumper);
+
+          // Dual horizontal frosted safety decals across the glass (standard grocery/convenience store pattern)
+          [-0.06, 0.06].forEach((dy) => {
+            const decal = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.004, 0.035, leafW - 0.09), frostedDecalMat);
+            decal.position.set(0, 1.15 + dy, 0);
+            leafGroup.add(decal);
+          });
+
+          return leafGroup;
+        };
+
+        const leftLeaf = createLeaf(true);
+        const rightLeaf = createLeaf(false);
+
+        // Closed positions: leaves meet at doorZ in center
+        const closedZLeft = doorZ - 0.51;
+        const closedZRight = doorZ + 0.51;
+
+        // Open positions: leaves retreat completely inside the wall pockets
+        const openZLeft = doorZ - 1.54;
+        const openZRight = doorZ + 1.54;
+
+        leftLeaf.position.set(4.0, y0, closedZLeft);
+        rightLeaf.position.set(4.0, y0, closedZRight);
+        this.scene.add(leftLeaf);
+        this.scene.add(rightLeaf);
+
+        // Active collider across doorway when glass is closed
+        const collider = {
+          type: 'box',
+          floor: fl,
+          minX: 3.82,
+          maxX: 4.18,
+          minZ: doorZ - 0.98,
+          maxZ: doorZ + 0.98
+        };
+        this.colliders.push(collider);
+
+        // Register sliding door for animation & proximity triggers
+        this.slidingDoors.push({
+          floor: fl,
+          x: 4.0,
+          doorZ: doorZ,
+          leftLeaf: leftLeaf,
+          rightLeaf: rightLeaf,
+          closedZLeft: closedZLeft,
+          closedZRight: closedZRight,
+          openZLeft: openZLeft,
+          openZRight: openZRight,
+          openProgress: 0.0,
+          sensorLEDMat: sensorLEDMat,
+          collider: collider,
+          isOpen: false
+        });
+
+        // Hallway room plaque
+        this.createRoomSign(4.24, y0 + 1.65, doorZ + 1.35, Math.PI / 2, signTitle);
       };
 
-      createRestroomDoorway(-12.0, 'MEN • RESTROOM', true);
-      createRestroomDoorway(-8.0, 'WOMEN • RESTROOM', false);
+      createSlidingRestroomDoor(-12.0, 'MEN • RESTROOM', true);
+      createSlidingRestroomDoor(-8.0, 'WOMEN • RESTROOM', false);
 
       // 5. HELPER: REALISTIC AMERICAN COMMERCIAL TOILET & DUAL JUMBO DISPENSER (Matching User Reference)
       // Positioned against West perimeter wall (x = -3.76), facing East into stall with rotY = Math.PI / 2
@@ -4221,17 +4391,27 @@
 
         group.add(dispGroup);
 
-        // 7. CORNER PLUMBING DRAIN/VENT STACK (as seen in Image 2)
-        const pipeH = 2.4;
+        // 7. CORNER PLUMBING DRAIN/VENT STACK EXTENDING ALL THE WAY INTO CEILING
+        const pipeH = ceilH; // Extends through full floor height into the ceiling!
         const pipe = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, pipeH, 16), pipeMat);
         pipe.position.set(wallX - 0.06, pipeH / 2, -0.22);
         group.add(pipe);
 
-        [0.70, 1.35].forEach((py) => {
+        // Heavy industrial wall mounting pipe clamps up the vertical stack
+        [0.70, 1.60, 2.80, 4.20].forEach((py) => {
           const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.058, 0.058, 0.05, 16), pipeMat);
           collar.position.set(wallX - 0.06, py, -0.22);
           group.add(collar);
+
+          const wallStrap = new THREE.Mesh(new THREE.BoxGeometry(0.035, 0.03, 0.12), pipeMat);
+          wallStrap.position.set(wallX - 0.02, py, -0.22);
+          group.add(wallStrap);
         });
+
+        // Top ceiling escutcheon collar plate at the ceiling penetration
+        const ceilFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.085, 0.04, 16), pipeMat);
+        ceilFlange.position.set(wallX - 0.06, ceilH - 0.02, -0.22);
+        group.add(ceilFlange);
 
         this.scene.add(group);
       };
@@ -4458,12 +4638,51 @@
           group.add(sconceBar);
         });
 
-        // Stainless steel automatic hand dryer on the side wall
-        const dryer = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.34, 0.16), faucetMat);
-        dryer.position.set(width / 2 + 0.22, 1.28, forwardDir * 0.05);
-        group.add(dryer);
-
         this.scene.add(group);
+      };
+
+      // Helper: Commercial Sculpted Stainless Steel Wall-Mounted Hand Dryer (Flush against wall tiles)
+      const buildWallMountedHandDryer = (x, zWall, wallDirZ) => {
+        const forward = -wallDirZ; // Direction out from wall face into restroom
+        const dGroup = new THREE.Group();
+        dGroup.position.set(x, y0 + 1.25, zWall);
+
+        const dryerMat = new THREE.MeshStandardMaterial({
+          color: 0xe2e8f0,
+          metalness: 0.90,
+          roughness: 0.20
+        });
+        const backplateMat = new THREE.MeshLambertMaterial({ color: 0x1e293b });
+        const ledBlueMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
+        const nozzleMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.6 });
+
+        // 1. Flush mounting backplate pinned directly against wall tiles
+        const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.40, 0.015), backplateMat);
+        backPlate.position.set(0, 0, forward * 0.008);
+        dGroup.add(backPlate);
+
+        // 2. Main commercial sculpted stainless casing
+        const casing = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.35, 0.15), dryerMat);
+        casing.position.set(0, 0, forward * 0.085);
+        dGroup.add(casing);
+
+        // 3. Top contoured hood cowl
+        const topCowl = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.15, 16), dryerMat);
+        topCowl.rotation.z = Math.PI / 2;
+        topCowl.position.set(0, 0.175, forward * 0.085);
+        dGroup.add(topCowl);
+
+        // 4. Downward high-speed air nozzle outlet
+        const nozzle = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.03, 0.06), nozzleMat);
+        nozzle.position.set(0, -0.165, forward * 0.095);
+        dGroup.add(nozzle);
+
+        // 5. Active optical sensor glow indicator
+        const sensorLED = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.012, 0.01), ledBlueMat);
+        sensorLED.position.set(0, -0.06, forward * 0.162);
+        dGroup.add(sensorLED);
+
+        this.scene.add(dGroup);
       };
 
       // Helper: Men's Commercial Vitreous China Urinals
@@ -4516,6 +4735,16 @@
           handle.position.set(-0.08, 1.58, -0.06);
           uGroup.add(handle);
 
+          // Vertical supply pipe extending straight up into the ceiling slab
+          const supplyH = ceilH - 1.61;
+          const supplyPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, supplyH, 10), chromeMat);
+          supplyPipe.position.set(0, 1.61 + supplyH / 2, -0.06);
+          uGroup.add(supplyPipe);
+
+          const supplyFlange = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.025, 12), chromeMat);
+          supplyFlange.position.set(0, ceilH - 0.015, -0.06);
+          uGroup.add(supplyFlange);
+
           this.scene.add(uGroup);
         });
 
@@ -4538,6 +4767,8 @@
       buildStallBank(-13.8, -10.2, -12.0, -12.9, -11.1);
       // Vanity on North wall face (z = -13.80, wallDirZ = -1, counter center vz = -13.49)
       buildVanitySuite(1.4, -13.49, 2.8, -1);
+      // Flush wall-mounted hand dryer on North wall beside vanity (x = 3.15, z = -13.80)
+      buildWallMountedHandDryer(3.15, -13.80, -1);
       // Urinals on South divider wall face (z = -10.20)
       buildUrinals(-10.20);
 
@@ -4546,6 +4777,8 @@
       buildStallBank(-9.8, -6.2, -8.0, -8.9, -7.1);
       // Vanity on South wall face (z = -6.20, wallDirZ = 1, counter center vz = -6.51)
       buildVanitySuite(1.4, -6.51, 2.8, 1);
+      // Flush wall-mounted hand dryer on South wall beside vanity (x = 3.15, z = -6.20)
+      buildWallMountedHandDryer(3.15, -6.20, 1);
 
       // Colliders for Restrooms
       this.colliders.push(
@@ -5595,6 +5828,18 @@
         connect(fn.east_w_n2,  fn.east_w_p5);
         connect(fn.east_w_p5,  fn.east_w_p10);
         connect(fn.east_w_p10, fn.east_w_p15);
+
+        // Doorways through automatic sliding glass doors into Restrooms
+        fn.doorM_rest_mid = addNode(4.0, y, -12.0, fl, 'doorM_rest_mid');
+        fn.doorM_rest_in  = addNode(1.5, y, -12.0, fl, 'doorM_rest_in');
+        connect(fn.east_w_n12, fn.doorM_rest_mid);
+        connect(fn.doorM_rest_mid, fn.doorM_rest_in);
+
+        // Doorway into Women's Restroom at x = 4.0, z = -8.0
+        fn.doorW_rest_mid = addNode(4.0, y, -8.0, fl, 'doorW_rest_mid');
+        fn.doorW_rest_in  = addNode(1.5, y, -8.0, fl, 'doorW_rest_in');
+        connect(fn.east_w_n7, fn.doorW_rest_mid);
+        connect(fn.doorW_rest_mid, fn.doorW_rest_in);
 
         // East Aisle (x = 23.5)
         fn.east_e_n24 = addNode(23.5, y, -23.0, fl, 'east_e_n24');
@@ -9268,6 +9513,57 @@
           this.leftDoorPivot.rotation.y = targetL;
           this.rightDoorPivot.rotation.y = targetR;
           this.exitDoorsOpening = false;
+        }
+      }
+
+      // Automatic sliding glass doors (Restrooms)
+      if (this.slidingDoors && this.slidingDoors.length > 0) {
+        const playerX = this.playerPos.x;
+        const playerZ = this.playerPos.z;
+        const smittyX = this.smittyPos ? this.smittyPos.x : 999;
+        const smittyZ = this.smittyPos ? this.smittyPos.z : 999;
+        const smittyFloor = this.smittyPos ? Math.round(this.smittyPos.y / CONFIG.FLOOR_HEIGHT) : -1;
+        const smittyActive = (this.smittyState !== 'DEAD');
+
+        for (let i = 0; i < this.slidingDoors.length; i++) {
+          const d = this.slidingDoors[i];
+          const distPlayer = (this.playerFloor === d.floor) ? Math.hypot(playerX - d.x, playerZ - d.doorZ) : 999;
+          const distSmitty = (smittyActive && smittyFloor === d.floor) ? Math.hypot(smittyX - d.x, smittyZ - d.doorZ) : 999;
+          const shouldOpen = (distPlayer < 3.4 || distSmitty < 3.4);
+
+          // Audio whisper when door begins to slide open
+          if (shouldOpen && !d.isOpen && d.openProgress < 0.05) {
+            d.isOpen = true;
+            if (this.playerFloor === d.floor && this.audio && this.audio.playSlidingDoor) {
+              this.audio.playSlidingDoor();
+            }
+          } else if (!shouldOpen && d.isOpen && d.openProgress > 0.95) {
+            d.isOpen = false;
+          }
+
+          const targetProgress = shouldOpen ? 1.0 : 0.0;
+          const speed = shouldOpen ? 3.2 : 1.8; // Opens promptly when approached, closes smoothly
+          d.openProgress = THREE.MathUtils.lerp(d.openProgress, targetProgress, Math.min(1.0, delta * speed));
+
+          // Slide glass panels into the wall pockets
+          d.leftLeaf.position.z = THREE.MathUtils.lerp(d.closedZLeft, d.openZLeft, d.openProgress);
+          d.rightLeaf.position.z = THREE.MathUtils.lerp(d.closedZRight, d.openZRight, d.openProgress);
+
+          // Sensor indicator LED: green when motion detected / door active, blue when idle
+          if (d.sensorLEDMat) {
+            d.sensorLEDMat.color.setHex(d.openProgress > 0.08 ? 0x00ff88 : 0x0088ff);
+          }
+
+          // Dynamic collider: clear obstruction once glass is 35% open so you can walk through
+          if (d.collider) {
+            if (d.openProgress > 0.35) {
+              d.collider.minX = 0;
+              d.collider.maxX = 0;
+            } else {
+              d.collider.minX = 3.82;
+              d.collider.maxX = 4.18;
+            }
+          }
         }
       }
 
