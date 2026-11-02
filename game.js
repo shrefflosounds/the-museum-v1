@@ -782,7 +782,7 @@
       CROUCH_SPEED: 2.4,
       CAMERA_HEIGHT: 1.72,
       CROUCH_HEIGHT: 0.95,
-      JUMP_FORCE: 5.4,
+      JUMP_FORCE: 6.6,
       GRAVITY: 16.0,
       RADIUS: 0.36,
       MOUSE_SENS: 0.0024,
@@ -3486,9 +3486,8 @@
       this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
       this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
-      this.createWall(-2.8, yc, 18.0, 2.0, wallH, t, mainWallMat, true, fl);      // -3.8..-1.8
-      this.createWall(2.9, yc, 18.0, 1.8, wallH, t, mainWallMat, true, fl);       // 2.0..3.8
-      this.createLintel(0.1, y0, 18.0, 3.8, t, ceilH, mainWallMat);               // -1.8..2.0
+      // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
+      this.createWall(0.0, yc, 18.0, 7.6, wallH, t, mainWallMat, true, fl);       // -3.8..3.8
 
       // South wall of South Cross-Passage (z = 28, x: -3.8..11.8)
       this.createWall(4.0, yc, 28, 15.6, wallH, t, mainWallMat, true, fl);        // -3.8..11.8
@@ -5159,6 +5158,17 @@
       });
 
       this.scene.add(benchGroup);
+
+      // Solid physical obstacle collider for the bench across its floor
+      const fl = Math.round(y / CONFIG.FLOOR_HEIGHT);
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 1.54,
+        maxX: x + 1.54,
+        minZ: z - 0.54,
+        maxZ: z + 0.54
+      });
     }
 
     createExhibitionPlinth(x, y, z, w, h, d, hasStanchions = false) {
@@ -7838,9 +7848,14 @@
         this.stamina = Math.min(CONFIG.PLAYER.MAX_STAMINA, this.stamina + delta * 16);
       }
 
-      const moveSpeed = isCrouching
+      const baseSpeed = isCrouching
         ? CONFIG.PLAYER.CROUCH_SPEED
         : (this.isSprinting ? CONFIG.PLAYER.SPRINT_SPEED : CONFIG.PLAYER.WALK_SPEED);
+
+      // Sprint-jump momentum boost: extra speed while airborne during a running jump
+      const moveSpeed = (this.isSprinting && !this.isGrounded && !isCrouching)
+        ? baseSpeed * 1.18
+        : baseSpeed;
 
       const oldPx = this.playerPos.x;
       const oldPz = this.playerPos.z;
