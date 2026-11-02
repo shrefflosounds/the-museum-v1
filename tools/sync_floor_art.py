@@ -11,7 +11,7 @@ directly into The Museum game codebase (assets/gallery, game.js, GAME_TEXT.txt, 
 
 Usage:
   python3 tools/sync_floor_art.py [path_to_Museum_Art_By_Floor]
-Defaults to /Users/johnobrien/Desktop/Museum_Art_By_Floor
+Defaults to ~/Desktop/Museum_Art_By_Floor
 """
 
 import os
@@ -23,11 +23,11 @@ import struct
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_DIR = os.path.dirname(SCRIPT_DIR)
-DEFAULT_SOURCE = "/Users/johnobrien/Desktop/Museum_Art_By_Floor"
+DEFAULT_SOURCE = os.path.expanduser("~/Desktop/Museum_Art_By_Floor")
 DEST_GALLERY = os.path.join(PROJECT_DIR, "assets", "gallery")
 GAME_JS = os.path.join(PROJECT_DIR, "game.js")
 GAME_TEXT = os.path.join(PROJECT_DIR, "GAME_TEXT.txt")
-DESKTOP_TEXT = "/Users/johnobrien/Desktop/Museum_Text_Files/05_FULL_GAME_TEXT.txt"
+DESKTOP_TEXT = os.path.expanduser("~/Desktop/Museum_Text_Files/05_FULL_GAME_TEXT.txt")
 MANIFEST_JSON = os.path.join(PROJECT_DIR, "assets", "gallery_manifest.json")
 PLACEMENTS_JSON = os.path.join(PROJECT_DIR, "assets", "curated_placements.json")
 

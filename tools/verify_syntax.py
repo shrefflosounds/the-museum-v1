@@ -1,4 +1,9 @@
-with open('/Users/johnobrien/Desktop/SITES : APPS : CODE/THE MUSEUM/game.js') as f:
+import os
+
+script_dir = os.path.dirname(os.path.abspath(__file__))
+game_js_path = os.path.join(script_dir, '..', 'game.js')
+
+with open(game_js_path) as f:
     code = f.read()
 
 stack = []
