@@ -7541,9 +7541,7 @@
           if (this.gameStarted) this.toggleFlashlight();
         } else if (e.code === 'KeyR') {
           if (this.gameStarted) {
-            if (!this.isSpectatorMode) {
-              this.reloadPistol();
-            }
+            this.reloadPistol();
           }
         } else if (e.code === 'KeyE') {
           if (this.isExaminingArt) {
@@ -8501,7 +8499,8 @@
         this.updateSpectatorBadge();
 
         this.showSystemNotification(
-          T('hud.spectator_enabled', 'SPECTATOR MODE ENABLED (` OR ~: EXIT, V: NO-CLIP, N: OUTLINE, H: HIDE HUD)')
+          T('hud.spectator_enabled', 'SPECTATOR MODE (`: EXIT • V: NO-CLIP • N: OUTLINE • H: HUD)'),
+          4000
         );
       } else {
         // Disengage no-clip, X-ray, and unhide HUD/arms if active when exiting spectator mode
@@ -8561,7 +8560,7 @@
 
       if (this.isNoClipMode) {
         this.showSystemNotification(
-          T('hud.noclip_enabled', 'NO-CLIP ENABLED (WASD TO FLY, SPACE/C FOR VERTICAL, V TO EXIT)')
+          T('hud.noclip_enabled', 'NO-CLIP ENABLED (V TO EXIT)')
         );
       } else {
         // Seamless drop to ground like Garry's Mod
