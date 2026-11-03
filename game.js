@@ -3175,8 +3175,8 @@
   }
 
   class MuseumGame {
-    constructor() {
-      this.canvas = document.getElementById('game-canvas');
+    constructor(customCanvas = null) {
+      this.canvas = customCanvas || document.getElementById('game-canvas') || document.getElementById('editor-canvas');
       this.audio = new MuseumAudioEngine();
 
       this.renderer = null;
@@ -3422,9 +3422,10 @@
       if (this.renderer && this.scene && this.camera) {
         this.renderer.compile(this.scene, this.camera);
       }
-      this.setupEventListeners();
-      this.updateSmittyModeUI();
-      this.updateMusicModeUI();
+      if (!window._IS_EDITOR_MODE) {
+        this.setupEventListeners();
+        this.updateSmittyModeUI();
+        this.updateMusicModeUI();
       if (this.dom.aboutBuildTag) {
         this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
       }
@@ -3432,7 +3433,8 @@
       if (this.musicEnabled) {
         this.audio.playMenuMusic();
       }
-      this.animate();
+        this.animate();
+      }
     }
 
     initThree() {
@@ -3444,16 +3446,20 @@
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
-      this.renderer = new THREE.WebGLRenderer({
-        canvas: this.canvas,
-        antialias: true,
-        powerPreference: 'high-performance'
-      });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(1);
-      this.renderer.shadowMap.enabled = false;
-      this.renderer.toneMapping = THREE.LinearToneMapping;
-      this.renderer.toneMappingExposure = 1.0;
+      if (window._EDITOR_RENDERER) {
+        this.renderer = window._EDITOR_RENDERER;
+      } else if (this.canvas) {
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: this.canvas,
+          antialias: true,
+          powerPreference: 'high-performance'
+        });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(1);
+        this.renderer.shadowMap.enabled = false;
+        this.renderer.toneMapping = THREE.LinearToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+      }
 
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
       this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
@@ -13425,11 +13431,16 @@
     }
   }
 
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', () => {
+  window.MuseumGame = MuseumGame;
+  window.Game = MuseumGame;
+
+  if (!window._IS_EDITOR_MODE) {
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', () => {
+        window.gameInstance = new MuseumGame();
+      });
+    } else {
       window.gameInstance = new MuseumGame();
-    });
-  } else {
-    window.gameInstance = new MuseumGame();
+    }
   }
 })();
