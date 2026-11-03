@@ -318,8 +318,14 @@
         if (this.initialized && this.gameplayActive && this.ctx && this.ctx.state === 'running') {
           if (this.currentBpm > 65) {
             const intensity = Math.min(1.0, (this.currentBpm - 60) / 110);
-            this.triggerThump(0, 52, 0.42 * intensity);
-            this.triggerThump(0.14, 44, 0.26 * intensity);
+            if (this.customBuffers && this.customBuffers['heartbeat_pulse.wav']) {
+              // The audio asset heartbeat_pulse.wav is a pre-recorded heartbeat pulse; trigger once per beat
+              this.triggerThump(0, 52, 0.38 * intensity);
+            } else {
+              // Procedural two-part anatomical pulse (lub-dub)
+              this.triggerThump(0, 52, 0.36 * intensity);
+              this.triggerThump(0.14, 44, 0.22 * intensity);
+            }
           }
         }
         const intervalMs = (60 / Math.max(40, this.currentBpm)) * 1000;
@@ -337,7 +343,7 @@
           const src = this.ctx.createBufferSource();
           src.buffer = this.customBuffers['heartbeat_pulse.wav'];
           const g = this.ctx.createGain();
-          g.gain.setValueAtTime(vol * 2.56, now); // Boosted by +60%
+          g.gain.setValueAtTime(vol * 1.25, now);
           src.connect(g);
           g.connect(this.masterGain);
           src.start(now);
@@ -12668,21 +12674,44 @@
         this.smittySawPlayerStairsTimer -= delta;
       }
 
+      const floorDiff = Math.abs(this.smittyFloor - this.playerFloor);
+      const horizontalDist = Math.hypot(this.smittyPos.x - this.playerPos.x, this.smittyPos.z - this.playerPos.z);
       const dist3D = this.smittyPos.distanceTo(this.playerPos);
 
+      // Heartbeat dynamics: only escalate when player is genuinely in danger on the SAME floor or actively chased
       if (this.isSpectatorMode) {
         this.audio.setHeartbeatBpm(45);
-      } else if (this.smittyState === 'CHASE' || dist3D < 9) {
-        this.audio.setHeartbeatBpm(165);
-      } else if (this.smittyState === 'STALK' || dist3D < 18) {
-        this.audio.setHeartbeatBpm(110);
-      } else if (dist3D < 30) {
-        this.audio.setHeartbeatBpm(75);
+      } else if (this.smittyState === 'CHASE') {
+        if (floorDiff === 0) {
+          if (horizontalDist < 8) this.audio.setHeartbeatBpm(165);
+          else if (horizontalDist < 16) this.audio.setHeartbeatBpm(135);
+          else this.audio.setHeartbeatBpm(105);
+        } else {
+          // In active pursuit across floors (e.g. entering stairwells)
+          const inStairs = this.isInStairwell(this.playerPos) || this.isInStairwell(this.smittyPos);
+          if (inStairs) this.audio.setHeartbeatBpm(120);
+          else this.audio.setHeartbeatBpm(45);
+        }
+      } else if (this.smittyState === 'STALK') {
+        if (floorDiff === 0) {
+          if (horizontalDist < 10) this.audio.setHeartbeatBpm(115);
+          else if (horizontalDist < 18) this.audio.setHeartbeatBpm(85);
+          else this.audio.setHeartbeatBpm(45);
+        } else {
+          this.audio.setHeartbeatBpm(45);
+        }
       } else {
-        this.audio.setHeartbeatBpm(45);
+        // Calm patrol/inspect/dance/search:
+        if (floorDiff === 0 && horizontalDist < 7.5) {
+          // Immediate close proximity on same floor
+          this.audio.setHeartbeatBpm(75);
+        } else {
+          // Peaceful resting rate (completely silent, no thumping!)
+          this.audio.setHeartbeatBpm(45);
+        }
       }
 
-      if (!this.isSpectatorMode && this.flashlightOn && dist3D < 12 && Math.random() < 0.08) {
+      if (!this.isSpectatorMode && this.flashlightOn && floorDiff === 0 && horizontalDist < 12 && Math.random() < 0.08) {
         this.flashlight.intensity = Math.random() < 0.5 ? 0.3 : 1.65;
       } else if (this.flashlightOn) {
         this.flashlight.intensity = 1.65;
@@ -12983,8 +13012,15 @@
             this.smittyFootstepInterval = 0.60;
           }
           this.smittyFootstepTimer = this.smittyFootstepInterval;
-          if (dist3D < 38) {
-            this.audio.playSmittyFootstep(dist3D);
+          if (floorDiff === 0) {
+            if (horizontalDist < 34) {
+              this.audio.playSmittyFootstep(horizontalDist);
+            }
+          } else if (floorDiff === 1) {
+            // Immediately adjacent floor: muffled reverberation through concrete ceiling
+            if (horizontalDist < 14) {
+              this.audio.playSmittyFootstep(horizontalDist * 2.2 + 16);
+            }
           }
         }
       } else {
