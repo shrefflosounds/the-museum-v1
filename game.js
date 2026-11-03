@@ -4073,32 +4073,35 @@
       const stallSignMat = new THREE.MeshStandardMaterial({
         map: stallSignTex,
         roughness: 0.45,
-        metalness: 0.05
+        metalness: 0.05,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       });
 
-      // OSHA-grade Black & Yellow diagonal hazard caution tape
+      // Bold OSHA-grade Black & Yellow diagonal hazard caution tape (high-res texture)
       let hazardTapeTex;
       {
         const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 64;
+        canvas.width = 512;
+        canvas.height = 128;
         const ctx = canvas.getContext('2d');
         ctx.fillStyle = '#facc15';
-        ctx.fillRect(0, 0, 256, 64);
+        ctx.fillRect(0, 0, 512, 128);
         ctx.fillStyle = '#111827';
-        const stripeW = 32;
-        for (let x = -64; x < 320; x += stripeW * 2) {
+        const stripeW = 64;
+        for (let x = -128; x < 640; x += stripeW * 2) {
           ctx.beginPath();
           ctx.moveTo(x, 0);
           ctx.lineTo(x + stripeW, 0);
-          ctx.lineTo(x + stripeW - 64, 64);
-          ctx.lineTo(x - 64, 64);
+          ctx.lineTo(x + stripeW - 128, 128);
+          ctx.lineTo(x - 128, 128);
           ctx.closePath();
           ctx.fill();
         }
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(0, 0, 256, 3);
-        ctx.fillRect(0, 61, 256, 3);
+        ctx.fillRect(0, 0, 512, 5);
+        ctx.fillRect(0, 123, 512, 5);
         hazardTapeTex = new THREE.CanvasTexture(canvas);
         hazardTapeTex.wrapS = THREE.RepeatWrapping;
         hazardTapeTex.wrapT = THREE.ClampToEdgeWrapping;
@@ -4108,7 +4111,10 @@
         map: hazardTapeTex,
         roughness: 0.35,
         metalness: 0.1,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
       });
 
       // Commercial sliding glass door materials
@@ -4578,10 +4584,10 @@
         latch1.position.set(0, 1.05, 0.85);
         door1Group.add(latch1);
 
-        // Out-of-order poster sign on Door 1
-        const signGeom = new THREE.PlaneGeometry(0.38, 0.57);
+        // Out-of-order poster sign on Door 1 (2x larger: 0.76m wide x 1.14m tall)
+        const signGeom = new THREE.PlaneGeometry(0.76, 1.14);
         const sign1 = new THREE.Mesh(signGeom, stallSignMat);
-        sign1.position.set(0.018, 1.25, 0.45);
+        sign1.position.set(0.017, 1.075, 0.45);
         sign1.rotation.y = Math.PI / 2;
         door1Group.add(sign1);
 
@@ -4604,9 +4610,9 @@
         latch2.position.set(0, 1.05, 0.85);
         door2Group.add(latch2);
 
-        // Out-of-order poster sign on Door 2
+        // Out-of-order poster sign on Door 2 (2x larger: 0.76m wide x 1.14m tall)
         const sign2 = new THREE.Mesh(signGeom, stallSignMat);
-        sign2.position.set(0.018, 1.25, 0.45);
+        sign2.position.set(0.017, 1.075, 0.45);
         sign2.rotation.y = Math.PI / 2;
         door2Group.add(sign2);
 
@@ -4618,8 +4624,9 @@
         pil2.position.set(-1.80, y0 + 1.10, zSouth - 0.15);
         this.scene.add(pil2);
 
-        // Black and Yellow OSHA Hazard Caution Tape across both shut-down stall doors
-        const addTapeStrip = (y1, z1, y2, z2, tapeW = 0.08) => {
+        // Bold Black & Yellow OSHA Hazard Caution Tape across both shut-down stall doors
+        // Each strip is layered with distinct X-offsets to completely eliminate coplanar Z-fighting glitches
+        const addTapeStrip = (y1, z1, y2, z2, tapeW = 0.16, layer = 0) => {
           const dy = y2 - y1;
           const dz = z2 - z1;
           const len = Math.hypot(dy, dz);
@@ -4628,7 +4635,8 @@
           const nz = dy / len * (tapeW / 2);
 
           const geom = new THREE.BufferGeometry();
-          const posX = -1.772; // Rests cleanly 2.8cm in front of door surface
+          // Layer offset in X prevents tape strips from intersecting or z-fighting each other
+          const posX = -1.770 + layer * 0.003;
           const positions = new Float32Array([
             posX, y1 + ny, z1 + nz,
             posX, y1 - ny, z1 - nz,
@@ -4638,7 +4646,7 @@
             posX, y2 - ny, z2 - nz,
             posX, y2 + ny, z2 + nz,
           ]);
-          const uMax = len * 5.0;
+          const uMax = len * 2.5; // repeats stripes cleanly along the wider tape
           const uvs = new Float32Array([
             0, 1,
             0, 0,
@@ -4663,21 +4671,21 @@
           this.scene.add(tapeMesh);
         };
 
-        // Stall 1 Caution Tape (spans across North pilaster, Door 1, and Center pilaster)
-        const s1_zA = zNorth + 0.15;
-        const s1_zB = zNorth + 1.35;
-        addTapeStrip(y0 + 1.58, s1_zA, y0 + 0.68, s1_zB);
-        addTapeStrip(y0 + 0.68, s1_zA, y0 + 1.58, s1_zB);
-        addTapeStrip(y0 + 1.05, s1_zA - 0.05, y0 + 1.05, s1_zB + 0.05);
-        addTapeStrip(y0 + 1.40, s1_zA - 0.05, y0 + 1.40, s1_zB + 0.05);
+        // Stall 1 Caution Tape (larger tape width: 0.16m, layered to prevent any visual glitching)
+        const s1_zA = zNorth + 0.12;
+        const s1_zB = zNorth + 1.38;
+        addTapeStrip(y0 + 1.62, s1_zA, y0 + 0.62, s1_zB, 0.16, 0); // Diagonal 1
+        addTapeStrip(y0 + 0.62, s1_zA, y0 + 1.62, s1_zB, 0.16, 1); // Diagonal 2
+        addTapeStrip(y0 + 1.05, s1_zA - 0.06, y0 + 1.05, s1_zB + 0.06, 0.16, 2); // Middle horizontal
+        addTapeStrip(y0 + 1.45, s1_zA - 0.06, y0 + 1.45, s1_zB + 0.06, 0.16, 3); // Upper horizontal
 
-        // Stall 2 Caution Tape (spans across Center pilaster, Door 2, and South pilaster)
-        const s2_zA = zSouth - 1.35;
-        const s2_zB = zSouth - 0.15;
-        addTapeStrip(y0 + 1.58, s2_zA, y0 + 0.68, s2_zB);
-        addTapeStrip(y0 + 0.68, s2_zA, y0 + 1.58, s2_zB);
-        addTapeStrip(y0 + 1.05, s2_zA - 0.05, y0 + 1.05, s2_zB + 0.05);
-        addTapeStrip(y0 + 1.40, s2_zA - 0.05, y0 + 1.40, s2_zB + 0.05);
+        // Stall 2 Caution Tape (larger tape width: 0.16m, layered to prevent any visual glitching)
+        const s2_zA = zSouth - 1.38;
+        const s2_zB = zSouth - 0.12;
+        addTapeStrip(y0 + 1.62, s2_zA, y0 + 0.62, s2_zB, 0.16, 0); // Diagonal 1
+        addTapeStrip(y0 + 0.62, s2_zA, y0 + 1.62, s2_zB, 0.16, 1); // Diagonal 2
+        addTapeStrip(y0 + 1.05, s2_zA - 0.06, y0 + 1.05, s2_zB + 0.06, 0.16, 2); // Middle horizontal
+        addTapeStrip(y0 + 1.45, s2_zA - 0.06, y0 + 1.45, s2_zB + 0.06, 0.16, 3); // Upper horizontal
 
         // Mount toilets flush against back wall: tank against West perimeter wall (x = -3.76), facing East into stall
         buildToilet(-3.45, toiletZ1, Math.PI / 2);
