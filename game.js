@@ -380,12 +380,14 @@
     playCrateImpact() {
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
+      if (this.lastCrateImpactTime && (now - this.lastCrateImpactTime) < 0.08) return;
+      this.lastCrateImpactTime = now;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(160, now);
       osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
-      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       osc.connect(gain);
       gain.connect(this.masterGain);
@@ -412,6 +414,8 @@
     playCrateCreak() {
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
+      if (this.lastCrateCreakTime && (now - this.lastCrateCreakTime) < 0.12) return;
+      this.lastCrateCreakTime = now;
       const osc = this.ctx.createOscillator();
       const gain = this.ctx.createGain();
       osc.type = 'sawtooth';
@@ -3096,6 +3100,72 @@
     const closeZ = z0 + t * dz;
     const distSq = (cx - closeX) * (cx - closeX) + (cz - closeZ) * (cz - closeZ);
     return distSq <= r * r;
+  }
+
+  // High-performance BufferGeometry combiner for low draw-call count
+  function mergeBufferGeometries(geometries) {
+    if (!geometries || geometries.length === 0) return new THREE.BufferGeometry();
+    let totalPositions = 0;
+    let totalIndices = 0;
+    const prepared = [];
+
+    for (let i = 0; i < geometries.length; i++) {
+      let g = geometries[i];
+      if (!g || !g.attributes || !g.attributes.position) continue;
+      if (!g.attributes.normal) g.computeVertexNormals();
+      if (!g.index) {
+        const count = g.attributes.position.count;
+        const idx = new Uint32Array(count);
+        for (let k = 0; k < count; k++) idx[k] = k;
+        g = g.clone();
+        g.setIndex(new THREE.BufferAttribute(idx, 1));
+      }
+      totalPositions += g.attributes.position.array.length;
+      totalIndices += g.index.array.length;
+      prepared.push(g);
+    }
+
+    if (prepared.length === 0) return new THREE.BufferGeometry();
+
+    const positions = new Float32Array(totalPositions);
+    const normals = new Float32Array(totalPositions);
+    const uvs = new Float32Array((totalPositions / 3) * 2);
+    const indices = new Uint32Array(totalIndices);
+
+    let posOffset = 0;
+    let uvOffset = 0;
+    let indexOffset = 0;
+    let vertexOffset = 0;
+
+    for (let i = 0; i < prepared.length; i++) {
+      const g = prepared[i];
+      const pos = g.attributes.position.array;
+      positions.set(pos, posOffset);
+
+      if (g.attributes.normal) {
+        normals.set(g.attributes.normal.array, posOffset);
+      }
+      if (g.attributes.uv) {
+        uvs.set(g.attributes.uv.array, uvOffset);
+      }
+
+      const idx = g.index.array;
+      for (let j = 0; j < idx.length; j++) {
+        indices[indexOffset + j] = idx[j] + vertexOffset;
+      }
+      indexOffset += idx.length;
+
+      posOffset += pos.length;
+      uvOffset += (pos.length / 3) * 2;
+      vertexOffset += pos.length / 3;
+    }
+
+    const merged = new THREE.BufferGeometry();
+    merged.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    merged.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+    merged.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+    merged.setIndex(new THREE.BufferAttribute(indices, 1));
+    return merged;
   }
 
   class MuseumGame {
@@ -6578,7 +6648,7 @@
     }
 
     updatePhysicsCrates(delta) {
-      if (!this.physicsCrates || this.physicsCrates.length === 0) return;
+      if (this.playerFloor !== 3 || !this.physicsCrates || this.physicsCrates.length === 0) return;
 
       const y0 = 3 * CONFIG.FLOOR_HEIGHT; // Floor 3 elevation (15.60m)
       const ceilY = y0 + CONFIG.FLOOR_HEIGHT - 0.12;
@@ -6755,10 +6825,10 @@
           }
 
           // Room boundary wall bounce
-          if (c.x < 6.2) { c.x = 6.2; c.vx = Math.abs(c.vx) * 0.5; this.audio.playCrateImpact(); }
-          if (c.x > 23.8) { c.x = 23.8; c.vx = -Math.abs(c.vx) * 0.5; this.audio.playCrateImpact(); }
-          if (c.z < -23.8) { c.z = -23.8; c.vz = Math.abs(c.vz) * 0.5; this.audio.playCrateImpact(); }
-          if (c.z > 3.8) { c.z = 3.8; c.vz = -Math.abs(c.vz) * 0.5; this.audio.playCrateImpact(); }
+          if (c.x < 6.2) { c.x = 6.2; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = Math.abs(c.vx) * 0.5; }
+          if (c.x > 23.8) { c.x = 23.8; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = -Math.abs(c.vx) * 0.5; }
+          if (c.z < -23.8) { c.z = -23.8; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = Math.abs(c.vz) * 0.5; }
+          if (c.z > 3.8) { c.z = 3.8; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = -Math.abs(c.vz) * 0.5; }
         } else {
           // Stable resting in stack: spring restore minor tilts
           c.y = c.baseY;
@@ -6789,6 +6859,9 @@
           const c2 = this.physicsCrates[j];
           if (c2.isHeld) continue;
 
+          // If BOTH crates are intact in their stacks, skip: intact stacks never self-destruct!
+          if (!c1.isCollapsed && !c2.isCollapsed) continue;
+
           const dx = c2.x - c1.x;
           const dz = c2.z - c1.z;
           const dy = (c2.y + c2.h / 2) - (c1.y + c1.h / 2);
@@ -6801,7 +6874,8 @@
           const overlapZ = halfD - Math.abs(dz);
           const overlapY = halfH - Math.abs(dy);
 
-          if (overlapX > 0 && overlapZ > 0 && overlapY > 0) {
+          // Require physical 3cm penetration threshold to prevent floating-point noise
+          if (overlapX > 0.03 && overlapZ > 0.03 && overlapY > 0.03) {
             // Collision between crates c1 and c2!
             if (!c1.isCollapsed) this.triggerCrateStackCollapse(c1);
             if (!c2.isCollapsed) this.triggerCrateStackCollapse(c2);
@@ -7100,106 +7174,141 @@
       this.scene.add(rugGroup);
     }
 
+    getPlantMaterials() {
+      if (!this._plantMats) {
+        this._plantMats = {
+          potTerracotta: new THREE.MeshStandardMaterial({
+            color: 0x9a3412,
+            roughness: 0.55,
+            metalness: 0.08
+          }),
+          potGranite: new THREE.MeshStandardMaterial({
+            color: 0x27272a,
+            roughness: 0.55,
+            metalness: 0.08
+          }),
+          brassTrim: new THREE.MeshStandardMaterial({
+            color: 0xd4af37,
+            metalness: 0.85,
+            roughness: 0.25
+          }),
+          soil: new THREE.MeshStandardMaterial({
+            color: 0x1c1917,
+            roughness: 0.96
+          }),
+          foliage: new THREE.MeshStandardMaterial({
+            color: 0x166534,
+            roughness: 0.32,
+            metalness: 0.04,
+            side: THREE.DoubleSide
+          })
+        };
+      }
+      return this._plantMats;
+    }
+
+    getPlantGeometries() {
+      if (!this._plantGeoms) {
+        // Pot Body (Base + Waist + Fluted Rim)
+        const potBase = new THREE.CylinderGeometry(0.24, 0.28, 0.08, 14);
+        potBase.translate(0, 0.04, 0);
+
+        const potWaist = new THREE.CylinderGeometry(0.32, 0.20, 0.48, 14);
+        potWaist.translate(0, 0.32, 0);
+
+        const potRim = new THREE.TorusGeometry(0.32, 0.032, 8, 18);
+        potRim.rotateX(Math.PI / 2);
+        potRim.translate(0, 0.56, 0);
+
+        const potGeom = mergeBufferGeometries([potBase, potWaist, potRim]);
+
+        // Polished Brass Accent Ring
+        const goldBand = new THREE.TorusGeometry(0.28, 0.016, 6, 18);
+        goldBand.rotateX(Math.PI / 2);
+        goldBand.translate(0, 0.44, 0);
+
+        // Potting Soil
+        const soilGeom = new THREE.CylinderGeometry(0.30, 0.30, 0.03, 14);
+        soilGeom.translate(0, 0.54, 0);
+
+        // Full Botanical Foliage Canopy: Pre-merged into 1 single BufferGeometry!
+        const leafParts = [];
+        const frondCount = 10;
+        for (let f = 0; f < frondCount; f++) {
+          const ang = (f * Math.PI * 2) / frondCount + (f % 2) * 0.12;
+          const stemLength = 0.85 + (f % 3) * 0.15;
+          const droopAngle = 0.55 + (f % 2) * 0.18;
+
+          const frondMat = new THREE.Matrix4();
+          frondMat.makeRotationY(ang);
+          frondMat.setPosition(0, 0.55, 0);
+
+          const stem = new THREE.CylinderGeometry(0.012, 0.022, stemLength, 6);
+          const sPos = new THREE.Vector3(Math.sin(droopAngle) * stemLength * 0.5, Math.cos(droopAngle) * stemLength * 0.5, 0);
+          const sRot = new THREE.Euler(0, 0, -droopAngle);
+          const sMat = new THREE.Matrix4().makeRotationFromEuler(sRot);
+          sMat.setPosition(sPos);
+          sMat.premultiply(frondMat);
+          stem.applyMatrix4(sMat);
+          leafParts.push(stem);
+
+          const leafPairs = 5;
+          for (let l = 1; l <= leafPairs; l++) {
+            const t = l / leafPairs;
+            const lx = Math.sin(droopAngle) * stemLength * t;
+            const ly = Math.cos(droopAngle) * stemLength * t;
+            const leafScale = (0.7 + Math.sin(t * Math.PI) * 0.5) * 0.22;
+
+            [-1, 1].forEach(side => {
+              const leaf = new THREE.ConeGeometry(leafScale * 0.65, leafScale * 1.8, 5);
+              leaf.scale(1.0, 1.0, 0.15);
+              const lPos = new THREE.Vector3(lx, ly, side * (leafScale * 0.5));
+              const lRot = new THREE.Euler(side * 0.35, side * 0.45, -droopAngle - 0.25);
+              const lMat = new THREE.Matrix4().makeRotationFromEuler(lRot);
+              lMat.setPosition(lPos);
+              lMat.premultiply(frondMat);
+              leaf.applyMatrix4(lMat);
+              leafParts.push(leaf);
+            });
+          }
+
+          const tipX = Math.sin(droopAngle) * stemLength;
+          const tipY = Math.cos(droopAngle) * stemLength;
+          const tipLeaf = new THREE.ConeGeometry(0.09, 0.32, 5);
+          tipLeaf.scale(1.0, 1.0, 0.15);
+          const tPos = new THREE.Vector3(tipX, tipY, 0);
+          const tRot = new THREE.Euler(0, 0, -droopAngle - 0.35);
+          const tMat = new THREE.Matrix4().makeRotationFromEuler(tRot);
+          tMat.setPosition(tPos);
+          tMat.premultiply(frondMat);
+          tipLeaf.applyMatrix4(tMat);
+          leafParts.push(tipLeaf);
+        }
+
+        const foliageGeom = mergeBufferGeometries(leafParts);
+
+        this._plantGeoms = {
+          pot: potGeom,
+          goldBand: goldBand,
+          soil: soilGeom,
+          foliage: foliageGeom
+        };
+      }
+      return this._plantGeoms;
+    }
+
     createPottedMuseumPlant(x, y0, z, fl) {
+      const geoms = this.getPlantGeometries();
+      const mats = this.getPlantMaterials();
+
       const plantGroup = new THREE.Group();
       plantGroup.position.set(x, y0, z);
 
-      const potMat = new THREE.MeshStandardMaterial({
-        color: (fl === 0 || fl === 2) ? 0x9a3412 : 0x27272a,
-        roughness: 0.55,
-        metalness: 0.08
-      });
-      const brassTrimMat = new THREE.MeshStandardMaterial({
-        color: 0xd4af37,
-        metalness: 0.85,
-        roughness: 0.25
-      });
-      const soilMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.96 });
-      const leafMat = new THREE.MeshStandardMaterial({
-        color: 0x166534,
-        roughness: 0.32,
-        metalness: 0.04,
-        side: THREE.DoubleSide
-      });
-      const leafAccentMat = new THREE.MeshStandardMaterial({
-        color: 0x15803d,
-        roughness: 0.30,
-        metalness: 0.04,
-        side: THREE.DoubleSide
-      });
-      const stemMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.52 });
-
-      // 1. Classical Pedestal Base & Pot Body
-      const potBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 16), potMat);
-      potBase.position.y = 0.04;
-      plantGroup.add(potBase);
-
-      const potWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.20, 0.48, 16), potMat);
-      potWaist.position.y = 0.32;
-      plantGroup.add(potWaist);
-
-      // Polished brass accent band around pot waist
-      const goldBand = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.016, 8, 24), brassTrimMat);
-      goldBand.rotation.x = Math.PI / 2;
-      goldBand.position.y = 0.44;
-      plantGroup.add(goldBand);
-
-      // Fluted top rim
-      const potRim = new THREE.Mesh(new THREE.TorusGeometry(0.32, 0.032, 8, 24), potMat);
-      potRim.rotation.x = Math.PI / 2;
-      potRim.position.y = 0.56;
-      plantGroup.add(potRim);
-
-      // Dark moist potting soil
-      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.30, 0.03, 16), soilMat);
-      soil.position.y = 0.54;
-      plantGroup.add(soil);
-
-      // 2. Lush, Realistic Botanical Foliage (Ficus / Monstera / Palm Canopy)
-      const frondCount = 10;
-      for (let f = 0; f < frondCount; f++) {
-        const ang = (f * Math.PI * 2) / frondCount + (f % 2) * 0.12;
-        const stemGroup = new THREE.Group();
-        stemGroup.position.set(0, 0.55, 0);
-        stemGroup.rotation.y = ang;
-
-        const stemLength = 0.85 + (f % 3) * 0.15;
-        const droopAngle = 0.55 + (f % 2) * 0.18;
-
-        // Curved organic stem
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, stemLength, 8), stemMat);
-        stem.position.set(Math.sin(droopAngle) * stemLength * 0.5, Math.cos(droopAngle) * stemLength * 0.5, 0);
-        stem.rotation.z = -droopAngle;
-        stemGroup.add(stem);
-
-        // Lush paired leaves along the stem
-        const leafPairs = 5;
-        for (let l = 1; l <= leafPairs; l++) {
-          const t = l / leafPairs;
-          const lx = Math.sin(droopAngle) * stemLength * t;
-          const ly = Math.cos(droopAngle) * stemLength * t;
-          const leafScale = (0.7 + Math.sin(t * Math.PI) * 0.5) * 0.22;
-
-          [-1, 1].forEach(side => {
-            const leaf = new THREE.Mesh(new THREE.ConeGeometry(leafScale * 0.65, leafScale * 1.8, 5), (l % 2 === 0 ? leafMat : leafAccentMat));
-            leaf.scale.set(1.0, 1.0, 0.15);
-            leaf.position.set(lx, ly, side * (leafScale * 0.5));
-            leaf.rotation.set(side * 0.35, side * 0.45, -droopAngle - 0.25);
-            stemGroup.add(leaf);
-          });
-        }
-
-        // Terminal crown leaf at tip of frond
-        const tipX = Math.sin(droopAngle) * stemLength;
-        const tipY = Math.cos(droopAngle) * stemLength;
-        const tipLeaf = new THREE.Mesh(new THREE.ConeGeometry(0.09, 0.32, 5), leafMat);
-        tipLeaf.scale.set(1.0, 1.0, 0.15);
-        tipLeaf.position.set(tipX, tipY, 0);
-        tipLeaf.rotation.z = -droopAngle - 0.35;
-        stemGroup.add(tipLeaf);
-
-        plantGroup.add(stemGroup);
-      }
+      const potMat = (fl === 0 || fl === 2) ? mats.potTerracotta : mats.potGranite;
+      plantGroup.add(new THREE.Mesh(geoms.pot, potMat));
+      plantGroup.add(new THREE.Mesh(geoms.goldBand, mats.brassTrim));
+      plantGroup.add(new THREE.Mesh(geoms.soil, mats.soil));
+      plantGroup.add(new THREE.Mesh(geoms.foliage, mats.foliage));
 
       this.scene.add(plantGroup);
 
@@ -7214,247 +7323,216 @@
       });
     }
 
+    getAquariumMaterials() {
+      if (!this._aquaMats) {
+        this._aquaMats = {
+          cabinet: new THREE.MeshStandardMaterial({
+            color: 0x18181b,
+            roughness: 0.35,
+            metalness: 0.15,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.12
+          }),
+          frame: new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.25, metalness: 0.80 }),
+          sand: new THREE.MeshStandardMaterial({ color: 0xdfd3c3, roughness: 0.95 }),
+          pebble: new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 }),
+          kelp: new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.40, side: THREE.DoubleSide }),
+          glass: new THREE.MeshStandardMaterial({
+            color: 0xdef3f6,
+            transparent: true,
+            opacity: 0.28,
+            roughness: 0.08,
+            metalness: 0.15,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          }),
+          water: new THREE.MeshStandardMaterial({
+            color: 0x0284c7,
+            transparent: true,
+            opacity: 0.32,
+            roughness: 0.08,
+            metalness: 0.05,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.22,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          }),
+          waterSurface: new THREE.MeshStandardMaterial({
+            color: 0x38bdf8,
+            transparent: true,
+            opacity: 0.55,
+            roughness: 0.05,
+            metalness: 0.20,
+            emissive: 0x38bdf8,
+            emissiveIntensity: 0.35,
+            depthWrite: false,
+            side: THREE.DoubleSide
+          }),
+          bubble: new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75 })
+        };
+      }
+      return this._aquaMats;
+    }
+
+    getAquariumGeometries() {
+      if (!this._aquaGeoms) {
+        const tW = 1.54, tH = 0.70, tD = 0.70;
+        const edgeThick = 0.024;
+        const tankCenterY = 0.72 + tH / 2;
+
+        const frameParts = [];
+        [[-tW/2, -tD/2], [tW/2, -tD/2], [-tW/2, tD/2], [tW/2, tD/2]].forEach(([ex, ez]) => {
+          const post = new THREE.BoxGeometry(edgeThick, tH, edgeThick);
+          post.translate(ex, tankCenterY, ez);
+          frameParts.push(post);
+        });
+        const topRim = new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02);
+        topRim.translate(0, 0.72 + tH, 0);
+        frameParts.push(topRim);
+        const botRim = new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02);
+        botRim.translate(0, 0.72, 0);
+        frameParts.push(botRim);
+        const sBase = new THREE.BoxGeometry(1.54, 0.06, 0.69);
+        sBase.translate(0, 0.03, 0);
+        frameParts.push(sBase);
+
+        const glassThick = 0.012;
+        const glassParts = [];
+        [-tD / 2 + glassThick / 2, tD / 2 - glassThick / 2].forEach(pz => {
+          const pane = new THREE.BoxGeometry(tW, tH, glassThick);
+          pane.translate(0, tankCenterY, pz);
+          glassParts.push(pane);
+        });
+        [-tW / 2 + glassThick / 2, tW / 2 - glassThick / 2].forEach(px => {
+          const pane = new THREE.BoxGeometry(glassThick, tH, tD - glassThick * 2);
+          pane.translate(px, tankCenterY, 0);
+          glassParts.push(pane);
+        });
+
+        const decorParts = [];
+        [[-0.45, -0.12, 0.09], [0.42, 0.15, 0.10], [-0.08, 0.05, 0.07], [0.12, -0.18, 0.06], [-0.25, 0.18, 0.05]].forEach(([rx, rz, rad]) => {
+          const rock = new THREE.DodecahedronGeometry(rad, 1);
+          rock.translate(rx, 0.76 + rad * 0.7, rz);
+          decorParts.push(rock);
+        });
+        const woodBranch = new THREE.CylinderGeometry(0.03, 0.05, 0.65, 8);
+        const bRot = new THREE.Euler(0.4, 0.8, 1.1);
+        const bMat = new THREE.Matrix4().makeRotationFromEuler(bRot);
+        bMat.setPosition(0.15, 0.88, -0.05);
+        woodBranch.applyMatrix4(bMat);
+        decorParts.push(woodBranch);
+
+        this._aquaGeoms = {
+          stand: new THREE.BoxGeometry(1.60, 0.72, 0.75),
+          canopy: new THREE.BoxGeometry(1.56, 0.05, 0.72),
+          frame: mergeBufferGeometries(frameParts),
+          glass: mergeBufferGeometries(glassParts),
+          sand: new THREE.BoxGeometry(1.48, 0.08, 0.64),
+          seabed: mergeBufferGeometries(decorParts),
+          water: new THREE.BoxGeometry(1.48, 0.60, 0.64),
+          waterSurface: new THREE.PlaneGeometry(1.48, 0.64, 4, 4)
+        };
+      }
+      return this._aquaGeoms;
+    }
+
     createAquariumTank(x, y0, z, fl, rotY = 0) {
       const group = new THREE.Group();
       group.position.set(x, y0, z);
       group.rotation.y = rotY;
 
-      // Realistic museum materials
-      const cabinetMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.35, metalness: 0.15 });
-      const frameMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.25, metalness: 0.80 });
-      const sandMat = new THREE.MeshStandardMaterial({ color: 0xdfd3c3, roughness: 0.95 });
-      const pebbleMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.85 });
-      const driftMat = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 0.90 });
-      const kelpMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.40, side: THREE.DoubleSide });
-
-      // Visible clear glass with subtle pale cyan tint and soft reflections (depthWrite: false so fish/plants render through)
-      const tankGlassMat = new THREE.MeshStandardMaterial({
-        color: 0xdef3f6,
-        transparent: true,
-        opacity: 0.28,
-        roughness: 0.08,
-        metalness: 0.15,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-
-      // Shimmering azure aquatic water volume
-      const waterMat = new THREE.MeshStandardMaterial({
-        color: 0x0284c7,
-        transparent: true,
-        opacity: 0.32,
-        roughness: 0.08,
-        metalness: 0.05,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-
-      const waterSurfaceMat = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        transparent: true,
-        opacity: 0.55,
-        roughness: 0.05,
-        metalness: 0.20,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
+      const mats = this.getAquariumMaterials();
+      const geoms = this.getAquariumGeometries();
 
       // 1. Sleek museum gallery stand
-      const stand = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.72, 0.75), cabinetMat);
+      const stand = new THREE.Mesh(geoms.stand, mats.cabinet);
       stand.position.y = 0.36;
       group.add(stand);
 
-      // Recessed brass/dark plinth foot
-      const standBase = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.06, 0.69), frameMat);
-      standBase.position.y = 0.03;
-      group.add(standBase);
+      // 2. Merged metal frame & stand base (1 draw call)
+      const frameMesh = new THREE.Mesh(geoms.frame, mats.frame);
+      group.add(frameMesh);
 
-      // 2. Clear glass tank panels (Front, Back, Left, Right, Top)
-      const tW = 1.54, tH = 0.70, tD = 0.70;
-      const glassThick = 0.012;
-      const tankCenterY = 0.72 + tH / 2;
+      // 3. Merged crystal glass tank panels (1 draw call)
+      const glassMesh = new THREE.Mesh(geoms.glass, mats.glass);
+      group.add(glassMesh);
 
-      // Front & Back glass panes
-      [-tD / 2 + glassThick / 2, tD / 2 - glassThick / 2].forEach(pz => {
-        const pane = new THREE.Mesh(new THREE.BoxGeometry(tW, tH, glassThick), tankGlassMat);
-        pane.position.set(0, tankCenterY, pz);
-        group.add(pane);
-      });
-      // Left & Right glass panes
-      [-tW / 2 + glassThick / 2, tW / 2 - glassThick / 2].forEach(px => {
-        const pane = new THREE.Mesh(new THREE.BoxGeometry(glassThick, tH, tD - glassThick * 2), tankGlassMat);
-        pane.position.set(px, tankCenterY, 0);
-        group.add(pane);
-      });
-
-      // Sleek Anodized Beveled Edge Framing along all 12 tank edges
-      const edgeThick = 0.024;
-      [[-tW/2, -tD/2], [tW/2, -tD/2], [-tW/2, tD/2], [tW/2, tD/2]].forEach(([ex, ez]) => {
-        const post = new THREE.Mesh(new THREE.BoxGeometry(edgeThick, tH, edgeThick), frameMat);
-        post.position.set(ex, tankCenterY, ez);
-        group.add(post);
-      });
-      // Top perimeter frame
-      const topRim = new THREE.Mesh(new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02), frameMat);
-      topRim.position.y = 0.72 + tH;
-      group.add(topRim);
-      // Bottom perimeter frame
-      const botRim = new THREE.Mesh(new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02), frameMat);
-      botRim.position.y = 0.72;
-      group.add(botRim);
-
-      // 3. Sandy bottom riverbed
-      const sand = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.08, 0.64), sandMat);
+      // 4. Sandy riverbed & decorative seabed rocks
+      const sand = new THREE.Mesh(geoms.sand, mats.sand);
       sand.position.y = 0.72 + 0.04;
       group.add(sand);
 
-      // 4. Smooth river pebbles and weathered driftwood
-      [[-0.45, -0.12, 0.09], [0.42, 0.15, 0.10], [-0.08, 0.05, 0.07], [0.12, -0.18, 0.06], [-0.25, 0.18, 0.05]].forEach(([rx, rz, rad]) => {
-        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), pebbleMat);
-        rock.position.set(rx, 0.76 + rad * 0.7, rz);
-        group.add(rock);
-      });
+      const seabed = new THREE.Mesh(geoms.seabed, mats.pebble);
+      group.add(seabed);
 
-      const woodBranch = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.05, 0.65, 8), driftMat);
-      woodBranch.rotation.set(0.4, 0.8, 1.1);
-      woodBranch.position.set(0.15, 0.88, -0.05);
-      group.add(woodBranch);
-
-      // 5. Swaying underwater plants (Kelp / Vallisneria ribbon grass)
+      // 5. Swaying underwater plants (3 lush blades)
       const kelpBlades = [];
-      [-0.55, -0.32, -0.10, 0.28, 0.52].forEach((kx, ki) => {
-        const h = 0.40 + (ki % 3) * 0.10;
-        const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.065, h, 1, 4), kelpMat);
+      [-0.45, -0.05, 0.40].forEach((kx, ki) => {
+        const h = 0.42 + (ki % 2) * 0.10;
+        const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.065, h, 1, 3), mats.kelp);
         blade.position.set(kx, 0.76 + h / 2, (ki % 2 === 0 ? -0.15 : 0.15));
-        blade.rotation.y = ki * 0.75;
+        blade.rotation.y = ki * 0.85;
         group.add(blade);
-        kelpBlades.push({ mesh: blade, phase: ki * 1.2, baseY: 0.76 + h / 2 });
+        kelpBlades.push({ mesh: blade, phase: ki * 1.4, baseY: 0.76 + h / 2 });
       });
 
-      // 6. Transparent Water Volume
-      const water = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.60, 0.64), waterMat);
+      // 6. Transparent Water Volume & Shimmering Surface
+      const water = new THREE.Mesh(geoms.water, mats.water);
       water.position.y = 0.76 + 0.30;
       group.add(water);
 
-      // Shimmering animated water surface
-      const waterSurface = new THREE.Mesh(new THREE.PlaneGeometry(1.48, 0.64, 8, 8), waterSurfaceMat);
+      const waterSurface = new THREE.Mesh(geoms.waterSurface, mats.waterSurface);
       waterSurface.rotation.x = -Math.PI / 2;
       waterSurface.position.y = 0.76 + 0.59;
       group.add(waterSurface);
 
-      // 7. Rising Bubbler Aeration Column
+      // 7. Rising Bubbler Column (3 streamlined bubbles)
       const bubbles = [];
-      const bubbleMat = new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75 });
-      for (let b = 0; b < 6; b++) {
-        const bMesh = new THREE.Mesh(new THREE.SphereGeometry(0.012 + Math.random() * 0.010, 6, 6), bubbleMat);
-        const bY = 0.78 + Math.random() * 0.55;
-        bMesh.position.set(-0.45 + (Math.random() - 0.5) * 0.06, bY, 0.10 + (Math.random() - 0.5) * 0.06);
+      for (let b = 0; b < 3; b++) {
+        const bMesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), mats.bubble);
+        const bY = 0.78 + b * 0.18;
+        bMesh.position.set(-0.45 + (b % 2) * 0.03, bY, 0.10);
         group.add(bMesh);
-        bubbles.push({ mesh: bMesh, speed: 0.25 + Math.random() * 0.20, startX: -0.45, startZ: 0.10 });
+        bubbles.push({ mesh: bMesh, speed: 0.28 + b * 0.06, startX: -0.45, startZ: 0.10 });
       }
 
-      // Top sleek aquarium canopy with integrated LED gallery strip
-      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.05, 0.72), cabinetMat);
-      canopy.position.y = 0.72 + tH;
+      // Top sleek aquarium canopy with integrated LED gallery strip (emissive glow, no PointLight!)
+      const canopy = new THREE.Mesh(geoms.canopy, mats.cabinet);
+      canopy.position.y = 0.72 + 0.70;
       group.add(canopy);
-
-      // Subtle aquatic illumination light
-      const aquaGlow = new THREE.PointLight(0x7dd3fc, 0.45, 3.2);
-      aquaGlow.position.set(0, 0.72 + tH - 0.05, 0);
-      group.add(aquaGlow);
 
       this.scene.add(group);
 
       // 8. Dynamic Living Fish (Clownfish, Neon Tetra, Golden Angelfish)
       const fishProfiles = [
-        {
-          species: 'clownfish',
-          scale: 0.18,
-          speed: 0.52,
-          bodyColor: 0xea580c,
-          stripeColor: 0xffffff,
-          accentColor: 0x18181b,
-          finColor: 0xf97316,
-          yOffset: 0.22,
-          zLane: -0.12,
-          dir: 1
-        },
-        {
-          species: 'tetra',
-          scale: 0.15,
-          speed: 0.68,
-          bodyColor: 0x0284c7,
-          stripeColor: 0xdc2626,
-          accentColor: 0x38bdf8,
-          finColor: 0xbae6fd,
-          yOffset: 0.35,
-          zLane: 0.14,
-          dir: -1
-        },
-        {
-          species: 'angelfish',
-          scale: 0.20,
-          speed: 0.42,
-          bodyColor: 0xfacc15,
-          stripeColor: 0x15803d,
-          accentColor: 0xfef08a,
-          finColor: 0xfef9c3,
-          yOffset: 0.46,
-          zLane: 0.02,
-          dir: 1
-        }
+        { species: 'clownfish', scale: 0.18, speed: 0.52, bodyColor: 0xea580c, finColor: 0xf97316, yOffset: 0.22, zLane: -0.12, dir: 1 },
+        { species: 'tetra', scale: 0.15, speed: 0.68, bodyColor: 0x0284c7, finColor: 0xbae6fd, yOffset: 0.35, zLane: 0.14, dir: -1 },
+        { species: 'angelfish', scale: 0.20, speed: 0.42, bodyColor: 0xfacc15, finColor: 0xfef9c3, yOffset: 0.46, zLane: 0.02, dir: 1 }
       ];
+
+      if (!this.aquariumFish) this.aquariumFish = [];
 
       fishProfiles.forEach((fp, idx) => {
         const fishRoot = new THREE.Group();
         const s = fp.scale;
 
         const bodyMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.28, metalness: 0.18 });
-        const stripeMat = new THREE.MeshStandardMaterial({ color: fp.stripeColor, roughness: 0.30 });
         const finMat = new THREE.MeshStandardMaterial({ color: fp.finColor, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
-        const eyeRingMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        // Tapered Streamlined Fish Body
-        const body = new THREE.Mesh(new THREE.ConeGeometry(s * 0.38, s * 1.15, 12), bodyMat);
-        body.rotation.z = -Math.PI / 2;
-        fishRoot.add(body);
+        // Tapered Streamlined Fish Body & Head
+        const bodyGeom = new THREE.ConeGeometry(s * 0.38, s * 1.15, 10);
+        bodyGeom.rotateZ(-Math.PI / 2);
+        const headGeom = new THREE.SphereGeometry(s * 0.36, 10, 8);
+        headGeom.scale(1.2, 0.95, 0.75);
+        headGeom.translate(s * 0.52, 0, 0);
+        const fullFishBodyGeom = mergeBufferGeometries([bodyGeom, headGeom]);
+        fishRoot.add(new THREE.Mesh(fullFishBodyGeom, bodyMat));
 
-        // Smooth Head Dome
-        const head = new THREE.Mesh(new THREE.SphereGeometry(s * 0.36, 12, 10), bodyMat);
-        head.position.x = s * 0.52;
-        head.scale.set(1.2, 0.95, 0.75);
-        fishRoot.add(head);
-
-        // Distinct Species Markings
-        if (fp.species === 'clownfish') {
-          [-s * 0.05, s * 0.28].forEach(sx => {
-            const band = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.33, s * 0.36, s * 0.12, 12), stripeMat);
-            band.rotation.z = -Math.PI / 2;
-            band.position.x = sx;
-            fishRoot.add(band);
-          });
-        } else if (fp.species === 'tetra') {
-          const neonStripe = new THREE.Mesh(new THREE.BoxGeometry(s * 0.9, s * 0.08, s * 0.24), stripeMat);
-          neonStripe.position.set(0, -s * 0.08, 0);
-          fishRoot.add(neonStripe);
-        } else {
-          [-s * 0.15, s * 0.15].forEach(sx => {
-            const band = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.35, s * 0.38, s * 0.08, 12), stripeMat);
-            band.rotation.z = -Math.PI / 2;
-            band.position.x = sx;
-            fishRoot.add(band);
-          });
-        }
-
-        // Realistic eyes on both sides of head
+        // Eyes
         [-s * 0.20, s * 0.20].forEach(ez => {
-          const eyeRing = new THREE.Mesh(new THREE.SphereGeometry(s * 0.075, 8, 8), eyeRingMat);
-          eyeRing.position.set(s * 0.65, s * 0.08, ez);
-          fishRoot.add(eyeRing);
-
-          const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.045, 8, 8), eyeMat);
-          pupil.position.set(s * 0.68, s * 0.09, ez + (ez > 0 ? 0.02 : -0.02));
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.05, 6, 6), eyeMat);
+          pupil.position.set(s * 0.66, s * 0.08, ez);
           fishRoot.add(pupil);
         });
 
@@ -7464,28 +7542,17 @@
         dorsalShape.lineTo(s * 0.05, s * 0.55);
         dorsalShape.lineTo(s * 0.35, 0);
         dorsalShape.closePath();
-        const dorsalGeom = new THREE.ShapeGeometry(dorsalShape);
-        const dorsal = new THREE.Mesh(dorsalGeom, finMat);
+        const dorsal = new THREE.Mesh(new THREE.ShapeGeometry(dorsalShape), finMat);
         dorsal.position.set(0, s * 0.25, 0);
         fishRoot.add(dorsal);
 
-        // Ventral/Anal fin
-        const ventralShape = new THREE.Shape();
-        ventralShape.moveTo(-s * 0.35, 0);
-        ventralShape.lineTo(-s * 0.10, -s * 0.40);
-        ventralShape.lineTo(s * 0.10, 0);
-        ventralShape.closePath();
-        const ventral = new THREE.Mesh(new THREE.ShapeGeometry(ventralShape), finMat);
-        ventral.position.set(0, -s * 0.25, 0);
-        fishRoot.add(ventral);
-
         // Fluttering Pectoral Side Fins
-        const pecLeft = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.32, s * 0.18), finMat);
+        const pecLeft = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
         pecLeft.position.set(s * 0.30, -s * 0.05, s * 0.24);
         pecLeft.rotation.set(0.4, -0.6, 0.2);
         fishRoot.add(pecLeft);
 
-        const pecRight = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.32, s * 0.18), finMat);
+        const pecRight = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
         pecRight.position.set(s * 0.30, -s * 0.05, -s * 0.24);
         pecRight.rotation.set(-0.4, 0.6, -0.2);
         fishRoot.add(pecRight);
@@ -7504,7 +7571,6 @@
         tailPivot.add(tailFin);
         fishRoot.add(tailPivot);
 
-        // Initial 3D placement inside aquarium
         const startX = (idx - 1) * 0.36;
         const startY = 0.76 + fp.yOffset;
         const startZ = fp.zLane;
@@ -7531,7 +7597,6 @@
         });
       });
 
-      // Keep reference to dynamic elements for animation
       if (!this.aquariumFX) this.aquariumFX = [];
       this.aquariumFX.push({
         floor: fl,
@@ -7588,13 +7653,11 @@
         const fish = this.aquariumFish[i];
         if (fish.floor !== this.playerFloor) continue;
 
-        // Tail and fin stroke animation frequencies
         fish.phase += delta * 9.5;
         fish.tailPivot.rotation.y = Math.sin(fish.phase) * 0.65;
         fish.pecLeft.rotation.z = Math.sin(fish.phase * 1.2) * 0.40;
         fish.pecRight.rotation.z = -Math.sin(fish.phase * 1.2) * 0.40;
 
-        // Realistic swimming patrol with smooth turning at tank walls
         fish.localX += fish.speed * fish.heading * delta;
         if (fish.localX > fish.maxX) {
           fish.localX = fish.maxX;
@@ -7608,10 +7671,67 @@
         const targetRotY = (fish.heading > 0 ? 0 : Math.PI);
         fish.root.rotation.y = THREE.MathUtils.lerp(fish.root.rotation.y, targetRotY, Math.min(1, delta * 14));
 
-        // Natural undulation, swimming wave, and buoyancy bob
         fish.root.position.y = fish.baseY + Math.sin(fish.phase * 0.35) * 0.035;
         fish.root.rotation.z = Math.sin(fish.phase * 0.45) * 0.06 * fish.heading;
       }
+    }
+
+    getVitrineMaterials(fl) {
+      if (!this._vitrineMats) {
+        this._vitrineMats = {
+          wood: new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 }),
+          gold: new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.20 }),
+          velvetBlue: new THREE.MeshStandardMaterial({ color: 0x1e3a8a, roughness: 0.85 }),
+          velvetBurgundy: new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.85 }),
+          glass: new THREE.MeshStandardMaterial({
+            color: 0xe2f3f5,
+            transparent: true,
+            opacity: 0.30,
+            roughness: 0.08,
+            metalness: 0.12,
+            depthWrite: false
+          }),
+          bronze: new THREE.MeshStandardMaterial({ color: 0x644a2c, metalness: 0.75, roughness: 0.35 }),
+          terracotta: new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 }),
+          parchment: new THREE.MeshLambertMaterial({ color: 0xfef08a })
+        };
+      }
+      return this._vitrineMats;
+    }
+
+    getVitrineGeometries() {
+      if (!this._vitrineGeoms) {
+        const vWoodParts = [];
+        [[-0.68, -0.42], [0.68, -0.42], [-0.68, 0.42], [0.68, 0.42]].forEach(([lx, lz]) => {
+          const leg = new THREE.CylinderGeometry(0.038, 0.030, 0.74, 8);
+          leg.translate(lx, 0.37, lz);
+          vWoodParts.push(leg);
+        });
+        const apron = new THREE.BoxGeometry(1.48, 0.09, 0.96);
+        apron.translate(0, 0.71, 0);
+        vWoodParts.push(apron);
+        const deck = new THREE.BoxGeometry(1.54, 0.04, 1.02);
+        deck.translate(0, 0.76, 0);
+        vWoodParts.push(deck);
+
+        const vBrassParts = [];
+        [[-0.68, -0.42], [0.68, -0.42], [-0.68, 0.42], [0.68, 0.42]].forEach(([lx, lz]) => {
+          const ferrule = new THREE.CylinderGeometry(0.032, 0.032, 0.06, 8);
+          ferrule.translate(lx, 0.03, lz);
+          vBrassParts.push(ferrule);
+        });
+        const gFrame = new THREE.BoxGeometry(1.44, 0.03, 0.92);
+        gFrame.translate(0, 0.78 + 0.70, 0);
+        vBrassParts.push(gFrame);
+
+        this._vitrineGeoms = {
+          woodBody: mergeBufferGeometries(vWoodParts),
+          brassTrim: mergeBufferGeometries(vBrassParts),
+          cushion: new THREE.BoxGeometry(1.24, 0.08, 0.76),
+          glass: new THREE.BoxGeometry(1.42, 0.70, 0.90)
+        };
+      }
+      return this._vitrineGeoms;
     }
 
     createVitrineTable(x, y0, z, relicType, fl, rotY = 0) {
@@ -7619,106 +7739,73 @@
       group.position.set(x, y0, z);
       group.rotation.y = rotY;
 
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 });
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.20 });
-      const velvetMat = new THREE.MeshStandardMaterial({ color: fl === 1 ? 0x1e3a8a : 0x881337, roughness: 0.85 });
-      const glassMat = new THREE.MeshStandardMaterial({
-        color: 0xe2f3f5,
-        transparent: true,
-        opacity: 0.30,
-        roughness: 0.08,
-        metalness: 0.12,
-        depthWrite: false
-      });
-      const bronzeMat = new THREE.MeshStandardMaterial({ color: 0x644a2c, metalness: 0.75, roughness: 0.35 });
-      const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 });
-      const parchmentMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+      const mats = this.getVitrineMaterials(fl);
+      const geoms = this.getVitrineGeometries();
 
-      // Table frame with 4 turned mahogany legs
-      [[-0.68, -0.42], [0.68, -0.42], [-0.68, 0.42], [0.68, 0.42]].forEach(([lx, lz]) => {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.030, 0.74, 10), woodMat);
-        leg.position.set(lx, 0.37, lz);
-        group.add(leg);
+      // Merged wood structure (4 legs, apron, deck)
+      const woodMesh = new THREE.Mesh(geoms.woodBody, mats.wood);
+      group.add(woodMesh);
 
-        const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.06, 10), goldMat);
-        ferrule.position.set(lx, 0.03, lz);
-        group.add(ferrule);
-      });
+      // Merged brass trim (4 ferrules, perimeter glass frame)
+      const brassMesh = new THREE.Mesh(geoms.brassTrim, mats.gold);
+      group.add(brassMesh);
 
-      const apron = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.09, 0.96), woodMat);
-      apron.position.y = 0.71;
-      group.add(apron);
-
-      const deck = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.04, 1.02), woodMat);
-      deck.position.y = 0.76;
-      group.add(deck);
-
-      // Velvet display cushion riser
-      const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.08, 0.76), velvetMat);
+      // Velvet display cushion
+      const velvetMat = fl === 1 ? mats.velvetBlue : mats.velvetBurgundy;
+      const cushion = new THREE.Mesh(geoms.cushion, velvetMat);
       cushion.position.y = 0.82;
       group.add(cushion);
 
-      // Clear glass display case
-      const vitrineGlass = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.70, 0.90), glassMat);
+      // Vitrine Glass Box
+      const vitrineGlass = new THREE.Mesh(geoms.glass, mats.glass);
       vitrineGlass.position.y = 0.78 + 0.35;
       group.add(vitrineGlass);
 
-      // Glass brass perimeter trim frame
-      const gFrame = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.03, 0.92), goldMat);
-      gFrame.position.y = 0.78 + 0.70;
-      group.add(gFrame);
-
       // Relic content inside case
       if (relicType === 'coins') {
-        for (let c = 0; c < 8; c++) {
-          const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.008, 14), goldMat);
-          coin.position.set(-0.25 + (c % 4) * 0.16, 0.865 + (c > 3 ? 0.008 : 0), -0.08 + Math.floor(c / 4) * 0.16);
+        for (let c = 0; c < 6; c++) {
+          const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.008, 10), mats.gold);
+          coin.position.set(-0.20 + (c % 3) * 0.16, 0.865 + (c > 2 ? 0.008 : 0), -0.06 + Math.floor(c / 3) * 0.14);
           group.add(coin);
         }
-        const med = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.012, 18), goldMat);
+        const med = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.012, 12), mats.gold);
         med.position.set(0.24, 0.868, 0.05);
         group.add(med);
       } else if (relicType === 'chalice') {
-        const chBase = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.04, 14), goldMat);
+        const chBase = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.04, 12), mats.gold);
         chBase.position.y = 0.88;
         group.add(chBase);
-        const chStem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 12), goldMat);
+        const chStem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 10), mats.gold);
         chStem.position.y = 0.98;
         group.add(chStem);
-        const chCup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.07, 0.18, 16), goldMat);
+        const chCup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.07, 0.18, 12), mats.gold);
         chCup.position.y = 1.15;
         group.add(chCup);
       } else if (relicType === 'amphora') {
-        const amp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), terracottaMat);
+        const amp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), mats.terracotta);
         amp.scale.set(1.0, 1.4, 1.0);
         amp.position.y = 1.05;
         group.add(amp);
-        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 12), terracottaMat);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 10), mats.terracotta);
         neck.position.y = 1.25;
         group.add(neck);
       } else if (relicType === 'scroll') {
-        const scroll1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.60, 14), parchmentMat);
+        const scroll1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.60, 10), mats.parchment);
         scroll1.rotation.z = Math.PI / 2;
         scroll1.position.set(0, 0.89, -0.10);
         group.add(scroll1);
-        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.06, 14), velvetMat);
+        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.06, 10), velvetMat);
         ribbon.rotation.z = Math.PI / 2;
         ribbon.position.set(0, 0.89, -0.10);
         group.add(ribbon);
-      } else if (relicType === 'jewelry') {
-        const diadem = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.022, 8, 24), goldMat);
-        diadem.rotation.x = Math.PI / 2 + 0.2;
-        diadem.position.set(0, 0.92, 0);
-        group.add(diadem);
       } else {
-        // Astrolabe
-        const aBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 14), bronzeMat);
+        const aBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 12), mats.bronze);
         aBase.position.y = 0.88;
         group.add(aBase);
-        const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 8, 20), goldMat);
+        const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 6, 16), mats.gold);
         ring1.position.y = 1.08;
         group.add(ring1);
-        const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 8, 20), bronzeMat);
+        const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 6, 16), mats.bronze);
         ring2.rotation.x = Math.PI / 2;
         ring2.position.y = 1.08;
         group.add(ring2);
@@ -7738,81 +7825,95 @@
       });
     }
 
+    getPedestalMaterials() {
+      if (!this._pedMats) {
+        this._pedMats = {
+          marble: new THREE.MeshStandardMaterial({ color: 0xedebe6, roughness: 0.35, metalness: 0.05 }),
+          goldPlacard: new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 }),
+          bronze: new THREE.MeshStandardMaterial({ color: 0x5a4328, metalness: 0.78, roughness: 0.32 }),
+          velvetRope: new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 })
+        };
+      }
+      return this._pedMats;
+    }
+
+    getPedestalGeometries() {
+      if (!this._pedGeoms) {
+        const base1 = new THREE.BoxGeometry(0.92, 0.12, 0.92);
+        base1.translate(0, 0.06, 0);
+        const shaft = new THREE.CylinderGeometry(0.32, 0.36, 1.05, 14);
+        shaft.translate(0, 0.12 + 0.525, 0);
+        const cap = new THREE.BoxGeometry(0.84, 0.12, 0.84);
+        cap.translate(0, 1.23, 0);
+
+        this._pedGeoms = {
+          pedestal: mergeBufferGeometries([base1, shaft, cap]),
+          placard: new THREE.BoxGeometry(0.36, 0.14, 0.02)
+        };
+      }
+      return this._pedGeoms;
+    }
+
     createClassicalSculpturePedestal(x, y0, z, statueType, fl, hasStanchions = false) {
       const group = new THREE.Group();
       group.position.set(x, y0, z);
 
-      const marbleMat = new THREE.MeshStandardMaterial({ color: 0xedebe6, roughness: 0.35, metalness: 0.05 });
-      const darkBaseMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.50 });
-      const goldPlacardMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
-      const bronzeMat = new THREE.MeshStandardMaterial({ color: 0x5a4328, metalness: 0.78, roughness: 0.32 });
-      const velvetRopeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
+      const mats = this.getPedestalMaterials();
+      const geoms = this.getPedestalGeometries();
 
-      // Stepped Pedestal Base Plinth
-      const base1 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.12, 0.92), darkBaseMat);
-      base1.position.y = 0.06;
-      group.add(base1);
+      // Merged Fluted Pedestal (base, shaft, cap)
+      const pedestal = new THREE.Mesh(geoms.pedestal, mats.marble);
+      group.add(pedestal);
 
-      // Fluted Marble Shaft Column
-      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.05, 16), marbleMat);
-      shaft.position.y = 0.12 + 0.525;
-      group.add(shaft);
-
-      // Carved Capital Crown
-      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), darkBaseMat);
-      cap.position.y = 1.23;
-      group.add(cap);
-
-      // Descriptive brass museum placard on pedestal face
-      const placard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 0.02), goldPlacardMat);
+      // Placard
+      const placard = new THREE.Mesh(geoms.placard, mats.goldPlacard);
       placard.position.set(0, 0.75, 0.36);
       group.add(placard);
 
       // Sculpture atop pedestal
       if (statueType === 'winged_victory') {
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.65, 12), marbleMat);
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.65, 10), mats.marble);
         torso.position.set(0, 1.29 + 0.325, 0);
         group.add(torso);
         [-0.30, 0.30].forEach((wx, wi) => {
-          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.38), marbleMat);
+          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.38), mats.marble);
           wing.position.set(wx, 1.80, -0.12);
           wing.rotation.z = (wi === 0 ? 0.35 : -0.35);
           wing.rotation.y = (wi === 0 ? -0.25 : 0.25);
           group.add(wing);
         });
       } else if (statueType === 'venus') {
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 14), marbleMat);
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 10), mats.marble);
         torso.position.set(0, 1.29 + 0.36, 0);
         group.add(torso);
-        const drape = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.35, 14), marbleMat);
+        const drape = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.35, 10), mats.marble);
         drape.position.set(0, 1.29 + 0.175, 0);
         group.add(drape);
       } else if (statueType === 'bronze_urn') {
-        const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.52, 14), bronzeMat);
+        const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.52, 12), mats.bronze);
         urn.position.set(0, 1.29 + 0.26, 0);
         group.add(urn);
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 16), bronzeMat);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 14), mats.bronze);
         rim.rotation.x = Math.PI / 2;
         rim.position.set(0, 1.29 + 0.52, 0);
         group.add(rim);
       } else if (statueType === 'bronze_philosopher') {
-        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.26), bronzeMat);
+        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.26), mats.bronze);
         bustShoulders.position.set(0, 1.29 + 0.12, 0);
         group.add(bustShoulders);
-        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), bronzeMat);
+        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), mats.bronze);
         bustHead.scale.set(0.9, 1.2, 0.95);
         bustHead.position.set(0, 1.29 + 0.36, 0);
         group.add(bustHead);
       } else {
-        // Bust Augustus with laurel wreath
-        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.26, 0.28), marbleMat);
+        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.26, 0.28), mats.marble);
         bustShoulders.position.set(0, 1.29 + 0.13, 0);
         group.add(bustShoulders);
-        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), marbleMat);
+        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 12), mats.marble);
         bustHead.scale.set(0.9, 1.2, 0.95);
         bustHead.position.set(0, 1.29 + 0.38, 0);
         group.add(bustHead);
-        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.022, 8, 20), goldPlacardMat);
+        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.022, 6, 16), mats.goldPlacard);
         laurel.rotation.x = Math.PI / 2 + 0.15;
         laurel.position.set(0, 1.29 + 0.45, 0.02);
         group.add(laurel);
@@ -7832,17 +7933,24 @@
 
       if (hasStanchions) {
         const sOffsets = [[-0.85, -0.85], [0.85, -0.85], [0.85, 0.85], [-0.85, 0.85]];
-        sOffsets.forEach(([sox, soz]) => {
-          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.035, 12), goldPlacardMat);
-          sBase.position.set(x + sox, y0 + 0.02, z + soz);
-          this.scene.add(sBase);
-          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.90, 8), goldPlacardMat);
-          sPost.position.set(x + sox, y0 + 0.47, z + soz);
-          this.scene.add(sPost);
-          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldPlacardMat);
-          sBall.position.set(x + sox, y0 + 0.94, z + soz);
-          this.scene.add(sBall);
+        const stanchionParts = [];
+        sOffsets.forEach(p => {
+          const sBase = new THREE.CylinderGeometry(0.12, 0.14, 0.035, 8);
+          sBase.translate(p[0], 0.02, p[1]);
+          stanchionParts.push(sBase);
+
+          const sPost = new THREE.CylinderGeometry(0.022, 0.022, 0.90, 6);
+          sPost.translate(p[0], 0.47, p[1]);
+          stanchionParts.push(sPost);
+
+          const sBall = new THREE.SphereGeometry(0.04, 6, 6);
+          sBall.translate(p[0], 0.94, p[1]);
+          stanchionParts.push(sBall);
         });
+
+        const mergedStanchions = new THREE.Mesh(mergeBufferGeometries(stanchionParts), mats.goldPlacard);
+        mergedStanchions.position.set(x, y0, z);
+        this.scene.add(mergedStanchions);
 
         for (let r = 0; r < 4; r++) {
           const p1 = sOffsets[r];
@@ -7851,7 +7959,7 @@
           const midZ = z + (p1[1] + p2[1]) / 2;
           const rLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
           const rAng = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]);
-          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, rLen, 8), velvetRopeMat);
+          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, rLen, 6), mats.velvetRope);
           rope.rotation.x = Math.PI / 2;
           rope.rotation.z = -rAng;
           rope.position.set(midX, y0 + 0.86, midZ);
