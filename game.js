@@ -377,6 +377,55 @@
       }
     }
 
+    playCrateImpact() {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(160, now);
+      osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
+      gain.gain.setValueAtTime(0.28, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.10);
+    }
+
+    playCratePickup() {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(220, now);
+      osc.frequency.exponentialRampToValueAtTime(360, now + 0.07);
+      gain.gain.setValueAtTime(0.22, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.09);
+    }
+
+    playCrateCreak() {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(85, now);
+      osc.frequency.linearRampToValueAtTime(110, now + 0.06);
+      osc.frequency.linearRampToValueAtTime(75, now + 0.12);
+      gain.gain.setValueAtTime(0.08, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + 0.14);
+    }
+
     playMarbleFootstep() {
       if (!this.ctx) return;
       if (this.playCustom('player_footstep.wav', null, 0.72)) return; // Boosted by +60% (from 0.45)
@@ -3106,6 +3155,8 @@
       this.paintings = [];
       this.relics = [];
       this.ammoPickups = [];
+      this.physicsCrates = [];
+      this.heldCrate = null;
       this.lastAnnouncedFloor = null;
       this.floorIndicatorTimeout = null;
       this.navNodes = [];
@@ -4417,9 +4468,10 @@
         lidMesh.position.set(0, 0.445, -0.04);
         group.add(lidMesh);
 
-        // Dual rubber bumpers on front face of upright lid (visible in front view, matching Image 2)
+        // Dual rubber bumpers on front face of upright lid (subtle white silicone pads matching Image 2)
+        const bumperMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
         [-0.095, 0.095].forEach((bx) => {
-          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.008, 12), sensorPodMat);
+          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.006, 12), bumperMat);
           bumper.rotation.x = Math.PI / 2;
           bumper.position.set(bx, 0.78, -0.075);
           group.add(bumper);
@@ -4611,9 +4663,10 @@
         door2Group.add(latch2);
 
         // Out-of-order poster sign on Door 2 (2x larger: 0.76m wide x 1.14m tall)
+        // Tilted slightly (~4.6 degrees, 0.08 rad) so it looks hastily put on
         const sign2 = new THREE.Mesh(signGeom, stallSignMat);
         sign2.position.set(0.017, 1.075, 0.45);
-        sign2.rotation.y = Math.PI / 2;
+        sign2.rotation.set(0, Math.PI / 2, 0.08);
         door2Group.add(sign2);
 
         door2Group.rotation.y = 0;
@@ -4625,8 +4678,9 @@
         this.scene.add(pil2);
 
         // Bold Black & Yellow OSHA Hazard Caution Tape across both shut-down stall doors
-        // Each strip is layered with distinct X-offsets to completely eliminate coplanar Z-fighting glitches
-        const addTapeStrip = (y1, z1, y2, z2, tapeW = 0.16, layer = 0) => {
+        // Skinnier width (0.08m) so posters behind remain clearly visible while keeping full length
+        // Layered with distinct X-offsets to completely eliminate coplanar Z-fighting glitches
+        const addTapeStrip = (y1, z1, y2, z2, tapeW = 0.08, layer = 0) => {
           const dy = y2 - y1;
           const dz = z2 - z1;
           const len = Math.hypot(dy, dz);
@@ -4646,7 +4700,7 @@
             posX, y2 - ny, z2 - nz,
             posX, y2 + ny, z2 + nz,
           ]);
-          const uMax = len * 2.5; // repeats stripes cleanly along the wider tape
+          const uMax = len * 4.0; // repeats stripes cleanly along the skinnier tape
           const uvs = new Float32Array([
             0, 1,
             0, 0,
@@ -4671,21 +4725,21 @@
           this.scene.add(tapeMesh);
         };
 
-        // Stall 1 Caution Tape (larger tape width: 0.16m, layered to prevent any visual glitching)
+        // Stall 1 Caution Tape (skinnier 0.08m width, same length, layered to prevent any visual glitching)
         const s1_zA = zNorth + 0.12;
         const s1_zB = zNorth + 1.38;
-        addTapeStrip(y0 + 1.62, s1_zA, y0 + 0.62, s1_zB, 0.16, 0); // Diagonal 1
-        addTapeStrip(y0 + 0.62, s1_zA, y0 + 1.62, s1_zB, 0.16, 1); // Diagonal 2
-        addTapeStrip(y0 + 1.05, s1_zA - 0.06, y0 + 1.05, s1_zB + 0.06, 0.16, 2); // Middle horizontal
-        addTapeStrip(y0 + 1.45, s1_zA - 0.06, y0 + 1.45, s1_zB + 0.06, 0.16, 3); // Upper horizontal
+        addTapeStrip(y0 + 1.62, s1_zA, y0 + 0.62, s1_zB, 0.08, 0); // Diagonal 1
+        addTapeStrip(y0 + 0.62, s1_zA, y0 + 1.62, s1_zB, 0.08, 1); // Diagonal 2
+        addTapeStrip(y0 + 1.05, s1_zA - 0.06, y0 + 1.05, s1_zB + 0.06, 0.08, 2); // Middle horizontal
+        addTapeStrip(y0 + 1.45, s1_zA - 0.06, y0 + 1.45, s1_zB + 0.06, 0.08, 3); // Upper horizontal
 
-        // Stall 2 Caution Tape (larger tape width: 0.16m, layered to prevent any visual glitching)
+        // Stall 2 Caution Tape (skinnier 0.08m width, same length, layered to prevent any visual glitching)
         const s2_zA = zSouth - 1.38;
         const s2_zB = zSouth - 0.12;
-        addTapeStrip(y0 + 1.62, s2_zA, y0 + 0.62, s2_zB, 0.16, 0); // Diagonal 1
-        addTapeStrip(y0 + 0.62, s2_zA, y0 + 1.62, s2_zB, 0.16, 1); // Diagonal 2
-        addTapeStrip(y0 + 1.05, s2_zA - 0.06, y0 + 1.05, s2_zB + 0.06, 0.16, 2); // Middle horizontal
-        addTapeStrip(y0 + 1.45, s2_zA - 0.06, y0 + 1.45, s2_zB + 0.06, 0.16, 3); // Upper horizontal
+        addTapeStrip(y0 + 1.62, s2_zA, y0 + 0.62, s2_zB, 0.08, 0); // Diagonal 1
+        addTapeStrip(y0 + 0.62, s2_zA, y0 + 1.62, s2_zB, 0.08, 1); // Diagonal 2
+        addTapeStrip(y0 + 1.05, s2_zA - 0.06, y0 + 1.05, s2_zB + 0.06, 0.08, 2); // Middle horizontal
+        addTapeStrip(y0 + 1.45, s2_zA - 0.06, y0 + 1.45, s2_zB + 0.06, 0.08, 3); // Upper horizontal
 
         // Mount toilets flush against back wall: tank against West perimeter wall (x = -3.76), facing East into stall
         buildToilet(-3.45, toiletZ1, Math.PI / 2);
@@ -5866,82 +5920,1130 @@
     }
 
     createRealisticMainStacks(fl, y0, mats) {
-      if (fl < 3) {
-        // --- DENSE 5-RANGE LIBRARY BOOKSTACKS (FLOORS 0, 1, 2) ---
+      if (fl === 0) {
+        // =========================================================================
+        // FLOOR 0 (fl = 0): CLASSICAL SCULPTURE & VITRINE EXHIBITION HALL
+        // =========================================================================
+        const marbleMat = new THREE.MeshStandardMaterial({ color: 0xedebe6, roughness: 0.35, metalness: 0.05 });
+        const darkPlinthMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.45 });
+        const goldRelicMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.85, roughness: 0.22 });
+        const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 });
+        const bronzeSculptMat = new THREE.MeshStandardMaterial({ color: 0x5a4328, metalness: 0.75, roughness: 0.35 });
+        const velvetRopeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
+        const brassStanchionMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.20 });
+        const vitrineGlassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.30,
+          roughness: 0.05,
+          transmission: 0.90,
+          thickness: 0.02
+        });
+
+        // 1. Central Monumental Marble Pedestal with Classical Roman Bust & Laurel Wreath at (15.0, y0, -18.0)
+        const monGroup = new THREE.Group();
+        monGroup.position.set(15.0, y0, -18.0);
+
+        const bBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.18, 2.0), darkPlinthMat);
+        bBase.position.y = 0.09;
+        monGroup.add(bBase);
+
+        const bColumn = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.10, 1.5), marbleMat);
+        bColumn.position.y = 0.18 + 0.55;
+        monGroup.add(bColumn);
+
+        const bCapital = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.14, 1.7), darkPlinthMat);
+        bCapital.position.y = 1.28 + 0.07;
+        monGroup.add(bCapital);
+
+        // Classical sculpted bust
+        const bustBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.30, 0.16, 16), marbleMat);
+        bustBase.position.y = 1.35 + 0.08;
+        monGroup.add(bustBase);
+
+        const bustChest = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.42, 0.32), marbleMat);
+        bustChest.position.y = 1.51 + 0.21;
+        monGroup.add(bustChest);
+
+        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), marbleMat);
+        bustHead.scale.set(0.9, 1.15, 1.0);
+        bustHead.position.y = 1.93 + 0.18;
+        monGroup.add(bustHead);
+
+        const bustNose = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.10, 8), marbleMat);
+        bustNose.rotation.x = Math.PI / 2;
+        bustNose.position.set(0, 2.11, 0.21);
+        monGroup.add(bustNose);
+
+        // Golden laurel wreath around head
+        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.025, 8, 24), goldRelicMat);
+        laurel.rotation.x = Math.PI / 2 + 0.15;
+        laurel.position.set(0, 2.17, 0.02);
+        monGroup.add(laurel);
+
+        // Gilded descriptive placard
+        const descPlacard = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.22, 0.02), brassStanchionMat);
+        descPlacard.position.set(0, 0.85, 0.77);
+        monGroup.add(descPlacard);
+
+        this.scene.add(monGroup);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 0,
+          minX: 15.0 - 1.1,
+          maxX: 15.0 + 1.1,
+          minZ: -18.0 - 1.1,
+          maxZ: -18.0 + 1.1,
+          minY: y0,
+          maxY: y0 + 1.35
+        });
+
+        // 4 Stanchions with Crimson Velvet Ropes enclosing the bust
+        const stanchionOffsets = [
+          [-1.4, -1.4], [1.4, -1.4], [1.4, 1.4], [-1.4, 1.4]
+        ];
+        stanchionOffsets.forEach(([ox, oz]) => {
+          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 14), brassStanchionMat);
+          sBase.position.set(15.0 + ox, y0 + 0.02, -18.0 + oz);
+          this.scene.add(sBase);
+
+          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.92, 12), brassStanchionMat);
+          sPost.position.set(15.0 + ox, y0 + 0.48, -18.0 + oz);
+          this.scene.add(sPost);
+
+          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), brassStanchionMat);
+          sBall.position.set(15.0 + ox, y0 + 0.96, -18.0 + oz);
+          this.scene.add(sBall);
+        });
+
+        // Velvet ropes between stanchions
+        for (let i = 0; i < 4; i++) {
+          const p1 = stanchionOffsets[i];
+          const p2 = stanchionOffsets[(i + 1) % 4];
+          const midX = 15.0 + (p1[0] + p2[0]) / 2;
+          const midZ = -18.0 + (p1[1] + p2[1]) / 2;
+          const rLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+          const rAng = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]);
+
+          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, rLen, 8), velvetRopeMat);
+          rope.rotation.x = Math.PI / 2;
+          rope.rotation.z = -rAng;
+          rope.position.set(midX, y0 + 0.88, midZ);
+          this.scene.add(rope);
+        }
+
+        // 2. Twin Glass Museum Vitrines at (11.0, y0, -8.0) and (19.0, y0, -8.0)
+        // West Vitrine: Ancient Terracotta Amphora Vase
+        const v1Group = new THREE.Group();
+        v1Group.position.set(11.0, y0, -8.0);
+        const v1Base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 1.4), mats.mahogany);
+        v1Base.position.y = 0.425;
+        v1Group.add(v1Base);
+        const v1Glass = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.05, 1.28), vitrineGlassMat);
+        v1Glass.position.y = 0.85 + 0.525;
+        v1Group.add(v1Glass);
+        // Terracotta amphora
+        const ampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.08, 14), terracottaMat);
+        ampBase.position.y = 0.85 + 0.04;
+        v1Group.add(ampBase);
+        const ampBody = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), terracottaMat);
+        ampBody.scale.set(1.0, 1.45, 1.0);
+        ampBody.position.y = 0.85 + 0.38;
+        v1Group.add(ampBody);
+        const ampNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.22, 14), terracottaMat);
+        ampNeck.position.y = 0.85 + 0.65;
+        v1Group.add(ampNeck);
+        const ampLip = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.09, 0.05, 14), terracottaMat);
+        ampLip.position.y = 0.85 + 0.77;
+        v1Group.add(ampLip);
+        this.scene.add(v1Group);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 0,
+          minX: 11.0 - 0.75,
+          maxX: 11.0 + 0.75,
+          minZ: -8.0 - 0.75,
+          maxZ: -8.0 + 0.75,
+          minY: y0,
+          maxY: y0 + 1.90
+        });
+
+        // East Vitrine: Golden Reliquary Crown
+        const v2Group = new THREE.Group();
+        v2Group.position.set(19.0, y0, -8.0);
+        const v2Base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 1.4), mats.mahogany);
+        v2Base.position.y = 0.425;
+        v2Group.add(v2Base);
+        const v2Glass = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.05, 1.28), vitrineGlassMat);
+        v2Glass.position.y = 0.85 + 0.525;
+        v2Group.add(v2Glass);
+        const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.10, 0.55), velvetRopeMat);
+        cushion.position.y = 0.85 + 0.05;
+        v2Group.add(cushion);
+        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.16, 16, 1, true), goldRelicMat);
+        crown.position.y = 0.85 + 0.20;
+        v2Group.add(crown);
+        [-0.14, 0, 0.14].forEach((px) => {
+          const spike = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.11, 8), goldRelicMat);
+          spike.position.set(px, 0.85 + 0.32, 0.14);
+          v2Group.add(spike);
+        });
+        this.scene.add(v2Group);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 0,
+          minX: 19.0 - 0.75,
+          maxX: 19.0 + 0.75,
+          minZ: -8.0 - 0.75,
+          maxZ: -8.0 + 0.75,
+          minY: y0,
+          maxY: y0 + 1.90
+        });
+
+        // 3. Central Gallery Viewing Bench at (15.0, y0, -13.0)
+        this.createMuseumBench(15.0, y0, -13.0);
+
+        // 4. Classical Limestone Obelisk Monument / Stele at (15.0, y0, 2.0)
+        const obGroup = new THREE.Group();
+        obGroup.position.set(15.0, y0, 2.0);
+        const obBase1 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.30, 1.6), darkPlinthMat);
+        obBase1.position.y = 0.15;
+        obGroup.add(obBase1);
+        const obBase2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 1.2), marbleMat);
+        obBase2.position.y = 0.30 + 0.175;
+        obGroup.add(obBase2);
+        const obShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.52, 2.8, 4), marbleMat);
+        obShaft.rotation.y = Math.PI / 4;
+        obShaft.position.y = 0.65 + 1.40;
+        obGroup.add(obShaft);
+        const obCap = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.50, 4), marbleMat);
+        obCap.rotation.y = Math.PI / 4;
+        obCap.position.y = 3.45 + 0.25;
+        obGroup.add(obCap);
+        this.scene.add(obGroup);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 0,
+          minX: 15.0 - 0.85,
+          maxX: 15.0 + 0.85,
+          minZ: 2.0 - 0.85,
+          maxZ: 2.0 + 0.85,
+          minY: y0,
+          maxY: y0 + 1.20
+        });
+
+        // 4 Classical Side Pedestals with Bronze Urns and Roman Statues
+        const sidePedestals = [
+          [10.0, -18.0, 'urn'],
+          [20.0, -18.0, 'statue'],
+          [10.0, 0.0, 'statue'],
+          [20.0, 0.0, 'urn']
+        ];
+        sidePedestals.forEach(([px, pz, pType]) => {
+          const pedGroup = new THREE.Group();
+          pedGroup.position.set(px, y0, pz);
+          const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 1.15, 16), marbleMat);
+          pCol.position.y = 0.575;
+          pedGroup.add(pCol);
+          const pCap = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.12, 16), darkPlinthMat);
+          pCap.position.y = 1.21;
+          pedGroup.add(pCap);
+
+          if (pType === 'urn') {
+            const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.48, 14), bronzeSculptMat);
+            urn.position.y = 1.27 + 0.24;
+            pedGroup.add(urn);
+            const urnLip = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 16), bronzeSculptMat);
+            urnLip.rotation.x = Math.PI / 2;
+            urnLip.position.y = 1.27 + 0.48;
+            pedGroup.add(urnLip);
+          } else {
+            const statBust = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), bronzeSculptMat);
+            statBust.scale.set(0.9, 1.2, 0.95);
+            statBust.position.y = 1.27 + 0.22;
+            pedGroup.add(statBust);
+            const statShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.24), bronzeSculptMat);
+            statShoulders.position.y = 1.27 + 0.11;
+            pedGroup.add(statShoulders);
+          }
+          this.scene.add(pedGroup);
+
+          this.colliders.push({
+            type: 'cylinder',
+            floor: 0,
+            x: px,
+            z: pz,
+            radius: 0.45,
+            minY: y0,
+            maxY: y0 + 1.27
+          });
+        });
+      } else if (fl === 1) {
+        // =========================================================================
+        // FLOOR 1 (fl = 1): REALISTIC DETAILED LIBRARY BOOKSTACKS & LADDERS
+        // =========================================================================
         const rangeZCoords = [-20.0, -15.0, -10.0, -5.0, 0.0];
         const rangeH = 2.80;
         const rangeW = 12.0;
         const rangeD = 0.90;
 
         const shelfMat = mats.mahogany;
+        const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
+        const ladderWoodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 });
+
+        // Colorful bookcloth materials
+        const bookColors = [0x831843, 0x1e3a8a, 0x064e3b, 0xb45309, 0x451a03, 0x1e293b, 0x3b0764, 0x78350f];
+        const bookMats = bookColors.map(c => new THREE.MeshLambertMaterial({ color: c }));
 
         rangeZCoords.forEach((rz, rIdx) => {
           const rangeGroup = new THREE.Group();
           rangeGroup.position.set(15.0, y0, rz);
 
-          const stackCore = new THREE.Mesh(new THREE.BoxGeometry(rangeW, rangeH, rangeD), shelfMat);
-          stackCore.position.y = rangeH / 2;
-          rangeGroup.add(stackCore);
+          // Center spine divider
+          const divider = new THREE.Mesh(new THREE.BoxGeometry(rangeW, rangeH, 0.06), shelfMat);
+          divider.position.y = rangeH / 2;
+          rangeGroup.add(divider);
 
-          [-rangeW / 2, rangeW / 2].forEach((ex) => {
-            const endCap = new THREE.Mesh(new THREE.BoxGeometry(0.12, rangeH + 0.12, rangeD + 0.08), shelfMat);
+          // Both endcaps (East and West) with framed brass Dewey placard
+          [-rangeW / 2, rangeW / 2].forEach((ex, eIdx) => {
+            const endCap = new THREE.Mesh(new THREE.BoxGeometry(0.10, rangeH + 0.12, rangeD + 0.06), shelfMat);
             endCap.position.set(ex, (rangeH + 0.12) / 2, 0);
             rangeGroup.add(endCap);
+
+            // Framed brass Dewey decimal placard
+            const placard = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.18, 0.55), brassMat);
+            placard.position.set(ex + (eIdx === 0 ? -0.055 : 0.055), 1.85, 0);
+            rangeGroup.add(placard);
           });
 
+          // Molded cornice overhang
           const cornice = new THREE.Mesh(new THREE.BoxGeometry(rangeW + 0.24, 0.16, rangeD + 0.16), shelfMat);
           cornice.position.y = rangeH + 0.08;
           rangeGroup.add(cornice);
+
+          // 5 shelving bays along width
+          const numBays = 5;
+          const bayW = (rangeW - 0.20) / numBays;
+          for (let b = 0; b <= numBays; b++) {
+            const bx = -rangeW / 2 + 0.10 + b * bayW;
+            const upright = new THREE.Mesh(new THREE.BoxGeometry(0.04, rangeH, rangeD - 0.02), shelfMat);
+            upright.position.set(bx, rangeH / 2, 0);
+            rangeGroup.add(upright);
+          }
+
+          // 5 tiers of horizontal shelves on North (-Z) and South (+Z) sides
+          const numTiers = 5;
+          const tierH = (rangeH - 0.25) / numTiers;
+          for (let t = 0; t < numTiers; t++) {
+            const sy = 0.15 + t * tierH;
+            [-1, 1].forEach((sideDir) => {
+              const shelfBoard = new THREE.Mesh(new THREE.BoxGeometry(rangeW - 0.10, 0.035, (rangeD - 0.10) / 2), shelfMat);
+              shelfBoard.position.set(0, sy, sideDir * rangeD / 4);
+              rangeGroup.add(shelfBoard);
+
+              // Populate each bay with rows of vintage colorful books
+              for (let b = 0; b < numBays; b++) {
+                const bayCenterX = -rangeW / 2 + 0.10 + (b + 0.5) * bayW;
+                const bookCount = 9;
+                for (let k = 0; k < bookCount; k++) {
+                  const bkW = 0.035 + (k % 3) * 0.015;
+                  const bkH = tierH * 0.72 + (k % 4) * 0.035;
+                  const bkD = 0.26 + (k % 2) * 0.03;
+                  const bkX = bayCenterX - bayW / 2 + 0.08 + k * (bayW - 0.16) / bookCount;
+                  const bkMat = bookMats[(rIdx * 3 + b * 2 + k) % bookMats.length];
+
+                  const book = new THREE.Mesh(new THREE.BoxGeometry(bkW, bkH, bkD), bkMat);
+                  if (k === bookCount - 1 && b % 2 === 0) {
+                    book.rotation.z = -0.16;
+                    book.position.set(bkX + 0.02, sy + 0.02 + bkH / 2, sideDir * (rangeD / 4));
+                  } else {
+                    book.position.set(bkX, sy + 0.02 + bkH / 2, sideDir * (rangeD / 4));
+                  }
+                  rangeGroup.add(book);
+                }
+              }
+            });
+          }
+
+          // Brass tracking rail along top of South side (+Z)
+          const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, rangeW, 12), brassMat);
+          rail.rotation.z = Math.PI / 2;
+          rail.position.set(0, rangeH - 0.15, rangeD / 2 + 0.04);
+          rangeGroup.add(rail);
+
+          // Rolling wooden library ladder mounted on rail
+          const ladX = rIdx % 2 === 0 ? -2.8 : 2.8;
+          const ladGroup = new THREE.Group();
+          ladGroup.position.set(ladX, 0, rangeD / 2 + 0.22);
+          ladGroup.rotation.x = -0.16;
+
+          [-0.22, 0.22].forEach((lx) => {
+            const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.045, rangeH, 0.06), ladderWoodMat);
+            stilt.position.set(lx, rangeH / 2, 0);
+            ladGroup.add(stilt);
+
+            const hook = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 8, 12, Math.PI), brassMat);
+            hook.position.set(lx, rangeH - 0.02, -0.04);
+            ladGroup.add(hook);
+
+            const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.025, 12), brassMat);
+            wheel.rotation.z = Math.PI / 2;
+            wheel.position.set(lx, 0.04, 0);
+            ladGroup.add(wheel);
+          });
+
+          for (let r = 1; r < 8; r++) {
+            const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.40, 8), ladderWoodMat);
+            rung.rotation.z = Math.PI / 2;
+            rung.position.set(0, r * (rangeH / 8), 0);
+            ladGroup.add(rung);
+          }
+          rangeGroup.add(ladGroup);
 
           this.scene.add(rangeGroup);
 
           this.colliders.push({
             type: 'box',
-            floor: fl,
-            minX: 15.0 - rangeW / 2 - 0.1,
-            maxX: 15.0 + rangeW / 2 + 0.1,
-            minZ: rz - rangeD / 2,
-            maxZ: rz + rangeD / 2
+            floor: 1,
+            minX: 15.0 - rangeW / 2 - 0.10,
+            maxX: 15.0 + rangeW / 2 + 0.10,
+            minZ: rz - rangeD / 2 - 0.08,
+            maxZ: rz + rangeD / 2 + 0.08,
+            minY: y0,
+            maxY: y0 + rangeH + 0.10
           });
-
-          const ladderX = rIdx % 2 === 0 ? 9.8 : 20.2;
-          const ladder = new THREE.Mesh(new THREE.BoxGeometry(0.48, rangeH - 0.2, 0.12), shelfMat);
-          ladder.position.set(ladderX, y0 + (rangeH - 0.2) / 2, rz + rangeD / 2 + 0.08);
-          ladder.rotation.x = -0.15;
-          this.scene.add(ladder);
         });
 
-        // 2 Library Book Carts / Trolleys placed at aisle ends
+        // 2 Library Book Carts / Trolleys with stacked books at aisle ends
         [[-17.5, 8.2], [-7.5, 21.8]].forEach(([cz, cx]) => {
-          const cart = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.90, 0.55), mats.mahogany);
-          cart.position.set(cx, y0 + 0.45, cz);
-          this.scene.add(cart);
+          const cartGroup = new THREE.Group();
+          cartGroup.position.set(cx, y0, cz);
+
+          const cartBase = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.05, 0.55), shelfMat);
+          cartBase.position.y = 0.12;
+          cartGroup.add(cartBase);
+
+          const cartTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.04, 0.55), shelfMat);
+          cartTop.position.y = 0.82;
+          cartGroup.add(cartTop);
+
+          const cartMid = new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.035, 0.50), shelfMat);
+          cartMid.position.y = 0.47;
+          cartGroup.add(cartMid);
+
+          const hBar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.48, 8), brassMat);
+          hBar.rotation.x = Math.PI / 2;
+          hBar.position.set(-0.52, 0.88, 0);
+          cartGroup.add(hBar);
+
+          [[-0.38, -0.22], [0.38, -0.22], [-0.38, 0.22], [0.38, 0.22]].forEach(([wx, wz]) => {
+            const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 12), brassMat);
+            wh.rotation.z = Math.PI / 2;
+            wh.position.set(wx, 0.05, wz);
+            cartGroup.add(wh);
+          });
+
+          [-0.22, 0.12].forEach((bx, bi) => {
+            const bStack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.35), bookMats[bi * 2]);
+            bStack.position.set(bx, 0.56, 0);
+            cartGroup.add(bStack);
+          });
+
+          this.scene.add(cartGroup);
 
           this.colliders.push({
             type: 'box',
-            floor: fl,
-            minX: cx - 0.5,
-            maxX: cx + 0.5,
-            minZ: cz - 0.3,
-            maxZ: cz + 0.3,
+            floor: 1,
+            minX: cx - 0.55,
+            maxX: cx + 0.55,
+            minZ: cz - 0.35,
+            maxZ: cz + 0.35,
             minY: y0,
-            maxY: y0 + 0.90
+            maxY: y0 + 0.92
+          });
+        });
+      } else if (fl === 2) {
+        // =========================================================================
+        // FLOOR 2 (fl = 2): RARE MANUSCRIPTS & GLASS ARTIFACT DISPLAY HALL
+        // =========================================================================
+        const woodMat = mats.mahogany;
+        const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
+        const parchmentMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+        const waxSealMat = new THREE.MeshLambertMaterial({ color: 0x991b1b });
+        const glassMat = new THREE.MeshPhysicalMaterial({
+          color: 0xffffff,
+          transparent: true,
+          opacity: 0.32,
+          roughness: 0.04,
+          transmission: 0.90,
+          thickness: 0.02
+        });
+
+        // 4 Slanted Glass Manuscript Showcase Tables
+        const tableLocs = [
+          [12.0, -18.0],
+          [18.0, -18.0],
+          [12.0, -8.0],
+          [18.0, -8.0]
+        ];
+
+        tableLocs.forEach(([tx, tz]) => {
+          const tGroup = new THREE.Group();
+          tGroup.position.set(tx, y0, tz);
+
+          [[-0.85, -0.55], [0.85, -0.55], [-0.85, 0.55], [0.85, 0.55]].forEach(([lx, lz]) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.76, 12), woodMat);
+            leg.position.set(lx, 0.38, lz);
+            tGroup.add(leg);
+          });
+
+          const apron = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.08, 1.25), woodMat);
+          apron.position.y = 0.72;
+          tGroup.add(apron);
+
+          const deck = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.06, 1.30), woodMat);
+          deck.position.y = 0.78;
+          tGroup.add(deck);
+
+          const gLid = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.32, 1.22), glassMat);
+          gLid.position.set(0, 0.96, 0);
+          tGroup.add(gLid);
+
+          const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.015, 0.55), parchmentMat);
+          pageLeft.position.set(-0.35, 0.82, 0.05);
+          tGroup.add(pageLeft);
+
+          const pageRight = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.015, 0.55), parchmentMat);
+          pageRight.position.set(0.35, 0.82, 0.05);
+          tGroup.add(pageRight);
+
+          const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.01, 12), waxSealMat);
+          seal.position.set(0.48, 0.835, 0.22);
+          tGroup.add(seal);
+
+          const lensRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 8, 16), brassMat);
+          lensRing.rotation.x = Math.PI / 2;
+          lensRing.position.set(-0.15, 0.835, -0.22);
+          tGroup.add(lensRing);
+
+          const lensHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.11, 8), woodMat);
+          lensHandle.rotation.z = Math.PI / 3;
+          lensHandle.position.set(-0.21, 0.835, -0.25);
+          tGroup.add(lensHandle);
+
+          this.scene.add(tGroup);
+
+          this.colliders.push({
+            type: 'box',
+            floor: 2,
+            minX: tx - 1.0,
+            maxX: tx + 1.0,
+            minZ: tz - 0.70,
+            maxZ: tz + 0.70,
+            minY: y0,
+            maxY: y0 + 1.15
+          });
+        });
+
+        // Central Octagonal Glass Reliquary Astrolabe Tower at (15.0, y0, -13.0)
+        const relGroup = new THREE.Group();
+        relGroup.position.set(15.0, y0, -13.0);
+
+        const rBase = new THREE.Mesh(new THREE.CylinderGeometry(1.10, 1.15, 0.75, 8), woodMat);
+        rBase.position.y = 0.375;
+        relGroup.add(rBase);
+
+        const rGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 1.50, 8, 1, true), glassMat);
+        rGlass.position.y = 0.75 + 0.75;
+        relGroup.add(rGlass);
+
+        const rCap = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.02, 0.12, 8), woodMat);
+        rCap.position.y = 2.31;
+        relGroup.add(rCap);
+
+        const astroBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.08, 14), brassMat);
+        astroBase.position.y = 0.75 + 0.04;
+        relGroup.add(astroBase);
+
+        const astroCol = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.35, 12), brassMat);
+        astroCol.position.y = 0.75 + 0.25;
+        relGroup.add(astroCol);
+
+        [0.26, 0.21, 0.16].forEach((radius, ri) => {
+          const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.014, 8, 24), brassMat);
+          ring.rotation.x = ri * 0.75;
+          ring.rotation.y = ri * 0.62;
+          ring.position.y = 0.75 + 0.55;
+          relGroup.add(ring);
+        });
+
+        this.scene.add(relGroup);
+
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 2,
+          x: 15.0,
+          z: -13.0,
+          radius: 1.15,
+          minY: y0,
+          maxY: y0 + 1.25
+        });
+
+        // 4 Sapphire velvet stanchions around the reliquary
+        [[-1.6, -1.6], [1.6, -1.6], [1.6, 1.6], [-1.6, 1.6]].forEach(([sx, sz]) => {
+          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 12), brassMat);
+          sBase.position.set(15.0 + sx, y0 + 0.02, -13.0 + sz);
+          this.scene.add(sBase);
+
+          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.92, 8), brassMat);
+          sPost.position.set(15.0 + sx, y0 + 0.48, -13.0 + sz);
+          this.scene.add(sPost);
+
+          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), brassMat);
+          sBall.position.set(15.0 + sx, y0 + 0.96, -13.0 + sz);
+          this.scene.add(sBall);
+        });
+
+        // Map Flat-File Cabinet at (15.0, y0, 0.0)
+        const flatGroup = new THREE.Group();
+        flatGroup.position.set(15.0, y0, 0.0);
+
+        const cab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.88, 1.4), woodMat);
+        cab.position.y = 0.44;
+        flatGroup.add(cab);
+
+        [-0.45, 0.15, 0.65].forEach((rx, ri) => {
+          const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 12), parchmentMat);
+          roll.rotation.z = Math.PI / 2 + (ri - 1) * 0.12;
+          roll.position.set(rx, 0.92, (ri % 2 === 0 ? 0.15 : -0.15));
+          flatGroup.add(roll);
+        });
+
+        this.scene.add(flatGroup);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 2,
+          minX: 15.0 - 1.25,
+          maxX: 15.0 + 1.25,
+          minZ: 0.0 - 0.75,
+          maxZ: 0.0 + 0.75,
+          minY: y0,
+          maxY: y0 + 0.95
+        });
+
+        // 2 Glass Bell-Jar Cloches on turned mahogany pedestal columns at (10, -2) and (20, -2)
+        [[10.0, -2.0, 'sundial'], [20.0, -2.0, 'hourglass']].forEach(([cx, cz, cType]) => {
+          const cGroup = new THREE.Group();
+          cGroup.position.set(cx, y0, cz);
+
+          const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.05, 16), woodMat);
+          ped.position.y = 0.525;
+          cGroup.add(ped);
+
+          const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.45, 14, 1, true), glassMat);
+          bell.position.y = 1.05 + 0.225;
+          cGroup.add(bell);
+
+          const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
+          bellDome.position.y = 1.05 + 0.45;
+          cGroup.add(bellDome);
+
+          if (cType === 'sundial') {
+            const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.03, 14), brassMat);
+            dial.position.y = 1.07;
+            cGroup.add(dial);
+            const gnomon = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 4), brassMat);
+            gnomon.rotation.x = 0.4;
+            gnomon.position.set(0, 1.15, -0.02);
+            cGroup.add(gnomon);
+          } else {
+            const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.015, 12), woodMat);
+            hgTop.position.y = 1.05 + 0.28;
+            cGroup.add(hgTop);
+            const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.015, 12), woodMat);
+            hgBot.position.y = 1.05 + 0.02;
+            cGroup.add(hgBot);
+            const bulb1 = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 10), glassMat);
+            bulb1.position.y = 1.05 + 0.08;
+            cGroup.add(bulb1);
+            const bulb2 = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 10), glassMat);
+            bulb2.rotation.x = Math.PI;
+            bulb2.position.y = 1.05 + 0.20;
+            cGroup.add(bulb2);
+          }
+          this.scene.add(cGroup);
+
+          this.colliders.push({
+            type: 'cylinder',
+            floor: 2,
+            x: cx,
+            z: cz,
+            radius: 0.40,
+            minY: y0,
+            maxY: y0 + 1.10
           });
         });
       } else {
-        // --- FLOOR 3: QUARANTINED STORAGE CRATES & CARGO PALLETS ---
-        const crateCoords = [
-          [11.0, -19.0, 2.4, 2.0, 2.4],
-          [16.5, -19.0, 2.2, 1.8, 2.2],
-          [19.5, -13.0, 2.6, 2.2, 2.6],
-          [13.0, -11.0, 2.4, 1.6, 2.4],
-          [17.0, -5.0, 2.8, 2.4, 2.8],
-          [12.0, -3.0, 2.2, 1.9, 2.2],
-          [15.5, 1.0, 2.5, 2.0, 2.5]
-        ];
-        crateCoords.forEach(([cx, cz, cw, ch, cd]) => {
-          this.createStorageCrate(cx, y0, cz, cw, ch, cd, mats.mahogany, fl);
+        // =========================================================================
+        // FLOOR 3 (fl = 3): THE MILK CRATE CHALLENGE & HALF-LIFE 2 PROP PHYSICS
+        // =========================================================================
+        this.spawnMilkCrates(y0);
+      }
+    }
+
+    spawnMilkCrates(y0) {
+      this.physicsCrates = [];
+      const crateW = 0.38;
+      const crateH = 0.31;
+      const crateD = 0.38;
+
+      // Mix of authentic colors: black, brown, maroon, and navy blue
+      const palette = [0x18181b, 0x5c3a21, 0x7f1d1d, 0x1e3a5f];
+      let crateCounter = 0;
+
+      const addSingleCrate = (cx, cy, cz, tier = 1) => {
+        const colorHex = palette[crateCounter % palette.length];
+        crateCounter++;
+
+        const mesh = this.buildMilkCrateMesh(colorHex, crateW, crateH, crateD);
+        mesh.position.set(cx, cy + crateH / 2, cz);
+        this.scene.add(mesh);
+
+        const col = {
+          type: 'box',
+          floor: 3,
+          minX: cx - crateW / 2,
+          maxX: cx + crateW / 2,
+          minZ: cz - crateD / 2,
+          maxZ: cz + crateD / 2,
+          minY: cy,
+          maxY: cy + crateH
+        };
+        this.colliders.push(col);
+
+        const crateEntry = {
+          id: crateCounter,
+          mesh: mesh,
+          w: crateW,
+          h: crateH,
+          d: crateD,
+          colorHex: colorHex,
+          tier: tier,
+          x: cx,
+          y: cy,
+          z: cz,
+          baseY: cy,
+          vx: 0,
+          vy: 0,
+          vz: 0,
+          rotX: 0,
+          rotY: 0,
+          rotZ: 0,
+          angVx: 0,
+          angVy: 0,
+          angVz: 0,
+          isHeld: false,
+          isCollapsed: false,
+          collider: col,
+          supportedCrates: []
+        };
+        this.physicsCrates.push(crateEntry);
+        return crateEntry;
+      };
+
+      // 1. Build the Iconic Milk Crate Challenge Stepped Pyramid at x = 15.0 along Z (-18.0 to -7.0)
+      // 13 Columns: heights [1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]
+      const heights = [1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1];
+      const spacingZ = 0.39;
+      const startZ = -13.0 - (6 * spacingZ); // Peak (col 6) at z = -13.0
+
+      for (let col = 0; col < heights.length; col++) {
+        const cz = startZ + col * spacingZ;
+        const cx = 15.0;
+        const hCount = heights[col];
+        let lowerCrate = null;
+        for (let t = 0; t < hCount; t++) {
+          const cy = y0 + t * crateH;
+          const crateObj = addSingleCrate(cx, cy, cz, t + 1);
+          if (lowerCrate) {
+            lowerCrate.supportedCrates.push(crateObj);
+          }
+          lowerCrate = crateObj;
+        }
+      }
+
+      // 2. Extra Stacks and Towers for Fun
+      // Wobbly 5-crate vertical tower at (19.0, y0, -6.0)
+      let prevCrate = null;
+      for (let t = 0; t < 5; t++) {
+        const cy = y0 + t * crateH;
+        const c = addSingleCrate(19.0, cy, -6.0, t + 1);
+        if (prevCrate) prevCrate.supportedCrates.push(c);
+        prevCrate = c;
+      }
+
+      // 3-crate stack at (11.0, y0, -11.0)
+      prevCrate = null;
+      for (let t = 0; t < 3; t++) {
+        const cy = y0 + t * crateH;
+        const c = addSingleCrate(11.0, cy, -11.0, t + 1);
+        if (prevCrate) prevCrate.supportedCrates.push(c);
+        prevCrate = c;
+      }
+
+      // 3. Loose Scattered Crates on the floor (ready for player to pick up, carry with E, and place/throw)
+      const looseCoords = [
+        [12.0, -3.0],
+        [18.0, -16.0],
+        [15.0, 0.0],
+        [13.2, -14.0],
+        [16.8, -8.0],
+        [10.5, -5.0],
+        [19.5, -2.0]
+      ];
+      looseCoords.forEach(([lx, lz]) => {
+        addSingleCrate(lx, y0, lz, 1);
+      });
+    }
+
+    buildMilkCrateMesh(colorHex, w = 0.38, h = 0.31, d = 0.38) {
+      const group = new THREE.Group();
+      const plasticMat = new THREE.MeshStandardMaterial({
+        color: colorHex,
+        roughness: 0.42,
+        metalness: 0.06
+      });
+
+      // 4 Corner vertical posts with molded bottom interlocking feet
+      const postW = 0.038;
+      const footH = 0.018;
+      const cornerOffsets = [
+        [-w / 2 + postW / 2, -d / 2 + postW / 2],
+        [w / 2 - postW / 2, -d / 2 + postW / 2],
+        [-w / 2 + postW / 2, d / 2 - postW / 2],
+        [w / 2 - postW / 2, d / 2 - postW / 2]
+      ];
+      cornerOffsets.forEach(([ox, oz]) => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(postW, h, postW), plasticMat);
+        post.position.set(ox, 0, oz);
+        group.add(post);
+
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(postW - 0.008, footH, postW - 0.008), plasticMat);
+        foot.position.set(ox, -h / 2 - footH / 2, oz);
+        group.add(foot);
+      });
+
+      // Top rim collar bars
+      const rimH = 0.035;
+      const rimThick = 0.032;
+      [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
+        const rimBar = new THREE.Mesh(new THREE.BoxGeometry(w, rimH, rimThick), plasticMat);
+        rimBar.position.set(0, h / 2 - rimH / 2, rz);
+        group.add(rimBar);
+      });
+      [-w / 2 + rimThick / 2, w / 2 - rimThick / 2].forEach((rx) => {
+        const rimBar = new THREE.Mesh(new THREE.BoxGeometry(rimThick, rimH, d - rimThick * 2), plasticMat);
+        rimBar.position.set(rx, h / 2 - rimH / 2, 0);
+        group.add(rimBar);
+      });
+
+      // Bottom rim base frame
+      const botH = 0.028;
+      [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
+        const bBar = new THREE.Mesh(new THREE.BoxGeometry(w, botH, rimThick), plasticMat);
+        bBar.position.set(0, -h / 2 + botH / 2, rz);
+        group.add(bBar);
+      });
+      [-w / 2 + rimThick / 2, w / 2 - rimThick / 2].forEach((rx) => {
+        const bBar = new THREE.Mesh(new THREE.BoxGeometry(rimThick, botH, d - rimThick * 2), plasticMat);
+        bBar.position.set(rx, -h / 2 + botH / 2, 0);
+        group.add(bBar);
+      });
+
+      // Bottom grid plate
+      const botPlate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.016, d - 0.06), plasticMat);
+      botPlate.position.set(0, -h / 2 + 0.01, 0);
+      group.add(botPlate);
+
+      // 4 Side lattice walls with handle cutouts
+      const midRibH = 0.024;
+      [-d / 2 + 0.014, d / 2 - 0.014].forEach((sz) => {
+        const midRib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, midRibH, 0.016), plasticMat);
+        midRib.position.set(0, 0, sz);
+        group.add(midRib);
+
+        [-0.14, 0.14].forEach((hx) => {
+          const hBlock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.045, 0.016), plasticMat);
+          hBlock.position.set(hx, h / 2 - rimH - 0.025, sz);
+          group.add(hBlock);
         });
+
+        [-0.10, 0.10].forEach((dx) => {
+          const strut = new THREE.Mesh(new THREE.BoxGeometry(0.014, h * 0.75, 0.012), plasticMat);
+          strut.rotation.z = (dx > 0 ? 0.38 : -0.38);
+          strut.position.set(dx, -0.02, sz);
+          group.add(strut);
+        });
+      });
+
+      [-w / 2 + 0.014, w / 2 - 0.014].forEach((sx) => {
+        const midRib = new THREE.Mesh(new THREE.BoxGeometry(0.016, midRibH, d - 0.08), plasticMat);
+        midRib.position.set(sx, 0, 0);
+        group.add(midRib);
+
+        [-0.14, 0.14].forEach((hz) => {
+          const hBlock = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.045, 0.06), plasticMat);
+          hBlock.position.set(sx, h / 2 - rimH - 0.025, hz);
+          group.add(hBlock);
+        });
+
+        [-0.10, 0.10].forEach((dz) => {
+          const strut = new THREE.Mesh(new THREE.BoxGeometry(0.012, h * 0.75, 0.014), plasticMat);
+          strut.rotation.x = (dz > 0 ? 0.38 : -0.38);
+          strut.position.set(sx, -0.02, dz);
+          group.add(strut);
+        });
+      });
+
+      return group;
+    }
+
+    tryPickupCrate() {
+      if (this.playerFloor !== 3 || !this.physicsCrates || this.physicsCrates.length === 0) return false;
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const cosYaw = Math.cos(this.playerYaw);
+      const sinYaw = Math.sin(this.playerYaw);
+
+      const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+      const camPos = this.camera.position;
+
+      let bestCrate = null;
+      let bestDist = 2.85;
+
+      for (let i = 0; i < this.physicsCrates.length; i++) {
+        const crate = this.physicsCrates[i];
+        if (crate.isHeld) continue;
+
+        const toCrate = new THREE.Vector3(crate.x - camPos.x, (crate.y + crate.h / 2) - camPos.y, crate.z - camPos.z);
+        const dist = toCrate.length();
+        if (dist > bestDist) continue;
+
+        toCrate.normalize();
+        const dot = toCrate.dot(fwd);
+        if (dot > 0.78) {
+          bestCrate = crate;
+          bestDist = dist;
+        }
+      }
+
+      if (bestCrate) {
+        this.heldCrate = bestCrate;
+        bestCrate.isHeld = true;
+        bestCrate.isCollapsed = true;
+
+        if (bestCrate.supportedCrates && bestCrate.supportedCrates.length > 0) {
+          bestCrate.supportedCrates.forEach(child => {
+            this.triggerCrateStackCollapse(child);
+          });
+          bestCrate.supportedCrates = [];
+        }
+
+        this.audio.playCratePickup();
+        return true;
+      }
+      return false;
+    }
+
+    dropHeldCrate() {
+      if (!this.heldCrate) return;
+      const crate = this.heldCrate;
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const cosYaw = Math.cos(this.playerYaw);
+      const sinYaw = Math.sin(this.playerYaw);
+
+      const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+
+      crate.isHeld = false;
+      crate.vx = fwd.x * 1.8 + this.playerVelocity.x;
+      crate.vy = 0.4;
+      crate.vz = fwd.z * 1.8 + this.playerVelocity.z;
+      crate.angVx = (Math.random() - 0.5) * 1.5;
+      crate.angVz = (Math.random() - 0.5) * 1.5;
+
+      this.heldCrate = null;
+      this.audio.playCrateImpact();
+    }
+
+    throwHeldCrate() {
+      if (!this.heldCrate) return;
+      const crate = this.heldCrate;
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const cosYaw = Math.cos(this.playerYaw);
+      const sinYaw = Math.sin(this.playerYaw);
+
+      const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+
+      crate.isHeld = false;
+      crate.isCollapsed = true;
+      crate.vx = fwd.x * 14.5;
+      crate.vy = fwd.y * 14.5 + 2.2;
+      crate.vz = fwd.z * 14.5;
+      crate.angVx = (Math.random() - 0.5) * 12.0;
+      crate.angVz = (Math.random() - 0.5) * 12.0;
+      crate.angVy = (Math.random() - 0.5) * 8.0;
+
+      this.heldCrate = null;
+      this.audio.playCrateImpact();
+    }
+
+    triggerCrateStackCollapse(baseCrate) {
+      if (!baseCrate || baseCrate.isCollapsed) return;
+      baseCrate.isCollapsed = true;
+      baseCrate.vx += (Math.random() - 0.5) * 4.2;
+      baseCrate.vz += (Math.random() - 0.5) * 4.2;
+      baseCrate.vy += 0.8 + Math.random() * 0.5;
+      baseCrate.angVx = (Math.random() - 0.5) * 12.0;
+      baseCrate.angVz = (Math.random() - 0.5) * 12.0;
+
+      if (baseCrate.supportedCrates && baseCrate.supportedCrates.length > 0) {
+        baseCrate.supportedCrates.forEach(child => {
+          this.triggerCrateStackCollapse(child);
+        });
+        baseCrate.supportedCrates = [];
+      }
+
+      this.audio.playCrateImpact();
+    }
+
+    updatePhysicsCrates(delta) {
+      if (this.playerFloor !== 3 || !this.physicsCrates || this.physicsCrates.length === 0) return;
+
+      const y0 = 3 * CONFIG.FLOOR_HEIGHT; // Floor 3 elevation (15.60m)
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const cosYaw = Math.cos(this.playerYaw);
+      const sinYaw = Math.sin(this.playerYaw);
+      const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+
+      // Handle held crate position and viewmodel
+      if (this.heldCrate) {
+        const hc = this.heldCrate;
+        const targetX = this.camera.position.x + fwd.x * 1.55;
+        const targetY = this.camera.position.y + fwd.y * 1.55 - 0.18;
+        const targetZ = this.camera.position.z + fwd.z * 1.55;
+
+        hc.x = THREE.MathUtils.lerp(hc.x, targetX, Math.min(1, delta * 22));
+        hc.y = THREE.MathUtils.lerp(hc.y, targetY, Math.min(1, delta * 22));
+        hc.z = THREE.MathUtils.lerp(hc.z, targetZ, Math.min(1, delta * 22));
+        hc.rotY = THREE.MathUtils.lerp(hc.rotY, this.playerYaw, Math.min(1, delta * 16));
+        hc.rotX = THREE.MathUtils.lerp(hc.rotX, 0, Math.min(1, delta * 16));
+        hc.rotZ = THREE.MathUtils.lerp(hc.rotZ, 0, Math.min(1, delta * 16));
+
+        hc.mesh.position.set(hc.x, hc.y + hc.h / 2, hc.z);
+        hc.mesh.rotation.set(hc.rotX, hc.rotY, hc.rotZ);
+
+        hc.collider.minX = hc.x - hc.w / 2;
+        hc.collider.maxX = hc.x + hc.w / 2;
+        hc.collider.minZ = hc.z - hc.d / 2;
+        hc.collider.maxZ = hc.z + hc.d / 2;
+        hc.collider.minY = hc.y;
+        hc.collider.maxY = hc.y + hc.h;
+      }
+
+      // Check if player is standing on any crate in the stacks
+      let standingCrate = null;
+      if (this.isGrounded) {
+        const footY = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+        for (let i = 0; i < this.physicsCrates.length; i++) {
+          const crate = this.physicsCrates[i];
+          if (crate.isHeld || crate.isCollapsed) continue;
+          if (Math.abs(this.playerPos.x - crate.x) <= crate.w / 2 + 0.08 &&
+              Math.abs(this.playerPos.z - crate.z) <= crate.d / 2 + 0.08 &&
+              Math.abs(footY - (crate.y + crate.h)) < 0.35) {
+            standingCrate = crate;
+            break;
+          }
+        }
+      }
+
+      if (standingCrate) {
+        const offX = this.playerPos.x - standingCrate.x;
+        const offZ = this.playerPos.z - standingCrate.z;
+        const leverage = Math.max(1, standingCrate.tier) * 0.95;
+
+        standingCrate.angVz -= (offX / 0.19) * 14.0 * leverage * delta;
+        standingCrate.angVx += (offZ / 0.19) * 14.0 * leverage * delta;
+
+        const isMoving = this.playerVelocity.lengthSq() > 0.01;
+        if (isMoving) {
+          standingCrate.angVx += (Math.random() - 0.5) * 8.0 * delta;
+          standingCrate.angVz += (Math.random() - 0.5) * 8.0 * delta;
+          if (Math.random() < 0.035) this.audio.playCrateCreak();
+        }
+
+        const totalTilt = Math.hypot(standingCrate.rotX, standingCrate.rotZ);
+        if (totalTilt > 0.28 || Math.hypot(standingCrate.angVx, standingCrate.angVz) > 4.8) {
+          this.triggerCrateStackCollapse(standingCrate);
+          this.isGrounded = false;
+          this.fallVelocity = 0;
+          this.isFalling = true;
+        }
+      }
+
+      // Update all non-held crates
+      for (let i = 0; i < this.physicsCrates.length; i++) {
+        const c = this.physicsCrates[i];
+        if (c.isHeld) continue;
+
+        if (c.isCollapsed || c.y > y0 + 0.02) {
+          c.vy -= 14.0 * delta;
+          c.x += c.vx * delta;
+          c.y += c.vy * delta;
+          c.z += c.vz * delta;
+
+          c.rotX += c.angVx * delta;
+          c.rotY += c.angVy * delta;
+          c.rotZ += c.angVz * delta;
+
+          if (c.y <= y0) {
+            c.y = y0;
+            c.vy = -c.vy * 0.24;
+            c.vx *= 0.72;
+            c.vz *= 0.72;
+            c.angVx *= 0.65;
+            c.angVy *= 0.65;
+            c.angVz *= 0.65;
+            if (Math.abs(c.vy) > 1.2) this.audio.playCrateImpact();
+          }
+
+          if (c.x < 6.2) { c.x = 6.2; c.vx = Math.abs(c.vx) * 0.5; }
+          if (c.x > 23.8) { c.x = 23.8; c.vx = -Math.abs(c.vx) * 0.5; }
+          if (c.z < -23.8) { c.z = -23.8; c.vz = Math.abs(c.vz) * 0.5; }
+          if (c.z > 3.8) { c.z = 3.8; c.vz = -Math.abs(c.vz) * 0.5; }
+        } else {
+          c.angVx += (-c.rotX * 32.0 - c.angVx * 9.0) * delta;
+          c.angVz += (-c.rotZ * 32.0 - c.angVz * 9.0) * delta;
+          c.rotX += c.angVx * delta;
+          c.rotZ += c.angVz * delta;
+        }
+
+        c.mesh.position.set(c.x, c.y + c.h / 2, c.z);
+        c.mesh.rotation.set(c.rotX, c.rotY, c.rotZ);
+
+        c.collider.minX = c.x - c.w / 2;
+        c.collider.maxX = c.x + c.w / 2;
+        c.collider.minZ = c.z - c.d / 2;
+        c.collider.maxZ = c.z + c.d / 2;
+        c.collider.minY = c.y;
+        c.collider.maxY = c.isCollapsed ? (c.y + 0.15) : (c.y + c.h);
       }
     }
 
@@ -8224,7 +9326,11 @@
         }
 
         if (e.button === 0) {
-          this.shootPistol();
+          if (this.heldCrate) {
+            this.throwHeldCrate();
+          } else {
+            this.shootPistol();
+          }
         } else if (e.button === 2) {
           this.isAiming = true;
         }
@@ -8332,6 +9438,9 @@
           } else if (this.isObjectiveModalOpen) {
             this.closeObjectiveModal();
           } else if (this.gameStarted) {
+            if (!this.heldCrate && this.tryPickupCrate()) {
+              return;
+            }
             this.interact();
           }
         } else if (e.code === 'Escape') {
@@ -8364,6 +9473,11 @@
 
       window.addEventListener('keyup', (e) => {
         this.keys[e.code] = false;
+        if (e.code === 'KeyE') {
+          if (this.heldCrate) {
+            this.dropHeldCrate();
+          }
+        }
         if (e.key === 'Shift') {
           this.keys['ShiftLeft'] = false;
           this.keys['ShiftRight'] = false;
@@ -9029,6 +10143,21 @@
     }
 
     getPlatformSurfaceY(x, z, floorIdx) {
+      if (floorIdx === 3 && this.physicsCrates && this.physicsCrates.length > 0) {
+        let crateSurfaceY = 0;
+        for (let i = 0; i < this.physicsCrates.length; i++) {
+          const crate = this.physicsCrates[i];
+          if (crate.isHeld) continue;
+          const halfW = crate.w / 2 + 0.04;
+          const halfD = crate.d / 2 + 0.04;
+          if (x >= crate.x - halfW && x <= crate.x + halfW && z >= crate.z - halfD && z <= crate.z + halfD) {
+            const topY = crate.isCollapsed ? (crate.y + 0.15) : (crate.y + crate.h);
+            if (topY > crateSurfaceY) crateSurfaceY = topY;
+          }
+        }
+        if (crateSurfaceY > 0) return crateSurfaceY;
+      }
+
       // If player is inside or navigating a stairwell, elevation is governed exclusively by the stairwell solver
       if (this.playerStairState && this.playerStairState.active) {
         return 0;
@@ -9133,6 +10262,32 @@
     }
 
     updateInteractionPrompt() {
+      // Held crate status prompt
+      if (this.heldCrate) {
+        this.setInteractPrompt('[E] RELEASE TO PLACE / DROP  •  [LMB] THROW');
+        return;
+      }
+
+      // Crate pickup prompt on 4th floor
+      if (this.playerFloor === 3 && this.physicsCrates && this.physicsCrates.length > 0) {
+        const cosPitch = Math.cos(this.playerPitch);
+        const sinPitch = Math.sin(this.playerPitch);
+        const cosYaw = Math.cos(this.playerYaw);
+        const sinYaw = Math.sin(this.playerYaw);
+        const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+        const camPos = this.camera.position;
+
+        for (let i = 0; i < this.physicsCrates.length; i++) {
+          const c = this.physicsCrates[i];
+          if (c.isHeld) continue;
+          const toC = new THREE.Vector3(c.x - camPos.x, (c.y + c.h / 2) - camPos.y, c.z - camPos.z);
+          if (toC.length() < 2.85 && toC.normalize().dot(fwd) > 0.78) {
+            this.setInteractPrompt('HOLD [E] LIFT & CARRY CRATE  •  [LMB] THROW');
+            return;
+          }
+        }
+      }
+
       // 1. Relics
       for (let relic of this.relics) {
         if (!relic.collected && relic.floor === this.playerFloor) {
@@ -9412,7 +10567,9 @@
       let targetZ = -0.40;
       let targetFov = 74;
 
-      if (this.isAiming) {
+      if (this.heldCrate) {
+        targetY = -0.75;
+      } else if (this.isAiming) {
         targetX = -0.04;
         targetY = -0.22;
         targetZ = -0.32;
@@ -9441,7 +10598,7 @@
 
       // Base idle position & rotation (Pose 1 from user reference screenshot)
       let targetX = -0.32;
-      let targetY = -0.28;
+      let targetY = this.heldCrate ? -0.75 : -0.28;
       let targetZ = -0.41;
       let targetRotX = 0;
       let targetRotY = 0;
@@ -10706,6 +11863,7 @@
 
       if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
         this.updatePlayer(delta);
+        this.updatePhysicsCrates(delta);
         this.updateSmitty(delta);
         this.updateLiquidBlood(delta);
         this.updateAmmoPickups(delta);
