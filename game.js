@@ -5931,11 +5931,9 @@
 
     createRealisticMainStacks(fl, y0, mats) {
       if (fl === 0) {
-        // Floor 0 Gallery Stacks: Elegant runner rug, central gallery bench, and 2 aquarium tanks
-        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x881337, 0xd4af37);
+        // Floor 0 Gallery Stacks: Elegant runner rug and central gallery bench
+        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0xb47488, 0xc6bc99);
         this.createMuseumBench(15.0, y0, -13.0);
-        this.createAquariumTank(11.0, y0, -8.0, 0, Math.PI / 2);
-        this.createAquariumTank(19.0, y0, -8.0, 0, -Math.PI / 2);
       } else if (fl === 1) {
         // =========================================================================
         // FLOOR 1 (fl = 1): REALISTIC DETAILED LIBRARY BOOKSTACKS & LADDERS
@@ -6184,11 +6182,9 @@
           });
         });
       } else if (fl === 2) {
-        // Floor 2 Stacks: Deep emerald runner rug, central gallery bench, and 2 aquarium tanks
-        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x064e3b, 0xd4af37);
+        // Floor 2 Stacks: Soft seafoam runner rug and central gallery bench
+        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x53aa93, 0xc6bc99);
         this.createMuseumBench(15.0, y0, -13.0);
-        this.createAquariumTank(11.0, y0, -8.0, 2, Math.PI / 2);
-        this.createAquariumTank(19.0, y0, -8.0, 2, -Math.PI / 2);
       } else {
         // =========================================================================
         // FLOOR 3 (fl = 3): THE MILK CRATE CHALLENGE & HALF-LIFE 2 PROP PHYSICS
@@ -6508,91 +6504,23 @@
       if (!this.heldCrate) return;
       const crate = this.heldCrate;
       const y0 = 3 * CONFIG.FLOOR_HEIGHT;
-      const camPos = this.camera.position;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
       const sinYaw = Math.sin(this.playerYaw);
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
 
-      // Check if dropped near/above an existing crate to stack neatly!
-      let targetBase = null;
-      let highestY = y0;
-      for (let i = 0; i < this.physicsCrates.length; i++) {
-        const other = this.physicsCrates[i];
-        if (other === crate || other.isHeld) continue;
-        const dx = Math.abs(crate.x - other.x);
-        const dz = Math.abs(crate.z - other.z);
-        if (dx < 0.42 && dz < 0.42) {
-          const topY = other.y + other.h;
-          if (crate.y >= other.y - 0.25 && topY > highestY) {
-            highestY = topY;
-            targetBase = other;
-          }
-        } else {
-          // Check if player's crosshair / view ray aims directly at this crate
-          const toOther = new THREE.Vector3(other.x - camPos.x, (other.y + other.h / 2) - camPos.y, other.z - camPos.z);
-          const distToOther = toOther.length();
-          if (distToOther < 3.2) {
-            toOther.normalize();
-            if (toOther.dot(fwd) > 0.88) {
-              const topY = other.y + other.h;
-              if (topY > highestY) {
-                highestY = topY;
-                targetBase = other;
-              }
-            }
-          }
-        }
-      }
-
       crate.isHeld = false;
       crate.collider.disabled = false;
+      crate.isCollapsed = true;
 
-      if (targetBase) {
-        // Stack directly on top of target crate!
-        crate.x = targetBase.x;
-        crate.z = targetBase.z;
-        crate.y = highestY;
-        crate.baseY = highestY;
-        crate.rotX = 0;
-        crate.rotZ = 0;
-        crate.rotY = targetBase.rotY;
-        crate.vx = 0;
-        crate.vy = 0;
-        crate.vz = 0;
-        crate.angVx = 0;
-        crate.angVy = 0;
-        crate.angVz = 0;
-        crate.isCollapsed = false;
-        crate.tier = targetBase.tier + 1;
-        targetBase.supportedCrates.push(crate);
-      } else {
-        // Place neatly onto the floor right where held
-        crate.isCollapsed = false;
-        crate.y = y0;
-        crate.baseY = y0;
-        crate.rotX = 0;
-        crate.rotZ = 0;
-        crate.rotY = this.playerYaw;
-        crate.vx = 0;
-        crate.vy = 0;
-        crate.vz = 0;
-        crate.angVx = 0;
-        crate.angVy = 0;
-        crate.angVz = 0;
-        crate.tier = 1;
-      }
-
-      crate.mesh.position.set(crate.x, crate.y + crate.h / 2, crate.z);
-      crate.mesh.rotation.set(crate.rotX, crate.rotY, crate.rotZ);
-
-      crate.collider.minX = crate.x - crate.w / 2;
-      crate.collider.maxX = crate.x + crate.w / 2;
-      crate.collider.minZ = crate.z - crate.d / 2;
-      crate.collider.maxZ = crate.z + crate.d / 2;
-      crate.collider.minY = crate.y;
-      crate.collider.maxY = crate.isCollapsed ? (crate.y + 0.16) : (crate.y + crate.h);
+      // Half-Life 2 style gentle release forward with slight player momentum
+      crate.vx = fwd.x * 1.5;
+      crate.vy = Math.max(-0.5, fwd.y * 1.5);
+      crate.vz = fwd.z * 1.5;
+      crate.angVx = (Math.random() - 0.5) * 1.5;
+      crate.angVy = (Math.random() - 0.5) * 1.5;
+      crate.angVz = (Math.random() - 0.5) * 1.5;
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
@@ -6616,24 +6544,17 @@
       // Safe clamp below ceiling before launching
       crate.y = Math.min(crate.y, ceilY - crate.h - 0.08);
 
-      crate.vx = fwd.x * 12.0;
-      crate.vy = fwd.y * 12.0 + 1.2;
-      crate.vz = fwd.z * 12.0;
-      crate.angVx = (Math.random() - 0.5) * 8.0;
-      crate.angVz = (Math.random() - 0.5) * 8.0;
-      crate.angVy = (Math.random() - 0.5) * 6.0;
-
-      crate.collider.minX = crate.x - crate.w / 2;
-      crate.collider.maxX = crate.x + crate.w / 2;
-      crate.collider.minZ = crate.z - crate.d / 2;
-      crate.collider.maxZ = crate.z + crate.d / 2;
-      crate.collider.minY = crate.y;
-      crate.collider.maxY = crate.y + 0.16;
+      // Half-Life 2 style punchy throw impulse
+      crate.vx = fwd.x * 11.0;
+      crate.vy = fwd.y * 11.0 + 1.0;
+      crate.vz = fwd.z * 11.0;
+      crate.angVx = (Math.random() - 0.5) * 6.0;
+      crate.angVz = (Math.random() - 0.5) * 6.0;
+      crate.angVy = (Math.random() - 0.5) * 4.0;
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
     }
-
     triggerCrateStackCollapse(baseCrate) {
       if (!baseCrate || baseCrate.isCollapsed) return;
       baseCrate.isCollapsed = true;
@@ -6785,25 +6706,26 @@
 
           if (c.y <= landingY) {
             c.y = landingY;
-            if (landedCrate && !landedCrate.isCollapsed && Math.hypot(c.rotX, c.rotZ) < 0.25 && Math.hypot(c.vx, c.vz) < 1.4) {
-              // Settle cleanly into stack on top of lower crate
-              c.isCollapsed = false;
-              c.baseY = landingY;
-              c.x = THREE.MathUtils.lerp(c.x, landedCrate.x, 0.40);
-              c.z = THREE.MathUtils.lerp(c.z, landedCrate.z, 0.40);
-              c.vx = 0; c.vy = 0; c.vz = 0;
-              c.rotX = 0; c.rotZ = 0;
-              c.angVx = 0; c.angVz = 0;
-              c.tier = landedCrate.tier + 1;
-              landedCrate.supportedCrates.push(c);
+            if (Math.abs(c.vy) > 0.5) {
+              c.vy = -c.vy * 0.25;
+              c.vx *= 0.70;
+              c.vz *= 0.70;
+              c.angVx *= 0.60;
+              c.angVz *= 0.60;
+              this.audio.playCrateImpact();
             } else {
-              c.vy = -c.vy * 0.22;
-              c.vx *= 0.65;
-              c.vz *= 0.65;
-              c.angVx *= 0.55;
-              c.angVz *= 0.55;
+              c.vy = 0;
+              c.vx *= Math.max(0, 1 - delta * 8.0);
+              c.vz *= Math.max(0, 1 - delta * 8.0);
+              c.angVx *= Math.max(0, 1 - delta * 8.0);
+              c.angVy *= Math.max(0, 1 - delta * 8.0);
+              c.angVz *= Math.max(0, 1 - delta * 8.0);
+              if (Math.abs(c.vx) < 0.02) c.vx = 0;
+              if (Math.abs(c.vz) < 0.02) c.vz = 0;
+              // Settle resting angle smoothly toward flat
+              c.rotX = THREE.MathUtils.lerp(c.rotX, 0, Math.min(1, delta * 6.0));
+              c.rotZ = THREE.MathUtils.lerp(c.rotZ, 0, Math.min(1, delta * 6.0));
             }
-            if (Math.abs(c.vy) > 1.0) this.audio.playCrateImpact();
           }
 
           if (c.x < 6.2) { c.x = 6.2; c.vx = Math.abs(c.vx) * 0.5; }
@@ -7026,7 +6948,7 @@
     // BEAUTY PASS & COMPREHENSIVE PROCEDURAL EXHIBIT BUILDERS
     // =========================================================================
 
-    createGalleryRunnerRug(x, y0, z, w, d, mainColorHex = 0x881337, borderGoldHex = 0xd4af37) {
+    createGalleryRunnerRug(x, y0, z, w, d, mainColorHex = 0xb47488, borderGoldHex = 0xc6bc99) {
       const rugGroup = new THREE.Group();
       rugGroup.position.set(x, y0 + 0.006, z);
 
@@ -7121,144 +7043,228 @@
       group.position.set(x, y0, z);
       group.rotation.y = rotY;
 
-      // Materials
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.45 });
-      const standTrimMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.50 });
-      const gravelMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.90 });
-      const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.85 });
-      const plantMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.40, side: THREE.DoubleSide });
+      // Realistic materials
+      const cabinetMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.35, metalness: 0.10 });
+      const gravelMat = new THREE.MeshStandardMaterial({ color: 0xd6c4b2, roughness: 0.92 });
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x52525b, roughness: 0.85 });
+      const seaGrassMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.45, side: THREE.DoubleSide });
 
-      // Translucent realistic aquatic water volume
-      const waterMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0284c7,
-        transparent: true,
-        opacity: 0.28,
-        roughness: 0.08,
-        transmission: 0.92,
-        thickness: 0.70
-      });
-
-      // Clear ultra-pure museum aquarium glass
-      const glassMat = new THREE.MeshPhysicalMaterial({
+      // Ultra-clear glass panels (index of refraction ~1.5)
+      const tankGlassMat = new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.20,
+        opacity: 0.16,
         roughness: 0.02,
+        metalness: 0.05,
         transmission: 0.98,
-        thickness: 0.03
+        thickness: 0.04
       });
 
-      // Heavy museum cabinetry stand (1.50m wide, 0.72m high, 0.70m deep)
-      const baseStand = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.70, 0.70), woodMat);
-      baseStand.position.y = 0.35;
-      group.add(baseStand);
+      // Shimmering clear aquatic water volume
+      const waterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.22,
+        roughness: 0.05,
+        transmission: 0.94,
+        thickness: 0.75
+      });
 
-      const standTop = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.05, 0.76), standTrimMat);
-      standTop.position.y = 0.725;
-      group.add(standTop);
+      // 1. Sleek museum gallery stand
+      const stand = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.72, 0.75), cabinetMat);
+      stand.position.y = 0.36;
+      group.add(stand);
 
-      // Sandy gravel substrate bed
-      const sandBed = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.07, 0.64), gravelMat);
-      sandBed.position.y = 0.75 + 0.035;
-      group.add(sandBed);
+      // 2. Clear glass tank (1.54m wide x 0.70m high x 0.70m deep)
+      const glassTank = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.70, 0.70), tankGlassMat);
+      glassTank.position.y = 0.72 + 0.35;
+      group.add(glassTank);
 
-      // Decorative river stones
-      [[-0.35, -0.12, 0.08], [0.38, 0.10, 0.09], [-0.05, 0.08, 0.06]].forEach(([rx, rz, rRad]) => {
-        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rRad, 0), rockMat);
-        rock.position.set(rx, 0.785 + rRad * 0.7, rz);
+      // 3. Sandy bottom substrate bed
+      const sand = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.08, 0.66), gravelMat);
+      sand.position.y = 0.72 + 0.04;
+      group.add(sand);
+
+      // 4. Natural river pebbles and stones
+      [[-0.45, -0.12, 0.09], [0.42, 0.15, 0.10], [-0.08, 0.05, 0.07], [0.12, -0.18, 0.06]].forEach(([rx, rz, rad]) => {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rad, 1), rockMat);
+        rock.position.set(rx, 0.76 + rad * 0.7, rz);
         group.add(rock);
       });
 
-      // Aquatic kelp / sea grass fronds
-      [-0.48, -0.22, 0.18, 0.46].forEach((kx, ki) => {
-        const kelp = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.38 + (ki % 2) * 0.12, 0.01), plantMat);
-        kelp.position.set(kx, 0.785 + 0.20, (ki % 2 === 0 ? -0.15 : 0.15));
-        kelp.rotation.z = (ki % 2 === 0 ? 0.18 : -0.18);
-        group.add(kelp);
+      // 5. Living sea plants / swaying kelp fronds
+      const kelpBlades = [];
+      [-0.52, -0.28, 0.22, 0.50].forEach((kx, ki) => {
+        const h = 0.42 + (ki % 2) * 0.12;
+        const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.06, h, 1, 4), seaGrassMat);
+        blade.position.set(kx, 0.76 + h / 2, (ki % 2 === 0 ? -0.16 : 0.16));
+        blade.rotation.y = (ki * 0.7);
+        group.add(blade);
+        kelpBlades.push(blade);
       });
 
-      // Water volume
-      const water = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.58, 0.64), waterMat);
-      water.position.y = 0.75 + 0.30;
+      // 6. Transparent water volume
+      const water = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.62, 0.66), waterMat);
+      water.position.y = 0.76 + 0.31;
       group.add(water);
 
-      // Outer glass tank
-      const glass = new THREE.Mesh(new THREE.BoxGeometry(1.46, 0.64, 0.66), glassMat);
-      glass.position.y = 0.75 + 0.33;
-      group.add(glass);
-
-      // Top aquarium canopy / light hood
-      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.06, 0.72), standTrimMat);
-      canopy.position.y = 0.75 + 0.66;
+      // 7. Top sleek aquarium light canopy
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.05, 0.72), cabinetMat);
+      canopy.position.y = 0.72 + 0.70;
       group.add(canopy);
 
       this.scene.add(group);
 
-      // Add 3 swimming fish to this tank
+      // 8. Dynamic Living Fish with realistic organic morphology (Head, Torpedo Body, Swishing Tail, Fins, Glossy Eyes)
       const fishProfiles = [
-        { type: 'clownfish', bodyColor: 0xea580c, stripeColor: 0xffffff, size: 0.14, speed: 0.55 },
-        { type: 'tetra', bodyColor: 0x06b6d4, stripeColor: 0xef4444, size: 0.11, speed: 0.72 },
-        { type: 'angelfish', bodyColor: 0xe2e8f0, stripeColor: 0xf59e0b, size: 0.15, speed: 0.42 }
+        {
+          type: 'clownfish',
+          scale: 0.16,
+          baseSpeed: 0.48,
+          bodyColor: 0xf97316,
+          stripeColor: 0xffffff,
+          finColor: 0xfb923c,
+          yOffset: 0.24,
+          zLane: -0.12
+        },
+        {
+          type: 'tetra',
+          scale: 0.14,
+          baseSpeed: 0.65,
+          bodyColor: 0x0ea5e9,
+          stripeColor: 0xef4444,
+          finColor: 0x38bdf8,
+          yOffset: 0.36,
+          zLane: 0.14
+        },
+        {
+          type: 'angelfish',
+          scale: 0.18,
+          baseSpeed: 0.38,
+          bodyColor: 0xf8fafc,
+          stripeColor: 0xf59e0b,
+          finColor: 0xe2e8f0,
+          yOffset: 0.48,
+          zLane: 0.02
+        }
       ];
 
       fishProfiles.forEach((fp, idx) => {
-        const fishGroup = new THREE.Group();
-        const bMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.35 });
+        const fishRoot = new THREE.Group();
+
+        const bMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.30, metalness: 0.15 });
         const sMat = new THREE.MeshStandardMaterial({ color: fp.stripeColor, roughness: 0.35 });
-        const finMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, transparent: true, opacity: 0.75 });
+        const fMat = new THREE.MeshStandardMaterial({ color: fp.finColor, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+        const pupilMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
 
-        // Fish body
-        const body = new THREE.Mesh(new THREE.ConeGeometry(fp.size * 0.38, fp.size, 8), bMat);
+        // Organic Torpedo Body
+        const s = fp.scale;
+        const body = new THREE.Mesh(new THREE.ConeGeometry(s * 0.35, s * 1.1, 12), bMat);
         body.rotation.z = -Math.PI / 2;
-        fishGroup.add(body);
+        fishRoot.add(body);
 
-        // Body stripes
-        const stripe = new THREE.Mesh(new THREE.CylinderGeometry(fp.size * 0.28, fp.size * 0.32, fp.size * 0.22, 8), sMat);
-        stripe.rotation.z = -Math.PI / 2;
-        stripe.position.x = -fp.size * 0.15;
-        fishGroup.add(stripe);
+        // Rounded Head Dome
+        const head = new THREE.Mesh(new THREE.SphereGeometry(s * 0.34, 10, 10), bMat);
+        head.position.x = s * 0.50;
+        head.scale.set(1.2, 0.9, 0.8);
+        fishRoot.add(head);
 
-        // Swishing tail fin
-        const tail = new THREE.Mesh(new THREE.ConeGeometry(fp.size * 0.32, fp.size * 0.45, 3), finMat);
-        tail.rotation.z = Math.PI / 2;
-        tail.position.x = -fp.size * 0.65;
-        fishGroup.add(tail);
+        // Striking Stripes / Markings
+        const band = new THREE.Mesh(new THREE.CylinderGeometry(s * 0.30, s * 0.33, s * 0.22, 10), sMat);
+        band.rotation.z = -Math.PI / 2;
+        band.position.x = s * 0.12;
+        fishRoot.add(band);
 
-        // Position fish within tank's local bounds
-        const fx = (idx - 1) * 0.35;
-        const fy = 0.75 + 0.22 + idx * 0.11;
-        const fz = ((idx % 2) - 0.5) * 0.20;
-        fishGroup.position.set(fx, fy, fz);
-        group.add(fishGroup);
+        // Eyes on both sides of head
+        [-s * 0.22, s * 0.22].forEach(ez => {
+          const eye = new THREE.Mesh(new THREE.SphereGeometry(s * 0.08, 8, 8), eyeMat);
+          eye.position.set(s * 0.65, s * 0.10, ez);
+          fishRoot.add(eye);
+
+          const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.035, 6, 6), pupilMat);
+          pupil.position.set(s * 0.68, s * 0.12, ez + (ez > 0 ? 0.02 : -0.02));
+          fishRoot.add(pupil);
+        });
+
+        // Top Dorsal Fin
+        const dorsal = new THREE.Mesh(new THREE.BufferGeometry(), fMat);
+        const dVerts = new Float32Array([
+          -s * 0.2, s * 0.25, 0,
+           s * 0.1, s * 0.65, 0,
+           s * 0.4, s * 0.28, 0
+        ]);
+        dorsal.setAttribute('position', new THREE.BufferAttribute(dVerts, 3));
+        dorsal.computeVertexNormals();
+        fishRoot.add(dorsal);
+
+        // Pectoral side fins
+        const pecLeft = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.32, s * 0.18), fMat);
+        pecLeft.position.set(s * 0.30, -s * 0.05, s * 0.25);
+        pecLeft.rotation.set(0.4, -0.6, 0.2);
+        fishRoot.add(pecLeft);
+
+        const pecRight = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.32, s * 0.18), fMat);
+        pecRight.position.set(s * 0.30, -s * 0.05, -s * 0.25);
+        pecRight.rotation.set(-0.4, 0.6, -0.2);
+        fishRoot.add(pecRight);
+
+        // Dynamic swishing caudal tail (articulated pivot)
+        const tailPivot = new THREE.Group();
+        tailPivot.position.x = -s * 0.55;
+
+        const tailFin = new THREE.Mesh(new THREE.BufferGeometry(), fMat);
+        const tVerts = new Float32Array([
+          0, 0, 0,
+          -s * 0.65,  s * 0.48, 0,
+          -s * 0.45,  0, 0,
+          -s * 0.65, -s * 0.48, 0
+        ]);
+        const tIndices = [0, 1, 2, 0, 2, 3];
+        tailFin.setIndex(tIndices);
+        tailFin.setAttribute('position', new THREE.BufferAttribute(tVerts, 3));
+        tailFin.computeVertexNormals();
+        tailPivot.add(tailFin);
+        fishRoot.add(tailPivot);
+
+        // Initial placement inside tank volume
+        const startX = (idx - 1) * 0.38;
+        const startY = 0.76 + fp.yOffset;
+        const startZ = fp.zLane;
+        fishRoot.position.set(startX, startY, startZ);
+        group.add(fishRoot);
 
         this.aquariumFish.push({
-          group: fishGroup,
-          tail: tail,
+          root: fishRoot,
+          tailPivot: tailPivot,
+          pecLeft: pecLeft,
+          pecRight: pecRight,
           tankPos: { x: x, y: y0, z: z },
           floor: fl,
           rotY: rotY,
-          localX: fx,
-          localY: fy,
-          localZ: fz,
-          speed: fp.speed,
+          localX: startX,
+          localY: startY,
+          localZ: startZ,
+          baseY: startY,
+          speed: fp.baseSpeed,
           heading: (idx % 2 === 0 ? 1 : -1),
-          tailPhase: Math.random() * Math.PI * 2,
-          minX: -0.55,
-          maxX: 0.55,
-          minZ: -0.22,
-          maxZ: 0.22
+          phase: Math.random() * Math.PI * 2,
+          minX: -0.58,
+          maxX: 0.58,
+          minZ: -0.24,
+          maxZ: 0.24
         });
       });
 
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: x - (rotY !== 0 ? 0.40 : 0.80),
-        maxX: x + (rotY !== 0 ? 0.40 : 0.80),
-        minZ: z - (rotY !== 0 ? 0.80 : 0.40),
-        maxZ: z + (rotY !== 0 ? 0.80 : 0.40),
+        minX: x - (rotY !== 0 ? 0.42 : 0.82),
+        maxX: x + (rotY !== 0 ? 0.42 : 0.82),
+        minZ: z - (rotY !== 0 ? 0.82 : 0.42),
+        maxZ: z + (rotY !== 0 ? 0.82 : 0.42),
         minY: y0,
-        maxY: y0 + 1.45
+        maxY: y0 + 1.48
       });
     }
 
@@ -7268,11 +7274,13 @@
         const fish = this.aquariumFish[i];
         if (fish.floor !== this.playerFloor) continue;
 
-        // Tail swishing animation
-        fish.tailPhase += delta * 12.0;
-        fish.tail.rotation.y = Math.sin(fish.tailPhase) * 0.45;
+        // Tail and fin stroke animation frequencies
+        fish.phase += delta * 10.0;
+        fish.tailPivot.rotation.y = Math.sin(fish.phase) * 0.58;
+        fish.pecLeft.rotation.z = Math.sin(fish.phase * 0.8) * 0.35;
+        fish.pecRight.rotation.z = -Math.sin(fish.phase * 0.8) * 0.35;
 
-        // Swimming forward
+        // Realistic swimming patrol with smooth turning at tank walls
         fish.localX += fish.speed * fish.heading * delta;
         if (fish.localX > fish.maxX) {
           fish.localX = fish.maxX;
@@ -7282,10 +7290,13 @@
           fish.heading = 1;
         }
 
-        fish.group.position.x = fish.localX;
-        fish.group.rotation.y = (fish.heading > 0 ? 0 : Math.PI);
-        // Subtle vertical undulating bob
-        fish.group.position.y = fish.localY + Math.sin(fish.tailPhase * 0.5) * 0.02;
+        fish.root.position.x = fish.localX;
+        const targetRotY = (fish.heading > 0 ? 0 : Math.PI);
+        fish.root.rotation.y = THREE.MathUtils.lerp(fish.root.rotation.y, targetRotY, Math.min(1, delta * 12));
+
+        // Gentle natural undulation and buoyancy bob
+        fish.root.position.y = fish.baseY + Math.sin(fish.phase * 0.4) * 0.025;
+        fish.root.rotation.z = Math.sin(fish.phase * 0.5) * 0.05 * fish.heading;
       }
     }
 
@@ -7699,54 +7710,39 @@
     populateFloorExhibits(fl, y0, mats) {
       if (fl === 0) {
         // =========================================================================
-        // FLOOR 0: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
+        // FLOOR 0: RUNNER RUGS, 2 AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-        // Main Concourse Rugs
-        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.2, 14.0, 0x881337, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0x881337, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0x881337, 0xd4af37);
+        // Main Concourse Rugs (Lighter, soft pastel hues)
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.2, 14.0, 0xb47488, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
 
         // West Wing Rug
-        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
 
         // South-East Concourse Rug
-        this.createGalleryRunnerRug(16.0, y0, 23.0, 16.0, 3.2, 0x881337, 0xd4af37);
+        this.createGalleryRunnerRug(16.0, y0, 23.0, 16.0, 3.2, 0xb47488, 0xc6bc99);
 
-        // Live Aquatic Glass Aquarium Tanks in side galleries
-        this.createAquariumTank(-14.2, y0, -10.0, 0, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0, -10.0, 0, -Math.PI / 2);
-        this.createAquariumTank(-14.2, y0,   7.0, 0, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0,   7.0, 0, -Math.PI / 2);
-        this.createAquariumTank(-31.0, y0,   0.0, 0, 0);
-        this.createAquariumTank(-21.0, y0,   0.0, 0, 0);
-        this.createAquariumTank(-31.0, y0,  12.0, 0, 0);
-        this.createAquariumTank(-21.0, y0,  12.0, 0, 0);
-        this.createAquariumTank(  2.0, y0, -33.0, 0, 0);
-        this.createAquariumTank( 22.0, y0, -33.0, 0, 0);
+        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 0 (recessed alcoves)
+        this.createAquariumTank(-14.2, y0, -5.0, 0, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0, 14.0, 0, -Math.PI / 2);
 
-        // Non-clipping, unobstructed corner potted plants (far perimeter dead space)
+        // Non-clipping, unobstructed corner potted plants
         this.createPottedMuseumPlant(-34.5, y0, 16.5, 0);
         this.createPottedMuseumPlant( 22.0, y0, -38.5, 0);
 
       } else if (fl === 1) {
         // =========================================================================
-        // FLOOR 1: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
+        // FLOOR 1: RUNNER RUGS, 2 AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x1e3a8a, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
-        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x7e8bb2, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
 
-        // Live Aquatic Glass Aquarium Tanks
-        this.createAquariumTank(-14.2, y0, -10.0, 1, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0,   7.0, 1, -Math.PI / 2);
-        this.createAquariumTank(-14.2, y0,  21.0, 1, Math.PI / 2);
-        this.createAquariumTank(-31.0, y0,   0.0, 1, 0);
-        this.createAquariumTank(-21.0, y0,   0.0, 1, 0);
-        this.createAquariumTank(-31.0, y0,  12.0, 1, 0);
-        this.createAquariumTank(-21.0, y0,  12.0, 1, 0);
-        this.createAquariumTank(  6.0, y0, -33.0, 1, 0);
-        this.createAquariumTank( 18.0, y0, -33.0, 1, 0);
+        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 1
+        this.createAquariumTank(-14.2, y0, -5.0, 1, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0, 14.0, 1, -Math.PI / 2);
 
         // Non-clipping, unobstructed corner potted plants
         this.createPottedMuseumPlant(-34.5, y0, 16.5, 1);
@@ -7754,23 +7750,16 @@
 
       } else if (fl === 2) {
         // =========================================================================
-        // FLOOR 2: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
+        // FLOOR 2: RUNNER RUGS, 2 AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x064e3b, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
-        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
-        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x064e3b, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x53aa93, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x53aa93, 0xc6bc99);
 
-        // Live Aquatic Glass Aquarium Tanks
-        this.createAquariumTank(-14.2, y0, -10.0, 2, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0,   7.0, 2, -Math.PI / 2);
-        this.createAquariumTank(-14.2, y0,  21.0, 2, Math.PI / 2);
-        this.createAquariumTank(-31.0, y0,   0.0, 2, 0);
-        this.createAquariumTank(-21.0, y0,   0.0, 2, 0);
-        this.createAquariumTank(-31.0, y0,  12.0, 2, 0);
-        this.createAquariumTank(-21.0, y0,  12.0, 2, 0);
-        this.createAquariumTank(  6.0, y0, -33.0, 2, 0);
-        this.createAquariumTank( 18.0, y0, -33.0, 2, 0);
+        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 2
+        this.createAquariumTank(-14.2, y0, -5.0, 2, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0, 14.0, 2, -Math.PI / 2);
 
         // Non-clipping, unobstructed corner potted plants
         this.createPottedMuseumPlant(-34.5, y0, 16.5, 2);
