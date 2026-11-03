@@ -3169,6 +3169,7 @@
       this.relics = [];
       this.ammoPickups = [];
       this.physicsCrates = [];
+      this.aquariumFish = [];
       this.heldCrate = null;
       this.lastAnnouncedFloor = null;
       this.floorIndicatorTimeout = null;
@@ -5930,267 +5931,11 @@
 
     createRealisticMainStacks(fl, y0, mats) {
       if (fl === 0) {
-        // =========================================================================
-        // FLOOR 0 (fl = 0): CLASSICAL SCULPTURE & VITRINE EXHIBITION HALL
-        // =========================================================================
-        const marbleMat = new THREE.MeshStandardMaterial({ color: 0xedebe6, roughness: 0.35, metalness: 0.05 });
-        const darkPlinthMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.45 });
-        const goldRelicMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.85, roughness: 0.22 });
-        const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 });
-        const bronzeSculptMat = new THREE.MeshStandardMaterial({ color: 0x5a4328, metalness: 0.75, roughness: 0.35 });
-        const velvetRopeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
-        const brassStanchionMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.20 });
-        const vitrineGlassMat = new THREE.MeshPhysicalMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.30,
-          roughness: 0.05,
-          transmission: 0.90,
-          thickness: 0.02
-        });
-
-        // 1. Central Monumental Marble Pedestal with Classical Roman Bust & Laurel Wreath at (15.0, y0, -18.0)
-        const monGroup = new THREE.Group();
-        monGroup.position.set(15.0, y0, -18.0);
-
-        const bBase = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.18, 2.0), darkPlinthMat);
-        bBase.position.y = 0.09;
-        monGroup.add(bBase);
-
-        const bColumn = new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.10, 1.5), marbleMat);
-        bColumn.position.y = 0.18 + 0.55;
-        monGroup.add(bColumn);
-
-        const bCapital = new THREE.Mesh(new THREE.BoxGeometry(1.7, 0.14, 1.7), darkPlinthMat);
-        bCapital.position.y = 1.28 + 0.07;
-        monGroup.add(bCapital);
-
-        // Classical sculpted bust
-        const bustBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.30, 0.16, 16), marbleMat);
-        bustBase.position.y = 1.35 + 0.08;
-        monGroup.add(bustBase);
-
-        const bustChest = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.42, 0.32), marbleMat);
-        bustChest.position.y = 1.51 + 0.21;
-        monGroup.add(bustChest);
-
-        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), marbleMat);
-        bustHead.scale.set(0.9, 1.15, 1.0);
-        bustHead.position.y = 1.93 + 0.18;
-        monGroup.add(bustHead);
-
-        const bustNose = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.10, 8), marbleMat);
-        bustNose.rotation.x = Math.PI / 2;
-        bustNose.position.set(0, 2.11, 0.21);
-        monGroup.add(bustNose);
-
-        // Golden laurel wreath around head
-        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.21, 0.025, 8, 24), goldRelicMat);
-        laurel.rotation.x = Math.PI / 2 + 0.15;
-        laurel.position.set(0, 2.17, 0.02);
-        monGroup.add(laurel);
-
-        // Gilded descriptive placard
-        const descPlacard = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.22, 0.02), brassStanchionMat);
-        descPlacard.position.set(0, 0.85, 0.77);
-        monGroup.add(descPlacard);
-
-        this.scene.add(monGroup);
-
-        this.colliders.push({
-          type: 'box',
-          floor: 0,
-          minX: 15.0 - 1.1,
-          maxX: 15.0 + 1.1,
-          minZ: -18.0 - 1.1,
-          maxZ: -18.0 + 1.1,
-          minY: y0,
-          maxY: y0 + 1.35
-        });
-
-        // 4 Stanchions with Crimson Velvet Ropes enclosing the bust
-        const stanchionOffsets = [
-          [-1.4, -1.4], [1.4, -1.4], [1.4, 1.4], [-1.4, 1.4]
-        ];
-        stanchionOffsets.forEach(([ox, oz]) => {
-          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 14), brassStanchionMat);
-          sBase.position.set(15.0 + ox, y0 + 0.02, -18.0 + oz);
-          this.scene.add(sBase);
-
-          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.92, 12), brassStanchionMat);
-          sPost.position.set(15.0 + ox, y0 + 0.48, -18.0 + oz);
-          this.scene.add(sPost);
-
-          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.045, 12, 12), brassStanchionMat);
-          sBall.position.set(15.0 + ox, y0 + 0.96, -18.0 + oz);
-          this.scene.add(sBall);
-        });
-
-        // Velvet ropes between stanchions
-        for (let i = 0; i < 4; i++) {
-          const p1 = stanchionOffsets[i];
-          const p2 = stanchionOffsets[(i + 1) % 4];
-          const midX = 15.0 + (p1[0] + p2[0]) / 2;
-          const midZ = -18.0 + (p1[1] + p2[1]) / 2;
-          const rLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
-          const rAng = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]);
-
-          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, rLen, 8), velvetRopeMat);
-          rope.rotation.x = Math.PI / 2;
-          rope.rotation.z = -rAng;
-          rope.position.set(midX, y0 + 0.88, midZ);
-          this.scene.add(rope);
-        }
-
-        // 2. Twin Glass Museum Vitrines at (11.0, y0, -8.0) and (19.0, y0, -8.0)
-        // West Vitrine: Ancient Terracotta Amphora Vase
-        const v1Group = new THREE.Group();
-        v1Group.position.set(11.0, y0, -8.0);
-        const v1Base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 1.4), mats.mahogany);
-        v1Base.position.y = 0.425;
-        v1Group.add(v1Base);
-        const v1Glass = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.05, 1.28), vitrineGlassMat);
-        v1Glass.position.y = 0.85 + 0.525;
-        v1Group.add(v1Glass);
-        // Terracotta amphora
-        const ampBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.08, 0.08, 14), terracottaMat);
-        ampBase.position.y = 0.85 + 0.04;
-        v1Group.add(ampBase);
-        const ampBody = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), terracottaMat);
-        ampBody.scale.set(1.0, 1.45, 1.0);
-        ampBody.position.y = 0.85 + 0.38;
-        v1Group.add(ampBody);
-        const ampNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.22, 14), terracottaMat);
-        ampNeck.position.y = 0.85 + 0.65;
-        v1Group.add(ampNeck);
-        const ampLip = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.09, 0.05, 14), terracottaMat);
-        ampLip.position.y = 0.85 + 0.77;
-        v1Group.add(ampLip);
-        this.scene.add(v1Group);
-
-        this.colliders.push({
-          type: 'box',
-          floor: 0,
-          minX: 11.0 - 0.75,
-          maxX: 11.0 + 0.75,
-          minZ: -8.0 - 0.75,
-          maxZ: -8.0 + 0.75,
-          minY: y0,
-          maxY: y0 + 1.90
-        });
-
-        // East Vitrine: Golden Reliquary Crown
-        const v2Group = new THREE.Group();
-        v2Group.position.set(19.0, y0, -8.0);
-        const v2Base = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.85, 1.4), mats.mahogany);
-        v2Base.position.y = 0.425;
-        v2Group.add(v2Base);
-        const v2Glass = new THREE.Mesh(new THREE.BoxGeometry(1.28, 1.05, 1.28), vitrineGlassMat);
-        v2Glass.position.y = 0.85 + 0.525;
-        v2Group.add(v2Glass);
-        const cushion = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.10, 0.55), velvetRopeMat);
-        cushion.position.y = 0.85 + 0.05;
-        v2Group.add(cushion);
-        const crown = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.16, 0.16, 16, 1, true), goldRelicMat);
-        crown.position.y = 0.85 + 0.20;
-        v2Group.add(crown);
-        [-0.14, 0, 0.14].forEach((px) => {
-          const spike = new THREE.Mesh(new THREE.ConeGeometry(0.035, 0.11, 8), goldRelicMat);
-          spike.position.set(px, 0.85 + 0.32, 0.14);
-          v2Group.add(spike);
-        });
-        this.scene.add(v2Group);
-
-        this.colliders.push({
-          type: 'box',
-          floor: 0,
-          minX: 19.0 - 0.75,
-          maxX: 19.0 + 0.75,
-          minZ: -8.0 - 0.75,
-          maxZ: -8.0 + 0.75,
-          minY: y0,
-          maxY: y0 + 1.90
-        });
-
-        // 3. Central Gallery Viewing Bench at (15.0, y0, -13.0)
+        // Floor 0 Gallery Stacks: Elegant runner rug, central gallery bench, and 2 aquarium tanks
+        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x881337, 0xd4af37);
         this.createMuseumBench(15.0, y0, -13.0);
-
-        // 4. Classical Limestone Obelisk Monument / Stele at (15.0, y0, 2.0)
-        const obGroup = new THREE.Group();
-        obGroup.position.set(15.0, y0, 2.0);
-        const obBase1 = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.30, 1.6), darkPlinthMat);
-        obBase1.position.y = 0.15;
-        obGroup.add(obBase1);
-        const obBase2 = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.35, 1.2), marbleMat);
-        obBase2.position.y = 0.30 + 0.175;
-        obGroup.add(obBase2);
-        const obShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.52, 2.8, 4), marbleMat);
-        obShaft.rotation.y = Math.PI / 4;
-        obShaft.position.y = 0.65 + 1.40;
-        obGroup.add(obShaft);
-        const obCap = new THREE.Mesh(new THREE.ConeGeometry(0.45, 0.50, 4), marbleMat);
-        obCap.rotation.y = Math.PI / 4;
-        obCap.position.y = 3.45 + 0.25;
-        obGroup.add(obCap);
-        this.scene.add(obGroup);
-
-        this.colliders.push({
-          type: 'box',
-          floor: 0,
-          minX: 15.0 - 0.85,
-          maxX: 15.0 + 0.85,
-          minZ: 2.0 - 0.85,
-          maxZ: 2.0 + 0.85,
-          minY: y0,
-          maxY: y0 + 1.20
-        });
-
-        // 4 Classical Side Pedestals with Bronze Urns and Roman Statues
-        const sidePedestals = [
-          [10.0, -18.0, 'urn'],
-          [20.0, -18.0, 'statue'],
-          [10.0, 0.0, 'statue'],
-          [20.0, 0.0, 'urn']
-        ];
-        sidePedestals.forEach(([px, pz, pType]) => {
-          const pedGroup = new THREE.Group();
-          pedGroup.position.set(px, y0, pz);
-          const pCol = new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.38, 1.15, 16), marbleMat);
-          pCol.position.y = 0.575;
-          pedGroup.add(pCol);
-          const pCap = new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.36, 0.12, 16), darkPlinthMat);
-          pCap.position.y = 1.21;
-          pedGroup.add(pCap);
-
-          if (pType === 'urn') {
-            const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.48, 14), bronzeSculptMat);
-            urn.position.y = 1.27 + 0.24;
-            pedGroup.add(urn);
-            const urnLip = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.03, 8, 16), bronzeSculptMat);
-            urnLip.rotation.x = Math.PI / 2;
-            urnLip.position.y = 1.27 + 0.48;
-            pedGroup.add(urnLip);
-          } else {
-            const statBust = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), bronzeSculptMat);
-            statBust.scale.set(0.9, 1.2, 0.95);
-            statBust.position.y = 1.27 + 0.22;
-            pedGroup.add(statBust);
-            const statShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.22, 0.24), bronzeSculptMat);
-            statShoulders.position.y = 1.27 + 0.11;
-            pedGroup.add(statShoulders);
-          }
-          this.scene.add(pedGroup);
-
-          this.colliders.push({
-            type: 'cylinder',
-            floor: 0,
-            x: px,
-            z: pz,
-            radius: 0.45,
-            minY: y0,
-            maxY: y0 + 1.27
-          });
-        });
+        this.createAquariumTank(11.0, y0, -8.0, 0, Math.PI / 2);
+        this.createAquariumTank(19.0, y0, -8.0, 0, -Math.PI / 2);
       } else if (fl === 1) {
         // =========================================================================
         // FLOOR 1 (fl = 1): REALISTIC DETAILED LIBRARY BOOKSTACKS & LADDERS
@@ -6439,227 +6184,11 @@
           });
         });
       } else if (fl === 2) {
-        // =========================================================================
-        // FLOOR 2 (fl = 2): RARE MANUSCRIPTS & GLASS ARTIFACT DISPLAY HALL
-        // =========================================================================
-        const woodMat = mats.mahogany;
-        const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
-        const parchmentMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
-        const waxSealMat = new THREE.MeshLambertMaterial({ color: 0x991b1b });
-        const glassMat = new THREE.MeshPhysicalMaterial({
-          color: 0xffffff,
-          transparent: true,
-          opacity: 0.32,
-          roughness: 0.04,
-          transmission: 0.90,
-          thickness: 0.02
-        });
-
-        // 4 Slanted Glass Manuscript Showcase Tables
-        const tableLocs = [
-          [12.0, -18.0],
-          [18.0, -18.0],
-          [12.0, -8.0],
-          [18.0, -8.0]
-        ];
-
-        tableLocs.forEach(([tx, tz]) => {
-          const tGroup = new THREE.Group();
-          tGroup.position.set(tx, y0, tz);
-
-          [[-0.85, -0.55], [0.85, -0.55], [-0.85, 0.55], [0.85, 0.55]].forEach(([lx, lz]) => {
-            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.038, 0.76, 12), woodMat);
-            leg.position.set(lx, 0.38, lz);
-            tGroup.add(leg);
-          });
-
-          const apron = new THREE.Mesh(new THREE.BoxGeometry(1.85, 0.08, 1.25), woodMat);
-          apron.position.y = 0.72;
-          tGroup.add(apron);
-
-          const deck = new THREE.Mesh(new THREE.BoxGeometry(1.90, 0.06, 1.30), woodMat);
-          deck.position.y = 0.78;
-          tGroup.add(deck);
-
-          const gLid = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.32, 1.22), glassMat);
-          gLid.position.set(0, 0.96, 0);
-          tGroup.add(gLid);
-
-          const pageLeft = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.015, 0.55), parchmentMat);
-          pageLeft.position.set(-0.35, 0.82, 0.05);
-          tGroup.add(pageLeft);
-
-          const pageRight = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.015, 0.55), parchmentMat);
-          pageRight.position.set(0.35, 0.82, 0.05);
-          tGroup.add(pageRight);
-
-          const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.01, 12), waxSealMat);
-          seal.position.set(0.48, 0.835, 0.22);
-          tGroup.add(seal);
-
-          const lensRing = new THREE.Mesh(new THREE.TorusGeometry(0.05, 0.008, 8, 16), brassMat);
-          lensRing.rotation.x = Math.PI / 2;
-          lensRing.position.set(-0.15, 0.835, -0.22);
-          tGroup.add(lensRing);
-
-          const lensHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.009, 0.11, 8), woodMat);
-          lensHandle.rotation.z = Math.PI / 3;
-          lensHandle.position.set(-0.21, 0.835, -0.25);
-          tGroup.add(lensHandle);
-
-          this.scene.add(tGroup);
-
-          this.colliders.push({
-            type: 'box',
-            floor: 2,
-            minX: tx - 1.0,
-            maxX: tx + 1.0,
-            minZ: tz - 0.70,
-            maxZ: tz + 0.70,
-            minY: y0,
-            maxY: y0 + 1.15
-          });
-        });
-
-        // Central Octagonal Glass Reliquary Astrolabe Tower at (15.0, y0, -13.0)
-        const relGroup = new THREE.Group();
-        relGroup.position.set(15.0, y0, -13.0);
-
-        const rBase = new THREE.Mesh(new THREE.CylinderGeometry(1.10, 1.15, 0.75, 8), woodMat);
-        rBase.position.y = 0.375;
-        relGroup.add(rBase);
-
-        const rGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.98, 0.98, 1.50, 8, 1, true), glassMat);
-        rGlass.position.y = 0.75 + 0.75;
-        relGroup.add(rGlass);
-
-        const rCap = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.02, 0.12, 8), woodMat);
-        rCap.position.y = 2.31;
-        relGroup.add(rCap);
-
-        const astroBase = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.08, 14), brassMat);
-        astroBase.position.y = 0.75 + 0.04;
-        relGroup.add(astroBase);
-
-        const astroCol = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.04, 0.35, 12), brassMat);
-        astroCol.position.y = 0.75 + 0.25;
-        relGroup.add(astroCol);
-
-        [0.26, 0.21, 0.16].forEach((radius, ri) => {
-          const ring = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.014, 8, 24), brassMat);
-          ring.rotation.x = ri * 0.75;
-          ring.rotation.y = ri * 0.62;
-          ring.position.y = 0.75 + 0.55;
-          relGroup.add(ring);
-        });
-
-        this.scene.add(relGroup);
-
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 2,
-          x: 15.0,
-          z: -13.0,
-          radius: 1.15,
-          minY: y0,
-          maxY: y0 + 1.25
-        });
-
-        // 4 Sapphire velvet stanchions around the reliquary
-        [[-1.6, -1.6], [1.6, -1.6], [1.6, 1.6], [-1.6, 1.6]].forEach(([sx, sz]) => {
-          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 12), brassMat);
-          sBase.position.set(15.0 + sx, y0 + 0.02, -13.0 + sz);
-          this.scene.add(sBase);
-
-          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.92, 8), brassMat);
-          sPost.position.set(15.0 + sx, y0 + 0.48, -13.0 + sz);
-          this.scene.add(sPost);
-
-          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), brassMat);
-          sBall.position.set(15.0 + sx, y0 + 0.96, -13.0 + sz);
-          this.scene.add(sBall);
-        });
-
-        // Map Flat-File Cabinet at (15.0, y0, 0.0)
-        const flatGroup = new THREE.Group();
-        flatGroup.position.set(15.0, y0, 0.0);
-
-        const cab = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.88, 1.4), woodMat);
-        cab.position.y = 0.44;
-        flatGroup.add(cab);
-
-        [-0.45, 0.15, 0.65].forEach((rx, ri) => {
-          const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.75, 12), parchmentMat);
-          roll.rotation.z = Math.PI / 2 + (ri - 1) * 0.12;
-          roll.position.set(rx, 0.92, (ri % 2 === 0 ? 0.15 : -0.15));
-          flatGroup.add(roll);
-        });
-
-        this.scene.add(flatGroup);
-
-        this.colliders.push({
-          type: 'box',
-          floor: 2,
-          minX: 15.0 - 1.25,
-          maxX: 15.0 + 1.25,
-          minZ: 0.0 - 0.75,
-          maxZ: 0.0 + 0.75,
-          minY: y0,
-          maxY: y0 + 0.95
-        });
-
-        // 2 Glass Bell-Jar Cloches on turned mahogany pedestal columns at (10, -2) and (20, -2)
-        [[10.0, -2.0, 'sundial'], [20.0, -2.0, 'hourglass']].forEach(([cx, cz, cType]) => {
-          const cGroup = new THREE.Group();
-          cGroup.position.set(cx, y0, cz);
-
-          const ped = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.05, 16), woodMat);
-          ped.position.y = 0.525;
-          cGroup.add(ped);
-
-          const bell = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.24, 0.45, 14, 1, true), glassMat);
-          bell.position.y = 1.05 + 0.225;
-          cGroup.add(bell);
-
-          const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.24, 14, 14, 0, Math.PI * 2, 0, Math.PI / 2), glassMat);
-          bellDome.position.y = 1.05 + 0.45;
-          cGroup.add(bellDome);
-
-          if (cType === 'sundial') {
-            const dial = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.18, 0.03, 14), brassMat);
-            dial.position.y = 1.07;
-            cGroup.add(dial);
-            const gnomon = new THREE.Mesh(new THREE.ConeGeometry(0.04, 0.14, 4), brassMat);
-            gnomon.rotation.x = 0.4;
-            gnomon.position.set(0, 1.15, -0.02);
-            cGroup.add(gnomon);
-          } else {
-            const hgTop = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.015, 12), woodMat);
-            hgTop.position.y = 1.05 + 0.28;
-            cGroup.add(hgTop);
-            const hgBot = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.015, 12), woodMat);
-            hgBot.position.y = 1.05 + 0.02;
-            cGroup.add(hgBot);
-            const bulb1 = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 10), glassMat);
-            bulb1.position.y = 1.05 + 0.08;
-            cGroup.add(bulb1);
-            const bulb2 = new THREE.Mesh(new THREE.ConeGeometry(0.065, 0.12, 10), glassMat);
-            bulb2.rotation.x = Math.PI;
-            bulb2.position.y = 1.05 + 0.20;
-            cGroup.add(bulb2);
-          }
-          this.scene.add(cGroup);
-
-          this.colliders.push({
-            type: 'cylinder',
-            floor: 2,
-            x: cx,
-            z: cz,
-            radius: 0.40,
-            minY: y0,
-            maxY: y0 + 1.10
-          });
-        });
+        // Floor 2 Stacks: Deep emerald runner rug, central gallery bench, and 2 aquarium tanks
+        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x064e3b, 0xd4af37);
+        this.createMuseumBench(15.0, y0, -13.0);
+        this.createAquariumTank(11.0, y0, -8.0, 2, Math.PI / 2);
+        this.createAquariumTank(19.0, y0, -8.0, 2, -Math.PI / 2);
       } else {
         // =========================================================================
         // FLOOR 3 (fl = 3): THE MILK CRATE CHALLENGE & HALF-LIFE 2 PROP PHYSICS
@@ -6670,6 +6199,7 @@
 
     spawnMilkCrates(y0) {
       this.physicsCrates = [];
+      this.aquariumFish = [];
       const crateW = 0.38;
       const crateH = 0.31;
       const crateD = 0.38;
@@ -7549,58 +7079,28 @@
       const potMat = new THREE.MeshStandardMaterial({ color: fl === 0 ? 0xb4533c : 0x27272a, roughness: 0.65 });
       const soilMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.98 });
       const frondMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.45, side: THREE.DoubleSide });
-      const stemMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.50 });
-      const brassTrimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 });
 
-      // Fluted Urn Planter Base & Rim
-      const potBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 16), potMat);
-      potBase.position.y = 0.04;
-      plantGroup.add(potBase);
+      // Sleek fluted terracotta/charcoal ceramic planter
+      const pot = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.48, 12), potMat);
+      pot.position.y = 0.24;
+      plantGroup.add(pot);
 
-      const potWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.20, 0.52, 16), potMat);
-      potWaist.position.y = 0.34;
-      plantGroup.add(potWaist);
-
-      const potRim = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.035, 8, 20), potMat);
-      potRim.rotation.x = Math.PI / 2;
-      potRim.position.y = 0.60;
+      const potRim = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.24, 0.05, 12), potMat);
+      potRim.position.y = 0.48;
       plantGroup.add(potRim);
 
-      const goldBand = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.015, 8, 20), brassTrimMat);
-      goldBand.rotation.x = Math.PI / 2;
-      goldBand.position.y = 0.52;
-      plantGroup.add(goldBand);
-
-      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.02, 16), soilMat);
-      soil.position.y = 0.57;
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.23, 0.02, 12), soilMat);
+      soil.position.y = 0.47;
       plantGroup.add(soil);
 
-      // 8 Arching Kentia / Ficus Palm Fronds radiating outward gracefully
-      for (let f = 0; f < 8; f++) {
-        const ang = (f * Math.PI * 2) / 8 + (f % 2) * 0.15;
-        const frondGroup = new THREE.Group();
-        frondGroup.position.set(0, 0.58, 0);
-        frondGroup.rotation.y = ang;
-
-        // Curved arching stem
-        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 1.25, 8), stemMat);
-        stem.position.set(0.45, 0.40, 0);
-        stem.rotation.z = -Math.PI / 4 + 0.12 * (f % 3);
-        frondGroup.add(stem);
-
-        // Feathered leaflets along the stem
-        for (let l = 0; l < 7; l++) {
-          const lx = 0.20 + l * 0.13;
-          const ly = 0.22 + l * 0.10 - (l > 4 ? (l - 4) * 0.08 : 0);
-          [-0.12, 0.12].forEach(side => {
-            const leaflet = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.004, 0.05), frondMat);
-            leaflet.position.set(lx, ly, side);
-            leaflet.rotation.y = (side > 0 ? 0.35 : -0.35);
-            leaflet.rotation.z = -0.25;
-            frondGroup.add(leaflet);
-          });
-        }
-        plantGroup.add(frondGroup);
+      // 5 Compact stylized palm fronds
+      for (let f = 0; f < 5; f++) {
+        const ang = (f * Math.PI * 2) / 5;
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.55, 0.015), frondMat);
+        frond.position.set(Math.cos(ang) * 0.14, 0.68, Math.sin(ang) * 0.14);
+        frond.rotation.y = -ang;
+        frond.rotation.x = 0.45;
+        plantGroup.add(frond);
       }
 
       this.scene.add(plantGroup);
@@ -7610,135 +7110,183 @@
         floor: fl,
         x: x,
         z: z,
-        radius: 0.38,
+        radius: 0.32,
         minY: y0,
-        maxY: y0 + 0.65
+        maxY: y0 + 0.55
       });
     }
 
-    createVitrineTable(x, y0, z, relicType, fl, rotY = 0) {
+    createAquariumTank(x, y0, z, fl, rotY = 0) {
       const group = new THREE.Group();
       group.position.set(x, y0, z);
       group.rotation.y = rotY;
 
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 });
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.20 });
-      const velvetMat = new THREE.MeshStandardMaterial({ color: fl === 1 ? 0x1e3a8a : 0x881337, roughness: 0.85 });
+      // Materials
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.45 });
+      const standTrimMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.50 });
+      const gravelMat = new THREE.MeshStandardMaterial({ color: 0xd4a373, roughness: 0.90 });
+      const rockMat = new THREE.MeshStandardMaterial({ color: 0x57534e, roughness: 0.85 });
+      const plantMat = new THREE.MeshStandardMaterial({ color: 0x16a34a, roughness: 0.40, side: THREE.DoubleSide });
+
+      // Translucent realistic aquatic water volume
+      const waterMat = new THREE.MeshPhysicalMaterial({
+        color: 0x0284c7,
+        transparent: true,
+        opacity: 0.28,
+        roughness: 0.08,
+        transmission: 0.92,
+        thickness: 0.70
+      });
+
+      // Clear ultra-pure museum aquarium glass
       const glassMat = new THREE.MeshPhysicalMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.30,
-        roughness: 0.04,
-        transmission: 0.92,
-        thickness: 0.02
-      });
-      const bronzeMat = new THREE.MeshStandardMaterial({ color: 0x644a2c, metalness: 0.75, roughness: 0.35 });
-      const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 });
-      const parchmentMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
-
-      // Table frame with 4 turned mahogany legs
-      [[-0.68, -0.42], [0.68, -0.42], [-0.68, 0.42], [0.68, 0.42]].forEach(([lx, lz]) => {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.030, 0.74, 10), woodMat);
-        leg.position.set(lx, 0.37, lz);
-        group.add(leg);
-
-        const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.06, 10), goldMat);
-        ferrule.position.set(lx, 0.03, lz);
-        group.add(ferrule);
+        opacity: 0.20,
+        roughness: 0.02,
+        transmission: 0.98,
+        thickness: 0.03
       });
 
-      const apron = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.09, 0.96), woodMat);
-      apron.position.y = 0.71;
-      group.add(apron);
+      // Heavy museum cabinetry stand (1.50m wide, 0.72m high, 0.70m deep)
+      const baseStand = new THREE.Mesh(new THREE.BoxGeometry(1.50, 0.70, 0.70), woodMat);
+      baseStand.position.y = 0.35;
+      group.add(baseStand);
 
-      const deck = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.04, 1.02), woodMat);
-      deck.position.y = 0.76;
-      group.add(deck);
+      const standTop = new THREE.Mesh(new THREE.BoxGeometry(1.56, 0.05, 0.76), standTrimMat);
+      standTop.position.y = 0.725;
+      group.add(standTop);
 
-      // Velvet display cushion riser
-      const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.08, 0.76), velvetMat);
-      cushion.position.y = 0.82;
-      group.add(cushion);
+      // Sandy gravel substrate bed
+      const sandBed = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.07, 0.64), gravelMat);
+      sandBed.position.y = 0.75 + 0.035;
+      group.add(sandBed);
 
-      // Clear glass display case
-      const vitrineGlass = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.70, 0.90), glassMat);
-      vitrineGlass.position.y = 0.78 + 0.35;
-      group.add(vitrineGlass);
+      // Decorative river stones
+      [[-0.35, -0.12, 0.08], [0.38, 0.10, 0.09], [-0.05, 0.08, 0.06]].forEach(([rx, rz, rRad]) => {
+        const rock = new THREE.Mesh(new THREE.DodecahedronGeometry(rRad, 0), rockMat);
+        rock.position.set(rx, 0.785 + rRad * 0.7, rz);
+        group.add(rock);
+      });
 
-      // Glass brass perimeter trim frame
-      const gFrame = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.03, 0.92), goldMat);
-      gFrame.position.y = 0.78 + 0.70;
-      group.add(gFrame);
+      // Aquatic kelp / sea grass fronds
+      [-0.48, -0.22, 0.18, 0.46].forEach((kx, ki) => {
+        const kelp = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.38 + (ki % 2) * 0.12, 0.01), plantMat);
+        kelp.position.set(kx, 0.785 + 0.20, (ki % 2 === 0 ? -0.15 : 0.15));
+        kelp.rotation.z = (ki % 2 === 0 ? 0.18 : -0.18);
+        group.add(kelp);
+      });
 
-      // Relic content inside case
-      if (relicType === 'coins') {
-        for (let c = 0; c < 8; c++) {
-          const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.008, 14), goldMat);
-          coin.position.set(-0.25 + (c % 4) * 0.16, 0.865 + (c > 3 ? 0.008 : 0), -0.08 + Math.floor(c / 4) * 0.16);
-          group.add(coin);
-        }
-        const med = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.012, 18), goldMat);
-        med.position.set(0.24, 0.868, 0.05);
-        group.add(med);
-      } else if (relicType === 'chalice') {
-        const chBase = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.04, 14), goldMat);
-        chBase.position.y = 0.88;
-        group.add(chBase);
-        const chStem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 12), goldMat);
-        chStem.position.y = 0.98;
-        group.add(chStem);
-        const chCup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.07, 0.18, 16), goldMat);
-        chCup.position.y = 1.15;
-        group.add(chCup);
-      } else if (relicType === 'amphora') {
-        const amp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), terracottaMat);
-        amp.scale.set(1.0, 1.4, 1.0);
-        amp.position.y = 1.05;
-        group.add(amp);
-        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 12), terracottaMat);
-        neck.position.y = 1.25;
-        group.add(neck);
-      } else if (relicType === 'scroll') {
-        const scroll1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.60, 14), parchmentMat);
-        scroll1.rotation.z = Math.PI / 2;
-        scroll1.position.set(0, 0.89, -0.10);
-        group.add(scroll1);
-        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.06, 14), velvetMat);
-        ribbon.rotation.z = Math.PI / 2;
-        ribbon.position.set(0, 0.89, -0.10);
-        group.add(ribbon);
-      } else if (relicType === 'jewelry') {
-        const diadem = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.022, 8, 24), goldMat);
-        diadem.rotation.x = Math.PI / 2 + 0.2;
-        diadem.position.set(0, 0.92, 0);
-        group.add(diadem);
-      } else {
-        // Astrolabe
-        const aBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 14), bronzeMat);
-        aBase.position.y = 0.88;
-        group.add(aBase);
-        const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 8, 20), goldMat);
-        ring1.position.y = 1.06;
-        ring1.rotation.y = 0.4;
-        group.add(ring1);
-        const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 8, 20), goldMat);
-        ring2.position.y = 1.06;
-        ring2.rotation.x = 0.6;
-        group.add(ring2);
-      }
+      // Water volume
+      const water = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.58, 0.64), waterMat);
+      water.position.y = 0.75 + 0.30;
+      group.add(water);
+
+      // Outer glass tank
+      const glass = new THREE.Mesh(new THREE.BoxGeometry(1.46, 0.64, 0.66), glassMat);
+      glass.position.y = 0.75 + 0.33;
+      group.add(glass);
+
+      // Top aquarium canopy / light hood
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.52, 0.06, 0.72), standTrimMat);
+      canopy.position.y = 0.75 + 0.66;
+      group.add(canopy);
 
       this.scene.add(group);
+
+      // Add 3 swimming fish to this tank
+      const fishProfiles = [
+        { type: 'clownfish', bodyColor: 0xea580c, stripeColor: 0xffffff, size: 0.14, speed: 0.55 },
+        { type: 'tetra', bodyColor: 0x06b6d4, stripeColor: 0xef4444, size: 0.11, speed: 0.72 },
+        { type: 'angelfish', bodyColor: 0xe2e8f0, stripeColor: 0xf59e0b, size: 0.15, speed: 0.42 }
+      ];
+
+      fishProfiles.forEach((fp, idx) => {
+        const fishGroup = new THREE.Group();
+        const bMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.35 });
+        const sMat = new THREE.MeshStandardMaterial({ color: fp.stripeColor, roughness: 0.35 });
+        const finMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, transparent: true, opacity: 0.75 });
+
+        // Fish body
+        const body = new THREE.Mesh(new THREE.ConeGeometry(fp.size * 0.38, fp.size, 8), bMat);
+        body.rotation.z = -Math.PI / 2;
+        fishGroup.add(body);
+
+        // Body stripes
+        const stripe = new THREE.Mesh(new THREE.CylinderGeometry(fp.size * 0.28, fp.size * 0.32, fp.size * 0.22, 8), sMat);
+        stripe.rotation.z = -Math.PI / 2;
+        stripe.position.x = -fp.size * 0.15;
+        fishGroup.add(stripe);
+
+        // Swishing tail fin
+        const tail = new THREE.Mesh(new THREE.ConeGeometry(fp.size * 0.32, fp.size * 0.45, 3), finMat);
+        tail.rotation.z = Math.PI / 2;
+        tail.position.x = -fp.size * 0.65;
+        fishGroup.add(tail);
+
+        // Position fish within tank's local bounds
+        const fx = (idx - 1) * 0.35;
+        const fy = 0.75 + 0.22 + idx * 0.11;
+        const fz = ((idx % 2) - 0.5) * 0.20;
+        fishGroup.position.set(fx, fy, fz);
+        group.add(fishGroup);
+
+        this.aquariumFish.push({
+          group: fishGroup,
+          tail: tail,
+          tankPos: { x: x, y: y0, z: z },
+          floor: fl,
+          rotY: rotY,
+          localX: fx,
+          localY: fy,
+          localZ: fz,
+          speed: fp.speed,
+          heading: (idx % 2 === 0 ? 1 : -1),
+          tailPhase: Math.random() * Math.PI * 2,
+          minX: -0.55,
+          maxX: 0.55,
+          minZ: -0.22,
+          maxZ: 0.22
+        });
+      });
 
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: x - 0.80,
-        maxX: x + 0.80,
-        minZ: z - 0.55,
-        maxZ: z + 0.55,
+        minX: x - (rotY !== 0 ? 0.40 : 0.80),
+        maxX: x + (rotY !== 0 ? 0.40 : 0.80),
+        minZ: z - (rotY !== 0 ? 0.80 : 0.40),
+        maxZ: z + (rotY !== 0 ? 0.80 : 0.40),
         minY: y0,
-        maxY: y0 + 1.25
+        maxY: y0 + 1.45
       });
+    }
+
+    updateAquariumFish(delta) {
+      if (!this.aquariumFish || this.aquariumFish.length === 0) return;
+      for (let i = 0; i < this.aquariumFish.length; i++) {
+        const fish = this.aquariumFish[i];
+        if (fish.floor !== this.playerFloor) continue;
+
+        // Tail swishing animation
+        fish.tailPhase += delta * 12.0;
+        fish.tail.rotation.y = Math.sin(fish.tailPhase) * 0.45;
+
+        // Swimming forward
+        fish.localX += fish.speed * fish.heading * delta;
+        if (fish.localX > fish.maxX) {
+          fish.localX = fish.maxX;
+          fish.heading = -1;
+        } else if (fish.localX < fish.minX) {
+          fish.localX = fish.minX;
+          fish.heading = 1;
+        }
+
+        fish.group.position.x = fish.localX;
+        fish.group.rotation.y = (fish.heading > 0 ? 0 : Math.PI);
+        // Subtle vertical undulating bob
+        fish.group.position.y = fish.localY + Math.sin(fish.tailPhase * 0.5) * 0.02;
+      }
     }
 
     createClassicalSculpturePedestal(x, y0, z, statueType, fl, hasStanchions = false) {
@@ -8151,214 +7699,85 @@
     populateFloorExhibits(fl, y0, mats) {
       if (fl === 0) {
         // =========================================================================
-        // FLOOR 0 ("1ST FLOOR"): GRAND CLASSICAL ANTIQUITIES & CONCOURSE
+        // FLOOR 0: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-
-        // 1. MAIN GALLERY (x: -16..-4, z: -18..28): 46m Grand Concourse
-        // 3 Grand Woven Persian Runner Rugs down the central axis
+        // Main Concourse Rugs
         this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.2, 14.0, 0x881337, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0x881337, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0x881337, 0xd4af37);
 
-        // Fluted Marble Pedestals with Classical Sculptures along gallery sides
-        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'winged_victory', fl, true);
-        this.createClassicalSculpturePedestal( -5.8, y0, -10.0, 'venus', fl, true);
-        this.createClassicalSculpturePedestal(-14.2, y0,   7.0, 'bust_augustus', fl, false);
-        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl, false);
-        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'bronze_philosopher', fl, false);
-        this.createClassicalSculpturePedestal( -5.8, y0,  21.0, 'bust_augustus', fl, false);
-
-        // Potted Kentia Palms flanking all archways
-        [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
-          [-14.8,  25.5], [-5.2,  25.5]
-        ].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // Polished Mahogany Easel stands at North and South entrances
-        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0);
-        this.createMuseumEasel(-10.0, y0,  26.0, fl, Math.PI);
-
-        // Gold Roman Coin Hoard Vitrine Table in alcove at (-10.0, y0, -5.0)
-        this.createVitrineTable(-10.0, y0, -5.0, 'coins', fl);
-
-        // 2. WEST WING (x: -36..-16, z: -6..18): Classical Antiquities Salon
+        // West Wing Rug
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
-        this.createVitrineTable(-31.0, y0,  0.0, 'amphora', fl);
-        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
-        this.createVitrineTable(-31.0, y0, 12.0, 'coins', fl);
-        this.createVitrineTable(-21.0, y0, 12.0, 'chalice', fl);
 
-        this.createClassicalSculpturePedestal(-34.0, y0, -4.5, 'bust_augustus', fl);
-        this.createClassicalSculpturePedestal(-18.0, y0, -4.5, 'bronze_philosopher', fl);
-        this.createClassicalSculpturePedestal(-34.0, y0, 16.5, 'venus', fl);
-
-        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // 3. NORTH GALLERY (x: -4..28, z: -40..-26): Egyptian Antiquities Pavilion
-        this.createEgyptianSarcophagusDais(12.0, y0, -33.0, fl);
-
-        // Limestone Obelisks flanking North Gallery entry
-        [4.0, 20.0].forEach(ox => {
-          const obeliskGroup = new THREE.Group();
-          obeliskGroup.position.set(ox, y0, -28.0);
-          const obB = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.35, 0.95), mats.wallConcrete);
-          obB.position.y = 0.175;
-          obeliskGroup.add(obB);
-          const obS = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.40, 2.6, 4), mats.wallPlasterCool);
-          obS.rotation.y = Math.PI / 4;
-          obS.position.y = 0.35 + 1.3;
-          obeliskGroup.add(obS);
-          const obP = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.42, 4), mats.wallPlasterCool);
-          obP.rotation.y = Math.PI / 4;
-          obP.position.y = 0.35 + 2.6 + 0.21;
-          obeliskGroup.add(obP);
-          this.scene.add(obeliskGroup);
-
-          this.colliders.push({
-            type: 'box',
-            floor: fl,
-            minX: ox - 0.50,
-            maxX: ox + 0.50,
-            minZ: -28.0 - 0.50,
-            maxZ: -28.0 + 0.50,
-            minY: y0,
-            maxY: y0 + 1.20
-          });
-        });
-
-        this.createVitrineTable(2.0, y0, -33.0, 'scroll', fl);
-        this.createVitrineTable(22.0, y0, -33.0, 'jewelry', fl);
-
-        [[1.0, -27.5], [23.0, -27.5], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // 4. SOUTH-EAST WING (x: 4..28, z: 18..28): Rotunda Concourse
+        // South-East Concourse Rug
         this.createGalleryRunnerRug(16.0, y0, 23.0, 16.0, 3.2, 0x881337, 0xd4af37);
-        this.createClassicalSculpturePedestal(10.0, y0, 21.0, 'bust_augustus', fl);
-        this.createClassicalSculpturePedestal(22.0, y0, 21.0, 'venus', fl);
-        this.createClassicalSculpturePedestal(10.0, y0, 25.0, 'winged_victory', fl);
 
-        [[12.0, 27.5], [26.0, 27.5]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
+        // Live Aquatic Glass Aquarium Tanks in side galleries
+        this.createAquariumTank(-14.2, y0, -10.0, 0, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0, -10.0, 0, -Math.PI / 2);
+        this.createAquariumTank(-14.2, y0,   7.0, 0, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0,   7.0, 0, -Math.PI / 2);
+        this.createAquariumTank(-31.0, y0,   0.0, 0, 0);
+        this.createAquariumTank(-21.0, y0,   0.0, 0, 0);
+        this.createAquariumTank(-31.0, y0,  12.0, 0, 0);
+        this.createAquariumTank(-21.0, y0,  12.0, 0, 0);
+        this.createAquariumTank(  2.0, y0, -33.0, 0, 0);
+        this.createAquariumTank( 22.0, y0, -33.0, 0, 0);
+
+        // Non-clipping, unobstructed corner potted plants (far perimeter dead space)
+        this.createPottedMuseumPlant(-34.5, y0, 16.5, 0);
+        this.createPottedMuseumPlant( 22.0, y0, -38.5, 0);
 
       } else if (fl === 1) {
         // =========================================================================
-        // FLOOR 1 ("2ND FLOOR"): THE GREAT LIBRARY & CARTOGRAPHY
+        // FLOOR 1: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-
-        // Main Gallery Runner Rugs in Royal Navy & Gold
         this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x1e3a8a, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
-
-        // Map & Astrolabe Vitrine Tables
-        this.createVitrineTable(-14.2, y0, -10.0, 'astrolabe', fl);
-        this.createVitrineTable( -5.8, y0,   7.0, 'scroll', fl);
-        this.createVitrineTable(-14.2, y0,  21.0, 'astrolabe', fl);
-
-        // Potted Ficus Trees
-        [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
-          [-14.8,  25.5], [-5.2,  25.5]
-        ].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // West Wing Folio Reading Room (Globe, reading vitrines, rugs)
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
-        this.createVitrineTable(-31.0, y0,  0.0, 'scroll', fl);
-        this.createVitrineTable(-21.0, y0,  0.0, 'astrolabe', fl);
-        this.createVitrineTable(-31.0, y0, 12.0, 'scroll', fl);
-        this.createVitrineTable(-21.0, y0, 12.0, 'astrolabe', fl);
 
-        // North Gallery Map Archives
-        this.createVitrineTable(6.0, y0, -33.0, 'scroll', fl);
-        this.createVitrineTable(18.0, y0, -33.0, 'astrolabe', fl);
-        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
+        // Live Aquatic Glass Aquarium Tanks
+        this.createAquariumTank(-14.2, y0, -10.0, 1, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0,   7.0, 1, -Math.PI / 2);
+        this.createAquariumTank(-14.2, y0,  21.0, 1, Math.PI / 2);
+        this.createAquariumTank(-31.0, y0,   0.0, 1, 0);
+        this.createAquariumTank(-21.0, y0,   0.0, 1, 0);
+        this.createAquariumTank(-31.0, y0,  12.0, 1, 0);
+        this.createAquariumTank(-21.0, y0,  12.0, 1, 0);
+        this.createAquariumTank(  6.0, y0, -33.0, 1, 0);
+        this.createAquariumTank( 18.0, y0, -33.0, 1, 0);
+
+        // Non-clipping, unobstructed corner potted plants
+        this.createPottedMuseumPlant(-34.5, y0, 16.5, 1);
+        this.createPottedMuseumPlant( 20.0, y0, -38.5, 1);
 
       } else if (fl === 2) {
         // =========================================================================
-        // FLOOR 2 ("3RD FLOOR"): SURREALISM SALON & RENAISSANCE ARMORY
+        // FLOOR 2: RUNNER RUGS, LIVE AQUARIUM TANKS, AND CORNER PLANTS ONLY
         // =========================================================================
-
-        // Emerald Damask Runner Rugs down Main Gallery
         this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x064e3b, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
-
-        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'bronze_philosopher', fl);
-        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl);
-        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'winged_victory', fl);
-
-        [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
-          [-14.8,  25.5], [-5.2,  25.5]
-        ].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // West Wing: FULL STANDING SUIT OF KNIGHT PLATE ARMOR!
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x064e3b, 0xd4af37);
-        this.createKnightArmorDisplay(-26.0, y0, 6.0, fl);
 
-        this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
-        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
-        this.createVitrineTable(-31.0, y0, 12.0, 'chalice', fl);
-        this.createVitrineTable(-21.0, y0, 12.0, 'jewelry', fl);
+        // Live Aquatic Glass Aquarium Tanks
+        this.createAquariumTank(-14.2, y0, -10.0, 2, Math.PI / 2);
+        this.createAquariumTank( -5.8, y0,   7.0, 2, -Math.PI / 2);
+        this.createAquariumTank(-14.2, y0,  21.0, 2, Math.PI / 2);
+        this.createAquariumTank(-31.0, y0,   0.0, 2, 0);
+        this.createAquariumTank(-21.0, y0,   0.0, 2, 0);
+        this.createAquariumTank(-31.0, y0,  12.0, 2, 0);
+        this.createAquariumTank(-21.0, y0,  12.0, 2, 0);
+        this.createAquariumTank(  6.0, y0, -33.0, 2, 0);
+        this.createAquariumTank( 18.0, y0, -33.0, 2, 0);
 
-        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
-        // North Gallery Wunderkammer
-        this.createVitrineTable(6.0, y0, -33.0, 'astrolabe', fl);
-        this.createVitrineTable(18.0, y0, -33.0, 'chalice', fl);
-        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
+        // Non-clipping, unobstructed corner potted plants
+        this.createPottedMuseumPlant(-34.5, y0, 16.5, 2);
+        this.createPottedMuseumPlant( 20.0, y0, -38.5, 2);
 
       } else {
-        // =========================================================================
-        // FLOOR 3 ("4TH FLOOR"): RESTRICTED RELIQUARY VAULT & ARCHIVAL PALLETS
-        // =========================================================================
-
-        // Heavy Industrial Pallet Racks flanking East Hall (Milk Crate Challenge Arena)
-        this.createPalletRackStorage(10.0, y0, -21.0, fl);
-        this.createPalletRackStorage(20.0, y0, -21.0, fl);
-        this.createPalletRackStorage(10.0, y0,   1.0, fl);
-        this.createPalletRackStorage(20.0, y0,   1.0, fl);
-
-        // Vault Hallway Storage Racks & Shipping Crates in Main Gallery
-        this.createPalletRackStorage(-14.2, y0, -10.0, fl);
-        this.createPalletRackStorage( -5.8, y0,   7.0, fl);
-        this.createPalletRackStorage(-14.2, y0,  21.0, fl);
-
-        // West Wing Quarantined Vault Racks
-        this.createPalletRackStorage(-31.0, y0,  0.0, fl);
-        this.createPalletRackStorage(-21.0, y0,  0.0, fl);
-        this.createPalletRackStorage(-31.0, y0, 12.0, fl);
-        this.createPalletRackStorage(-21.0, y0, 12.0, fl);
-
-        // North Gallery Evidence Vault
-        this.createPalletRackStorage(6.0, y0, -33.0, fl);
-        this.createPalletRackStorage(18.0, y0, -33.0, fl);
+        // FLOOR 3: Top floor challenge room - keep floor clear for milk crate stacking
       }
     }
 
@@ -12993,6 +12412,7 @@
       if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
         this.updatePlayer(delta);
         this.updatePhysicsCrates(delta);
+        this.updateAquariumFish(delta);
         this.updateSmitty(delta);
         this.updateLiquidBlood(delta);
         this.updateAmmoPickups(delta);
