@@ -7845,16 +7845,28 @@
 
     getPedestalGeometries() {
       if (!this._pedGeoms) {
-        const base1 = new THREE.BoxGeometry(0.92, 0.12, 0.92);
-        base1.translate(0, 0.06, 0);
-        const shaft = new THREE.CylinderGeometry(0.32, 0.36, 1.05, 14);
-        shaft.translate(0, 0.12 + 0.525, 0);
-        const cap = new THREE.BoxGeometry(0.84, 0.12, 0.84);
-        cap.translate(0, 1.23, 0);
+        // Multi-tiered classical pedestal: stepped plinth, fluted cylindrical column shaft, and carved torus/capital
+        const plinthBase = new THREE.BoxGeometry(0.88, 0.10, 0.88);
+        plinthBase.translate(0, 0.05, 0);
+
+        const plinthSub = new THREE.BoxGeometry(0.78, 0.08, 0.78);
+        plinthSub.translate(0, 0.14, 0);
+
+        const baseTorus = new THREE.CylinderGeometry(0.36, 0.38, 0.08, 20);
+        baseTorus.translate(0, 0.22, 0);
+
+        const colShaft = new THREE.CylinderGeometry(0.30, 0.33, 0.86, 24);
+        colShaft.translate(0, 0.26 + 0.43, 0);
+
+        const capCollar = new THREE.CylinderGeometry(0.35, 0.30, 0.06, 20);
+        capCollar.translate(0, 1.15, 0);
+
+        const capAbacus = new THREE.BoxGeometry(0.80, 0.10, 0.80);
+        capAbacus.translate(0, 1.23, 0);
 
         this._pedGeoms = {
-          pedestal: mergeBufferGeometries([base1, shaft, cap]),
-          placard: new THREE.BoxGeometry(0.36, 0.14, 0.02)
+          pedestal: mergeBufferGeometries([plinthBase, plinthSub, baseTorus, colShaft, capCollar, capAbacus]),
+          placard: new THREE.BoxGeometry(0.34, 0.13, 0.02)
         };
       }
       return this._pedGeoms;
@@ -7876,52 +7888,133 @@
       placard.position.set(0, 0.75, 0.36);
       group.add(placard);
 
-      // Sculpture atop pedestal
+      // Sculpture atop pedestal: Clean resting plane at y = 1.28m atop pedestal abacus cap
+      const capTop = 1.28;
+
       if (statueType === 'winged_victory') {
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.65, 10), mats.marble);
-        torso.position.set(0, 1.29 + 0.325, 0);
-        group.add(torso);
-        [-0.30, 0.30].forEach((wx, wi) => {
-          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.38), mats.marble);
-          wing.position.set(wx, 1.80, -0.12);
-          wing.rotation.z = (wi === 0 ? 0.35 : -0.35);
-          wing.rotation.y = (wi === 0 ? -0.25 : 0.25);
+        // Nike of Samothrace inspired classical drapery and sculpted wings
+        const socle = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.28, 0.05, 18), mats.marble);
+        socle.position.set(0, capTop + 0.025, 0);
+        group.add(socle);
+
+        const gownLower = new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.25, 0.48, 16), mats.marble);
+        gownLower.position.set(0, capTop + 0.05 + 0.24, 0);
+        group.add(gownLower);
+
+        const gownTorso = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.19, 0.36, 16), mats.marble);
+        gownTorso.position.set(0, capTop + 0.05 + 0.48 + 0.18, 0.02);
+        gownTorso.rotation.x = 0.08;
+        group.add(gownTorso);
+
+        const chest = new THREE.Mesh(new THREE.SphereGeometry(0.16, 14, 14), mats.marble);
+        chest.scale.set(1.0, 1.15, 0.88);
+        chest.position.set(0, capTop + 0.05 + 0.78, 0.04);
+        group.add(chest);
+
+        // Swept back classical sculpted wings
+        [-0.24, 0.24].forEach((wx, wi) => {
+          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.56, 0.34), mats.marble);
+          wing.position.set(wx, capTop + 0.72, -0.14);
+          wing.rotation.z = (wi === 0 ? 0.42 : -0.42);
+          wing.rotation.y = (wi === 0 ? -0.32 : 0.32);
+          wing.rotation.x = -0.16;
           group.add(wing);
         });
       } else if (statueType === 'venus') {
-        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 10), mats.marble);
-        torso.position.set(0, 1.29 + 0.36, 0);
+        // Venus de Milo classical draped contrapposto silhouette
+        const socle = new THREE.Mesh(new THREE.CylinderGeometry(0.25, 0.27, 0.05, 18), mats.marble);
+        socle.position.set(0, capTop + 0.025, 0);
+        group.add(socle);
+
+        const lowerDrape = new THREE.Mesh(new THREE.CylinderGeometry(0.20, 0.24, 0.52, 16), mats.marble);
+        lowerDrape.position.set(0, capTop + 0.05 + 0.26, 0);
+        group.add(lowerDrape);
+
+        const waistFold = new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.04, 8, 18), mats.marble);
+        waistFold.rotation.x = Math.PI / 2;
+        waistFold.position.set(0, capTop + 0.05 + 0.52, 0);
+        group.add(waistFold);
+
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.17, 0.38, 16), mats.marble);
+        torso.position.set(0, capTop + 0.05 + 0.52 + 0.19, 0);
+        torso.rotation.z = 0.04;
         group.add(torso);
-        const drape = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.35, 10), mats.marble);
-        drape.position.set(0, 1.29 + 0.175, 0);
-        group.add(drape);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.12, 14, 14), mats.marble);
+        head.scale.set(0.88, 1.15, 0.95);
+        head.position.set(0.01, capTop + 0.05 + 0.52 + 0.43, 0);
+        group.add(head);
       } else if (statueType === 'bronze_urn') {
-        const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.52, 12), mats.bronze);
-        urn.position.set(0, 1.29 + 0.26, 0);
-        group.add(urn);
-        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 6, 14), mats.bronze);
-        rim.rotation.x = Math.PI / 2;
-        rim.position.set(0, 1.29 + 0.52, 0);
-        group.add(rim);
+        // Classical Roman Amphora / Bronze Crater Urn
+        const foot = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.06, 18), mats.bronze);
+        foot.position.set(0, capTop + 0.03, 0);
+        group.add(foot);
+
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.10, 16), mats.bronze);
+        stem.position.set(0, capTop + 0.06 + 0.05, 0);
+        group.add(stem);
+
+        const belly = new THREE.Mesh(new THREE.SphereGeometry(0.24, 18, 16), mats.bronze);
+        belly.scale.set(1.0, 1.22, 1.0);
+        belly.position.set(0, capTop + 0.16 + 0.24, 0);
+        group.add(belly);
+
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.18, 0.18, 18), mats.bronze);
+        neck.position.set(0, capTop + 0.16 + 0.48 + 0.09, 0);
+        group.add(neck);
+
+        const lip = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 20), mats.bronze);
+        lip.rotation.x = Math.PI / 2;
+        lip.position.set(0, capTop + 0.16 + 0.48 + 0.18, 0);
+        group.add(lip);
+
+        // Fluted amphora handles
+        [-0.23, 0.23].forEach((hx) => {
+          const handle = new THREE.Mesh(new THREE.TorusGeometry(0.12, 0.024, 8, 16, Math.PI), mats.bronze);
+          handle.rotation.y = (hx < 0 ? -Math.PI / 2 : Math.PI / 2);
+          handle.position.set(hx, capTop + 0.50, 0);
+          group.add(handle);
+        });
       } else if (statueType === 'bronze_philosopher') {
-        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.26), mats.bronze);
-        bustShoulders.position.set(0, 1.29 + 0.12, 0);
-        group.add(bustShoulders);
-        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 12, 12), mats.bronze);
-        bustHead.scale.set(0.9, 1.2, 0.95);
-        bustHead.position.set(0, 1.29 + 0.36, 0);
-        group.add(bustHead);
+        // Classical Roman philosopher bronze portrait bust on circular socle
+        const socle = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.20, 0.08, 16), mats.bronze);
+        socle.position.set(0, capTop + 0.04, 0);
+        group.add(socle);
+
+        const bustChest = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.18, 0.32, 16), mats.bronze);
+        bustChest.scale.set(1.30, 1.0, 0.85);
+        bustChest.position.set(0, capTop + 0.08 + 0.16, 0);
+        group.add(bustChest);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), mats.bronze);
+        head.scale.set(0.92, 1.20, 1.0);
+        head.position.set(0, capTop + 0.08 + 0.32 + 0.15, 0.02);
+        group.add(head);
+
+        const beard = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.16, 12), mats.bronze);
+        beard.rotation.x = -0.30;
+        beard.position.set(0, capTop + 0.08 + 0.32 + 0.06, 0.10);
+        group.add(beard);
       } else {
-        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.26, 0.28), mats.marble);
-        bustShoulders.position.set(0, 1.29 + 0.13, 0);
-        group.add(bustShoulders);
-        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 12, 12), mats.marble);
-        bustHead.scale.set(0.9, 1.2, 0.95);
-        bustHead.position.set(0, 1.29 + 0.38, 0);
-        group.add(bustHead);
-        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.022, 6, 16), mats.goldPlacard);
-        laurel.rotation.x = Math.PI / 2 + 0.15;
-        laurel.position.set(0, 1.29 + 0.45, 0.02);
+        // Augustus of Prima Porta classical marble bust on carved pedestal socle
+        const socle = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.20, 0.08, 16), mats.marble);
+        socle.position.set(0, capTop + 0.04, 0);
+        group.add(socle);
+
+        const bustChest = new THREE.Mesh(new THREE.CylinderGeometry(0.23, 0.19, 0.32, 16), mats.marble);
+        bustChest.scale.set(1.32, 1.0, 0.86);
+        bustChest.position.set(0, capTop + 0.08 + 0.16, 0);
+        group.add(bustChest);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.15, 16, 16), mats.marble);
+        head.scale.set(0.92, 1.20, 0.98);
+        head.position.set(0, capTop + 0.08 + 0.32 + 0.15, 0);
+        group.add(head);
+
+        // Gilded laurel wreath
+        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.022, 8, 20), mats.goldPlacard);
+        laurel.rotation.x = Math.PI / 2 + 0.16;
+        laurel.position.set(0, capTop + 0.08 + 0.32 + 0.20, 0.02);
         group.add(laurel);
       }
 
@@ -8270,13 +8363,7 @@
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
 
-        // Fluted Marble Pedestals with Classical Sculptures along gallery sides
-        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'winged_victory', fl, true);
-        this.createClassicalSculpturePedestal( -5.8, y0, -10.0, 'venus', fl, true);
-        this.createClassicalSculpturePedestal(-14.2, y0,   7.0, 'bust_augustus', fl, false);
-        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl, false);
-        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'bronze_philosopher', fl, false);
-        this.createClassicalSculpturePedestal( -5.8, y0,  21.0, 'bust_augustus', fl, false);
+        // (Classical sculptures relocated exclusively to Floor 1 open reading salon per curator request)
 
         // Potted plants flanking archways
         [
@@ -8307,9 +8394,7 @@
         this.createVitrineTable(-31.0, y0, 12.0, 'coins', fl);
         this.createVitrineTable(-21.0, y0, 12.0, 'chalice', fl);
 
-        this.createClassicalSculpturePedestal(-34.0, y0, -4.5, 'bust_augustus', fl);
-        this.createClassicalSculpturePedestal(-18.0, y0, -4.5, 'bronze_philosopher', fl);
-        this.createClassicalSculpturePedestal(-34.0, y0, 16.5, 'venus', fl);
+        // (Floor 0 West Wing sculptures removed per curator request)
 
         [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
@@ -8355,10 +8440,8 @@
         });
 
         // 4. SOUTH-EAST WING (x: 4..28, z: 18..28): Rotunda Concourse
-        this.createGalleryRunnerRug(16.0, y0, 23.0, 16.0, 3.2, 0xb47488, 0xc6bc99);
-        this.createClassicalSculpturePedestal(10.0, y0, 21.0, 'bust_augustus', fl);
-        this.createClassicalSculpturePedestal(22.0, y0, 21.0, 'venus', fl);
-        this.createClassicalSculpturePedestal(10.0, y0, 25.0, 'winged_victory', fl);
+        this.createGalleryRunnerRug(23.0, y0, 23.0, 3.2, 7.5, 0xb47488, 0xc6bc99);
+        // (Floor 0 South-East Wing sculptures removed per curator request)
 
       } else if (fl === 1) {
         // =========================================================================
@@ -8372,8 +8455,7 @@
         this.createVitrineTable(-14.2, y0, -10.0, 'astrolabe', fl);
         this.createVitrineTable( -5.8, y0,   7.0, 'scroll', fl);
         this.createVitrineTable(-14.2, y0,  21.0, 'astrolabe', fl);
-        this.createClassicalSculpturePedestal( -5.8, y0, -10.0, 'bronze_philosopher', fl);
-        this.createClassicalSculpturePedestal( -5.8, y0,  21.0, 'bust_augustus', fl);
+        // (Floor 1 Main Gallery hallway pedestals removed; curated into Floor 1 open reading salon)
 
         // Potted Plants along archways
         [
@@ -8404,6 +8486,13 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
+        // Floor 1 Large Open Salon (x: 4..28, z: -26..0): Curated Classical Sculpture Gallery
+        this.createClassicalSculpturePedestal( 8.5, y0, -18.0, 'winged_victory', fl, true);
+        this.createClassicalSculpturePedestal(21.5, y0, -18.0, 'venus', fl, true);
+        this.createClassicalSculpturePedestal( 8.5, y0,  -6.0, 'bust_augustus', fl, false);
+        this.createClassicalSculpturePedestal(21.5, y0,  -6.0, 'bronze_philosopher', fl, false);
+        this.createClassicalSculpturePedestal(15.0, y0, -22.0, 'bronze_urn', fl, false);
+
       } else if (fl === 2) {
         // =========================================================================
         // FLOOR 2 ("3RD FLOOR"): SURREALISM SALON & RENAISSANCE ARMORY
@@ -8412,10 +8501,7 @@
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
 
-        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'bronze_philosopher', fl);
-        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl);
-        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'winged_victory', fl);
-        this.createClassicalSculpturePedestal( -5.8, y0,  21.0, 'bust_augustus', fl);
+        // (Floor 2 Main Gallery sculptures removed per curator request)
 
         [
           [-14.8, -17.0], [-5.2, -17.0],
@@ -11211,7 +11297,7 @@
         // Keep inside reasonable museum altitude bounds (-1m floor 0 to 22m roof level)
         this.playerPos.y = Math.max(-1.0, Math.min(22.0, this.playerPos.y));
 
-        const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.round((this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT) / CONFIG.FLOOR_HEIGHT)));
+        const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
         if (approxFloor !== this.playerFloor) {
           this.playerFloor = approxFloor;
           this.showFloorNotification(this.playerFloor);
