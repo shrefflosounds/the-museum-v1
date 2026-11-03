@@ -3699,6 +3699,7 @@
 
       // South-East Rotunda Circular Reference Desk at (23, 22)
       this.createCircularReferenceDesk(23, y0, 22, mats.mahogany, fl);
+      this.populateFloorExhibits(fl, y0, mats);
 
       // Distinct Floor-Specific Atmospheric Ceiling Lamps & Spotlights
       const lightColor = fl === 0 ? 0xf4f4f4
@@ -6951,6 +6952,14 @@
         this.heldCrate = bestCrate;
         bestCrate.isHeld = true;
         bestCrate.isCollapsed = true;
+        // Keep collider completely disabled while held to prevent shoving or launching the player!
+        bestCrate.collider.disabled = true;
+        bestCrate.collider.minX = 0;
+        bestCrate.collider.maxX = 0;
+        bestCrate.collider.minZ = 0;
+        bestCrate.collider.maxZ = 0;
+        bestCrate.collider.minY = -999;
+        bestCrate.collider.maxY = -999;
 
         if (bestCrate.supportedCrates && bestCrate.supportedCrates.length > 0) {
           bestCrate.supportedCrates.forEach(child => {
@@ -6968,19 +6977,92 @@
     dropHeldCrate() {
       if (!this.heldCrate) return;
       const crate = this.heldCrate;
+      const y0 = 3 * CONFIG.FLOOR_HEIGHT;
+      const camPos = this.camera.position;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
       const sinYaw = Math.sin(this.playerYaw);
-
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
 
+      // Check if dropped near/above an existing crate to stack neatly!
+      let targetBase = null;
+      let highestY = y0;
+      for (let i = 0; i < this.physicsCrates.length; i++) {
+        const other = this.physicsCrates[i];
+        if (other === crate || other.isHeld) continue;
+        const dx = Math.abs(crate.x - other.x);
+        const dz = Math.abs(crate.z - other.z);
+        if (dx < 0.42 && dz < 0.42) {
+          const topY = other.y + other.h;
+          if (crate.y >= other.y - 0.25 && topY > highestY) {
+            highestY = topY;
+            targetBase = other;
+          }
+        } else {
+          // Check if player's crosshair / view ray aims directly at this crate
+          const toOther = new THREE.Vector3(other.x - camPos.x, (other.y + other.h / 2) - camPos.y, other.z - camPos.z);
+          const distToOther = toOther.length();
+          if (distToOther < 3.2) {
+            toOther.normalize();
+            if (toOther.dot(fwd) > 0.88) {
+              const topY = other.y + other.h;
+              if (topY > highestY) {
+                highestY = topY;
+                targetBase = other;
+              }
+            }
+          }
+        }
+      }
+
       crate.isHeld = false;
-      crate.vx = fwd.x * 1.8 + this.playerVelocity.x;
-      crate.vy = 0.4;
-      crate.vz = fwd.z * 1.8 + this.playerVelocity.z;
-      crate.angVx = (Math.random() - 0.5) * 1.5;
-      crate.angVz = (Math.random() - 0.5) * 1.5;
+      crate.collider.disabled = false;
+
+      if (targetBase) {
+        // Stack directly on top of target crate!
+        crate.x = targetBase.x;
+        crate.z = targetBase.z;
+        crate.y = highestY;
+        crate.baseY = highestY;
+        crate.rotX = 0;
+        crate.rotZ = 0;
+        crate.rotY = targetBase.rotY;
+        crate.vx = 0;
+        crate.vy = 0;
+        crate.vz = 0;
+        crate.angVx = 0;
+        crate.angVy = 0;
+        crate.angVz = 0;
+        crate.isCollapsed = false;
+        crate.tier = targetBase.tier + 1;
+        targetBase.supportedCrates.push(crate);
+      } else {
+        // Place neatly onto the floor right where held
+        crate.isCollapsed = false;
+        crate.y = y0;
+        crate.baseY = y0;
+        crate.rotX = 0;
+        crate.rotZ = 0;
+        crate.rotY = this.playerYaw;
+        crate.vx = 0;
+        crate.vy = 0;
+        crate.vz = 0;
+        crate.angVx = 0;
+        crate.angVy = 0;
+        crate.angVz = 0;
+        crate.tier = 1;
+      }
+
+      crate.mesh.position.set(crate.x, crate.y + crate.h / 2, crate.z);
+      crate.mesh.rotation.set(crate.rotX, crate.rotY, crate.rotZ);
+
+      crate.collider.minX = crate.x - crate.w / 2;
+      crate.collider.maxX = crate.x + crate.w / 2;
+      crate.collider.minZ = crate.z - crate.d / 2;
+      crate.collider.maxZ = crate.z + crate.d / 2;
+      crate.collider.minY = crate.y;
+      crate.collider.maxY = crate.isCollapsed ? (crate.y + 0.16) : (crate.y + crate.h);
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
@@ -6989,21 +7071,34 @@
     throwHeldCrate() {
       if (!this.heldCrate) return;
       const crate = this.heldCrate;
+      const y0 = 3 * CONFIG.FLOOR_HEIGHT;
+      const ceilY = y0 + CONFIG.FLOOR_HEIGHT - 0.12;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
       const sinYaw = Math.sin(this.playerYaw);
-
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
 
       crate.isHeld = false;
+      crate.collider.disabled = false;
       crate.isCollapsed = true;
-      crate.vx = fwd.x * 14.5;
-      crate.vy = fwd.y * 14.5 + 2.2;
-      crate.vz = fwd.z * 14.5;
-      crate.angVx = (Math.random() - 0.5) * 12.0;
-      crate.angVz = (Math.random() - 0.5) * 12.0;
-      crate.angVy = (Math.random() - 0.5) * 8.0;
+
+      // Safe clamp below ceiling before launching
+      crate.y = Math.min(crate.y, ceilY - crate.h - 0.08);
+
+      crate.vx = fwd.x * 12.0;
+      crate.vy = fwd.y * 12.0 + 1.2;
+      crate.vz = fwd.z * 12.0;
+      crate.angVx = (Math.random() - 0.5) * 8.0;
+      crate.angVz = (Math.random() - 0.5) * 8.0;
+      crate.angVy = (Math.random() - 0.5) * 6.0;
+
+      crate.collider.minX = crate.x - crate.w / 2;
+      crate.collider.maxX = crate.x + crate.w / 2;
+      crate.collider.minZ = crate.z - crate.d / 2;
+      crate.collider.maxZ = crate.z + crate.d / 2;
+      crate.collider.minY = crate.y;
+      crate.collider.maxY = crate.y + 0.16;
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
@@ -7041,13 +7136,18 @@
       // Handle held crate position and viewmodel
       if (this.heldCrate) {
         const hc = this.heldCrate;
-        const targetX = this.camera.position.x + fwd.x * 1.55;
-        const targetY = this.camera.position.y + fwd.y * 1.55 - 0.18;
-        const targetZ = this.camera.position.z + fwd.z * 1.55;
+        const targetX = this.camera.position.x + fwd.x * 1.45;
+        const targetY = this.camera.position.y + fwd.y * 1.45 - 0.22;
+        const targetZ = this.camera.position.z + fwd.z * 1.45;
 
-        hc.x = THREE.MathUtils.lerp(hc.x, targetX, Math.min(1, delta * 22));
-        hc.y = THREE.MathUtils.lerp(hc.y, targetY, Math.min(1, delta * 22));
-        hc.z = THREE.MathUtils.lerp(hc.z, targetZ, Math.min(1, delta * 22));
+        // Keep held crate clamped safely within room boundaries
+        const clampedX = Math.max(6.5, Math.min(23.5, targetX));
+        const clampedZ = Math.max(-23.5, Math.min(3.5, targetZ));
+        const clampedY = Math.max(y0 + 0.1, Math.min(y0 + CONFIG.FLOOR_HEIGHT - 0.5, targetY));
+
+        hc.x = THREE.MathUtils.lerp(hc.x, clampedX, Math.min(1, delta * 22));
+        hc.y = THREE.MathUtils.lerp(hc.y, clampedY, Math.min(1, delta * 22));
+        hc.z = THREE.MathUtils.lerp(hc.z, clampedZ, Math.min(1, delta * 22));
         hc.rotY = THREE.MathUtils.lerp(hc.rotY, this.playerYaw, Math.min(1, delta * 16));
         hc.rotX = THREE.MathUtils.lerp(hc.rotX, 0, Math.min(1, delta * 16));
         hc.rotZ = THREE.MathUtils.lerp(hc.rotZ, 0, Math.min(1, delta * 16));
@@ -7055,12 +7155,14 @@
         hc.mesh.position.set(hc.x, hc.y + hc.h / 2, hc.z);
         hc.mesh.rotation.set(hc.rotX, hc.rotY, hc.rotZ);
 
-        hc.collider.minX = hc.x - hc.w / 2;
-        hc.collider.maxX = hc.x + hc.w / 2;
-        hc.collider.minZ = hc.z - hc.d / 2;
-        hc.collider.maxZ = hc.z + hc.d / 2;
-        hc.collider.minY = hc.y;
-        hc.collider.maxY = hc.y + hc.h;
+        // Keep collider completely disabled while held to prevent shoving or launching the player!
+        hc.collider.disabled = true;
+        hc.collider.minX = 0;
+        hc.collider.maxX = 0;
+        hc.collider.minZ = 0;
+        hc.collider.maxZ = 0;
+        hc.collider.minY = -999;
+        hc.collider.maxY = -999;
       }
 
       // Check if player is standing on any crate in the stacks
@@ -7103,6 +7205,8 @@
         }
       }
 
+      const ceilY = y0 + CONFIG.FLOOR_HEIGHT - 0.12;
+
       // Update all non-held crates
       for (let i = 0; i < this.physicsCrates.length; i++) {
         const c = this.physicsCrates[i];
@@ -7118,21 +7222,58 @@
           c.rotY += c.angVy * delta;
           c.rotZ += c.angVz * delta;
 
+          // CEILING COLLISION: Bounces downward, NEVER noclipping through ceilings into upper floors
+          if (c.y + c.h >= ceilY) {
+            c.y = ceilY - c.h;
+            c.vy = -Math.abs(c.vy) * 0.40;
+            c.angVx += (Math.random() - 0.5) * 8.0;
+            c.angVz += (Math.random() - 0.5) * 8.0;
+            if (Math.abs(c.vy) > 0.6) this.audio.playCrateImpact();
+          }
+          if (c.y + c.h > ceilY) c.y = ceilY - c.h;
+
           // Oriented bounding drop prevents any corner/edge of tilted or rolling crate from penetrating the floor
           const drop = (c.h / 2) * Math.abs(Math.cos(c.rotX) * Math.cos(c.rotZ)) +
                        (c.d / 2) * Math.abs(Math.sin(c.rotX)) +
                        (c.w / 2) * Math.abs(Math.sin(c.rotZ));
           const groundY = y0 + drop - c.h / 2;
 
-          if (c.y <= groundY) {
-            c.y = groundY;
-            c.vy = -c.vy * 0.22;
-            c.vx *= 0.68;
-            c.vz *= 0.68;
-            c.angVx *= 0.60;
-            c.angVy *= 0.60;
-            c.angVz *= 0.60;
-            if (Math.abs(c.vy) > 1.2) this.audio.playCrateImpact();
+          // STACKING & LANDING: Check if landing on top of any resting crate
+          let landingY = groundY;
+          let landedCrate = null;
+          for (let j = 0; j < this.physicsCrates.length; j++) {
+            const other = this.physicsCrates[j];
+            if (other === c || other.isHeld) continue;
+            if (Math.abs(c.x - other.x) < c.w * 0.75 && Math.abs(c.z - other.z) < c.d * 0.75) {
+              const topY = other.y + other.h;
+              if (c.y >= topY - 0.22 && topY > landingY) {
+                landingY = topY;
+                landedCrate = other;
+              }
+            }
+          }
+
+          if (c.y <= landingY) {
+            c.y = landingY;
+            if (landedCrate && !landedCrate.isCollapsed && Math.hypot(c.rotX, c.rotZ) < 0.25 && Math.hypot(c.vx, c.vz) < 1.4) {
+              // Settle cleanly into stack on top of lower crate
+              c.isCollapsed = false;
+              c.baseY = landingY;
+              c.x = THREE.MathUtils.lerp(c.x, landedCrate.x, 0.40);
+              c.z = THREE.MathUtils.lerp(c.z, landedCrate.z, 0.40);
+              c.vx = 0; c.vy = 0; c.vz = 0;
+              c.rotX = 0; c.rotZ = 0;
+              c.angVx = 0; c.angVz = 0;
+              c.tier = landedCrate.tier + 1;
+              landedCrate.supportedCrates.push(c);
+            } else {
+              c.vy = -c.vy * 0.22;
+              c.vx *= 0.65;
+              c.vz *= 0.65;
+              c.angVx *= 0.55;
+              c.angVz *= 0.55;
+            }
+            if (Math.abs(c.vy) > 1.0) this.audio.playCrateImpact();
           }
 
           if (c.x < 6.2) { c.x = 6.2; c.vx = Math.abs(c.vx) * 0.5; }
@@ -7151,12 +7292,13 @@
         c.mesh.position.set(c.x, c.y + c.h / 2, c.z);
         c.mesh.rotation.set(c.rotX, c.rotY, c.rotZ);
 
+        c.collider.disabled = false;
         c.collider.minX = c.x - c.w / 2;
         c.collider.maxX = c.x + c.w / 2;
         c.collider.minZ = c.z - c.d / 2;
         c.collider.maxZ = c.z + c.d / 2;
         c.collider.minY = c.y;
-        c.collider.maxY = c.isCollapsed ? (c.y + 0.15) : (c.y + c.h);
+        c.collider.maxY = c.isCollapsed ? (c.y + 0.16) : (c.y + c.h);
       }
     }
 
@@ -7348,6 +7490,876 @@
         minY: y,
         maxY: y + h
       });
+    }
+
+    // =========================================================================
+    // BEAUTY PASS & COMPREHENSIVE PROCEDURAL EXHIBIT BUILDERS
+    // =========================================================================
+
+    createGalleryRunnerRug(x, y0, z, w, d, mainColorHex = 0x881337, borderGoldHex = 0xd4af37) {
+      const rugGroup = new THREE.Group();
+      rugGroup.position.set(x, y0 + 0.006, z);
+
+      const carpetMat = new THREE.MeshStandardMaterial({
+        color: mainColorHex,
+        roughness: 0.88,
+        metalness: 0.02
+      });
+      const goldBorderMat = new THREE.MeshStandardMaterial({
+        color: borderGoldHex,
+        roughness: 0.55,
+        metalness: 0.35
+      });
+      const fringeMat = new THREE.MeshStandardMaterial({
+        color: 0xfef08a,
+        roughness: 0.95
+      });
+
+      // Main woven textile field
+      const field = new THREE.Mesh(new THREE.BoxGeometry(w, 0.005, d), carpetMat);
+      rugGroup.add(field);
+
+      // Gold ornamental border frame (4 border strips inset 8cm from edge)
+      const bThick = 0.06;
+      [-d / 2 + 0.10, d / 2 - 0.10].forEach(bz => {
+        const bStrip = new THREE.Mesh(new THREE.BoxGeometry(w - 0.16, 0.006, bThick), goldBorderMat);
+        bStrip.position.set(0, 0.001, bz);
+        rugGroup.add(bStrip);
+      });
+      [-w / 2 + 0.10, w / 2 - 0.10].forEach(bx => {
+        const bStrip = new THREE.Mesh(new THREE.BoxGeometry(bThick, 0.006, d - 0.20), goldBorderMat);
+        bStrip.position.set(bx, 0.001, 0);
+        rugGroup.add(bStrip);
+      });
+
+      // Decorative end fringes at both short ends
+      [-d / 2, d / 2].forEach(fz => {
+        const fringe = new THREE.Mesh(new THREE.BoxGeometry(w + 0.04, 0.004, 0.04), fringeMat);
+        fringe.position.set(0, 0, fz);
+        rugGroup.add(fringe);
+      });
+
+      this.scene.add(rugGroup);
+    }
+
+    createPottedMuseumPlant(x, y0, z, fl) {
+      const plantGroup = new THREE.Group();
+      plantGroup.position.set(x, y0, z);
+
+      const potMat = new THREE.MeshStandardMaterial({ color: fl === 0 ? 0xb4533c : 0x27272a, roughness: 0.65 });
+      const soilMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.98 });
+      const frondMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.45, side: THREE.DoubleSide });
+      const stemMat = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.50 });
+      const brassTrimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 });
+
+      // Fluted Urn Planter Base & Rim
+      const potBase = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.08, 16), potMat);
+      potBase.position.y = 0.04;
+      plantGroup.add(potBase);
+
+      const potWaist = new THREE.Mesh(new THREE.CylinderGeometry(0.30, 0.20, 0.52, 16), potMat);
+      potWaist.position.y = 0.34;
+      plantGroup.add(potWaist);
+
+      const potRim = new THREE.Mesh(new THREE.TorusGeometry(0.30, 0.035, 8, 20), potMat);
+      potRim.rotation.x = Math.PI / 2;
+      potRim.position.y = 0.60;
+      plantGroup.add(potRim);
+
+      const goldBand = new THREE.Mesh(new THREE.TorusGeometry(0.28, 0.015, 8, 20), brassTrimMat);
+      goldBand.rotation.x = Math.PI / 2;
+      goldBand.position.y = 0.52;
+      plantGroup.add(goldBand);
+
+      const soil = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.02, 16), soilMat);
+      soil.position.y = 0.57;
+      plantGroup.add(soil);
+
+      // 8 Arching Kentia / Ficus Palm Fronds radiating outward gracefully
+      for (let f = 0; f < 8; f++) {
+        const ang = (f * Math.PI * 2) / 8 + (f % 2) * 0.15;
+        const frondGroup = new THREE.Group();
+        frondGroup.position.set(0, 0.58, 0);
+        frondGroup.rotation.y = ang;
+
+        // Curved arching stem
+        const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.022, 1.25, 8), stemMat);
+        stem.position.set(0.45, 0.40, 0);
+        stem.rotation.z = -Math.PI / 4 + 0.12 * (f % 3);
+        frondGroup.add(stem);
+
+        // Feathered leaflets along the stem
+        for (let l = 0; l < 7; l++) {
+          const lx = 0.20 + l * 0.13;
+          const ly = 0.22 + l * 0.10 - (l > 4 ? (l - 4) * 0.08 : 0);
+          [-0.12, 0.12].forEach(side => {
+            const leaflet = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.004, 0.05), frondMat);
+            leaflet.position.set(lx, ly, side);
+            leaflet.rotation.y = (side > 0 ? 0.35 : -0.35);
+            leaflet.rotation.z = -0.25;
+            frondGroup.add(leaflet);
+          });
+        }
+        plantGroup.add(frondGroup);
+      }
+
+      this.scene.add(plantGroup);
+
+      this.colliders.push({
+        type: 'cylinder',
+        floor: fl,
+        x: x,
+        z: z,
+        radius: 0.38,
+        minY: y0,
+        maxY: y0 + 0.65
+      });
+    }
+
+    createVitrineTable(x, y0, z, relicType, fl, rotY = 0) {
+      const group = new THREE.Group();
+      group.position.set(x, y0, z);
+      group.rotation.y = rotY;
+
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.20 });
+      const velvetMat = new THREE.MeshStandardMaterial({ color: fl === 1 ? 0x1e3a8a : 0x881337, roughness: 0.85 });
+      const glassMat = new THREE.MeshPhysicalMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.30,
+        roughness: 0.04,
+        transmission: 0.92,
+        thickness: 0.02
+      });
+      const bronzeMat = new THREE.MeshStandardMaterial({ color: 0x644a2c, metalness: 0.75, roughness: 0.35 });
+      const terracottaMat = new THREE.MeshStandardMaterial({ color: 0xb4533c, roughness: 0.72 });
+      const parchmentMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+
+      // Table frame with 4 turned mahogany legs
+      [[-0.68, -0.42], [0.68, -0.42], [-0.68, 0.42], [0.68, 0.42]].forEach(([lx, lz]) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.030, 0.74, 10), woodMat);
+        leg.position.set(lx, 0.37, lz);
+        group.add(leg);
+
+        const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.06, 10), goldMat);
+        ferrule.position.set(lx, 0.03, lz);
+        group.add(ferrule);
+      });
+
+      const apron = new THREE.Mesh(new THREE.BoxGeometry(1.48, 0.09, 0.96), woodMat);
+      apron.position.y = 0.71;
+      group.add(apron);
+
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(1.54, 0.04, 1.02), woodMat);
+      deck.position.y = 0.76;
+      group.add(deck);
+
+      // Velvet display cushion riser
+      const cushion = new THREE.Mesh(new THREE.BoxGeometry(1.24, 0.08, 0.76), velvetMat);
+      cushion.position.y = 0.82;
+      group.add(cushion);
+
+      // Clear glass display case
+      const vitrineGlass = new THREE.Mesh(new THREE.BoxGeometry(1.42, 0.70, 0.90), glassMat);
+      vitrineGlass.position.y = 0.78 + 0.35;
+      group.add(vitrineGlass);
+
+      // Glass brass perimeter trim frame
+      const gFrame = new THREE.Mesh(new THREE.BoxGeometry(1.44, 0.03, 0.92), goldMat);
+      gFrame.position.y = 0.78 + 0.70;
+      group.add(gFrame);
+
+      // Relic content inside case
+      if (relicType === 'coins') {
+        for (let c = 0; c < 8; c++) {
+          const coin = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.008, 14), goldMat);
+          coin.position.set(-0.25 + (c % 4) * 0.16, 0.865 + (c > 3 ? 0.008 : 0), -0.08 + Math.floor(c / 4) * 0.16);
+          group.add(coin);
+        }
+        const med = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.012, 18), goldMat);
+        med.position.set(0.24, 0.868, 0.05);
+        group.add(med);
+      } else if (relicType === 'chalice') {
+        const chBase = new THREE.Mesh(new THREE.CylinderGeometry(0.10, 0.12, 0.04, 14), goldMat);
+        chBase.position.y = 0.88;
+        group.add(chBase);
+        const chStem = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.03, 0.16, 12), goldMat);
+        chStem.position.y = 0.98;
+        group.add(chStem);
+        const chCup = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.07, 0.18, 16), goldMat);
+        chCup.position.y = 1.15;
+        group.add(chCup);
+      } else if (relicType === 'amphora') {
+        const amp = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), terracottaMat);
+        amp.scale.set(1.0, 1.4, 1.0);
+        amp.position.y = 1.05;
+        group.add(amp);
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.09, 0.16, 12), terracottaMat);
+        neck.position.y = 1.25;
+        group.add(neck);
+      } else if (relicType === 'scroll') {
+        const scroll1 = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.60, 14), parchmentMat);
+        scroll1.rotation.z = Math.PI / 2;
+        scroll1.position.set(0, 0.89, -0.10);
+        group.add(scroll1);
+        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.043, 0.043, 0.06, 14), velvetMat);
+        ribbon.rotation.z = Math.PI / 2;
+        ribbon.position.set(0, 0.89, -0.10);
+        group.add(ribbon);
+      } else if (relicType === 'jewelry') {
+        const diadem = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.022, 8, 24), goldMat);
+        diadem.rotation.x = Math.PI / 2 + 0.2;
+        diadem.position.set(0, 0.92, 0);
+        group.add(diadem);
+      } else {
+        // Astrolabe
+        const aBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.04, 14), bronzeMat);
+        aBase.position.y = 0.88;
+        group.add(aBase);
+        const ring1 = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.014, 8, 20), goldMat);
+        ring1.position.y = 1.06;
+        ring1.rotation.y = 0.4;
+        group.add(ring1);
+        const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.14, 0.012, 8, 20), goldMat);
+        ring2.position.y = 1.06;
+        ring2.rotation.x = 0.6;
+        group.add(ring2);
+      }
+
+      this.scene.add(group);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 0.80,
+        maxX: x + 0.80,
+        minZ: z - 0.55,
+        maxZ: z + 0.55,
+        minY: y0,
+        maxY: y0 + 1.25
+      });
+    }
+
+    createClassicalSculpturePedestal(x, y0, z, statueType, fl, hasStanchions = false) {
+      const group = new THREE.Group();
+      group.position.set(x, y0, z);
+
+      const marbleMat = new THREE.MeshStandardMaterial({ color: 0xedebe6, roughness: 0.35, metalness: 0.05 });
+      const darkBaseMat = new THREE.MeshStandardMaterial({ color: 0x1f2328, roughness: 0.50 });
+      const goldPlacardMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
+      const bronzeMat = new THREE.MeshStandardMaterial({ color: 0x5a4328, metalness: 0.78, roughness: 0.32 });
+      const velvetRopeMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
+
+      // Stepped Pedestal Base Plinth
+      const base1 = new THREE.Mesh(new THREE.BoxGeometry(0.92, 0.12, 0.92), darkBaseMat);
+      base1.position.y = 0.06;
+      group.add(base1);
+
+      // Fluted Marble Shaft Column
+      const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.36, 1.05, 16), marbleMat);
+      shaft.position.y = 0.12 + 0.525;
+      group.add(shaft);
+
+      // Carved Capital Crown
+      const cap = new THREE.Mesh(new THREE.BoxGeometry(0.84, 0.12, 0.84), darkBaseMat);
+      cap.position.y = 1.23;
+      group.add(cap);
+
+      // Descriptive brass museum placard on pedestal face
+      const placard = new THREE.Mesh(new THREE.BoxGeometry(0.36, 0.14, 0.02), goldPlacardMat);
+      placard.position.set(0, 0.75, 0.36);
+      group.add(placard);
+
+      // Sculpture atop pedestal
+      if (statueType === 'winged_victory') {
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.24, 0.65, 12), marbleMat);
+        torso.position.set(0, 1.29 + 0.325, 0);
+        group.add(torso);
+        [-0.30, 0.30].forEach((wx, wi) => {
+          const wing = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.55, 0.38), marbleMat);
+          wing.position.set(wx, 1.80, -0.12);
+          wing.rotation.z = (wi === 0 ? 0.35 : -0.35);
+          wing.rotation.y = (wi === 0 ? -0.25 : 0.25);
+          group.add(wing);
+        });
+      } else if (statueType === 'venus') {
+        const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.22, 0.72, 14), marbleMat);
+        torso.position.set(0, 1.29 + 0.36, 0);
+        group.add(torso);
+        const drape = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.28, 0.35, 14), marbleMat);
+        drape.position.set(0, 1.29 + 0.175, 0);
+        group.add(drape);
+      } else if (statueType === 'bronze_urn') {
+        const urn = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.16, 0.52, 14), bronzeMat);
+        urn.position.set(0, 1.29 + 0.26, 0);
+        group.add(urn);
+        const rim = new THREE.Mesh(new THREE.TorusGeometry(0.22, 0.035, 8, 16), bronzeMat);
+        rim.rotation.x = Math.PI / 2;
+        rim.position.set(0, 1.29 + 0.52, 0);
+        group.add(rim);
+      } else if (statueType === 'bronze_philosopher') {
+        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.24, 0.26), bronzeMat);
+        bustShoulders.position.set(0, 1.29 + 0.12, 0);
+        group.add(bustShoulders);
+        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.18, 14, 14), bronzeMat);
+        bustHead.scale.set(0.9, 1.2, 0.95);
+        bustHead.position.set(0, 1.29 + 0.36, 0);
+        group.add(bustHead);
+      } else {
+        // Bust Augustus with laurel wreath
+        const bustShoulders = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.26, 0.28), marbleMat);
+        bustShoulders.position.set(0, 1.29 + 0.13, 0);
+        group.add(bustShoulders);
+        const bustHead = new THREE.Mesh(new THREE.SphereGeometry(0.19, 16, 16), marbleMat);
+        bustHead.scale.set(0.9, 1.2, 0.95);
+        bustHead.position.set(0, 1.29 + 0.38, 0);
+        group.add(bustHead);
+        const laurel = new THREE.Mesh(new THREE.TorusGeometry(0.20, 0.022, 8, 20), goldPlacardMat);
+        laurel.rotation.x = Math.PI / 2 + 0.15;
+        laurel.position.set(0, 1.29 + 0.45, 0.02);
+        group.add(laurel);
+      }
+
+      this.scene.add(group);
+
+      this.colliders.push({
+        type: 'cylinder',
+        floor: fl,
+        x: x,
+        z: z,
+        radius: 0.48,
+        minY: y0,
+        maxY: y0 + 1.30
+      });
+
+      if (hasStanchions) {
+        const sOffsets = [[-0.85, -0.85], [0.85, -0.85], [0.85, 0.85], [-0.85, 0.85]];
+        sOffsets.forEach(([sox, soz]) => {
+          const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.14, 0.035, 12), goldPlacardMat);
+          sBase.position.set(x + sox, y0 + 0.02, z + soz);
+          this.scene.add(sBase);
+          const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.90, 8), goldPlacardMat);
+          sPost.position.set(x + sox, y0 + 0.47, z + soz);
+          this.scene.add(sPost);
+          const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), goldPlacardMat);
+          sBall.position.set(x + sox, y0 + 0.94, z + soz);
+          this.scene.add(sBall);
+        });
+
+        for (let r = 0; r < 4; r++) {
+          const p1 = sOffsets[r];
+          const p2 = sOffsets[(r + 1) % 4];
+          const midX = x + (p1[0] + p2[0]) / 2;
+          const midZ = z + (p1[1] + p2[1]) / 2;
+          const rLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+          const rAng = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]);
+          const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, rLen, 8), velvetRopeMat);
+          rope.rotation.x = Math.PI / 2;
+          rope.rotation.z = -rAng;
+          rope.position.set(midX, y0 + 0.86, midZ);
+          this.scene.add(rope);
+        }
+      }
+    }
+
+    createEgyptianSarcophagusDais(x, y0, z, fl) {
+      const daisGroup = new THREE.Group();
+      daisGroup.position.set(x, y0, z);
+
+      const basaltMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.40 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.22 });
+      const turquoiseMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.35 });
+      const velvetMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
+
+      // Stepped Basalt Dais (Tier 1 & Tier 2)
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.16, 2.6), basaltMat);
+      t1.position.y = 0.08;
+      daisGroup.add(t1);
+
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.16, 2.0), basaltMat);
+      t2.position.y = 0.24;
+      daisGroup.add(t2);
+
+      // Gilded Sarcophagus / Pharaoh Mask display
+      const sarc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.65, 0.95), goldMat);
+      sarc.position.y = 0.32 + 0.325;
+      daisGroup.add(sarc);
+
+      // Nemes royal headdress bands
+      const headdress = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.45, 0.98), turquoiseMat);
+      headdress.position.set(-0.75, 0.75, 0);
+      daisGroup.add(headdress);
+
+      // Golden Pharaoh Mask face
+      const maskFace = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), goldMat);
+      maskFace.scale.set(1.1, 0.8, 1.0);
+      maskFace.position.set(-0.72, 0.98, 0);
+      daisGroup.add(maskFace);
+
+      // Crossed Crook & Flail royal regalia
+      const regalia1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.62, 8), turquoiseMat);
+      regalia1.rotation.z = Math.PI / 4;
+      regalia1.position.set(-0.15, 0.99, 0);
+      daisGroup.add(regalia1);
+
+      const regalia2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.62, 8), turquoiseMat);
+      regalia2.rotation.z = -Math.PI / 4;
+      regalia2.position.set(-0.15, 0.99, 0);
+      daisGroup.add(regalia2);
+
+      this.scene.add(daisGroup);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 2.2,
+        maxX: x + 2.2,
+        minZ: z - 1.3,
+        maxZ: z + 1.3,
+        minY: y0,
+        maxY: y0 + 1.00
+      });
+
+      // 4 Brass Stanchions and velvet ropes enclosing the sarcophagus
+      const sOffsets = [[-2.4, -1.5], [2.4, -1.5], [2.4, 1.5], [-2.4, 1.5]];
+      sOffsets.forEach(([ox, oz]) => {
+        const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 12), goldMat);
+        sBase.position.set(x + ox, y0 + 0.02, z + oz);
+        this.scene.add(sBase);
+        const sPost = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.94, 8), goldMat);
+        sPost.position.set(x + ox, y0 + 0.49, z + oz);
+        this.scene.add(sPost);
+        const sBall = new THREE.Mesh(new THREE.SphereGeometry(0.045, 8, 8), goldMat);
+        sBall.position.set(x + ox, y0 + 0.98, z + oz);
+        this.scene.add(sBall);
+      });
+
+      for (let r = 0; r < 4; r++) {
+        const p1 = sOffsets[r];
+        const p2 = sOffsets[(r + 1) % 4];
+        const midX = x + (p1[0] + p2[0]) / 2;
+        const midZ = z + (p1[1] + p2[1]) / 2;
+        const rLen = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]);
+        const rAng = Math.atan2(p2[0] - p1[0], p2[1] - p1[1]);
+        const rope = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, rLen, 8), velvetMat);
+        rope.rotation.x = Math.PI / 2;
+        rope.rotation.z = -rAng;
+        rope.position.set(midX, y0 + 0.90, midZ);
+        this.scene.add(rope);
+      }
+    }
+
+    createKnightArmorDisplay(x, y0, z, fl) {
+      const armorGroup = new THREE.Group();
+      armorGroup.position.set(x, y0, z);
+
+      const stonePlinthMat = new THREE.MeshStandardMaterial({ color: 0x27272a, roughness: 0.60 });
+      const steelArmorMat = new THREE.MeshStandardMaterial({ color: 0xd1d5db, metalness: 0.92, roughness: 0.18 });
+      const goldTrimMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
+      const shieldMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.45 });
+
+      // Stepped Stone Display Plinth
+      const plinth = new THREE.Mesh(new THREE.BoxGeometry(1.6, 0.28, 1.4), stonePlinthMat);
+      plinth.position.y = 0.14;
+      armorGroup.add(plinth);
+
+      // Steel Sabatons (feet) & Greaves (shins)
+      [-0.18, 0.18].forEach(lx => {
+        const foot = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.08, 0.26), steelArmorMat);
+        foot.position.set(lx, 0.32, 0.06);
+        armorGroup.add(foot);
+
+        const greave = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.06, 0.44, 10), steelArmorMat);
+        greave.position.set(lx, 0.58, 0);
+        armorGroup.add(greave);
+
+        const poleyn = new THREE.Mesh(new THREE.SphereGeometry(0.075, 8, 8), goldTrimMat);
+        poleyn.position.set(lx, 0.80, 0.03);
+        armorGroup.add(poleyn);
+
+        const cuisse = new THREE.Mesh(new THREE.CylinderGeometry(0.085, 0.075, 0.42, 10), steelArmorMat);
+        cuisse.position.set(lx, 1.01, 0);
+        armorGroup.add(cuisse);
+      });
+
+      // Steel Breastplate Torso & Fauld
+      const breastplate = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.21, 0.58, 12), steelArmorMat);
+      breastplate.scale.set(1.2, 1.0, 0.85);
+      breastplate.position.set(0, 1.48, 0);
+      armorGroup.add(breastplate);
+
+      // Pauldrons (shoulder guards)
+      [-0.32, 0.32].forEach((px, pi) => {
+        const pauldron = new THREE.Mesh(new THREE.SphereGeometry(0.12, 10, 10), goldTrimMat);
+        pauldron.position.set(px, 1.72, 0);
+        armorGroup.add(pauldron);
+
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.055, 0.52, 10), steelArmorMat);
+        arm.position.set(px, 1.42, 0.06);
+        arm.rotation.x = -0.25;
+        armorGroup.add(arm);
+      });
+
+      // Close Helm Helmet & Visor
+      const helmet = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.15, 0.30, 12), steelArmorMat);
+      helmet.position.set(0, 1.94, 0);
+      armorGroup.add(helmet);
+
+      const visor = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.10, 0.12), goldTrimMat);
+      visor.position.set(0, 1.94, 0.10);
+      armorGroup.add(visor);
+
+      // Heraldic Heater Shield held on left arm
+      const shield = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.72, 0.46), shieldMat);
+      shield.position.set(-0.38, 1.35, 0.18);
+      shield.rotation.y = 0.35;
+      armorGroup.add(shield);
+
+      const shieldBoss = new THREE.Mesh(new THREE.SphereGeometry(0.06, 8, 8), goldTrimMat);
+      shieldBoss.position.set(-0.39, 1.35, 0.18);
+      armorGroup.add(shieldBoss);
+
+      // Steel Broadsword held in right hand pointing down
+      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 1.10, 0.08), steelArmorMat);
+      blade.position.set(0.38, 0.95, 0.15);
+      armorGroup.add(blade);
+
+      const crossguard = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.03, 0.28), goldTrimMat);
+      crossguard.position.set(0.38, 1.50, 0.15);
+      armorGroup.add(crossguard);
+
+      this.scene.add(armorGroup);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 0.85,
+        maxX: x + 0.85,
+        minZ: z - 0.75,
+        maxZ: z + 0.75,
+        minY: y0,
+        maxY: y0 + 1.50
+      });
+    }
+
+    createMuseumEasel(x, y0, z, fl, rotY = 0) {
+      const easelGroup = new THREE.Group();
+      easelGroup.position.set(x, y0, z);
+      easelGroup.rotation.y = rotY;
+
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.60 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 });
+      const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+
+      // Tripod Legs
+      [-0.24, 0.24].forEach((lx, li) => {
+        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.70, 8), woodMat);
+        leg.position.set(lx, 0.84, 0.05);
+        leg.rotation.z = (li === 0 ? 0.12 : -0.12);
+        easelGroup.add(leg);
+      });
+      const rearLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.70, 8), woodMat);
+      rearLeg.position.set(0, 0.84, -0.35);
+      rearLeg.rotation.x = -0.22;
+      easelGroup.add(rearLeg);
+
+      // Crossbar support
+      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.04, 0.06), woodMat);
+      bar.position.set(0, 0.95, 0.08);
+      easelGroup.add(bar);
+
+      // Framed Gallery Floorplan Board
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.035), goldMat);
+      frame.position.set(0, 1.35, 0.08);
+      easelGroup.add(frame);
+
+      const planPaper = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.01), paperMat);
+      planPaper.position.set(0, 1.35, 0.10);
+      easelGroup.add(planPaper);
+
+      this.scene.add(easelGroup);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 0.40,
+        maxX: x + 0.40,
+        minZ: z - 0.40,
+        maxZ: z + 0.40,
+        minY: y0,
+        maxY: y0 + 1.20
+      });
+    }
+
+    createPalletRackStorage(x, y0, z, fl) {
+      const rackGroup = new THREE.Group();
+      rackGroup.position.set(x, y0, z);
+
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0x1e3a8a, metalness: 0.85, roughness: 0.35 });
+      const beamMat = new THREE.MeshStandardMaterial({ color: 0xd97706, metalness: 0.75, roughness: 0.40 });
+      const crateMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.70 });
+      const cartonMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+
+      // 4 Industrial steel upright posts (height 3.2m)
+      [[-1.10, -0.45], [1.10, -0.45], [-1.10, 0.45], [1.10, 0.45]].forEach(([px, pz]) => {
+        const post = new THREE.Mesh(new THREE.BoxGeometry(0.06, 3.2, 0.06), steelMat);
+        post.position.set(px, 1.6, pz);
+        rackGroup.add(post);
+      });
+
+      // 3 Tiers of heavy orange load beams
+      [0.85, 1.85, 2.85].forEach(by => {
+        [-0.45, 0.45].forEach(bz => {
+          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.08, 0.04), beamMat);
+          beam.position.set(0, by, bz);
+          rackGroup.add(beam);
+        });
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(2.20, 0.02, 0.86), steelMat);
+        deck.position.set(0, by + 0.04, 0);
+        rackGroup.add(deck);
+      });
+
+      // Wooden storage crates on lower level
+      [-0.55, 0.55].forEach((cx, ci) => {
+        const crate = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.72, 0.70), crateMat);
+        crate.position.set(cx, 0.40, 0);
+        rackGroup.add(crate);
+      });
+
+      // Archival record cartons on mid level
+      [-0.75, -0.25, 0.25, 0.75].forEach(cx => {
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.55), cartonMat);
+        box.position.set(cx, 1.10, 0);
+        rackGroup.add(box);
+      });
+
+      this.scene.add(rackGroup);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: x - 1.20,
+        maxX: x + 1.20,
+        minZ: z - 0.55,
+        maxZ: z + 0.55,
+        minY: y0,
+        maxY: y0 + 2.80
+      });
+    }
+
+    populateFloorExhibits(fl, y0, mats) {
+      if (fl === 0) {
+        // =========================================================================
+        // FLOOR 0 ("1ST FLOOR"): GRAND CLASSICAL ANTIQUITIES & CONCOURSE
+        // =========================================================================
+
+        // 1. MAIN GALLERY (x: -16..-4, z: -18..28): 46m Grand Concourse
+        // 3 Grand Woven Persian Runner Rugs down the central axis
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.2, 14.0, 0x881337, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0x881337, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0x881337, 0xd4af37);
+
+        // Fluted Marble Pedestals with Classical Sculptures along gallery sides
+        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'winged_victory', fl, true);
+        this.createClassicalSculpturePedestal( -5.8, y0, -10.0, 'venus', fl, true);
+        this.createClassicalSculpturePedestal(-14.2, y0,   7.0, 'bust_augustus', fl, false);
+        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl, false);
+        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'bronze_philosopher', fl, false);
+        this.createClassicalSculpturePedestal( -5.8, y0,  21.0, 'bust_augustus', fl, false);
+
+        // Potted Kentia Palms flanking all archways
+        [
+          [-14.8, -17.0], [-5.2, -17.0],
+          [-14.8,  -3.8], [-5.2,  -3.8],
+          [-14.8,   4.2], [-5.2,   4.2],
+          [-14.8,  12.2], [-5.2,  12.2],
+          [-14.8,  25.5], [-5.2,  25.5]
+        ].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // Polished Mahogany Easel stands at North and South entrances
+        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0);
+        this.createMuseumEasel(-10.0, y0,  26.0, fl, Math.PI);
+
+        // Gold Roman Coin Hoard Vitrine Table in alcove at (-10.0, y0, -5.0)
+        this.createVitrineTable(-10.0, y0, -5.0, 'coins', fl);
+
+        // 2. WEST WING (x: -36..-16, z: -6..18): Classical Antiquities Salon
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
+        this.createVitrineTable(-31.0, y0,  0.0, 'amphora', fl);
+        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
+        this.createVitrineTable(-31.0, y0, 12.0, 'coins', fl);
+        this.createVitrineTable(-21.0, y0, 12.0, 'chalice', fl);
+
+        this.createClassicalSculpturePedestal(-34.0, y0, -4.5, 'bust_augustus', fl);
+        this.createClassicalSculpturePedestal(-18.0, y0, -4.5, 'bronze_philosopher', fl);
+        this.createClassicalSculpturePedestal(-34.0, y0, 16.5, 'venus', fl);
+
+        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // 3. NORTH GALLERY (x: -4..28, z: -40..-26): Egyptian Antiquities Pavilion
+        this.createEgyptianSarcophagusDais(12.0, y0, -33.0, fl);
+
+        // Limestone Obelisks flanking North Gallery entry
+        [4.0, 20.0].forEach(ox => {
+          const obeliskGroup = new THREE.Group();
+          obeliskGroup.position.set(ox, y0, -28.0);
+          const obB = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.35, 0.95), mats.wallConcrete);
+          obB.position.y = 0.175;
+          obeliskGroup.add(obB);
+          const obS = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.40, 2.6, 4), mats.wallPlasterCool);
+          obS.rotation.y = Math.PI / 4;
+          obS.position.y = 0.35 + 1.3;
+          obeliskGroup.add(obS);
+          const obP = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.42, 4), mats.wallPlasterCool);
+          obP.rotation.y = Math.PI / 4;
+          obP.position.y = 0.35 + 2.6 + 0.21;
+          obeliskGroup.add(obP);
+          this.scene.add(obeliskGroup);
+
+          this.colliders.push({
+            type: 'box',
+            floor: fl,
+            minX: ox - 0.50,
+            maxX: ox + 0.50,
+            minZ: -28.0 - 0.50,
+            maxZ: -28.0 + 0.50,
+            minY: y0,
+            maxY: y0 + 1.20
+          });
+        });
+
+        this.createVitrineTable(2.0, y0, -33.0, 'scroll', fl);
+        this.createVitrineTable(22.0, y0, -33.0, 'jewelry', fl);
+
+        [[1.0, -27.5], [23.0, -27.5], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // 4. SOUTH-EAST WING (x: 4..28, z: 18..28): Rotunda Concourse
+        this.createGalleryRunnerRug(16.0, y0, 23.0, 16.0, 3.2, 0x881337, 0xd4af37);
+        this.createClassicalSculpturePedestal(10.0, y0, 21.0, 'bust_augustus', fl);
+        this.createClassicalSculpturePedestal(22.0, y0, 21.0, 'venus', fl);
+        this.createClassicalSculpturePedestal(10.0, y0, 25.0, 'winged_victory', fl);
+
+        [[12.0, 27.5], [26.0, 27.5]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+      } else if (fl === 1) {
+        // =========================================================================
+        // FLOOR 1 ("2ND FLOOR"): THE GREAT LIBRARY & CARTOGRAPHY
+        // =========================================================================
+
+        // Main Gallery Runner Rugs in Royal Navy & Gold
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x1e3a8a, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x1e3a8a, 0xd4af37);
+
+        // Map & Astrolabe Vitrine Tables
+        this.createVitrineTable(-14.2, y0, -10.0, 'astrolabe', fl);
+        this.createVitrineTable( -5.8, y0,   7.0, 'scroll', fl);
+        this.createVitrineTable(-14.2, y0,  21.0, 'astrolabe', fl);
+
+        // Potted Ficus Trees
+        [
+          [-14.8, -17.0], [-5.2, -17.0],
+          [-14.8,  -3.8], [-5.2,  -3.8],
+          [-14.8,   4.2], [-5.2,   4.2],
+          [-14.8,  12.2], [-5.2,  12.2],
+          [-14.8,  25.5], [-5.2,  25.5]
+        ].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // West Wing Folio Reading Room (Globe, reading vitrines, rugs)
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x1e3a8a, 0xd4af37);
+        this.createVitrineTable(-31.0, y0,  0.0, 'scroll', fl);
+        this.createVitrineTable(-21.0, y0,  0.0, 'astrolabe', fl);
+        this.createVitrineTable(-31.0, y0, 12.0, 'scroll', fl);
+        this.createVitrineTable(-21.0, y0, 12.0, 'astrolabe', fl);
+
+        // North Gallery Map Archives
+        this.createVitrineTable(6.0, y0, -33.0, 'scroll', fl);
+        this.createVitrineTable(18.0, y0, -33.0, 'astrolabe', fl);
+        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+      } else if (fl === 2) {
+        // =========================================================================
+        // FLOOR 2 ("3RD FLOOR"): SURREALISM SALON & RENAISSANCE ARMORY
+        // =========================================================================
+
+        // Emerald Damask Runner Rugs down Main Gallery
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x064e3b, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x064e3b, 0xd4af37);
+
+        this.createClassicalSculpturePedestal(-14.2, y0, -10.0, 'bronze_philosopher', fl);
+        this.createClassicalSculpturePedestal( -5.8, y0,   7.0, 'bronze_urn', fl);
+        this.createClassicalSculpturePedestal(-14.2, y0,  21.0, 'winged_victory', fl);
+
+        [
+          [-14.8, -17.0], [-5.2, -17.0],
+          [-14.8,  -3.8], [-5.2,  -3.8],
+          [-14.8,   4.2], [-5.2,   4.2],
+          [-14.8,  12.2], [-5.2,  12.2],
+          [-14.8,  25.5], [-5.2,  25.5]
+        ].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // West Wing: FULL STANDING SUIT OF KNIGHT PLATE ARMOR!
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x064e3b, 0xd4af37);
+        this.createKnightArmorDisplay(-26.0, y0, 6.0, fl);
+
+        this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
+        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
+        this.createVitrineTable(-31.0, y0, 12.0, 'chalice', fl);
+        this.createVitrineTable(-21.0, y0, 12.0, 'jewelry', fl);
+
+        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // North Gallery Wunderkammer
+        this.createVitrineTable(6.0, y0, -33.0, 'astrolabe', fl);
+        this.createVitrineTable(18.0, y0, -33.0, 'chalice', fl);
+        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+      } else {
+        // =========================================================================
+        // FLOOR 3 ("4TH FLOOR"): RESTRICTED RELIQUARY VAULT & ARCHIVAL PALLETS
+        // =========================================================================
+
+        // Heavy Industrial Pallet Racks flanking East Hall (Milk Crate Challenge Arena)
+        this.createPalletRackStorage(10.0, y0, -21.0, fl);
+        this.createPalletRackStorage(20.0, y0, -21.0, fl);
+        this.createPalletRackStorage(10.0, y0,   1.0, fl);
+        this.createPalletRackStorage(20.0, y0,   1.0, fl);
+
+        // Vault Hallway Storage Racks & Shipping Crates in Main Gallery
+        this.createPalletRackStorage(-14.2, y0, -10.0, fl);
+        this.createPalletRackStorage( -5.8, y0,   7.0, fl);
+        this.createPalletRackStorage(-14.2, y0,  21.0, fl);
+
+        // West Wing Quarantined Vault Racks
+        this.createPalletRackStorage(-31.0, y0,  0.0, fl);
+        this.createPalletRackStorage(-21.0, y0,  0.0, fl);
+        this.createPalletRackStorage(-31.0, y0, 12.0, fl);
+        this.createPalletRackStorage(-21.0, y0, 12.0, fl);
+
+        // North Gallery Evidence Vault
+        this.createPalletRackStorage(6.0, y0, -33.0, fl);
+        this.createPalletRackStorage(18.0, y0, -33.0, fl);
+      }
     }
 
     createExitDoors(x, y, z, mats) {
@@ -10304,6 +11316,7 @@
       for (let iter = 0; iter < 3; iter++) {
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
+          if (c.disabled) continue;
           if (c.floor !== 'all' && c.floor !== floorIdx) continue;
 
           // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
