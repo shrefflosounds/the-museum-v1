@@ -4066,6 +4066,51 @@
       const woodMat = mats.mahogany;
       const brassMat = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
 
+      // Out of order stall door poster sign texture
+      const stallSignTex = this.texLoader.load('assets/textures/stall_sign.jpg', (t) => {
+        t.colorSpace = THREE.SRGBColorSpace;
+      });
+      const stallSignMat = new THREE.MeshStandardMaterial({
+        map: stallSignTex,
+        roughness: 0.45,
+        metalness: 0.05
+      });
+
+      // OSHA-grade Black & Yellow diagonal hazard caution tape
+      let hazardTapeTex;
+      {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 64;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#facc15';
+        ctx.fillRect(0, 0, 256, 64);
+        ctx.fillStyle = '#111827';
+        const stripeW = 32;
+        for (let x = -64; x < 320; x += stripeW * 2) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x + stripeW, 0);
+          ctx.lineTo(x + stripeW - 64, 64);
+          ctx.lineTo(x - 64, 64);
+          ctx.closePath();
+          ctx.fill();
+        }
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 256, 3);
+        ctx.fillRect(0, 61, 256, 3);
+        hazardTapeTex = new THREE.CanvasTexture(canvas);
+        hazardTapeTex.wrapS = THREE.RepeatWrapping;
+        hazardTapeTex.wrapT = THREE.ClampToEdgeWrapping;
+        hazardTapeTex.colorSpace = THREE.SRGBColorSpace;
+      }
+      const hazardTapeMat = new THREE.MeshStandardMaterial({
+        map: hazardTapeTex,
+        roughness: 0.35,
+        metalness: 0.1,
+        side: THREE.DoubleSide
+      });
+
       // Commercial sliding glass door materials
       const slidingGlassMat = new THREE.MeshPhongMaterial({
         color: 0xc8e6f0,
@@ -4523,7 +4568,7 @@
         pil1.position.set(-1.80, y0 + 1.10, zNorth + 0.15);
         this.scene.add(pil1);
 
-        // Stall 1 Door (width 0.90, swung slightly ajar in one stall)
+        // Stall 1 Door (width 0.90, closed flush and shut down)
         const door1Group = new THREE.Group();
         door1Group.position.set(-1.80, y0, zNorth + 0.30);
         const d1Mesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.85, 0.90), stallMat);
@@ -4532,7 +4577,15 @@
         const latch1 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.04), chromeMat);
         latch1.position.set(0, 1.05, 0.85);
         door1Group.add(latch1);
-        door1Group.rotation.y = -0.32;
+
+        // Out-of-order poster sign on Door 1
+        const signGeom = new THREE.PlaneGeometry(0.38, 0.57);
+        const sign1 = new THREE.Mesh(signGeom, stallSignMat);
+        sign1.position.set(0.018, 1.25, 0.45);
+        sign1.rotation.y = Math.PI / 2;
+        door1Group.add(sign1);
+
+        door1Group.rotation.y = 0;
         this.scene.add(door1Group);
 
         // Center Pilaster (zNorth + 1.20 to dividerZ + 0.60, covers the middle gap)
@@ -4541,7 +4594,7 @@
         pilMid.position.set(-1.80, y0 + 1.10, dividerZ);
         this.scene.add(pilMid);
 
-        // Stall 2 Door (width 0.90, closed flush)
+        // Stall 2 Door (width 0.90, closed flush and shut down)
         const door2Group = new THREE.Group();
         door2Group.position.set(-1.80, y0, zSouth - 1.20);
         const d2Mesh = new THREE.Mesh(new THREE.BoxGeometry(0.03, 1.85, 0.90), stallMat);
@@ -4550,12 +4603,81 @@
         const latch2 = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 0.04), chromeMat);
         latch2.position.set(0, 1.05, 0.85);
         door2Group.add(latch2);
+
+        // Out-of-order poster sign on Door 2
+        const sign2 = new THREE.Mesh(signGeom, stallSignMat);
+        sign2.position.set(0.018, 1.25, 0.45);
+        sign2.rotation.y = Math.PI / 2;
+        door2Group.add(sign2);
+
+        door2Group.rotation.y = 0;
         this.scene.add(door2Group);
 
         // South Pilaster
         const pil2 = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.0, 0.30), stallMat);
         pil2.position.set(-1.80, y0 + 1.10, zSouth - 0.15);
         this.scene.add(pil2);
+
+        // Black and Yellow OSHA Hazard Caution Tape across both shut-down stall doors
+        const addTapeStrip = (y1, z1, y2, z2, tapeW = 0.08) => {
+          const dy = y2 - y1;
+          const dz = z2 - z1;
+          const len = Math.hypot(dy, dz);
+          if (len < 0.001) return;
+          const ny = -dz / len * (tapeW / 2);
+          const nz = dy / len * (tapeW / 2);
+
+          const geom = new THREE.BufferGeometry();
+          const posX = -1.772; // Rests cleanly 2.8cm in front of door surface
+          const positions = new Float32Array([
+            posX, y1 + ny, z1 + nz,
+            posX, y1 - ny, z1 - nz,
+            posX, y2 - ny, z2 - nz,
+
+            posX, y1 + ny, z1 + nz,
+            posX, y2 - ny, z2 - nz,
+            posX, y2 + ny, z2 + nz,
+          ]);
+          const uMax = len * 5.0;
+          const uvs = new Float32Array([
+            0, 1,
+            0, 0,
+            uMax, 0,
+
+            0, 1,
+            uMax, 0,
+            uMax, 1,
+          ]);
+          const normals = new Float32Array([
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+            1, 0, 0,
+          ]);
+          geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+          geom.setAttribute('uv', new THREE.BufferAttribute(uvs, 2));
+          geom.setAttribute('normal', new THREE.BufferAttribute(normals, 3));
+          const tapeMesh = new THREE.Mesh(geom, hazardTapeMat);
+          this.scene.add(tapeMesh);
+        };
+
+        // Stall 1 Caution Tape (spans across North pilaster, Door 1, and Center pilaster)
+        const s1_zA = zNorth + 0.15;
+        const s1_zB = zNorth + 1.35;
+        addTapeStrip(y0 + 1.58, s1_zA, y0 + 0.68, s1_zB);
+        addTapeStrip(y0 + 0.68, s1_zA, y0 + 1.58, s1_zB);
+        addTapeStrip(y0 + 1.05, s1_zA - 0.05, y0 + 1.05, s1_zB + 0.05);
+        addTapeStrip(y0 + 1.40, s1_zA - 0.05, y0 + 1.40, s1_zB + 0.05);
+
+        // Stall 2 Caution Tape (spans across Center pilaster, Door 2, and South pilaster)
+        const s2_zA = zSouth - 1.35;
+        const s2_zB = zSouth - 0.15;
+        addTapeStrip(y0 + 1.58, s2_zA, y0 + 0.68, s2_zB);
+        addTapeStrip(y0 + 0.68, s2_zA, y0 + 1.58, s2_zB);
+        addTapeStrip(y0 + 1.05, s2_zA - 0.05, y0 + 1.05, s2_zB + 0.05);
+        addTapeStrip(y0 + 1.40, s2_zA - 0.05, y0 + 1.40, s2_zB + 0.05);
 
         // Mount toilets flush against back wall: tank against West perimeter wall (x = -3.76), facing East into stall
         buildToilet(-3.45, toiletZ1, Math.PI / 2);
@@ -4917,6 +5039,17 @@
       const feltMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
       const inkGlassMat = new THREE.MeshPhongMaterial({ color: 0x0f172a, specular: 0xffffff, shininess: 100 });
 
+      // Modern pen & pencil cup materials
+      const penCupMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5, metalness: 0.3 });
+      const cupInnerMat = new THREE.MeshBasicMaterial({ color: 0x0f172a });
+      const pencilYellowMat = new THREE.MeshLambertMaterial({ color: 0xeab308 });
+      const pencilFerruleMat = new THREE.MeshStandardMaterial({ color: 0xc0c0c0, metalness: 0.85, roughness: 0.3 });
+      const eraserMat = new THREE.MeshLambertMaterial({ color: 0xf472b6 });
+      const penBlueMat = new THREE.MeshLambertMaterial({ color: 0x1d4ed8 });
+      const penRedMat = new THREE.MeshLambertMaterial({ color: 0xdc2626 });
+      const penBlackMat = new THREE.MeshLambertMaterial({ color: 0x111827 });
+      const penSilverMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, metalness: 0.8, roughness: 0.25 });
+
       // --- REUSABLE 3D ASSET BUILDERS ---
 
       // 1. AUTHENTIC PERIOD BANKER'S LAMP
@@ -5042,17 +5175,13 @@
         seatFront.rotation.z = Math.PI / 2;
         chairGroup.add(seatFront);
 
-        // 4 Tapered turned wooden legs with brass ferrule glides
+        // 4 Tapered turned wooden legs extending clean straight to the floor
         [[-0.19, 0.18], [0.19, 0.18], [-0.17, -0.17], [0.17, -0.17]].forEach(([lx, lz], i) => {
           const isRear = i >= 2;
           const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.012, 0.42, 10), chairWoodMat);
           leg.position.set(lx, 0.21, lz);
           if (isRear) leg.rotation.x = -0.06;
           chairGroup.add(leg);
-
-          const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.013, 0.014, 0.016, 10), polishedBrassMat);
-          ferrule.position.set(lx, 0.008, lz + (isRear ? -0.012 : 0));
-          chairGroup.add(ferrule);
         });
 
         // H-stretcher system
@@ -5275,48 +5404,79 @@
         return bookGroup;
       };
 
-      const buildDeskAccessories = (x, y, z) => {
-        const accGroup = new THREE.Group();
-        accGroup.position.set(x, y, z);
+      // 4. MODERN CUP OF PENS & PENCILS
+      // Modern desk cup filled with classic yellow #2 pencils with pink erasers,
+      // and modern blue, red, black, and silver ballpoint/gel pens
+      const buildPenAndPencilCup = (x, y, z) => {
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
 
-        // Vintage brass double inkstand with crystal inkwells
-        const inkBase = new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.02, 0.12), polishedBrassMat);
-        inkBase.position.y = 0.01;
-        accGroup.add(inkBase);
+        // Cylindrical pen cup (radius 0.042, height 0.10)
+        const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.038, 0.10, 20), penCupMat);
+        cup.position.y = 0.05;
+        group.add(cup);
 
-        [-0.05, 0.05].forEach((ix) => {
-          const well = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.04, 12), inkGlassMat);
-          well.position.set(ix, 0.035, 0);
-          accGroup.add(well);
+        const cupRim = new THREE.Mesh(new THREE.CylinderGeometry(0.044, 0.044, 0.008, 20), penCupMat);
+        cupRim.position.y = 0.098;
+        group.add(cupRim);
 
-          const wellCap = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.01, 12), polishedBrassMat);
-          wellCap.position.set(ix, 0.058, 0);
-          accGroup.add(wellCap);
-        });
+        const interior = new THREE.Mesh(new THREE.CylinderGeometry(0.039, 0.039, 0.005, 18), cupInnerMat);
+        interior.position.y = 0.093;
+        group.add(interior);
 
-        // Feather quill / dipping pen in pen rest
-        const quill = new THREE.Mesh(new THREE.CylinderGeometry(0.003, 0.001, 0.22, 6), paperMat);
-        quill.position.set(0.05, 0.08, -0.02);
-        quill.rotation.z = -0.35;
-        accGroup.add(quill);
+        // Helper: add pencil
+        const addPencil = (px, pz, rotX, rotZ) => {
+          const pGroup = new THREE.Group();
+          pGroup.position.set(px, 0.04, pz);
+          pGroup.rotation.x = rotX;
+          pGroup.rotation.z = rotZ;
 
-        // Antique brass magnifying glass
-        const lensRim = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.008, 20), polishedBrassMat);
-        lensRim.position.set(0.18, 0.01, 0.08);
-        lensRim.rotation.x = Math.PI / 2;
-        accGroup.add(lensRim);
+          const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.12, 6), pencilYellowMat);
+          shaft.position.y = 0.07;
+          pGroup.add(shaft);
 
-        const lensGlass = new THREE.Mesh(new THREE.CylinderGeometry(0.046, 0.046, 0.004, 20), opalGlassMat);
-        lensGlass.position.set(0.18, 0.01, 0.08);
-        lensGlass.rotation.x = Math.PI / 2;
-        accGroup.add(lensGlass);
+          const ferrule = new THREE.Mesh(new THREE.CylinderGeometry(0.0042, 0.0042, 0.012, 10), pencilFerruleMat);
+          ferrule.position.y = 0.134;
+          pGroup.add(ferrule);
 
-        const lensHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.006, 0.11, 10), darkWoodMat);
-        lensHandle.position.set(0.25, 0.01, 0.12);
-        lensHandle.rotation.z = -Math.PI / 3;
-        accGroup.add(lensHandle);
+          const eraser = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.004, 0.008, 10), eraserMat);
+          eraser.position.y = 0.142;
+          pGroup.add(eraser);
 
-        return accGroup;
+          group.add(pGroup);
+        };
+
+        // Helper: add pen
+        const addPen = (px, pz, rotX, rotZ, bodyMat, capMat) => {
+          const penGroup = new THREE.Group();
+          penGroup.position.set(px, 0.04, pz);
+          penGroup.rotation.x = rotX;
+          penGroup.rotation.z = rotZ;
+
+          const barrel = new THREE.Mesh(new THREE.CylinderGeometry(0.0045, 0.0042, 0.125, 12), bodyMat);
+          barrel.position.y = 0.072;
+          penGroup.add(barrel);
+
+          const cap = new THREE.Mesh(new THREE.CylinderGeometry(0.0046, 0.0046, 0.020, 12), capMat || bodyMat);
+          cap.position.y = 0.138;
+          penGroup.add(cap);
+
+          const clip = new THREE.Mesh(new THREE.BoxGeometry(0.0015, 0.035, 0.003), pencilFerruleMat);
+          clip.position.set(0.0055, 0.125, 0);
+          penGroup.add(clip);
+
+          group.add(penGroup);
+        };
+
+        // Populate with modern pens and pencils
+        addPencil(-0.012, -0.008, -0.12, -0.10);
+        addPencil(0.014, 0.010, 0.14, 0.08);
+        addPen(0.016, -0.012, -0.06, 0.16, penBlueMat, penBlueMat);
+        addPen(-0.015, 0.014, 0.15, -0.12, penRedMat, penRedMat);
+        addPen(0.002, -0.016, -0.16, 0.04, penBlackMat, pencilFerruleMat);
+        addPen(-0.018, 0.002, 0.04, -0.18, penSilverMat, penSilverMat);
+
+        return group;
       };
 
       if (fl === 0 || fl === 2) {
@@ -5581,9 +5741,9 @@
         const deskLamp = buildBankersLamp(0.85, 0.78, -0.15, -Math.PI / 2 + 0.2, true);
         deskGroup.add(deskLamp);
 
-        // Desk accessories: inkstand, quill, and magnifying glass
-        const deskAcc = buildDeskAccessories(-0.75, 0.78, 0.10);
-        deskGroup.add(deskAcc);
+        // Modern cup of pens and pencils on side of desk, clear of blotter
+        const penCup = buildPenAndPencilCup(-0.90, 0.78, -0.32);
+        deskGroup.add(penCup);
 
         // Stack of vintage leather-bound volumes
         const bookStack = buildBookStack(0.82, 0.78, 0.25, 0.15);
@@ -5661,28 +5821,28 @@
           deskGroup.add(leg);
         });
 
-        // Open historic ledger book with marbled edges
-        const ledger = buildOpenBook(-0.35, 0.80, 0.05, 0.08);
+        // Open historic ledger book with marbled edges (centered on working area)
+        const ledger = buildOpenBook(-0.15, 0.80, 0.05, 0.08);
         deskGroup.add(ledger);
 
-        // Rolled antique parchment map scroll with red ribbon tie
+        // Rolled antique parchment map scroll with red ribbon tie (placed on far left side of desk)
         const scroll = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.65, 12), paperMat);
-        scroll.position.set(0.45, 0.84, -0.25);
-        scroll.rotation.z = Math.PI / 2;
+        scroll.position.set(-0.75, 0.84, -0.25);
+        scroll.rotation.x = Math.PI / 2;
         deskGroup.add(scroll);
 
         const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.04, 12), bookRedMat);
-        ribbon.position.set(0.45, 0.84, -0.25);
-        ribbon.rotation.z = Math.PI / 2;
+        ribbon.position.set(-0.75, 0.84, -0.25);
+        ribbon.rotation.x = Math.PI / 2;
         deskGroup.add(ribbon);
 
-        // Authentic brass Banker's Lamp
-        const bLamp = buildBankersLamp(0.70, 0.80, 0.35, Math.PI / 2, true);
+        // Authentic brass Banker's Lamp on front-right of desk
+        const bLamp = buildBankersLamp(0.75, 0.80, 0.32, Math.PI / 2, true);
         deskGroup.add(bLamp);
 
-        // Magnifying glass on desk
-        const deskAcc = buildDeskAccessories(0.10, 0.80, -0.20);
-        deskGroup.add(deskAcc);
+        // Modern cup of pens and pencils on rear-right of desk (clear of scroll, lamp, and ledger)
+        const penCup = buildPenAndPencilCup(0.75, 0.80, -0.25);
+        deskGroup.add(penCup);
 
         this.scene.add(deskGroup);
 
