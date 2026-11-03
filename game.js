@@ -6525,7 +6525,7 @@
     }
 
     tryPickupCrate() {
-      if (this.playerFloor !== 3 || !this.physicsCrates || this.physicsCrates.length === 0) return false;
+      if (!this.physicsCrates || this.physicsCrates.length === 0) return false;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
@@ -6582,7 +6582,6 @@
     dropHeldCrate() {
       if (!this.heldCrate) return;
       const crate = this.heldCrate;
-      const y0 = 3 * CONFIG.FLOOR_HEIGHT;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
@@ -6608,8 +6607,6 @@
     throwHeldCrate() {
       if (!this.heldCrate) return;
       const crate = this.heldCrate;
-      const y0 = 3 * CONFIG.FLOOR_HEIGHT;
-      const ceilY = y0 + CONFIG.FLOOR_HEIGHT - 0.12;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
@@ -6619,9 +6616,6 @@
       crate.isHeld = false;
       crate.collider.disabled = false;
       crate.isCollapsed = true;
-
-      // Safe clamp below ceiling before launching
-      crate.y = Math.min(crate.y, ceilY - crate.h - 0.08);
 
       // Half-Life 2 style punchy throw impulse
       crate.vx = fwd.x * 11.0;
@@ -6654,31 +6648,25 @@
     }
 
     updatePhysicsCrates(delta) {
-      if (this.playerFloor !== 3 || !this.physicsCrates || this.physicsCrates.length === 0) return;
+      if (!this.physicsCrates || this.physicsCrates.length === 0) return;
 
-      const y0 = 3 * CONFIG.FLOOR_HEIGHT; // Floor 3 elevation (15.60m)
-      const ceilY = y0 + CONFIG.FLOOR_HEIGHT - 0.12;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const cosYaw = Math.cos(this.playerYaw);
       const sinYaw = Math.sin(this.playerYaw);
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
 
-      // 1. Handle held crate position and viewmodel
+      // 1. Handle held crate position and viewmodel anywhere on map
       if (this.heldCrate) {
         const hc = this.heldCrate;
         const targetX = this.camera.position.x + fwd.x * 1.45;
         const targetY = this.camera.position.y + fwd.y * 1.45 - 0.22;
         const targetZ = this.camera.position.z + fwd.z * 1.45;
 
-        // Keep held crate clamped safely within room boundaries
-        const clampedX = Math.max(6.5, Math.min(23.5, targetX));
-        const clampedZ = Math.max(-23.5, Math.min(3.5, targetZ));
-        const clampedY = Math.max(y0 + 0.1, Math.min(ceilY - hc.h - 0.05, targetY));
-
-        hc.x = THREE.MathUtils.lerp(hc.x, clampedX, Math.min(1, delta * 22));
-        hc.y = THREE.MathUtils.lerp(hc.y, clampedY, Math.min(1, delta * 22));
-        hc.z = THREE.MathUtils.lerp(hc.z, clampedZ, Math.min(1, delta * 22));
+        // Follow player smoothly anywhere in the museum without single-room boundaries
+        hc.x = THREE.MathUtils.lerp(hc.x, targetX, Math.min(1, delta * 22));
+        hc.y = THREE.MathUtils.lerp(hc.y, targetY, Math.min(1, delta * 22));
+        hc.z = THREE.MathUtils.lerp(hc.z, targetZ, Math.min(1, delta * 22));
         hc.rotY = THREE.MathUtils.lerp(hc.rotY, this.playerYaw, Math.min(1, delta * 16));
         hc.rotX = THREE.MathUtils.lerp(hc.rotX, 0, Math.min(1, delta * 16));
         hc.rotZ = THREE.MathUtils.lerp(hc.rotZ, 0, Math.min(1, delta * 16));
@@ -6741,7 +6729,7 @@
         const c = this.physicsCrates[i];
         if (c.isHeld) continue;
 
-        // Verify player is on the same floor elevation and pushing against the crate side
+        // Verify player is on the same vertical elevation and pushing against crate side
         if (footY < c.y + c.h - 0.06 && footY + 1.8 > c.y) {
           const pdx = c.x - this.playerPos.x;
           const pdz = c.z - this.playerPos.z;
@@ -6780,6 +6768,11 @@
         if (c.isHeld) continue;
 
         if (c.isCollapsed) {
+          // Dynamic floor elevation based on crate position anywhere in museum
+          const cFloor = Math.max(0, Math.min(3, Math.floor((c.y + 0.2) / CONFIG.FLOOR_HEIGHT)));
+          const cGroundBase = cFloor * CONFIG.FLOOR_HEIGHT;
+          const cCeilY = cGroundBase + CONFIG.FLOOR_HEIGHT - 0.12;
+
           // Realistic gravity acceleration
           c.vy -= 15.0 * delta;
           c.x += c.vx * delta;
@@ -6791,8 +6784,8 @@
           c.rotZ += c.angVz * delta;
 
           // Ceiling bounce
-          if (c.y + c.h >= ceilY) {
-            c.y = ceilY - c.h;
+          if (c.y + c.h >= cCeilY && cCeilY > 0) {
+            c.y = cCeilY - c.h;
             c.vy = -Math.abs(c.vy) * 0.45;
             c.angVx += (Math.random() - 0.5) * 6.0;
             c.angVz += (Math.random() - 0.5) * 6.0;
@@ -6803,7 +6796,7 @@
           const drop = (c.h / 2) * Math.abs(Math.cos(c.rotX) * Math.cos(c.rotZ)) +
                        (c.d / 2) * Math.abs(Math.sin(c.rotX)) +
                        (c.w / 2) * Math.abs(Math.sin(c.rotZ));
-          const groundY = y0 + drop - c.h / 2;
+          const groundY = cGroundBase + drop - c.h / 2;
 
           if (c.y <= groundY) {
             c.y = groundY;
@@ -6830,11 +6823,11 @@
             }
           }
 
-          // Room boundary wall bounce
-          if (c.x < 6.2) { c.x = 6.2; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = Math.abs(c.vx) * 0.5; }
-          if (c.x > 23.8) { c.x = 23.8; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = -Math.abs(c.vx) * 0.5; }
-          if (c.z < -23.8) { c.z = -23.8; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = Math.abs(c.vz) * 0.5; }
-          if (c.z > 3.8) { c.z = 3.8; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = -Math.abs(c.vz) * 0.5; }
+          // Museum outer perimeter boundary containment
+          if (c.x < -36.5) { c.x = -36.5; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = Math.abs(c.vx) * 0.5; }
+          if (c.x > 32.5) { c.x = 32.5; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = -Math.abs(c.vx) * 0.5; }
+          if (c.z < -42.5) { c.z = -42.5; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = Math.abs(c.vz) * 0.5; }
+          if (c.z > 37.5) { c.z = 37.5; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = -Math.abs(c.vz) * 0.5; }
         } else {
           // Stable resting in stack: spring restore minor tilts
           c.y = c.baseY;
@@ -6848,6 +6841,7 @@
         c.mesh.rotation.set(c.rotX, c.rotY, c.rotZ);
 
         c.collider.disabled = false;
+        c.collider.floor = Math.max(0, Math.min(3, Math.floor((c.y + 0.2) / CONFIG.FLOOR_HEIGHT)));
         c.collider.minX = c.x - c.w / 2;
         c.collider.maxX = c.x + c.w / 2;
         c.collider.minZ = c.z - c.d / 2;
@@ -7309,6 +7303,8 @@
 
       const plantGroup = new THREE.Group();
       plantGroup.position.set(x, y0, z);
+      // Scaled 40% smaller (0.60x) per curator feedback
+      plantGroup.scale.set(0.60, 0.60, 0.60);
 
       const potMat = (fl === 0 || fl === 2) ? mats.potTerracotta : mats.potGranite;
       plantGroup.add(new THREE.Mesh(geoms.pot, potMat));
@@ -7323,9 +7319,9 @@
         floor: fl,
         x: x,
         z: z,
-        radius: 0.36,
+        radius: 0.36 * 0.60,
         minY: y0,
-        maxY: y0 + 0.60
+        maxY: y0 + 0.60 * 0.60
       });
     }
 
@@ -8085,13 +8081,13 @@
       t2.position.y = 0.24;
       daisGroup.add(t2);
 
-      // Gilded Sarcophagus / Pharaoh Mask display
+      // Gilded Sarcophagus / Pharaoh Mask display (all uniform gold)
       const sarc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.65, 0.95), goldMat);
       sarc.position.y = 0.32 + 0.325;
       daisGroup.add(sarc);
 
-      // Nemes royal headdress bands
-      const headdress = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.45, 0.98), turquoiseMat);
+      // Nemes royal headdress bands (all gold per curator request)
+      const headdress = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.45, 0.98), goldMat);
       headdress.position.set(-0.75, 0.75, 0);
       daisGroup.add(headdress);
 
@@ -8101,16 +8097,7 @@
       maskFace.position.set(-0.72, 0.98, 0);
       daisGroup.add(maskFace);
 
-      // Crossed Crook & Flail royal regalia
-      const regalia1 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.62, 8), turquoiseMat);
-      regalia1.rotation.z = Math.PI / 4;
-      regalia1.position.set(-0.15, 0.99, 0);
-      daisGroup.add(regalia1);
-
-      const regalia2 = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.62, 8), turquoiseMat);
-      regalia2.rotation.z = -Math.PI / 4;
-      regalia2.position.set(-0.15, 0.99, 0);
-      daisGroup.add(regalia2);
+      // (Crossed Crook & Flail royal regalia sticks removed per curator request)
 
       this.scene.add(daisGroup);
 
@@ -8312,29 +8299,30 @@
         rackGroup.add(post);
       });
 
-      // 3 Tiers of heavy orange load beams
+      // 3 Tiers of heavy orange load beams (mounted cleanly to front/back face of uprights without clipping)
       [0.85, 1.85, 2.85].forEach(by => {
-        [-0.45, 0.45].forEach(bz => {
+        [-0.45, 0.45].forEach(pz => {
+          const bz = pz > 0 ? (pz + 0.03 + 0.02) : (pz - 0.03 - 0.02);
           const beam = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.08, 0.04), beamMat);
           beam.position.set(0, by, bz);
           rackGroup.add(beam);
         });
-        const deck = new THREE.Mesh(new THREE.BoxGeometry(2.20, 0.02, 0.86), steelMat);
+        const deck = new THREE.Mesh(new THREE.BoxGeometry(2.14, 0.02, 0.86), steelMat);
         deck.position.set(0, by + 0.04, 0);
         rackGroup.add(deck);
       });
 
-      // Wooden storage crates on lower level
-      [-0.55, 0.55].forEach((cx, ci) => {
-        const crate = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.72, 0.70), crateMat);
-        crate.position.set(cx, 0.40, 0);
+      // Wooden storage crates on lower level (seated cleanly on floor)
+      [-0.55, 0.55].forEach((cx) => {
+        const crate = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.70, 0.70), crateMat);
+        crate.position.set(cx, 0.35, 0);
         rackGroup.add(crate);
       });
 
-      // Archival record cartons on mid level
+      // Archival record cartons on mid level (seated cleanly on shelf deck)
       [-0.75, -0.25, 0.25, 0.75].forEach(cx => {
-        const box = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.38, 0.55), cartonMat);
-        box.position.set(cx, 1.10, 0);
+        const box = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.35, 0.55), cartonMat);
+        box.position.set(cx, 1.075, 0);
         rackGroup.add(box);
       });
 
@@ -8363,29 +8351,16 @@
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.2, 10.0, 0xb47488, 0xc6bc99);
 
-        // (Classical sculptures relocated exclusively to Floor 1 open reading salon per curator request)
-
-        // Potted plants flanking archways
+        // Entrance potted plants flanking the entrance archway (scaled 40% smaller)
         [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
           [-14.8,  25.5], [-5.2,  25.5]
         ].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Polished Mahogany Easel stands at North and South entrances
+        // Polished Mahogany Easel stand moved to the left of the south entrance door
         this.createMuseumEasel(-10.0, y0, -16.5, fl, 0);
-        this.createMuseumEasel(-10.0, y0,  26.0, fl, Math.PI);
-
-        // Gold Roman Coin Hoard Vitrine Table in alcove at (-10.0, y0, -5.0)
-        this.createVitrineTable(-10.0, y0, -5.0, 'coins', fl);
-
-        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 0 (recessed alcoves)
-        this.createAquariumTank(-14.2, y0, -5.0, 0, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0, 14.0, 0, -Math.PI / 2);
+        this.createMuseumEasel(-12.8, y0,  26.0, fl, Math.PI);
 
         // 2. WEST WING (x: -36..-16, z: -6..18): Classical Antiquities Salon
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
@@ -8403,34 +8378,7 @@
         // 3. NORTH GALLERY (x: -4..28, z: -40..-26): Egyptian Antiquities Pavilion
         this.createEgyptianSarcophagusDais(12.0, y0, -33.0, fl);
 
-        // Limestone Obelisks flanking North Gallery entry
-        [4.0, 20.0].forEach(ox => {
-          const obeliskGroup = new THREE.Group();
-          obeliskGroup.position.set(ox, y0, -28.0);
-          const obB = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.35, 0.95), mats.wallConcrete);
-          obB.position.y = 0.175;
-          obeliskGroup.add(obB);
-          const obS = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.40, 2.6, 4), mats.wallPlasterCool);
-          obS.rotation.y = Math.PI / 4;
-          obS.position.y = 0.35 + 1.3;
-          obeliskGroup.add(obS);
-          const obP = new THREE.Mesh(new THREE.ConeGeometry(0.34, 0.42, 4), mats.wallPlasterCool);
-          obP.rotation.y = Math.PI / 4;
-          obP.position.y = 0.35 + 2.6 + 0.21;
-          obeliskGroup.add(obP);
-          this.scene.add(obeliskGroup);
-
-          this.colliders.push({
-            type: 'box',
-            floor: fl,
-            minX: ox - 0.50,
-            maxX: ox + 0.50,
-            minZ: -28.0 - 0.50,
-            maxZ: -28.0 + 0.50,
-            minY: y0,
-            maxY: y0 + 1.20
-          });
-        });
+        // (Limestone Obelisks flanking North Gallery entry removed per curator feedback)
 
         this.createVitrineTable(2.0, y0, -33.0, 'scroll', fl);
         this.createVitrineTable(22.0, y0, -33.0, 'jewelry', fl);
@@ -8440,7 +8388,8 @@
         });
 
         // 4. SOUTH-EAST WING (x: 4..28, z: 18..28): Rotunda Concourse
-        this.createGalleryRunnerRug(23.0, y0, 23.0, 3.2, 7.5, 0xb47488, 0xc6bc99);
+        // Pink rug aligned with room entrance at z = 18 and leading under the round wooden platform at (19, 30.5)
+        this.createGalleryRunnerRug(19.0, y0, 24.5, 3.0, 13.0, 0xb47488, 0xc6bc99);
         // (Floor 0 South-East Wing sculptures removed per curator request)
 
       } else if (fl === 1) {
@@ -8451,26 +8400,12 @@
         this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
         this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
 
-        // Map & Astrolabe Vitrine Tables
-        this.createVitrineTable(-14.2, y0, -10.0, 'astrolabe', fl);
-        this.createVitrineTable( -5.8, y0,   7.0, 'scroll', fl);
-        this.createVitrineTable(-14.2, y0,  21.0, 'astrolabe', fl);
-        // (Floor 1 Main Gallery hallway pedestals removed; curated into Floor 1 open reading salon)
-
-        // Potted Plants along archways
+        // Entrance potted plants flanking archway
         [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
           [-14.8,  25.5], [-5.2,  25.5]
         ].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
-
-        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 1
-        this.createAquariumTank(-14.2, y0, -5.0, 1, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0, 14.0, 1, -Math.PI / 2);
 
         // West Wing Folio Reading Room (Reading vitrines, rugs)
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
@@ -8503,28 +8438,26 @@
 
         // (Floor 2 Main Gallery sculptures removed per curator request)
 
+        // Entrance potted plants flanking archway
         [
-          [-14.8, -17.0], [-5.2, -17.0],
-          [-14.8,  -3.8], [-5.2,  -3.8],
-          [-14.8,   4.2], [-5.2,   4.2],
-          [-14.8,  12.2], [-5.2,  12.2],
           [-14.8,  25.5], [-5.2,  25.5]
         ].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Exactly 2 Live Aquatic Glass Aquarium Tanks on Floor 2
-        this.createAquariumTank(-14.2, y0, -5.0, 2, Math.PI / 2);
-        this.createAquariumTank( -5.8, y0, 14.0, 2, -Math.PI / 2);
-
-        // West Wing: FULL STANDING SUIT OF KNIGHT PLATE ARMOR!
+        // West Wing (Knight armor and 4 perimeter vitrine tables removed per feedback)
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x53aa93, 0xc6bc99);
-        this.createKnightArmorDisplay(-26.0, y0, 6.0, fl);
 
-        this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
-        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
-        this.createVitrineTable(-31.0, y0, 12.0, 'chalice', fl);
-        this.createVitrineTable(-21.0, y0, 12.0, 'jewelry', fl);
+        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
+
+        // North Gallery Wunderkammer
+        this.createVitrineTable(6.0, y0, -33.0, 'astrolabe', fl);
+        this.createVitrineTable(18.0, y0, -33.0, 'chalice', fl);
+        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
+          this.createPottedMuseumPlant(px, y0, pz, fl);
+        });
 
         [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
@@ -11478,7 +11411,7 @@
     }
 
     getPlatformSurfaceY(x, z, floorIdx) {
-      if (floorIdx === 3 && this.physicsCrates && this.physicsCrates.length > 0) {
+      if (this.physicsCrates && this.physicsCrates.length > 0) {
         let crateSurfaceY = 0;
         for (let i = 0; i < this.physicsCrates.length; i++) {
           const crate = this.physicsCrates[i];
@@ -11607,8 +11540,8 @@
         return;
       }
 
-      // Crate pickup prompt on 4th floor
-      if (this.playerFloor === 3 && this.physicsCrates && this.physicsCrates.length > 0) {
+      // Crate pickup prompt across any floor
+      if (this.physicsCrates && this.physicsCrates.length > 0) {
         const cosPitch = Math.cos(this.playerPitch);
         const sinPitch = Math.sin(this.playerPitch);
         const cosYaw = Math.cos(this.playerYaw);
