@@ -3085,6 +3085,19 @@
     return u1 <= u2;
   }
 
+  // 2D Line-Segment to Circle/Cylinder Intersection (Occlusion by Columns & Rotunda Pillars)
+  function lineIntersectsCircle(x0, z0, x1, z1, cx, cz, r) {
+    const dx = x1 - x0;
+    const dz = z1 - z0;
+    const lenSq = dx * dx + dz * dz;
+    if (lenSq < 0.0001) return Math.hypot(x0 - cx, z0 - cz) <= r;
+    const t = Math.max(0, Math.min(1, ((cx - x0) * dx + (cz - z0) * dz) / lenSq));
+    const closeX = x0 + t * dx;
+    const closeZ = z0 + t * dz;
+    const distSq = (cx - closeX) * (cx - closeX) + (cz - closeZ) * (cz - closeZ);
+    return distSq <= r * r;
+  }
+
   class MuseumGame {
     constructor() {
       this.canvas = document.getElementById('game-canvas');
@@ -3910,6 +3923,7 @@
     }
 
     createFloor(x, y, z, w, d, mat) {
+      if (mat) mat.side = THREE.DoubleSide;
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(x, y, z);
@@ -3917,6 +3931,7 @@
     }
 
     createCeiling(x, y, z, w, d, mat) {
+      if (mat) mat.side = THREE.DoubleSide;
       const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
       mesh.rotation.x = Math.PI / 2;
       mesh.position.set(x, y, z);
@@ -3925,24 +3940,23 @@
 
     createLintel(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
       const lintelH = ceilH - doorH;
-      const mats6 = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, mat, mat, mat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
+      if (mat) mat.side = THREE.DoubleSide;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mat);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
 
     createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
       const lintelH = ceilH - doorH;
-      const mats6 = [mat, mat, this.hiddenCapMat, mat, this.hiddenCapMat, this.hiddenCapMat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
+      if (mat) mat.side = THREE.DoubleSide;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mat);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
 
     createWall(x, y, z, w, h, d, mat, collide = true, floor = 'all') {
-      // Hide top (+Y) and bottom (-Y) caps so walls never share a horizontal plane with floors, ceilings, or landings
-      const mats6 = [mat, mat, this.hiddenCapMat, this.hiddenCapMat, mat, mat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats6);
+      if (mat) mat.side = THREE.DoubleSide;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
 
@@ -4011,6 +4025,10 @@
       // 8 Classical Corinthian / Fluted Columns along the inner colonnade
       const R_col = 6.0;
       for (let i = 0; i <= numFacets; i++) {
+        // Skip column 4 at (19.0, 34.0) — the central exhibition partition wall is located here,
+        // which completely eliminates the visual glitch where the column base and shaft poked through below the painting
+        if (i === 4) continue;
+
         const a = -Math.PI / 2 + (i / numFacets) * Math.PI;
         const colX = cx + R_col * Math.sin(a);
         const colZ = cz + R_col * Math.cos(a);
@@ -4432,7 +4450,7 @@
         seatMesh.position.set(0, 0.435, 0.13);
         group.add(seatMesh);
 
-        // Chrome hinge posts connecting seat and lid to the rear bowl shelf
+        // Chrome hinge posts connecting seat and lid to the rear porcelain shelf
         [-0.08, 0.08].forEach((hx) => {
           const hingePost = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.014, 0.038, 14), chromeMat);
           hingePost.position.set(hx, 0.445, -0.04);
@@ -4443,39 +4461,29 @@
           group.add(hingeCap);
         });
 
-        // 4. OPEN UPRIGHT TOILET LID (Matching realistic proportion in Image 2: tall elongated oval, rests flush against tank front)
-        // Tank front face is at z = -0.10. Hinge is at z = -0.04.
+        // 4. OPEN UPRIGHT TOILET LID (Authentic contoured porcelain/resin lid resting cleanly back against tank front)
+        // Clean contoured lid with rounded top and clean hinge base (no protruding eyes or awkward geometry)
         const lidShape = new THREE.Shape();
-        lidShape.moveTo(-0.16, 0);
-        lidShape.lineTo(-0.175, 0.22);
-        lidShape.bezierCurveTo(-0.175, 0.38, -0.09, 0.45, 0, 0.45);
-        lidShape.bezierCurveTo(0.09, 0.45, 0.175, 0.38, 0.175, 0.22);
-        lidShape.lineTo(0.16, 0);
-        lidShape.bezierCurveTo(0.12, -0.015, -0.12, -0.015, -0.16, 0);
+        lidShape.moveTo(-0.13, 0);
+        lidShape.lineTo(-0.165, 0.16);
+        lidShape.bezierCurveTo(-0.165, 0.35, -0.09, 0.44, 0, 0.44);
+        lidShape.bezierCurveTo(0.09, 0.44, 0.165, 0.35, 0.165, 0.16);
+        lidShape.lineTo(0.13, 0);
+        lidShape.bezierCurveTo(0.08, -0.01, -0.08, -0.01, -0.13, 0);
 
         const lidGeom = new THREE.ExtrudeGeometry(lidShape, {
           depth: 0.018,
           bevelEnabled: true,
           bevelSegments: 3,
           steps: 1,
-          bevelSize: 0.008,
-          bevelThickness: 0.008
+          bevelSize: 0.006,
+          bevelThickness: 0.006
         });
         const lidMesh = new THREE.Mesh(lidGeom, seatMat);
-        // Pivot at hinge level (y = 0.445, z = -0.04), leaning back ~7.8 degrees against tank front
-        // Reaches y = 0.89 (under the 0.92 tank lid bottom), resting cleanly at z = -0.10 flush against tank face
-        lidMesh.rotation.x = -0.135;
-        lidMesh.position.set(0, 0.445, -0.04);
+        // Pivot from chrome hinge line (y = 0.448, z = -0.045), angled back ~7 degrees so back face rests smoothly flush against the tank face
+        lidMesh.rotation.x = -0.12;
+        lidMesh.position.set(0, 0.448, -0.045);
         group.add(lidMesh);
-
-        // Dual rubber bumpers on front face of upright lid (subtle white silicone pads matching Image 2)
-        const bumperMat = new THREE.MeshLambertMaterial({ color: 0xeeeeee });
-        [-0.095, 0.095].forEach((bx) => {
-          const bumper = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.006, 12), bumperMat);
-          bumper.rotation.x = Math.PI / 2;
-          bumper.position.set(bx, 0.78, -0.075);
-          group.add(bumper);
-        });
 
         // 5. STREAMLINED VITREOUS CHINA WATER TANK & LID
         // Tank front face is at -0.19 + 0.18/2 = -0.10. Height is 0.48, so bottom is 0.68 - 0.24 = 0.44 (meets porcelain shelf).
@@ -6195,9 +6203,10 @@
         const brassMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.22 });
         const ladderWoodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.55 });
 
-        // Colorful bookcloth materials
-        const bookColors = [0x831843, 0x1e3a8a, 0x064e3b, 0xb45309, 0x451a03, 0x1e293b, 0x3b0764, 0x78350f];
-        const bookMats = bookColors.map(c => new THREE.MeshLambertMaterial({ color: c }));
+        // Realistic antique leather and cloth bindings (burgundy, forest calfskin, dark navy, saddle brown)
+        const bookColors = [0x421b1f, 0x1c3024, 0x1a2636, 0x4d321d, 0x241812, 0x302018, 0x223042, 0x58262b];
+        const bookMats = bookColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.65, metalness: 0.08 }));
+        const paperPageMat = new THREE.MeshLambertMaterial({ color: 0xf5eedc });
 
         rangeZCoords.forEach((rz, rIdx) => {
           const rangeGroup = new THREE.Group();
@@ -6257,6 +6266,19 @@
                   const bkMat = bookMats[(rIdx * 3 + b * 2 + k) % bookMats.length];
 
                   const book = new THREE.Mesh(new THREE.BoxGeometry(bkW, bkH, bkD), bkMat);
+
+                  // Realistic exposed cream paper pages inside the binding
+                  const pages = new THREE.Mesh(new THREE.BoxGeometry(bkW - 0.006, bkH - 0.014, bkD * 0.88), paperPageMat);
+                  pages.position.set(0, 0, -sideDir * 0.016);
+                  book.add(pages);
+
+                  // Gilded gold foil tooling bands along the spine
+                  if (k % 2 === 0) {
+                    const goldLine = new THREE.Mesh(new THREE.BoxGeometry(bkW + 0.002, 0.008, 0.012), brassMat);
+                    goldLine.position.set(0, bkH * 0.22, sideDir * (bkD / 2 - 0.004));
+                    book.add(goldLine);
+                  }
+
                   if (k === bookCount - 1 && b % 2 === 0) {
                     book.rotation.z = -0.16;
                     book.position.set(bkX + 0.02, sy + 0.02 + bkH / 2, sideDir * (rangeD / 4));
@@ -6269,37 +6291,46 @@
             });
           }
 
-          // Brass tracking rail along top of South side (+Z)
+          // Brass tracking rail along top of South side (+Z) at y = 2.65, z = 0.49
           const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, rangeW, 12), brassMat);
           rail.rotation.z = Math.PI / 2;
           rail.position.set(0, rangeH - 0.15, rangeD / 2 + 0.04);
           rangeGroup.add(rail);
 
-          // Rolling wooden library ladder mounted on rail
+          // Rolling wooden library ladder mounted firmly on tracking rail and grounded on floor
           const ladX = rIdx % 2 === 0 ? -2.8 : 2.8;
           const ladGroup = new THREE.Group();
-          ladGroup.position.set(ladX, 0, rangeD / 2 + 0.22);
-          ladGroup.rotation.x = -0.16;
+          // Anchored on floor tiles at z = 1.01, angled back 11 degrees (-0.194 rad) to meet rail at z = 0.49, y = 2.65
+          ladGroup.position.set(ladX, 0, rangeD / 2 + 0.56);
+          ladGroup.rotation.x = -0.194;
 
+          const ladderLength = 2.72;
           [-0.22, 0.22].forEach((lx) => {
-            const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.045, rangeH, 0.06), ladderWoodMat);
-            stilt.position.set(lx, rangeH / 2, 0);
+            const stilt = new THREE.Mesh(new THREE.BoxGeometry(0.045, ladderLength, 0.06), ladderWoodMat);
+            stilt.position.set(lx, ladderLength / 2, 0);
             ladGroup.add(stilt);
 
-            const hook = new THREE.Mesh(new THREE.TorusGeometry(0.035, 0.012, 8, 12, Math.PI), brassMat);
-            hook.position.set(lx, rangeH - 0.02, -0.04);
+            // Hook curved over tracking rail
+            const hook = new THREE.Mesh(new THREE.TorusGeometry(0.032, 0.012, 8, 14, Math.PI * 1.2), brassMat);
+            hook.rotation.y = Math.PI / 2;
+            hook.position.set(lx, ladderLength - 0.02, -0.02);
             ladGroup.add(hook);
+
+            // Rolling brass wheel assembly resting flat on floor tiles
+            const wheelBracket = new THREE.Mesh(new THREE.BoxGeometry(0.038, 0.05, 0.04), brassMat);
+            wheelBracket.position.set(lx, 0.05, 0);
+            ladGroup.add(wheelBracket);
 
             const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.025, 12), brassMat);
             wheel.rotation.z = Math.PI / 2;
-            wheel.position.set(lx, 0.04, 0);
+            wheel.position.set(lx, 0.035, 0);
             ladGroup.add(wheel);
           });
 
-          for (let r = 1; r < 8; r++) {
+          for (let r = 1; r < 9; r++) {
             const rung = new THREE.Mesh(new THREE.CylinderGeometry(0.015, 0.015, 0.40, 8), ladderWoodMat);
             rung.rotation.z = Math.PI / 2;
-            rung.position.set(0, r * (rangeH / 8), 0);
+            rung.position.set(0, r * (ladderLength / 9.5) + 0.10, 0);
             ladGroup.add(rung);
           }
           rangeGroup.add(ladGroup);
@@ -6327,19 +6358,39 @@
           cartBase.position.y = 0.12;
           cartGroup.add(cartBase);
 
-          const cartTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.04, 0.55), shelfMat);
-          cartTop.position.y = 0.82;
-          cartGroup.add(cartTop);
-
           const cartMid = new THREE.Mesh(new THREE.BoxGeometry(0.90, 0.035, 0.50), shelfMat);
           cartMid.position.y = 0.47;
           cartGroup.add(cartMid);
 
-          const hBar = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.48, 8), brassMat);
+          const cartTop = new THREE.Mesh(new THREE.BoxGeometry(0.95, 0.04, 0.55), shelfMat);
+          cartTop.position.y = 0.82;
+          cartGroup.add(cartTop);
+
+          // 4 Solid vertical tubular steel/brass corner uprights connecting all 3 shelves
+          [[-0.44, -0.23], [0.44, -0.23], [-0.44, 0.23], [0.44, 0.23]].forEach(([lx, lz]) => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.74, 10), brassMat);
+            leg.position.set(lx, 0.47, lz);
+            cartGroup.add(leg);
+          });
+
+          // Tubular handle uprights rising from the left corner legs up to the push bar
+          [-0.23, 0.23].forEach((hz) => {
+            const handleRiser = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.14, 10), brassMat);
+            handleRiser.position.set(-0.47, 0.89, hz);
+            cartGroup.add(handleRiser);
+
+            const cornerJoint = new THREE.Mesh(new THREE.SphereGeometry(0.018, 8, 8), brassMat);
+            cornerJoint.position.set(-0.47, 0.96, hz);
+            cartGroup.add(cornerJoint);
+          });
+
+          // Push handle bar firmly welded between the handle uprights (zero floating!)
+          const hBar = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.46, 10), brassMat);
           hBar.rotation.x = Math.PI / 2;
-          hBar.position.set(-0.52, 0.88, 0);
+          hBar.position.set(-0.47, 0.96, 0);
           cartGroup.add(hBar);
 
+          // 4 Industrial swivel casters on cart base
           [[-0.38, -0.22], [0.38, -0.22], [-0.38, 0.22], [0.38, 0.22]].forEach(([wx, wz]) => {
             const wh = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.03, 12), brassMat);
             wh.rotation.z = Math.PI / 2;
@@ -6347,10 +6398,30 @@
             cartGroup.add(wh);
           });
 
-          [-0.22, 0.12].forEach((bx, bi) => {
-            const bStack = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.18, 0.35), bookMats[bi * 2]);
-            bStack.position.set(bx, 0.56, 0);
-            cartGroup.add(bStack);
+          // Realistic stacks of vintage leather-bound volumes with gilded spine bands on middle shelf
+          [-0.26, 0.08].forEach((bx, bi) => {
+            const bStackGroup = new THREE.Group();
+            bStackGroup.position.set(bx, 0.49, 0);
+
+            for (let v = 0; v < 4; v++) {
+              const vy = v * 0.045;
+              const vMat = bookMats[(bi * 3 + v) % bookMats.length];
+              const volMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.042, 0.34), vMat);
+              volMesh.position.y = vy + 0.021;
+              if (v === 3) volMesh.rotation.y = 0.06;
+              bStackGroup.add(volMesh);
+
+              // Exposed cream pages
+              const vPages = new THREE.Mesh(new THREE.BoxGeometry(0.23, 0.034, 0.32), paperPageMat);
+              vPages.position.set(0.008, vy + 0.021, 0);
+              bStackGroup.add(vPages);
+
+              // Gilded spine line
+              const vGold = new THREE.Mesh(new THREE.BoxGeometry(0.008, 0.006, 0.342), brassMat);
+              vGold.position.set(-0.118, vy + 0.021, 0);
+              bStackGroup.add(vGold);
+            }
+            cartGroup.add(bStackGroup);
           });
 
           this.scene.add(cartGroup);
@@ -6603,7 +6674,7 @@
       const crateD = 0.38;
 
       // Mix of authentic colors: black, brown, maroon, and navy blue
-      const palette = [0x18181b, 0x5c3a21, 0x7f1d1d, 0x1e3a5f];
+      const palette = [0x18181b, 0x4a2c16, 0x6b1d24, 0x1a2b42];
       let crateCounter = 0;
 
       const addSingleCrate = (cx, cy, cz, tier = 1) => {
@@ -6656,11 +6727,11 @@
         return crateEntry;
       };
 
-      // 1. Build the Iconic Milk Crate Challenge Stepped Pyramid at x = 15.0 along Z (-18.0 to -7.0)
-      // 13 Columns: heights [1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1]
-      const heights = [1, 2, 3, 4, 5, 6, 7, 6, 5, 4, 3, 2, 1];
-      const spacingZ = 0.39;
-      const startZ = -13.0 - (6 * spacingZ); // Peak (col 6) at z = -13.0
+      // 1. Build the Iconic Milk Crate Challenge Stepped Pyramid at x = 15.0 along Z (-17.5 to -7.5)
+      // Stepped pyramid: [1, 2, 3, 4, 5, 4, 3, 2, 1] matching authentic viral challenge reference
+      const heights = [1, 2, 3, 4, 5, 4, 3, 2, 1];
+      const spacingZ = 0.40;
+      const startZ = -12.5 - (4 * spacingZ); // Peak (height 5) at z = -12.5
 
       for (let col = 0; col < heights.length; col++) {
         const cz = startZ + col * spacingZ;
@@ -6678,9 +6749,9 @@
       }
 
       // 2. Extra Stacks and Towers for Fun
-      // Wobbly 5-crate vertical tower at (19.0, y0, -6.0)
+      // 4-crate vertical stack at (19.0, y0, -6.0)
       let prevCrate = null;
-      for (let t = 0; t < 5; t++) {
+      for (let t = 0; t < 4; t++) {
         const cy = y0 + t * crateH;
         const c = addSingleCrate(19.0, cy, -6.0, t + 1);
         if (prevCrate) prevCrate.supportedCrates.push(c);
@@ -6715,13 +6786,12 @@
       const group = new THREE.Group();
       const plasticMat = new THREE.MeshStandardMaterial({
         color: colorHex,
-        roughness: 0.42,
-        metalness: 0.06
+        roughness: 0.38,
+        metalness: 0.08
       });
 
-      // 4 Corner vertical posts with molded bottom interlocking feet
+      // 4 Heavy-duty corner posts (span exact crate height -h/2..h/2)
       const postW = 0.038;
-      const footH = 0.018;
       const cornerOffsets = [
         [-w / 2 + postW / 2, -d / 2 + postW / 2],
         [w / 2 - postW / 2, -d / 2 + postW / 2],
@@ -6732,14 +6802,10 @@
         const post = new THREE.Mesh(new THREE.BoxGeometry(postW, h, postW), plasticMat);
         post.position.set(ox, 0, oz);
         group.add(post);
-
-        const foot = new THREE.Mesh(new THREE.BoxGeometry(postW - 0.008, footH, postW - 0.008), plasticMat);
-        foot.position.set(ox, -h / 2 - footH / 2, oz);
-        group.add(foot);
       });
 
-      // Top rim collar bars
-      const rimH = 0.035;
+      // Top reinforced perimeter rim
+      const rimH = 0.038;
       const rimThick = 0.032;
       [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
         const rimBar = new THREE.Mesh(new THREE.BoxGeometry(w, rimH, rimThick), plasticMat);
@@ -6752,8 +6818,8 @@
         group.add(rimBar);
       });
 
-      // Bottom rim base frame
-      const botH = 0.028;
+      // Bottom perimeter base frame (rests exactly at y = -h/2, zero ground penetration)
+      const botH = 0.034;
       [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
         const bBar = new THREE.Mesh(new THREE.BoxGeometry(w, botH, rimThick), plasticMat);
         bBar.position.set(0, -h / 2 + botH / 2, rz);
@@ -6765,49 +6831,88 @@
         group.add(bBar);
       });
 
-      // Bottom grid plate
-      const botPlate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.016, d - 0.06), plasticMat);
-      botPlate.position.set(0, -h / 2 + 0.01, 0);
+      // Molded bottom honeycomb grid plate (resting flat inside the base rim)
+      const botPlate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.016, d - 0.04), plasticMat);
+      botPlate.position.set(0, -h / 2 + 0.018, 0);
       group.add(botPlate);
 
-      // 4 Side lattice walls with handle cutouts
-      const midRibH = 0.024;
-      [-d / 2 + 0.014, d / 2 - 0.014].forEach((sz) => {
-        const midRib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.08, midRibH, 0.016), plasticMat);
-        midRib.position.set(0, 0, sz);
-        group.add(midRib);
+      // Molded side walls with handle openings and structural lattice grid
+      // North & South walls (Z = ±(d/2 - 0.012))
+      [-d / 2 + 0.012, d / 2 - 0.012].forEach((sz) => {
+        // Lower solid molded panel
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.055, 0.014), plasticMat);
+        lowPanel.position.set(0, -h / 2 + botH + 0.0275, sz);
+        group.add(lowPanel);
 
-        [-0.14, 0.14].forEach((hx) => {
-          const hBlock = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.045, 0.016), plasticMat);
-          hBlock.position.set(hx, h / 2 - rimH - 0.025, sz);
-          group.add(hBlock);
-        });
+        // Molded center handle cutout frame (width: 0.16m, height: 0.05m)
+        const leftHandleJamb = new THREE.Mesh(new THREE.BoxGeometry((w - 0.06 - 0.16) / 2, 0.052, 0.014), plasticMat);
+        leftHandleJamb.position.set(-(w - 0.06 + 0.16) / 4, h / 2 - rimH - 0.032, sz);
+        group.add(leftHandleJamb);
 
-        [-0.10, 0.10].forEach((dx) => {
-          const strut = new THREE.Mesh(new THREE.BoxGeometry(0.014, h * 0.75, 0.012), plasticMat);
-          strut.rotation.z = (dx > 0 ? 0.38 : -0.38);
-          strut.position.set(dx, -0.02, sz);
-          group.add(strut);
-        });
+        const rightHandleJamb = new THREE.Mesh(new THREE.BoxGeometry((w - 0.06 - 0.16) / 2, 0.052, 0.014), plasticMat);
+        rightHandleJamb.position.set((w - 0.06 + 0.16) / 4, h / 2 - rimH - 0.032, sz);
+        group.add(rightHandleJamb);
+
+        // Smooth rounded cylindrical handle grip bar along top of handle opening
+        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.155, 12), plasticMat);
+        gripBar.rotation.z = Math.PI / 2;
+        gripBar.position.set(0, h / 2 - rimH - 0.010, sz);
+        group.add(gripBar);
+
+        // 3 Horizontal molded lattice ribs
+        for (let r = 0; r < 3; r++) {
+          const ry = -h / 2 + 0.10 + r * 0.042;
+          const rib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.012, 0.014), plasticMat);
+          rib.position.set(0, ry, sz);
+          group.add(rib);
+        }
+
+        // 5 Vertical molded lattice ribs
+        for (let c = -2; c <= 2; c++) {
+          const vx = c * 0.058;
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.125, 0.014), plasticMat);
+          vRib.position.set(vx, -0.015, sz);
+          group.add(vRib);
+        }
       });
 
-      [-w / 2 + 0.014, w / 2 - 0.014].forEach((sx) => {
-        const midRib = new THREE.Mesh(new THREE.BoxGeometry(0.016, midRibH, d - 0.08), plasticMat);
-        midRib.position.set(sx, 0, 0);
-        group.add(midRib);
+      // East & West walls (X = ±(w/2 - 0.012))
+      [-w / 2 + 0.012, w / 2 - 0.012].forEach((sx) => {
+        // Lower solid molded panel
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.055, d - 0.06), plasticMat);
+        lowPanel.position.set(sx, -h / 2 + botH + 0.0275, 0);
+        group.add(lowPanel);
 
-        [-0.14, 0.14].forEach((hz) => {
-          const hBlock = new THREE.Mesh(new THREE.BoxGeometry(0.016, 0.045, 0.06), plasticMat);
-          hBlock.position.set(sx, h / 2 - rimH - 0.025, hz);
-          group.add(hBlock);
-        });
+        // Molded center handle cutout frame
+        const leftHandleJamb = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.052, (d - 0.06 - 0.16) / 2), plasticMat);
+        leftHandleJamb.position.set(sx, h / 2 - rimH - 0.032, -(d - 0.06 + 0.16) / 4);
+        group.add(leftHandleJamb);
 
-        [-0.10, 0.10].forEach((dz) => {
-          const strut = new THREE.Mesh(new THREE.BoxGeometry(0.012, h * 0.75, 0.014), plasticMat);
-          strut.rotation.x = (dz > 0 ? 0.38 : -0.38);
-          strut.position.set(sx, -0.02, dz);
-          group.add(strut);
-        });
+        const rightHandleJamb = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.052, (d - 0.06 - 0.16) / 2), plasticMat);
+        rightHandleJamb.position.set(sx, h / 2 - rimH - 0.032, (d - 0.06 + 0.16) / 4);
+        group.add(rightHandleJamb);
+
+        // Smooth rounded cylindrical handle grip bar
+        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.155, 12), plasticMat);
+        gripBar.rotation.x = Math.PI / 2;
+        gripBar.position.set(sx, h / 2 - rimH - 0.010, 0);
+        group.add(gripBar);
+
+        // 3 Horizontal molded lattice ribs
+        for (let r = 0; r < 3; r++) {
+          const ry = -h / 2 + 0.10 + r * 0.042;
+          const rib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.012, d - 0.06), plasticMat);
+          rib.position.set(sx, ry, 0);
+          group.add(rib);
+        }
+
+        // 5 Vertical molded lattice ribs
+        for (let c = -2; c <= 2; c++) {
+          const vz = c * 0.058;
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.125, 0.012), plasticMat);
+          vRib.position.set(sx, -0.015, vz);
+          group.add(vRib);
+        }
       });
 
       return group;
@@ -7003,7 +7108,7 @@
         const c = this.physicsCrates[i];
         if (c.isHeld) continue;
 
-        if (c.isCollapsed || c.y > y0 + 0.02) {
+        if (c.isCollapsed) {
           c.vy -= 14.0 * delta;
           c.x += c.vx * delta;
           c.y += c.vy * delta;
@@ -7013,14 +7118,20 @@
           c.rotY += c.angVy * delta;
           c.rotZ += c.angVz * delta;
 
-          if (c.y <= y0) {
-            c.y = y0;
-            c.vy = -c.vy * 0.24;
-            c.vx *= 0.72;
-            c.vz *= 0.72;
-            c.angVx *= 0.65;
-            c.angVy *= 0.65;
-            c.angVz *= 0.65;
+          // Oriented bounding drop prevents any corner/edge of tilted or rolling crate from penetrating the floor
+          const drop = (c.h / 2) * Math.abs(Math.cos(c.rotX) * Math.cos(c.rotZ)) +
+                       (c.d / 2) * Math.abs(Math.sin(c.rotX)) +
+                       (c.w / 2) * Math.abs(Math.sin(c.rotZ));
+          const groundY = y0 + drop - c.h / 2;
+
+          if (c.y <= groundY) {
+            c.y = groundY;
+            c.vy = -c.vy * 0.22;
+            c.vx *= 0.68;
+            c.vz *= 0.68;
+            c.angVx *= 0.60;
+            c.angVy *= 0.60;
+            c.angVz *= 0.60;
             if (Math.abs(c.vy) > 1.2) this.audio.playCrateImpact();
           }
 
@@ -7029,6 +7140,8 @@
           if (c.z < -23.8) { c.z = -23.8; c.vz = Math.abs(c.vz) * 0.5; }
           if (c.z > 3.8) { c.z = 3.8; c.vz = -Math.abs(c.vz) * 0.5; }
         } else {
+          // Stable resting in stack or on floor: spring restore minor tilts from stepping
+          c.y = c.baseY;
           c.angVx += (-c.rotX * 32.0 - c.angVx * 9.0) * delta;
           c.angVz += (-c.rotZ * 32.0 - c.angVz * 9.0) * delta;
           c.rotX += c.angVx * delta;
@@ -11066,14 +11179,13 @@
       // When in CHASE, Smitty is in furious predator pursuit: 360 degree awareness of player within line of sight!
 
       // Raycast line of sight check
-      // Offset starting point slightly along the ray towards player so it does not self-intersect
-      // the wall collider Smitty might be standing right against
+      // Minimal safe epsilon (0.02m) ensures starting and ending points never jump through thin walls
       const dirX = (this.playerPos.x - this.smittyPos.x) / (dist || 1);
       const dirZ = (this.playerPos.z - this.smittyPos.z) / (dist || 1);
-      const x0 = this.smittyPos.x + dirX * 0.35;
-      const z0 = this.smittyPos.z + dirZ * 0.35;
-      const x1 = this.playerPos.x - dirX * 0.2;
-      const z1 = this.playerPos.z - dirZ * 0.2;
+      const x0 = this.smittyPos.x + dirX * 0.02;
+      const z0 = this.smittyPos.z + dirZ * 0.02;
+      const x1 = this.playerPos.x - dirX * 0.02;
+      const z1 = this.playerPos.z - dirZ * 0.02;
 
       for (let i = 0; i < this.colliders.length; i++) {
         const c = this.colliders[i];
@@ -11089,6 +11201,10 @@
             }
           }
           if (lineIntersectsBox(x0, z0, x1, z1, c.minX, c.maxX, c.minZ, c.maxZ)) {
+            return false;
+          }
+        } else if (c.type === 'cylinder') {
+          if (lineIntersectsCircle(x0, z0, x1, z1, c.x, c.z, c.radius || 0.40)) {
             return false;
           }
         }
