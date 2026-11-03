@@ -7057,8 +7057,7 @@
         roughness: 0.02,
         metalness: 0.05,
         transmission: 0.98,
-        thickness: 0.04
-      });
+              });
 
       // Shimmering clear aquatic water volume
       const waterMat = new THREE.MeshPhysicalMaterial({
@@ -7067,8 +7066,7 @@
         opacity: 0.22,
         roughness: 0.05,
         transmission: 0.94,
-        thickness: 0.75
-      });
+              });
 
       // 1. Sleek museum gallery stand
       const stand = new THREE.Mesh(new THREE.BoxGeometry(1.60, 0.72, 0.75), cabinetMat);
@@ -7188,14 +7186,15 @@
         });
 
         // Top Dorsal Fin
-        const dorsal = new THREE.Mesh(new THREE.BufferGeometry(), fMat);
+        const dorsalGeom = new THREE.BufferGeometry();
         const dVerts = new Float32Array([
           -s * 0.2, s * 0.25, 0,
            s * 0.1, s * 0.65, 0,
            s * 0.4, s * 0.28, 0
         ]);
-        dorsal.setAttribute('position', new THREE.BufferAttribute(dVerts, 3));
-        dorsal.computeVertexNormals();
+        dorsalGeom.setAttribute('position', new THREE.BufferAttribute(dVerts, 3));
+        dorsalGeom.computeVertexNormals();
+        const dorsal = new THREE.Mesh(dorsalGeom, fMat);
         fishRoot.add(dorsal);
 
         // Pectoral side fins
@@ -7213,7 +7212,7 @@
         const tailPivot = new THREE.Group();
         tailPivot.position.x = -s * 0.55;
 
-        const tailFin = new THREE.Mesh(new THREE.BufferGeometry(), fMat);
+        const tailGeom = new THREE.BufferGeometry();
         const tVerts = new Float32Array([
           0, 0, 0,
           -s * 0.65,  s * 0.48, 0,
@@ -7221,9 +7220,10 @@
           -s * 0.65, -s * 0.48, 0
         ]);
         const tIndices = [0, 1, 2, 0, 2, 3];
-        tailFin.setIndex(tIndices);
-        tailFin.setAttribute('position', new THREE.BufferAttribute(tVerts, 3));
-        tailFin.computeVertexNormals();
+        tailGeom.setIndex(tIndices);
+        tailGeom.setAttribute('position', new THREE.BufferAttribute(tVerts, 3));
+        tailGeom.computeVertexNormals();
+        const tailFin = new THREE.Mesh(tailGeom, fMat);
         tailPivot.add(tailFin);
         fishRoot.add(tailPivot);
 
