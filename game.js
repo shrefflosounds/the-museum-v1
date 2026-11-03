@@ -3175,8 +3175,8 @@
   }
 
   class MuseumGame {
-    constructor(customCanvas = null) {
-      this.canvas = customCanvas || document.getElementById('game-canvas') || document.getElementById('editor-canvas');
+    constructor() {
+      this.canvas = document.getElementById('game-canvas');
       this.audio = new MuseumAudioEngine();
 
       this.renderer = null;
@@ -3415,17 +3415,15 @@
       this.buildWeaponViewmodel();
       this.buildLeftHandViewmodel();
       this.spawnRelics();
-      this.applySceneOverrides();
       this.spawnAmmoPickups();
       this.updateRelicFloorVisibility();
       this.loadSmittyModel();
       if (this.renderer && this.scene && this.camera) {
         this.renderer.compile(this.scene, this.camera);
       }
-      if (!window._IS_EDITOR_MODE) {
-        this.setupEventListeners();
-        this.updateSmittyModeUI();
-        this.updateMusicModeUI();
+      this.setupEventListeners();
+      this.updateSmittyModeUI();
+      this.updateMusicModeUI();
       if (this.dom.aboutBuildTag) {
         this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
       }
@@ -3433,8 +3431,7 @@
       if (this.musicEnabled) {
         this.audio.playMenuMusic();
       }
-        this.animate();
-      }
+      this.animate();
     }
 
     initThree() {
@@ -3446,20 +3443,16 @@
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
-      if (window._EDITOR_RENDERER) {
-        this.renderer = window._EDITOR_RENDERER;
-      } else if (this.canvas) {
-        this.renderer = new THREE.WebGLRenderer({
-          canvas: this.canvas,
-          antialias: true,
-          powerPreference: 'high-performance'
-        });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
-        this.renderer.setPixelRatio(1);
-        this.renderer.shadowMap.enabled = false;
-        this.renderer.toneMapping = THREE.LinearToneMapping;
-        this.renderer.toneMappingExposure = 1.0;
-      }
+      this.renderer = new THREE.WebGLRenderer({
+        canvas: this.canvas,
+        antialias: true,
+        powerPreference: 'high-performance'
+      });
+      this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(1);
+      this.renderer.shadowMap.enabled = false;
+      this.renderer.toneMapping = THREE.LinearToneMapping;
+      this.renderer.toneMappingExposure = 1.0;
 
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
       this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
@@ -6994,9 +6987,6 @@
       });
 
       this.scene.add(benchGroup);
-      const benchFloor = Math.max(0, Math.min(3, Math.round(y / CONFIG.FLOOR_HEIGHT)));
-      const benchId = 'bench_fl' + benchFloor + '_' + Math.round(x) + '_' + Math.round(z);
-      this.registerDecorObject(benchGroup, benchId, 'Museum Bench', 'furniture', benchFloor);
 
       // Solid physical obstacle collider for the bench across its floor (height: 0.65m)
       const fl = Math.round(y / CONFIG.FLOOR_HEIGHT);
@@ -7327,8 +7317,6 @@
       plantGroup.add(new THREE.Mesh(geoms.foliage, mats.foliage));
 
       this.scene.add(plantGroup);
-      const plantId = 'plant_fl' + fl + '_' + Math.round(x) + '_' + Math.round(z);
-      this.registerDecorObject(plantGroup, plantId, 'Potted Museum Plant', 'plant', fl);
 
       this.colliders.push({
         type: 'cylinder',
@@ -7520,8 +7508,6 @@
       group.add(canopy);
 
       this.scene.add(group);
-      const aquaId = 'aquarium_fl' + fl + '_' + Math.round(x) + '_' + Math.round(z);
-      this.registerDecorObject(group, aquaId, 'Aquarium Tank', 'aquarium', fl);
 
       // 8. Dynamic Living Fish (Clownfish, Neon Tetra, Golden Angelfish)
       const fishProfiles = [
@@ -7832,8 +7818,6 @@
       }
 
       this.scene.add(group);
-      const vitrineId = 'vitrine_' + relicType + '_fl' + fl + '_' + Math.round(x) + '_' + Math.round(z);
-      this.registerDecorObject(group, vitrineId, 'Vitrine Table (' + relicType + ')', 'vitrine', fl);
 
       this.colliders.push({
         type: 'box',
@@ -7886,76 +7870,6 @@
         };
       }
       return this._pedGeoms;
-    }
-
-        registerDecorObject(obj, id, name, category = 'decor', floor = 0) {
-      if (!this.decorObjects) this.decorObjects = new Map();
-      obj.userData = obj.userData || {};
-      obj.userData.id = id;
-      obj.userData.name = name;
-      obj.userData.category = category;
-      obj.userData.floor = floor;
-      obj.userData.isDecor = true;
-      if (!obj.userData.initialPos) {
-        obj.userData.initialPos = { x: obj.position.x, y: obj.position.y, z: obj.position.z };
-        obj.userData.initialRot = { x: obj.rotation.x, y: obj.rotation.y, z: obj.rotation.z };
-        obj.userData.initialScale = { x: obj.scale.x, y: obj.scale.y, z: obj.scale.z };
-      }
-      this.decorObjects.set(id, obj);
-      return obj;
-    }
-
-    async applySceneOverrides() {
-      try {
-        const res = await fetch('assets/curated_overrides.json?v=' + Date.now());
-        if (!res.ok) return;
-        const overrides = await res.json();
-        if (!overrides || typeof overrides !== 'object') return;
-
-        // Apply modifications to existing decor objects
-        if (overrides.objects && typeof overrides.objects === 'object') {
-          for (const [id, data] of Object.entries(overrides.objects)) {
-            const obj = this.decorObjects ? this.decorObjects.get(id) : null;
-            if (!obj) continue;
-            if (data.visible !== undefined) obj.visible = !!data.visible;
-            if (data.position && typeof data.position === 'object') {
-              if (data.position.x !== undefined) obj.position.x = data.position.x;
-              if (data.position.y !== undefined) obj.position.y = data.position.y;
-              if (data.position.z !== undefined) obj.position.z = data.position.z;
-            }
-            if (data.rotation && typeof data.rotation === 'object') {
-              if (data.rotation.x !== undefined) obj.rotation.x = data.rotation.x;
-              if (data.rotation.y !== undefined) obj.rotation.y = data.rotation.y;
-              if (data.rotation.z !== undefined) obj.rotation.z = data.rotation.z;
-            }
-            if (data.scale && typeof data.scale === 'object') {
-              if (data.scale.x !== undefined) obj.scale.x = data.scale.x;
-              if (data.scale.y !== undefined) obj.scale.y = data.scale.y;
-              if (data.scale.z !== undefined) obj.scale.z = data.scale.z;
-            }
-          }
-        }
-
-        // Spawn custom imported or created models
-        if (Array.isArray(overrides.customModels)) {
-          const loader = new THREE.GLTFLoader();
-          for (const cm of overrides.customModels) {
-            if (!cm || !cm.file) continue;
-            loader.load(cm.file, (gltf) => {
-              const root = gltf.scene;
-              root.name = cm.name || 'Custom Model';
-              if (cm.position) root.position.set(cm.position.x || 0, cm.position.y || 0, cm.position.z || 0);
-              if (cm.rotation) root.rotation.set(cm.rotation.x || 0, cm.rotation.y || 0, cm.rotation.z || 0);
-              if (cm.scale) root.scale.set(cm.scale.x || 1, cm.scale.y || 1, cm.scale.z || 1);
-              if (cm.visible !== undefined) root.visible = cm.visible;
-              this.scene.add(root);
-              if (cm.id) this.registerDecorObject(root, cm.id, cm.name || 'Custom Model', 'custom', cm.floor || 0);
-            }, undefined, (err) => console.warn('[Overrides] Error loading custom model:', cm.file, err));
-          }
-        }
-      } catch (e) {
-        // Overrides file does not exist yet or failed to parse, normal fallback
-      }
     }
 
     createClassicalSculpturePedestal(x, y0, z, statueType, fl, hasStanchions = false) {
@@ -8105,8 +8019,6 @@
       }
 
       this.scene.add(group);
-      const pedId = 'statue_' + statueType + '_fl' + fl + '_' + Math.round(x) + '_' + Math.round(z);
-      this.registerDecorObject(group, pedId, 'Sculpture: ' + statueType.replace('_', ' '), 'statue', fl);
 
       this.colliders.push({
         type: 'cylinder',
@@ -13431,16 +13343,11 @@
     }
   }
 
-  window.MuseumGame = MuseumGame;
-  window.Game = MuseumGame;
-
-  if (!window._IS_EDITOR_MODE) {
-    if (document.readyState === 'loading') {
-      window.addEventListener('DOMContentLoaded', () => {
-        window.gameInstance = new MuseumGame();
-      });
-    } else {
+  if (document.readyState === 'loading') {
+    window.addEventListener('DOMContentLoaded', () => {
       window.gameInstance = new MuseumGame();
-    }
+    });
+  } else {
+    window.gameInstance = new MuseumGame();
   }
 })();
