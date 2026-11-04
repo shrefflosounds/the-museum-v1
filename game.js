@@ -915,7 +915,8 @@
       songTitle: "Smitty Fantastic - Hexagram 27",
       duration: 165.49,
       targetHeight: 2.25,
-      walkSpeed: 1.50
+      walkSpeed: 1.50,
+      stayOnFloor: true
     },
     {
       id: "bird_squid",
@@ -15045,7 +15046,7 @@
     pickStatueWanderPath(s) {
       if (!this.navNodes || this.navNodes.length === 0 || !this.findShortestPath || !this.findNearestNavNode) return null;
       // 70% chance to wander across rooms on current floor, 30% chance to travel to another floor via the stairwells
-      const stayOnFloor = (Math.random() < 0.70);
+      const stayOnFloor = s.cfg.stayOnFloor || (Math.random() < 0.70);
       const candidates = this.navNodes.filter(n => {
         if (!this.isRoomNavNode(n)) return false;
         if (stayOnFloor && n.floor !== s.floor) return false;
