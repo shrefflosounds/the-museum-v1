@@ -12871,7 +12871,13 @@
       }
 
       // Check platform standing surface (benches, plinths, desks, crates)
-      const platformSurfaceY = this.getPlatformSurfaceY(this.playerPos.x, this.playerPos.z, this.playerFloor);
+      const platformSurfaceY = this.getPlatformSurfaceY(
+        this.playerPos.x,
+        this.playerPos.z,
+        this.playerFloor,
+        currentFootElevation,
+        this.isGrounded ? 0.85 : 0.18
+      );
       let groundY = Math.max(elev.y, platformSurfaceY);
 
       // Antigravity Step Protection (outside stairwells): Prevent sudden vertical launch > 0.85m above current feet
@@ -12946,9 +12952,13 @@
       this.updateHud();
     }
 
-    getPlatformSurfaceY(x, z, floorIdx) {
+    getPlatformSurfaceY(x, z, floorIdx, footElevation = Infinity, maxStepUp = 0.18) {
+      const floorBaseY = floorIdx * CONFIG.FLOOR_HEIGHT;
+      // Stacked floors and overhead platforms must not count as jump landing surfaces.
+      const floorCeilingY = floorBaseY + CONFIG.FLOOR_HEIGHT - 0.06;
+
       if (this.physicsCrates && this.physicsCrates.length > 0) {
-        let crateSurfaceY = 0;
+        let crateSurfaceY = floorBaseY;
         for (let i = 0; i < this.physicsCrates.length; i++) {
           const crate = this.physicsCrates[i];
           if (crate.isHeld) continue;
@@ -12956,10 +12966,12 @@
           const halfD = crate.d / 2 + 0.04;
           if (x >= crate.x - halfW && x <= crate.x + halfW && z >= crate.z - halfD && z <= crate.z + halfD) {
             const topY = crate.isCollapsed ? (crate.y + 0.15) : (crate.y + crate.h);
-            if (topY > crateSurfaceY) crateSurfaceY = topY;
+            if (topY > crateSurfaceY && topY < floorCeilingY && topY <= footElevation + maxStepUp) {
+              crateSurfaceY = topY;
+            }
           }
         }
-        if (crateSurfaceY > 0) return crateSurfaceY;
+        if (crateSurfaceY > floorBaseY) return crateSurfaceY;
       }
 
       // If player is inside or navigating a stairwell, elevation is governed exclusively by the stairwell solver
@@ -12971,11 +12983,12 @@
         return 0;
       }
 
-      let maxSurfaceY = 0;
+      let maxSurfaceY = floorBaseY;
       for (let i = 0; i < this.colliders.length; i++) {
         const c = this.colliders[i];
         if (c.isWall || (c.floor !== 'all' && c.floor !== floorIdx)) continue;
-        if (c.maxY === undefined) continue;
+        if (c.maxY === undefined || c.maxY < floorBaseY || c.maxY >= floorCeilingY ||
+            c.maxY > footElevation + maxStepUp) continue;
         if (c.type === 'box') {
           if (x >= c.minX && x <= c.maxX && z >= c.minZ && z <= c.maxZ) {
             if (c.maxY > maxSurfaceY) maxSurfaceY = c.maxY;
