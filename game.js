@@ -10574,8 +10574,8 @@
         fn.crossS_e_se  = addNode( 6.5, y, 22.0, fl, 'crossS_e_se');
         connect(fn.gallery_p22, fn.crossS_w_gal);
         connect(fn.crossS_w_gal, fn.crossS_w_mid);
-        connect(fn.crossS_w_mid, fn.cross_center);
-        connect(fn.cross_center, fn.crossS_e_mid);
+        connect(fn.crossS_w_mid, fn.crossS_center);
+        connect(fn.crossS_center, fn.crossS_e_mid);
         connect(fn.crossS_e_mid, fn.crossS_e_se);
 
         // 8. EAST MAIN HALL (x: 4..28, z: -26..18)
@@ -10956,7 +10956,7 @@
       };
 
       for (const c of this.colliders) {
-        if (c.disabled || c.isStatue || c.isCrate) continue;
+        if (c.disabled || c.isCrate) continue;
         const floors = (c.floor === 'all') ? [0, 1, 2, 3].slice(0, NF) : [c.floor];
         for (const fl of floors) {
           if (typeof fl !== 'number' || fl < 0 || fl >= NF) continue;
@@ -11076,7 +11076,7 @@
       push(startIdx, hfn(s.i, s.j));
       const DIRS = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
       let found = false, expansions = 0;
-      while (heapIdx.length > 0 && expansions < 40000) {
+      while (heapIdx.length > 0 && expansions < N) {
         const cur = pop();
         if (B.closed[cur] === gen) continue;
         B.closed[cur] = gen;
@@ -15014,6 +15014,16 @@
         this.updatePlayer(delta);
         this.updatePhysicsCrates(delta);
         this.updateAquariumFish(delta);
+        if (this.navGrid) {
+          this.navGridRefreshTimer = (this.navGridRefreshTimer ?? 2.0) - delta;
+          if (this.navGridRefreshTimer <= 0) {
+            this.buildObstacleGrid();
+            this.navGridRefreshTimer = 2.0;
+            this.smittyPath = [];
+            this.smittyPathIndex = 0;
+            this.smittyPathGoalId = -1;
+          }
+        }
         this.updateSmitty(delta);
         if (this.updateStatues) this.updateStatues(delta);
         if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
