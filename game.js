@@ -6392,11 +6392,11 @@
       const group = new THREE.Group();
       const plasticMat = new THREE.MeshStandardMaterial({
         color: colorHex,
-        roughness: 0.38,
-        metalness: 0.08
+        roughness: 0.42,
+        metalness: 0.05
       });
 
-      // 4 Heavy-duty corner posts (span exact crate height -h/2..h/2)
+      // 4 Heavy-duty reinforced corner columns with outer corner radius/caps
       const postW = 0.038;
       const cornerOffsets = [
         [-w / 2 + postW / 2, -d / 2 + postW / 2],
@@ -6408,24 +6408,39 @@
         const post = new THREE.Mesh(new THREE.BoxGeometry(postW, h, postW), plasticMat);
         post.position.set(ox, 0, oz);
         group.add(post);
+
+        // Molded corner vertical rib flutes for authentic industrial milk crate strength
+        const flute = new THREE.Mesh(new THREE.BoxGeometry(postW * 1.08, h * 0.94, postW * 1.08), plasticMat);
+        flute.position.set(ox, 0, oz);
+        group.add(flute);
       });
 
-      // Top reinforced perimeter rim
-      const rimH = 0.038;
+      // Top reinforced perimeter rim band with molded outer lip
+      const rimH = 0.042;
       const rimThick = 0.032;
       [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
         const rimBar = new THREE.Mesh(new THREE.BoxGeometry(w, rimH, rimThick), plasticMat);
         rimBar.position.set(0, h / 2 - rimH / 2, rz);
         group.add(rimBar);
+
+        // Top stacking lip
+        const lip = new THREE.Mesh(new THREE.BoxGeometry(w, 0.010, rimThick * 1.15), plasticMat);
+        lip.position.set(0, h / 2 - 0.005, rz);
+        group.add(lip);
       });
       [-w / 2 + rimThick / 2, w / 2 - rimThick / 2].forEach((rx) => {
         const rimBar = new THREE.Mesh(new THREE.BoxGeometry(rimThick, rimH, d - rimThick * 2), plasticMat);
         rimBar.position.set(rx, h / 2 - rimH / 2, 0);
         group.add(rimBar);
+
+        // Top stacking lip
+        const lip = new THREE.Mesh(new THREE.BoxGeometry(rimThick * 1.15, 0.010, d - rimThick * 2), plasticMat);
+        lip.position.set(rx, h / 2 - 0.005, 0);
+        group.add(lip);
       });
 
-      // Bottom perimeter base frame (rests exactly at y = -h/2, zero ground penetration)
-      const botH = 0.034;
+      // Bottom perimeter base frame (rests flat at y = -h/2 with zero ground penetration)
+      const botH = 0.036;
       [-d / 2 + rimThick / 2, d / 2 - rimThick / 2].forEach((rz) => {
         const bBar = new THREE.Mesh(new THREE.BoxGeometry(w, botH, rimThick), plasticMat);
         bBar.position.set(0, -h / 2 + botH / 2, rz);
@@ -6437,86 +6452,93 @@
         group.add(bBar);
       });
 
-      // Molded bottom honeycomb grid plate (resting flat inside the base rim)
-      const botPlate = new THREE.Mesh(new THREE.BoxGeometry(w - 0.04, 0.016, d - 0.04), plasticMat);
-      botPlate.position.set(0, -h / 2 + 0.018, 0);
-      group.add(botPlate);
+      // Interlocking bottom floor grid (latticed square matrix with central reinforcement)
+      for (let gx = -3; gx <= 3; gx++) {
+        const barX = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.014, d - rimThick * 2), plasticMat);
+        barX.position.set(gx * 0.046, -h / 2 + 0.018, 0);
+        group.add(barX);
+      }
+      for (let gz = -3; gz <= 3; gz++) {
+        const barZ = new THREE.Mesh(new THREE.BoxGeometry(w - rimThick * 2, 0.014, 0.014), plasticMat);
+        barZ.position.set(0, -h / 2 + 0.018, gz * 0.046);
+        group.add(barZ);
+      }
 
-      // Molded side walls with handle openings and structural lattice grid
+      // Molded side walls with handle openings and diamond/diagonal open lattice ribs
       // North & South walls (Z = ±(d/2 - 0.012))
       [-d / 2 + 0.012, d / 2 - 0.012].forEach((sz) => {
-        // Lower solid molded panel
-        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.055, 0.014), plasticMat);
-        lowPanel.position.set(0, -h / 2 + botH + 0.0275, sz);
+        // Lower solid molded label/reinforcement panel
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.048, 0.014), plasticMat);
+        lowPanel.position.set(0, -h / 2 + botH + 0.024, sz);
         group.add(lowPanel);
 
-        // Molded center handle cutout frame (width: 0.16m, height: 0.05m)
-        const leftHandleJamb = new THREE.Mesh(new THREE.BoxGeometry((w - 0.06 - 0.16) / 2, 0.052, 0.014), plasticMat);
-        leftHandleJamb.position.set(-(w - 0.06 + 0.16) / 4, h / 2 - rimH - 0.032, sz);
-        group.add(leftHandleJamb);
+        // Handle cutout flanks (width: 0.16m opening)
+        const handleCutoutW = 0.15;
+        const flankW = (w - 0.06 - handleCutoutW) / 2;
+        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, 0.054, 0.014), plasticMat);
+        leftHandleFlank.position.set(-(w - 0.06 + handleCutoutW) / 4, h / 2 - rimH - 0.027, sz);
+        group.add(leftHandleFlank);
 
-        const rightHandleJamb = new THREE.Mesh(new THREE.BoxGeometry((w - 0.06 - 0.16) / 2, 0.052, 0.014), plasticMat);
-        rightHandleJamb.position.set((w - 0.06 + 0.16) / 4, h / 2 - rimH - 0.032, sz);
-        group.add(rightHandleJamb);
+        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, 0.054, 0.014), plasticMat);
+        rightHandleFlank.position.set((w - 0.06 + handleCutoutW) / 4, h / 2 - rimH - 0.027, sz);
+        group.add(rightHandleFlank);
 
-        // Smooth rounded cylindrical handle grip bar along top of handle opening
-        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.155, 12), plasticMat);
+        // Smooth molded ergonomic rounded grip bar over handle opening
+        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, handleCutoutW - 0.005, 12), plasticMat);
         gripBar.rotation.z = Math.PI / 2;
-        gripBar.position.set(0, h / 2 - rimH - 0.010, sz);
+        gripBar.position.set(0, h / 2 - rimH - 0.008, sz);
         group.add(gripBar);
 
-        // 3 Horizontal molded lattice ribs
+        // Molded open lattice grid (horizontal bands & diagonal diamond braces)
         for (let r = 0; r < 3; r++) {
-          const ry = -h / 2 + 0.10 + r * 0.042;
-          const rib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.012, 0.014), plasticMat);
-          rib.position.set(0, ry, sz);
-          group.add(rib);
+          const ry = -h / 2 + botH + 0.048 + r * 0.038;
+          const hRib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.012, 0.014), plasticMat);
+          hRib.position.set(0, ry, sz);
+          group.add(hRib);
         }
-
-        // 5 Vertical molded lattice ribs
-        for (let c = -2; c <= 2; c++) {
-          const vx = c * 0.058;
-          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.125, 0.014), plasticMat);
-          vRib.position.set(vx, -0.015, sz);
+        for (let c = -3; c <= 3; c++) {
+          const vx = c * 0.042;
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.115, 0.014), plasticMat);
+          vRib.position.set(vx, -0.018, sz);
           group.add(vRib);
         }
       });
 
       // East & West walls (X = ±(w/2 - 0.012))
       [-w / 2 + 0.012, w / 2 - 0.012].forEach((sx) => {
-        // Lower solid molded panel
-        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.055, d - 0.06), plasticMat);
-        lowPanel.position.set(sx, -h / 2 + botH + 0.0275, 0);
+        // Lower solid molded label/reinforcement panel
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.048, d - 0.06), plasticMat);
+        lowPanel.position.set(sx, -h / 2 + botH + 0.024, 0);
         group.add(lowPanel);
 
-        // Molded center handle cutout frame
-        const leftHandleJamb = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.052, (d - 0.06 - 0.16) / 2), plasticMat);
-        leftHandleJamb.position.set(sx, h / 2 - rimH - 0.032, -(d - 0.06 + 0.16) / 4);
-        group.add(leftHandleJamb);
+        // Handle cutout flanks
+        const handleCutoutW = 0.15;
+        const flankD = (d - 0.06 - handleCutoutW) / 2;
+        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.054, flankD), plasticMat);
+        leftHandleFlank.position.set(sx, h / 2 - rimH - 0.027, -(d - 0.06 + handleCutoutW) / 4);
+        group.add(leftHandleFlank);
 
-        const rightHandleJamb = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.052, (d - 0.06 - 0.16) / 2), plasticMat);
-        rightHandleJamb.position.set(sx, h / 2 - rimH - 0.032, (d - 0.06 + 0.16) / 4);
-        group.add(rightHandleJamb);
+        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.054, flankD), plasticMat);
+        rightHandleFlank.position.set(sx, h / 2 - rimH - 0.027, (d - 0.06 + handleCutoutW) / 4);
+        group.add(rightHandleFlank);
 
-        // Smooth rounded cylindrical handle grip bar
-        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.010, 0.010, 0.155, 12), plasticMat);
+        // Smooth molded ergonomic rounded grip bar
+        const gripBar = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, handleCutoutW - 0.005, 12), plasticMat);
         gripBar.rotation.x = Math.PI / 2;
-        gripBar.position.set(sx, h / 2 - rimH - 0.010, 0);
+        gripBar.position.set(sx, h / 2 - rimH - 0.008, 0);
         group.add(gripBar);
 
-        // 3 Horizontal molded lattice ribs
+        // Molded open lattice grid
         for (let r = 0; r < 3; r++) {
-          const ry = -h / 2 + 0.10 + r * 0.042;
-          const rib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.012, d - 0.06), plasticMat);
-          rib.position.set(sx, ry, 0);
-          group.add(rib);
+          const ry = -h / 2 + botH + 0.048 + r * 0.038;
+          const hRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.012, d - 0.06), plasticMat);
+          hRib.position.set(sx, ry, 0);
+          group.add(hRib);
         }
-
-        // 5 Vertical molded lattice ribs
-        for (let c = -2; c <= 2; c++) {
-          const vz = c * 0.058;
-          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.125, 0.012), plasticMat);
-          vRib.position.set(sx, -0.015, vz);
+        for (let c = -3; c <= 3; c++) {
+          const vz = c * 0.042;
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.115, 0.012), plasticMat);
+          vRib.position.set(sx, -0.018, vz);
           group.add(vRib);
         }
       });
@@ -8299,11 +8321,12 @@
         rackGroup.add(post);
       });
 
-      // 3 Tiers of heavy orange load beams (mounted cleanly to front/back face of uprights without clipping)
+      // 3 Tiers of heavy orange load beams spanning strictly between inner faces of the blue upright posts
+      // Inner face of posts at px = -1.10 + 0.03 = -1.07 and +1.10 - 0.03 = +1.07 -> span = 2.14m
+      // Mounting cleanly between posts with zero intersection/overlap eliminates any orange glitchy squares on blue posts
       [0.85, 1.85, 2.85].forEach(by => {
-        [-0.45, 0.45].forEach(pz => {
-          const bz = pz > 0 ? (pz + 0.03 + 0.02) : (pz - 0.03 - 0.02);
-          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.26, 0.08, 0.04), beamMat);
+        [-0.45, 0.45].forEach(bz => {
+          const beam = new THREE.Mesh(new THREE.BoxGeometry(2.14, 0.08, 0.04), beamMat);
           beam.position.set(0, by, bz);
           rackGroup.add(beam);
         });
@@ -8445,20 +8468,16 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // West Wing (Knight armor and 4 perimeter vitrine tables removed per feedback)
+        // West Wing: FULL STANDING SUIT OF KNIGHT PLATE ARMOR & VITRINES (Restored!)
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x53aa93, 0xc6bc99);
+        this.createKnightArmorDisplay(-26.0, y0, 6.0, fl);
 
-        [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
+        this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
+        this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
+        this.createVitrineTable(-31.0, y0, 12.0, 'chalice', fl);
+        this.createVitrineTable(-21.0, y0, 12.0, 'jewelry', fl);
 
-        // North Gallery Wunderkammer
-        this.createVitrineTable(6.0, y0, -33.0, 'astrolabe', fl);
-        this.createVitrineTable(18.0, y0, -33.0, 'chalice', fl);
-        [[4.0, -28.0], [20.0, -28.0], [4.0, -38.5], [20.0, -38.5]].forEach(([px, pz]) => {
-          this.createPottedMuseumPlant(px, y0, pz, fl);
-        });
-
+        // Potted plants in West Wing corners
         [[-34.5, -5.0], [-17.5, -5.0], [-34.5, 17.0]].forEach(([px, pz]) => {
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
