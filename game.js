@@ -4268,6 +4268,8 @@
 
       // East Main Hall: Realistic 5-Range Bookstacks System with Ladders & Trolleys
       this.createRealisticMainStacks(fl, y0, mats);
+      this.buildStatues(fl, y0, mats);
+      this.buildSilverSmitty(fl, y0, mats);
 
       // Arts and Music Office Desk (x: 26, z: 13)
       this.createInfoDesk(26, y0, 13, mats.mahogany);
@@ -4276,12 +4278,9 @@
       this.createCircularReferenceDesk(23, y0, 22, mats.mahogany, fl);
       this.populateFloorExhibits(fl, y0, mats);
 
-      // Distinct Floor-Specific Atmospheric Ceiling Lamps & Spotlights
-      const lightColor = fl === 0 ? 0xf4f4f4
-                       : fl === 1 ? 0xffd27d
-                       : fl === 2 ? 0x93c5fd
-                       : 0xef4444;
-      const lightInt = fl === 3 ? 0.55 : 0.58;
+      // Cohesive Warm Gallery Ceiling Lamps & Spotlights (Uniform across all floors - no color shift)
+      const lightColor = 0xfff6eb;
+      const lightInt = 0.58;
       const roomLightCoords = [
         [-26, -1],  // West Wing North
         [-26, 13],  // West Wing South
@@ -4436,33 +4435,41 @@
       const H = CONFIG.FLOOR_HEIGHT;
       const numFloors = CONFIG.NUM_FLOORS || 4;
 
-      // Determine the entity's actual vertical floor plane
-      let approxFloor = currentFloor;
-      if (typeof currentFootY === 'number' && !isNaN(currentFootY)) {
-        approxFloor = Math.max(0, Math.min(numFloors - 1, Math.round(currentFootY / H)));
-      }
+      // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.85..3.85, z: -25.8..-14.2)
+      if (pos.x >= -3.85 && pos.x <= 3.85 && pos.z >= -25.8 && pos.z <= -14.2) {
+        const halfH = H / 2;
 
-      // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.75..3.75, z: -25.8..-14.2)
-      // Shaft walls are located at x = +/-4.0, z = -26.0, z = -14.0.
-      if (pos.x >= -3.75 && pos.x <= 3.75 && pos.z >= -25.8 && pos.z <= -14.2) {
         // A) South Landing (z: -16.8..-14.2)
         if (pos.z >= -16.8) {
+          if (stairState.active === 'N') {
+            if (pos.x >= 0) {
+              // Exiting at top of East flight to upper landing
+              const targetFl = Math.min(numFloors - 1, (stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor) + 1);
+              stairState.active = null;
+              stairState.baseFloor = targetFl;
+              return { y: targetFl * H, floor: targetFl };
+            } else {
+              // Exiting at bottom of West flight to lower landing
+              const targetFl = Math.max(0, stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor);
+              stairState.active = null;
+              stairState.baseFloor = targetFl;
+              return { y: targetFl * H, floor: targetFl };
+            }
+          }
+          // Walking or standing normally on current floor landing
           stairState.active = null;
-          stairState.baseFloor = approxFloor;
-          return { y: approxFloor * H, floor: approxFloor };
+          stairState.baseFloor = currentFloor;
+          return { y: currentFloor * H, floor: currentFloor };
         }
 
         // B) North Mid-Landing (z <= -23.2)
-        const halfH = H / 2;
         if (pos.z <= -23.2) {
           if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, Math.floor(footRef / H)));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
           }
           const L = stairState.baseFloor;
           stairState.active = 'N';
-          // West half of mid-landing corresponds to lower floor L, East half transitions to L + 1
-          const fl = (pos.x < 0) ? L : (L + 1);
+          const fl = (pos.x < 0) ? L : Math.min(numFloors - 1, L + 1);
           return { y: L * H + halfH, floor: fl };
         }
 
@@ -4473,51 +4480,58 @@
           // West Flight: Ascends UP from lower landing (y = L * H) to mid-landing (y = L * H + halfH)
           if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'N';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
           }
           const L = stairState.baseFloor;
           return { y: L * H + t * halfH, floor: L };
         } else {
           // East Flight: Ascends UP from mid-landing (y = L * H + halfH) to upper landing (y = (L + 1) * H)
-          // On Floor 0, there is NO downward flight below floor 0.
-          // If entity is on Floor 0 and hasn't ascended West flight (footRef < 2.0), lock strictly to Floor 0 ground.
-          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-          if (currentFloor === 0 && footRef < 2.0) {
+          if (currentFloor === 0 && (stairState.active !== 'N' || stairState.baseFloor === 0)) {
             stairState.active = null;
+            stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
           }
-
           if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'N';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor - 1));
           }
           const L = stairState.baseFloor;
-          if (L === 0 && footRef < 2.0) {
-            return { y: 0, floor: 0 };
-          }
-          return { y: (L + 1) * H - t * halfH, floor: L + 1 };
+          return { y: (L + 1) * H - t * halfH, floor: Math.min(numFloors - 1, L + 1) };
         }
       }
 
-      // 2. Check South-West Grand Stairwell Interior Shaft (interior x: -23.75..-16.25, z: 18.2..27.8)
-      if (pos.x >= -23.75 && pos.x <= -16.25 && pos.z >= 18.2 && pos.z <= 27.8) {
+      // 2. Check South-West Grand Stairwell Interior Shaft (interior x: -23.85..-16.15, z: 18.2..27.8)
+      if (pos.x >= -23.85 && pos.x <= -16.15 && pos.z >= 18.2 && pos.z <= 27.8) {
+        const halfH = H / 2;
+
         // A) North Landing (z: 18.2..20.8)
         if (pos.z <= 20.8) {
+          if (stairState.active === 'SW') {
+            if (pos.x >= -20.0) {
+              const targetFl = Math.min(numFloors - 1, (stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor) + 1);
+              stairState.active = null;
+              stairState.baseFloor = targetFl;
+              return { y: targetFl * H, floor: targetFl };
+            } else {
+              const targetFl = Math.max(0, stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor);
+              stairState.active = null;
+              stairState.baseFloor = targetFl;
+              return { y: targetFl * H, floor: targetFl };
+            }
+          }
           stairState.active = null;
-          stairState.baseFloor = approxFloor;
-          return { y: approxFloor * H, floor: approxFloor };
+          stairState.baseFloor = currentFloor;
+          return { y: currentFloor * H, floor: currentFloor };
         }
 
         // B) South Mid-Landing (z >= 25.6)
-        const halfH = H / 2;
         if (pos.z >= 25.6) {
           if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, Math.floor(footRef / H)));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
           }
           const L = stairState.baseFloor;
           stairState.active = 'SW';
-          const fl = (pos.x < -20.0) ? L : (L + 1);
+          const fl = (pos.x < -20.0) ? L : Math.min(numFloors - 1, L + 1);
           return { y: L * H + halfH, floor: fl };
         }
 
@@ -4528,33 +4542,30 @@
           // West Flight: Ascends UP from lower landing to mid-landing
           if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'SW';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
           }
           const L = stairState.baseFloor;
           return { y: L * H + t * halfH, floor: L };
         } else {
           // East Flight: Ascends UP from mid-landing to upper landing
-          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-          if (currentFloor === 0 && footRef < 2.0) {
+          if (currentFloor === 0 && (stairState.active !== 'SW' || stairState.baseFloor === 0)) {
             stairState.active = null;
+            stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
           }
-
           if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'SW';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor - 1));
           }
           const L = stairState.baseFloor;
-          if (L === 0 && footRef < 2.0) {
-            return { y: 0, floor: 0 };
-          }
-          return { y: (L + 1) * H - t * halfH, floor: L + 1 };
+          return { y: (L + 1) * H - t * halfH, floor: Math.min(numFloors - 1, L + 1) };
         }
       }
 
+      // OUTSIDE STAIRWELLS: Strictly lock to current floor. Zero floor-jumping glitches!
       stairState.active = null;
-      stairState.baseFloor = approxFloor;
-      return { y: approxFloor * H, floor: approxFloor };
+      stairState.baseFloor = currentFloor;
+      return { y: currentFloor * H, floor: currentFloor };
     }
 
     createSlab(x, y0, z, w, d, floorMat, ceilMat, h) {
@@ -4747,7 +4758,7 @@
 
       this.scene.add(chanGroup);
 
-      const chanColor = fl === 3 ? 0xff4422 : (fl === 1 ? 0xffdf99 : 0xfffae6);
+      const chanColor = 0xfffae6;
       const chanInt = fl === 3 ? 0.45 : 0.60;
       const chanLight = new THREE.PointLight(chanColor, fl === this.playerFloor ? chanInt : 0, 14.0);
       chanLight._origIntensity = chanInt;
@@ -12070,6 +12081,17 @@
     }
 
     interact() {
+      // 0. Check Interactive Statues
+      if (this.statues && this.statues.length > 0) {
+        for (let s of this.statues) {
+          if (s.floor !== this.playerFloor) continue;
+          const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
+          if (d < 3.8) {
+            this.interactStatue(s);
+            return;
+          }
+        }
+      }
       // 1. Check Relics
       for (let relic of this.relics) {
         if (relic.collected || relic.floor !== this.playerFloor) continue;
@@ -12557,6 +12579,18 @@
           if (d < 2.5) {
             this.setInteractPrompt(`[E] TAKE AMMO (+${CONFIG.AMMO_PICKUP.AMMO_AMOUNT} ROUNDS)`);
             this.focusedPainting = null;
+            return;
+          }
+        }
+      }
+
+      // Check near interactive statues
+      if (this.statues && this.statues.length > 0) {
+        for (let s of this.statues) {
+          if (s.floor !== this.playerFloor) continue;
+          const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
+          if (d < 3.8) {
+            this.setInteractPrompt(`[E] COMMUNE: ${s.cfg.name.toUpperCase()}`);
             return;
           }
         }
@@ -14149,6 +14183,8 @@
         this.updatePhysicsCrates(delta);
         this.updateAquariumFish(delta);
         this.updateSmitty(delta);
+        if (this.updateStatues) this.updateStatues(delta);
+        if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
         this.updateLiquidBlood(delta);
         this.updateAmmoPickups(delta);
         if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
@@ -14251,6 +14287,248 @@
       }
 
       this.renderer.render(this.scene, this.camera);
+    }
+
+
+    // =========================================================================
+    // INTERACTIVE STATUES (Squash-and-Stretch Dancing, Unique Music, Built-In Platforms)
+    // =========================================================================
+    buildStatues(fl, y0, mats) {
+      if (!this.statues) this.statues = [];
+      if (typeof STATUES_CONFIG === "undefined") return;
+
+      const gltfLoader = new THREE.GLTFLoader();
+
+      STATUES_CONFIG.filter(cfg => cfg.floor === fl).forEach(cfg => {
+        const group = new THREE.Group();
+        group.position.set(cfg.x, y0, cfg.z);
+        group.rotation.y = cfg.rotY || 0;
+
+        // Statues already include their own modeled platforms — rest directly flush on the floor at y = 0.0!
+        const statueRoot = new THREE.Group();
+        statueRoot.position.set(0, 0, 0);
+        group.add(statueRoot);
+
+        const spot = new THREE.PointLight(0xfff6eb, 0.60, 10.0, 1.4);
+        spot.position.set(0, 3.8, 0);
+        group.add(spot);
+
+        const statueObj = {
+          cfg: cfg,
+          group: group,
+          statueRoot: statueRoot,
+          floor: fl,
+          x: cfg.x,
+          z: cfg.z,
+          y: y0,
+          baseY: 0,
+          isDancing: false,
+          danceStartTime: 0,
+          audioEl: null
+        };
+
+        const audio = new Audio(cfg.audio);
+        audio.preload = "auto";
+        audio.onended = () => {
+          statueObj.isDancing = false;
+          statueRoot.scale.set(1, 1, 1);
+          statueRoot.position.y = 0;
+          statueRoot.rotation.set(0, 0, 0);
+        };
+        statueObj.audioEl = audio;
+
+        gltfLoader.load(cfg.model, (gltf) => {
+          const model = gltf.scene;
+          model.traverse(child => {
+            if (child.isMesh && child.material) {
+              const matsList = Array.isArray(child.material) ? child.material : [child.material];
+              matsList.forEach(m => {
+                m.side = THREE.DoubleSide;
+                if (typeof m.metalness === 'number' && m.metalness > 0.25) m.metalness = 0.20;
+                if (typeof m.roughness === 'number' && m.roughness < 0.35) m.roughness = 0.45;
+              });
+            }
+          });
+
+          // Normalize bounding box so statue rests flush on the floor at y = 0
+          model.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const currentH = Math.max(0.001, size.y);
+          const targetH = cfg.targetHeight || 2.25;
+          const normScale = targetH / currentH;
+          model.scale.set(normScale, normScale, normScale);
+          model.updateMatrixWorld(true);
+
+          const box2 = new THREE.Box3().setFromObject(model);
+          const center2 = new THREE.Vector3();
+          box2.getCenter(center2);
+          model.position.x -= center2.x;
+          model.position.z -= center2.z;
+          model.position.y -= box2.min.y; // Base touches floor exactly at y = 0
+
+          statueRoot.add(model);
+        }, undefined, () => {});
+
+        this.scene.add(group);
+        this.statues.push(statueObj);
+
+        if (this.colliders) {
+          this.colliders.push({
+            type: "cylinder",
+            floor: fl,
+            x: cfg.x,
+            z: cfg.z,
+            radius: 0.80,
+            minY: y0,
+            maxY: y0 + 2.5
+          });
+        }
+      });
+    }
+
+    updateStatues(delta) {
+      if (!this.statues) return;
+      const now = performance.now() / 1000;
+      this.statues.forEach(s => {
+        if (!s.isDancing) return;
+        const elapsed = now - s.danceStartTime;
+        if (elapsed > s.cfg.duration || (s.audioEl && s.audioEl.ended)) {
+          s.isDancing = false;
+          s.statueRoot.scale.set(1, 1, 1);
+          s.statueRoot.position.y = s.baseY;
+          s.statueRoot.rotation.set(0, 0, 0);
+          if (s.audioEl && !s.audioEl.paused) s.audioEl.pause();
+          return;
+        }
+
+        // Elastic Squash-and-Stretch dancing bounce + playful rhythm sway
+        const freq = 9.2;
+        const phase = elapsed * freq;
+        const osc = Math.sin(phase);
+        const squash = 1.0 + 0.30 * osc;
+        const stretch = 1.0 / Math.sqrt(Math.max(0.4, squash));
+
+        s.statueRoot.scale.set(stretch, squash, stretch);
+        s.statueRoot.position.y = s.baseY + Math.max(0, osc) * 0.42;
+        s.statueRoot.rotation.z = Math.sin(phase * 0.5) * 0.14;
+        s.statueRoot.rotation.y = Math.cos(phase * 0.5) * 0.22;
+      });
+    }
+
+    interactStatue(s) {
+      if (s.isDancing) return; // Anti-spam lockout while track is playing
+      if (this.activeStatueAudio && !this.activeStatueAudio.paused) {
+        this.activeStatueAudio.pause();
+        this.activeStatueAudio.currentTime = 0;
+        this.statues.forEach(other => {
+          if (other !== s) {
+            other.isDancing = false;
+            other.statueRoot.scale.set(1, 1, 1);
+            other.statueRoot.position.y = other.baseY;
+            other.statueRoot.rotation.set(0, 0, 0);
+          }
+        });
+      }
+      s.isDancing = true;
+      s.danceStartTime = performance.now() / 1000;
+      this.activeStatueAudio = s.audioEl;
+      if (s.audioEl) {
+        s.audioEl.currentTime = 0;
+        s.audioEl.volume = 0.85;
+        s.audioEl.play().catch(() => {});
+      }
+      this.showSystemNotification(`♪ PLAYING STATUE: ${s.cfg.name.toUpperCase()} ♪`);
+      if (this.triggerLeftHandGrab) this.triggerLeftHandGrab();
+    }
+
+    // =========================================================================
+    // SILVER SMITTY (Quietly Roaming Exhibit Statue — subtle relocation)
+    // =========================================================================
+    buildSilverSmitty(fl, y0, mats) {
+      if (fl !== 0 || this.silverSmitty) return;
+      const gltfLoader = new THREE.GLTFLoader();
+      const modelPath = "assets/statues/Silver Smitty.glb";
+
+      gltfLoader.load(modelPath, (gltf) => {
+        const model = gltf.scene;
+        model.traverse(child => {
+          if (child.isMesh && child.material) {
+            const matsList = Array.isArray(child.material) ? child.material : [child.material];
+            matsList.forEach(m => {
+              m.side = THREE.DoubleSide;
+              if (typeof m.metalness === 'number' && m.metalness > 0.3) m.metalness = 0.25;
+            });
+          }
+        });
+
+        model.updateMatrixWorld(true);
+        const box = new THREE.Box3().setFromObject(model);
+        const size = new THREE.Vector3();
+        box.getSize(size);
+        const currentH = Math.max(0.001, size.y);
+        const targetH = 2.15;
+        const normScale = targetH / currentH;
+        model.scale.set(normScale, normScale, normScale);
+        model.updateMatrixWorld(true);
+
+        const box2 = new THREE.Box3().setFromObject(model);
+        const center2 = new THREE.Vector3();
+        box2.getCenter(center2);
+        model.position.x -= center2.x;
+        model.position.z -= center2.z;
+        model.position.y -= box2.min.y;
+
+        const group = new THREE.Group();
+        group.position.set(23.0, 0, -33.0);
+        group.add(model);
+        this.scene.add(group);
+
+        this.silverSmitty = {
+          mesh: group,
+          cooldown: 50.0 + Math.random() * 40.0,
+          currentFloor: 0
+        };
+      }, undefined, () => {});
+    }
+
+    updateSilverSmitty(delta) {
+      if (!this.silverSmitty || !this.silverSmitty.mesh) return;
+      this.silverSmitty.cooldown -= delta;
+      if (this.silverSmitty.cooldown > 0) return;
+
+      const frustum = new THREE.Frustum();
+      const projScreenMatrix = new THREE.Matrix4();
+      projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      frustum.setFromProjectionMatrix(projScreenMatrix);
+
+      const smittyWorldPos = new THREE.Vector3();
+      this.silverSmitty.mesh.getWorldPosition(smittyWorldPos);
+
+      // Only relocate if player cannot see Silver Smitty!
+      if (!frustum.containsPoint(smittyWorldPos)) {
+        const waypoints = [
+          { x: -10.0, z: -10.0, floor: 0 },
+          { x: -26.0, z: -2.0, floor: 0 },
+          { x: 14.0, z: 12.0, floor: 0 },
+          { x: 23.0, z: -33.0, floor: 0 },
+          { x: -10.0, z: 10.0, floor: 1 },
+          { x: 12.0, z: -30.0, floor: 1 },
+          { x: 22.0, z: 12.0, floor: 2 },
+          { x: -10.0, z: -5.0, floor: 2 }
+        ];
+        const nextWp = waypoints[Math.floor(Math.random() * waypoints.length)];
+        const targetY = nextWp.floor * CONFIG.FLOOR_HEIGHT;
+        const candidatePos = new THREE.Vector3(nextWp.x, targetY + 1.2, nextWp.z);
+
+        if (!frustum.containsPoint(candidatePos)) {
+          this.silverSmitty.mesh.position.set(nextWp.x, targetY, nextWp.z);
+          this.silverSmitty.mesh.lookAt(this.playerPos.x, targetY, this.playerPos.z);
+          this.silverSmitty.currentFloor = nextWp.floor;
+          this.silverSmitty.cooldown = 60.0 + Math.random() * 45.0; // Random interval: 60 to 105 seconds
+        }
+      }
     }
 
     exportLevelJSON() {
