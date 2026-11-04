@@ -849,7 +849,7 @@
   // --- CONFIGURATION ---
   const CONFIG = {
     TOTAL_RELICS: 14,
-    FLOOR_HEIGHT: 5.2,
+    FLOOR_HEIGHT: 7.5,
     NUM_FLOORS: 4,
     AMMO_PICKUP: {
       RESPAWN_TIME: 180.0, // 3 minutes respawn timer
@@ -3841,24 +3841,25 @@
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
 
         if (fl < CONFIG.NUM_FLOORS - 1) {
-          // Solid North Mid-Landing box at y0 + 2.6 (x: -4.0..4.0, z: -26.0..-23.2)
+          const halfH = CONFIG.FLOOR_HEIGHT / 2;
+          // Solid North Mid-Landing box at y0 + halfH (x: -4.0..4.0, z: -26.0..-23.2)
           const nLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.8), mats.stairStone);
-          nLand.position.set(0, y0 + 2.6 - 0.14, -24.6);
+          nLand.position.set(0, y0 + halfH - 0.14, -24.6);
           this.scene.add(nLand);
 
-          const numSteps = 12;
+          const numSteps = 18;
           const stepLen = 6.4 / numSteps;
-          const stepH = 2.6 / numSteps;
+          const stepH = halfH / numSteps;
           for (let s = 0; s < numSteps; s++) {
             const sz = -16.8 - (s + 0.5) * stepLen;
-            // West Flight (x: -1.98, goes UP from y0 at z=-16.8 to y0+2.6 at z=-23.2)
+            // West Flight (x: -1.98, goes UP from y0 at z=-16.8 to y0+halfH at z=-23.2)
             const wy = y0 + (s + 1) * stepH;
             const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
             wStep.position.set(-1.98, wy - stepH / 2 - 0.06, sz);
             this.scene.add(wStep);
 
-            // East Flight (x: 1.98, goes UP from y0+2.6 at z=-23.2 to y0+5.2 at z=-16.8)
-            const ey = (y0 + 5.2) - s * stepH;
+            // East Flight (x: 1.98, goes UP from y0+halfH at z=-23.2 to y0+CONFIG.FLOOR_HEIGHT at z=-16.8)
+            const ey = (y0 + CONFIG.FLOOR_HEIGHT) - s * stepH;
             const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
             eStep.position.set(1.98, ey - stepH / 2 - 0.06, sz);
             this.scene.add(eStep);
@@ -3893,24 +3894,25 @@
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
 
         if (fl < CONFIG.NUM_FLOORS - 1) {
-          // Solid South Mid-Landing box at y0 + 2.6 (x: -24.0..-16.0, z: 25.6..28.0)
+          const halfH = CONFIG.FLOOR_HEIGHT / 2;
+          // Solid South Mid-Landing box at y0 + halfH (x: -24.0..-16.0, z: 25.6..28.0)
           const sLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.4), mats.stairStone);
-          sLand.position.set(-20, y0 + 2.6 - 0.14, 26.8);
+          sLand.position.set(-20, y0 + halfH - 0.14, 26.8);
           this.scene.add(sLand);
 
-          const numSteps = 10;
+          const numSteps = 14;
           const stepLen = 4.8 / numSteps;
-          const stepH = 2.6 / numSteps;
+          const stepH = halfH / numSteps;
           for (let s = 0; s < numSteps; s++) {
             const sz = 20.8 + (s + 0.5) * stepLen;
-            // West Flight (x: -21.98, goes UP from y0 at z=20.8 to y0+2.6 at z=25.6)
+            // West Flight (x: -21.98, goes UP from y0 at z=20.8 to y0+halfH at z=25.6)
             const wy = y0 + (s + 1) * stepH;
             const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
             wStep.position.set(-21.98, wy - stepH / 2 - 0.06, sz);
             this.scene.add(wStep);
 
-            // East Flight (x: -18.02, goes UP from y0+2.6 at z=25.6 to y0+5.2 at z=20.8)
-            const ey = (y0 + 5.2) - s * stepH;
+            // East Flight (x: -18.02, goes UP from y0+halfH at z=25.6 to y0+CONFIG.FLOOR_HEIGHT at z=20.8)
+            const ey = (y0 + CONFIG.FLOOR_HEIGHT) - s * stepH;
             const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
             eStep.position.set(-18.02, ey - stepH / 2 - 0.06, sz);
             this.scene.add(eStep);
@@ -3948,6 +3950,7 @@
         }
 
         // B) North Mid-Landing (z <= -23.2)
+        const halfH = H / 2;
         if (pos.z <= -23.2) {
           if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
             const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
@@ -3957,22 +3960,22 @@
           stairState.active = 'N';
           // West half of mid-landing corresponds to lower floor L, East half transitions to L + 1
           const fl = (pos.x < 0) ? L : (L + 1);
-          return { y: L * H + 2.6, floor: fl };
+          return { y: L * H + halfH, floor: fl };
         }
 
         // C) Active Flights (z: -23.2..-16.8, length = 6.4)
         const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
 
         if (pos.x < 0) {
-          // West Flight: Ascends UP from lower landing (y = L * H) to mid-landing (y = L * H + 2.6)
+          // West Flight: Ascends UP from lower landing (y = L * H) to mid-landing (y = L * H + halfH)
           if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'N';
             stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
           }
           const L = stairState.baseFloor;
-          return { y: L * H + t * 2.6, floor: L };
+          return { y: L * H + t * halfH, floor: L };
         } else {
-          // East Flight: Ascends UP from mid-landing (y = L * H + 2.6) to upper landing (y = (L + 1) * H)
+          // East Flight: Ascends UP from mid-landing (y = L * H + halfH) to upper landing (y = (L + 1) * H)
           // On Floor 0, there is NO downward flight below floor 0.
           // If entity is on Floor 0 and hasn't ascended West flight (footRef < 2.0), lock strictly to Floor 0 ground.
           const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
@@ -3989,7 +3992,7 @@
           if (L === 0 && footRef < 2.0) {
             return { y: 0, floor: 0 };
           }
-          return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
+          return { y: (L + 1) * H - t * halfH, floor: L + 1 };
         }
       }
 
@@ -4003,6 +4006,7 @@
         }
 
         // B) South Mid-Landing (z >= 25.6)
+        const halfH = H / 2;
         if (pos.z >= 25.6) {
           if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
             const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
@@ -4011,7 +4015,7 @@
           const L = stairState.baseFloor;
           stairState.active = 'SW';
           const fl = (pos.x < -20.0) ? L : (L + 1);
-          return { y: L * H + 2.6, floor: fl };
+          return { y: L * H + halfH, floor: fl };
         }
 
         // C) Active Flights (z: 20.8..25.6, length = 4.8)
@@ -4024,7 +4028,7 @@
             stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
           }
           const L = stairState.baseFloor;
-          return { y: L * H + t * 2.6, floor: L };
+          return { y: L * H + t * halfH, floor: L };
         } else {
           // East Flight: Ascends UP from mid-landing to upper landing
           const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
@@ -4041,7 +4045,7 @@
           if (L === 0 && footRef < 2.0) {
             return { y: 0, floor: 0 };
           }
-          return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
+          return { y: (L + 1) * H - t * halfH, floor: L + 1 };
         }
       }
 
@@ -4250,87 +4254,271 @@
     }
 
     createClassicalBeauxArtsArchitecture(fl, y0, mats, ceilH, wallH) {
-      // Classical architectural materials for molded cornices, coffered laylights & portal casings
-      const corniceMat = new THREE.MeshLambertMaterial({ color: fl === 3 ? 0x9ca3af : (fl === 1 ? 0xf8f5ee : (fl === 2 ? 0xeae6dc : 0xf4f1ea)) });
+      // Classical Beaux-Arts architectural materials for smooth coved vaulting, coffered laylights & portal architraves
+      const corniceMat = new THREE.MeshLambertMaterial({
+        color: fl === 3 ? 0x9ca3af : (fl === 1 ? 0xf8f5ee : (fl === 2 ? 0xeae6dc : 0xf5f2eb)),
+        side: THREE.DoubleSide
+      });
       const architraveMat = new THREE.MeshLambertMaterial({ color: fl === 3 ? 0x64748b : 0xe4e0d5 });
       const skylightGlassMat = new THREE.MeshLambertMaterial({
-        color: 0xbae6fd,
-        emissive: 0x1e3a5f,
-        emissiveIntensity: 0.38,
+        color: 0xcfeafe,
+        emissive: 0x22384f,
+        emissiveIntensity: 0.42,
         transparent: true,
-        opacity: 0.88
+        opacity: 0.90,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       });
-      const mullionMat = new THREE.MeshLambertMaterial({ color: 0x27272a });
+      const mullionMat = new THREE.MeshLambertMaterial({ color: 0x1f242d });
 
-      // 1. Helper: Multi-tiered Classical Coved Cornice Molding along a gallery perimeter
-      const addRoomCornice = (minX, maxX, minZ, maxZ) => {
-        const cDepth = 0.28;
-        const cH = 0.38;
-        const cy = y0 + ceilH - cH / 2;
+      // Helper: Generate a smooth parametric 2D quad mesh grid with smooth vertex normals
+      const buildGridGeom = (getVertex, nx, ny) => {
+        const geom = new THREE.BufferGeometry();
+        const positions = [];
+        const indices = [];
+
+        for (let iy = 0; iy <= ny; iy++) {
+          for (let ix = 0; ix <= nx; ix++) {
+            const v = getVertex(ix / nx, iy / ny);
+            positions.push(v.x, v.y, v.z);
+          }
+        }
+
+        for (let iy = 0; iy < ny; iy++) {
+          for (let ix = 0; ix < nx; ix++) {
+            const a = iy * (nx + 1) + ix;
+            const b = iy * (nx + 1) + (ix + 1);
+            const c = (iy + 1) * (nx + 1) + ix;
+            const d = (iy + 1) * (nx + 1) + (ix + 1);
+            indices.push(a, b, c);
+            indices.push(b, d, c);
+          }
+        }
+
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geom.setIndex(indices);
+        geom.computeVertexNormals();
+        return geom;
+      };
+
+      // 1. Helper: Grand Concave Coved Vault with Seamless Curved Corners across a gallery hall
+      const addVaultedCovedCeiling = (minX, maxX, minZ, maxZ, coveH = 2.0, coveDepth = 1.6) => {
+        const yBase = y0 + ceilH - coveH;
+        const segs = 14;
         const group = new THREE.Group();
 
-        // North cornice (at minZ)
-        const cNorth = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, cH, cDepth), corniceMat);
-        cNorth.position.set((minX + maxX) / 2, cy, minZ + cDepth / 2);
-        group.add(cNorth);
+        // A. Classical Frieze / Entablature Molding Band along the base of the cove (y = yBase)
+        const friezeH = 0.16;
+        const friezeD = 0.10;
+        const fy = yBase - friezeH / 2;
 
-        // South cornice (at maxZ)
-        const cSouth = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, cH, cDepth), corniceMat);
-        cSouth.position.set((minX + maxX) / 2, cy, maxZ - cDepth / 2);
-        group.add(cSouth);
+        const fN = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, friezeH, friezeD), architraveMat);
+        fN.position.set((minX + maxX) / 2, fy, minZ + friezeD / 2);
+        group.add(fN);
 
-        // West cornice (at minX)
-        const cWest = new THREE.Mesh(new THREE.BoxGeometry(cDepth, cH, (maxZ - minZ) - cDepth * 2), corniceMat);
-        cWest.position.set(minX + cDepth / 2, cy, (minZ + maxZ) / 2);
-        group.add(cWest);
+        const fS = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, friezeH, friezeD), architraveMat);
+        fS.position.set((minX + maxX) / 2, fy, maxZ - friezeD / 2);
+        group.add(fS);
 
-        // East cornice (at maxX)
-        const cEast = new THREE.Mesh(new THREE.BoxGeometry(cDepth, cH, (maxZ - minZ) - cDepth * 2), corniceMat);
-        cEast.position.set(maxX - cDepth / 2, cy, (minZ + maxZ) / 2);
-        group.add(cEast);
+        const fW = new THREE.Mesh(new THREE.BoxGeometry(friezeD, friezeH, (maxZ - minZ) - friezeD * 2), architraveMat);
+        fW.position.set(minX + friezeD / 2, fy, (minZ + maxZ) / 2);
+        group.add(fW);
+
+        const fE = new THREE.Mesh(new THREE.BoxGeometry(friezeD, friezeH, (maxZ - minZ) - friezeD * 2), architraveMat);
+        fE.position.set(maxX - friezeD / 2, fy, (minZ + maxZ) / 2);
+        group.add(fE);
+
+        // B. North Coved Wall Vault (minZ)
+        const northCoveGeom = buildGridGeom((u, v) => {
+          const x = (minX + coveDepth) + u * ((maxX - coveDepth) - (minX + coveDepth));
+          const theta = v * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const z = minZ + coveDepth * (1 - Math.cos(theta));
+          return { x, y, z };
+        }, 16, segs);
+        group.add(new THREE.Mesh(northCoveGeom, corniceMat));
+
+        // C. South Coved Wall Vault (maxZ)
+        const southCoveGeom = buildGridGeom((u, v) => {
+          const x = (minX + coveDepth) + u * ((maxX - coveDepth) - (minX + coveDepth));
+          const theta = v * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const z = maxZ - coveDepth * (1 - Math.cos(theta));
+          return { x, y, z };
+        }, 16, segs);
+        group.add(new THREE.Mesh(southCoveGeom, corniceMat));
+
+        // D. West Coved Wall Vault (minX)
+        const westCoveGeom = buildGridGeom((u, v) => {
+          const z = (minZ + coveDepth) + u * ((maxZ - coveDepth) - (minZ + coveDepth));
+          const theta = v * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const x = minX + coveDepth * (1 - Math.cos(theta));
+          return { x, y, z };
+        }, 16, segs);
+        group.add(new THREE.Mesh(westCoveGeom, corniceMat));
+
+        // E. East Coved Wall Vault (maxX)
+        const eastCoveGeom = buildGridGeom((u, v) => {
+          const z = (minZ + coveDepth) + u * ((maxZ - coveDepth) - (minZ + coveDepth));
+          const theta = v * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const x = maxX - coveDepth * (1 - Math.cos(theta));
+          return { x, y, z };
+        }, 16, segs);
+        group.add(new THREE.Mesh(eastCoveGeom, corniceMat));
+
+        // F. Four Seamless Coved Corner Transitions (Spherical Quadrant Sweeps)
+        // North-West Corner
+        const nwCornerGeom = buildGridGeom((u, v) => {
+          const theta = v * (Math.PI / 2);
+          const phi = u * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const r = coveDepth * Math.cos(theta);
+          const x = (minX + coveDepth) - r * Math.cos(phi);
+          const z = (minZ + coveDepth) - r * Math.sin(phi);
+          return { x, y, z };
+        }, 10, segs);
+        group.add(new THREE.Mesh(nwCornerGeom, corniceMat));
+
+        // North-East Corner
+        const neCornerGeom = buildGridGeom((u, v) => {
+          const theta = v * (Math.PI / 2);
+          const phi = u * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const r = coveDepth * Math.cos(theta);
+          const x = (maxX - coveDepth) + r * Math.cos(phi);
+          const z = (minZ + coveDepth) - r * Math.sin(phi);
+          return { x, y, z };
+        }, 10, segs);
+        group.add(new THREE.Mesh(neCornerGeom, corniceMat));
+
+        // South-West Corner
+        const swCornerGeom = buildGridGeom((u, v) => {
+          const theta = v * (Math.PI / 2);
+          const phi = u * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const r = coveDepth * Math.cos(theta);
+          const x = (minX + coveDepth) - r * Math.cos(phi);
+          const z = (maxZ - coveDepth) + r * Math.sin(phi);
+          return { x, y, z };
+        }, 10, segs);
+        group.add(new THREE.Mesh(swCornerGeom, corniceMat));
+
+        // South-East Corner
+        const seCornerGeom = buildGridGeom((u, v) => {
+          const theta = v * (Math.PI / 2);
+          const phi = u * (Math.PI / 2);
+          const y = yBase + coveH * Math.sin(theta);
+          const r = coveDepth * Math.cos(theta);
+          const x = (maxX - coveDepth) + r * Math.cos(phi);
+          const z = (maxZ - coveDepth) + r * Math.sin(phi);
+          return { x, y, z };
+        }, 10, segs);
+        group.add(new THREE.Mesh(seCornerGeom, corniceMat));
 
         this.scene.add(group);
       };
 
-      // 2. Helper: Grand Beaux-Arts Coffered Laylight / Skylight Grid (matching reference image)
-      const addCofferedSkylight = (cx, cz, w, d, rows = 6, cols = 3) => {
-        const skylightGroup = new THREE.Group();
-        skylightGroup.position.set(cx, y0 + ceilH - 0.04, cz);
+      // 2. Helper: Transverse Arched Ribs Spanning the Vault (matching the reference museum photo)
+      const addTransverseArchRib = (minX, maxX, z, coveH = 2.0, coveDepth = 1.6) => {
+        const yBase = y0 + ceilH - coveH;
+        const ribW = 0.28;
+        const ribThick = 0.05;
+        const segs = 14;
 
-        // Outer coved architrave surround
-        const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.30, 0.08, d + 0.30), architraveMat);
+        const geom = new THREE.BufferGeometry();
+        const positions = [];
+        const indices = [];
+
+        const curvePts = [];
+        // West cove arc
+        for (let s = 0; s <= segs; s++) {
+          const theta = (s / segs) * (Math.PI / 2);
+          const x = minX + coveDepth * (1 - Math.cos(theta));
+          const y = yBase + coveH * Math.sin(theta);
+          curvePts.push({ x, y });
+        }
+        // East cove arc
+        for (let s = segs; s >= 0; s--) {
+          const theta = (s / segs) * (Math.PI / 2);
+          const x = maxX - coveDepth * (1 - Math.cos(theta));
+          const y = yBase + coveH * Math.sin(theta);
+          curvePts.push({ x, y });
+        }
+
+        for (let i = 0; i < curvePts.length; i++) {
+          const p = curvePts[i];
+          positions.push(p.x, p.y - ribThick, z - ribW / 2);
+          positions.push(p.x, p.y - ribThick, z + ribW / 2);
+        }
+
+        for (let i = 0; i < curvePts.length - 1; i++) {
+          const a = i * 2;
+          const b = i * 2 + 1;
+          const c = (i + 1) * 2;
+          const d = (i + 1) * 2 + 1;
+          indices.push(a, b, c);
+          indices.push(b, d, c);
+        }
+
+        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+        geom.setIndex(indices);
+        geom.computeVertexNormals();
+
+        const ribMesh = new THREE.Mesh(geom, architraveMat);
+        this.scene.add(ribMesh);
+      };
+
+      // 3. Helper: Grand Beaux-Arts Coffered Laylight / Skylight Grid (clean layering, zero Z-fighting)
+      const addCofferedSkylight = (cx, cz, w, d, rows = 8, cols = 4) => {
+        const skylightGroup = new THREE.Group();
+        skylightGroup.position.set(cx, y0 + ceilH - 0.03, cz);
+
+        // Outer stepped architrave border
+        const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.36, 0.06, d + 0.36), architraveMat);
+        outerFrame.position.set(0, -0.01, 0);
         skylightGroup.add(outerFrame);
 
         // Diffuse luminous glazed sky panel
         const glassPanel = new THREE.Mesh(new THREE.PlaneGeometry(w, d), skylightGlassMat);
         glassPanel.rotation.x = Math.PI / 2;
+        glassPanel.position.set(0, 0.005, 0);
         skylightGroup.add(glassPanel);
 
         // Classical architectural bronze/steel glazing mullions
-        const barH = 0.04;
-        const barW = 0.05;
+        const barH = 0.035;
+        const barW = 0.045;
         for (let c = 1; c < cols; c++) {
           const mx = -w / 2 + (w / cols) * c;
           const bar = new THREE.Mesh(new THREE.BoxGeometry(barW, barH, d), mullionMat);
-          bar.position.set(mx, -0.02, 0);
+          bar.position.set(mx, -0.015, 0);
           skylightGroup.add(bar);
         }
         for (let r = 1; r < rows; r++) {
           const mz = -d / 2 + (d / rows) * r;
           const bar = new THREE.Mesh(new THREE.BoxGeometry(w, barH, barW), mullionMat);
-          bar.position.set(0, -0.02, mz);
+          bar.position.set(0, -0.015, mz);
           skylightGroup.add(bar);
         }
+
+        // Soft ambient daylight glow radiating down from the laylight
+        const skyLight = new THREE.PointLight(0xcfeafe, fl === this.playerFloor ? 0.35 : 0, 18.0, 1.4);
+        skyLight._origIntensity = 0.35;
+        skyLight.position.set(0, -0.65, 0);
+        skylightGroup.add(skyLight);
+        if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(skyLight);
 
         this.scene.add(skylightGroup);
       };
 
-      // 3. Helper: Classical Stepped Portal Architrave Casings & Headers around Major Passages
+      // 4. Helper: Classical Stepped Portal Architrave Casings & Headers around Major Passages
       const addPortalArchitrave = (px, pz, openW, openH, isXWall = false) => {
         const archGroup = new THREE.Group();
         archGroup.position.set(px, y0, pz);
         const trimW = 0.18;
-        const trimD = 0.44; // 44cm trim depth wraps around 40cm wall faces with clean 2cm reveal
+        const trimD = 0.44; // 44cm trim depth cleanly wraps around 40cm wall faces with 2cm reveal
         const capH = 0.22;
 
         if (!isXWall) {
@@ -4361,15 +4549,25 @@
         this.scene.add(archGroup);
       };
 
-      // Apply classical coved cornices to major museum halls
-      addRoomCornice(-16.0, -4.0, -18.0, 28.0); // Main Gallery (46m Concourse)
-      addRoomCornice(4.0, 28.0, -26.0, 18.0);   // East Main Hall
-      addRoomCornice(-36.0, -16.0, -6.0, 18.0); // West Wing Salon
-      addRoomCornice(-4.0, 28.0, -40.0, -26.0); // North Gallery
+      // Apply authentic smooth coved vaulting to the monumental museum halls
+      addVaultedCovedCeiling(-16.0, -4.0, -18.0, 28.0, 2.2, 1.6); // Main Gallery (46m Concourse)
+      addVaultedCovedCeiling(4.0, 28.0, -26.0, 18.0, 2.2, 1.8);   // East Main Hall (44m Grand Hall)
+      addVaultedCovedCeiling(-36.0, -16.0, -6.0, 18.0, 2.0, 1.6); // West Wing Salon
+      addVaultedCovedCeiling(-4.0, 28.0, -40.0, -26.0, 2.0, 1.6); // North Gallery Antiquities Pavilion
 
-      // Apply grand coffered laylights to the monumental halls
-      addCofferedSkylight(-10.0, 5.0, 5.2, 26.0, 8, 3);
-      addCofferedSkylight(16.0, -4.0, 9.6, 26.0, 8, 4);
+      // Apply transverse arched ribs spanning the vault bays (matching European museum architecture)
+      [-10.0, -2.0, 6.0, 14.0, 22.0].forEach(rz => {
+        addTransverseArchRib(-16.0, -4.0, rz, 2.2, 1.6);
+      });
+      [-18.0, -10.0, -2.0, 6.0, 14.0].forEach(rz => {
+        addTransverseArchRib(4.0, 28.0, rz, 2.2, 1.8);
+      });
+
+      // Apply grand coffered laylights to the elevated ceilings of the monumental halls
+      addCofferedSkylight(-10.0, 5.0, 5.6, 32.0, 10, 4);  // Main Gallery central spine
+      addCofferedSkylight(16.0, -4.0, 12.0, 32.0, 10, 6); // East Main Hall grand skylight
+      addCofferedSkylight(12.0, -33.0, 18.0, 7.0, 4, 8);  // North Gallery central laylight
+      addCofferedSkylight(-26.0, 6.0, 10.0, 14.0, 6, 4);  // West Wing Salon laylight
 
       // Apply stepped classical portal architraves to major room thresholds
       addPortalArchitrave(-16.0, -2.0, 3.0, 3.2, true);
@@ -7904,13 +8102,16 @@
         kelpBlades: kelpBlades
       });
 
+      const isZAligned = Math.abs(Math.sin(rotY)) > 0.5;
+      const halfW = isZAligned ? 0.42 : 0.82;
+      const halfD = isZAligned ? 0.82 : 0.42;
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: x - (rotY !== 0 ? 0.42 : 0.82),
-        maxX: x + (rotY !== 0 ? 0.42 : 0.82),
-        minZ: z - (rotY !== 0 ? 0.82 : 0.42),
-        maxZ: z + (rotY !== 0 ? 0.82 : 0.42),
+        minX: x - halfW,
+        maxX: x + halfW,
+        minZ: z - halfD,
+        maxZ: z + halfD,
         minY: y0,
         maxY: y0 + 1.48
       });
@@ -8737,8 +8938,8 @@
         this.createGalleryRunnerRug(19.0, y0, 24.5, 3.0, 13.0, 0xb47488, 0xc6bc99);
         // (Floor 0 South-East Wing sculptures removed per curator request)
 
-        // Living aquatic exhibition tank (Main Gallery East wall alcove with blue lid glow)
-        this.createAquariumTank(-4.8, y0, 5.0, fl, -Math.PI / 2);
+        // Living aquatic exhibition tank (South-East Wing exhibition alcove with blue lid glow)
+        this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
 
       } else if (fl === 1) {
         // =========================================================================
@@ -8771,8 +8972,8 @@
 
         // (Floor 1 Library section sculptures removed per curator request)
 
-        // Living aquatic exhibition tank (South-East Gallery wall with blue lid glow)
-        this.createAquariumTank(10.0, y0, 27.2, fl, Math.PI);
+        // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
+        this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
 
       } else if (fl === 2) {
         // =========================================================================
@@ -8811,8 +9012,8 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Living aquatic exhibition tank (West Wing South wall between doorways with blue lid glow)
-        this.createAquariumTank(-25.0, y0, 17.2, fl, Math.PI);
+        // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
+        this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
 
       } else {
         // =========================================================================
@@ -8825,8 +9026,8 @@
         this.createPalletRackStorage(10.0, y0,   1.0, fl);
         this.createPalletRackStorage(20.0, y0,   1.0, fl);
 
-        // Living aquatic exhibition tank (Main Gallery East wall alcove with blue lid glow)
-        this.createAquariumTank(-4.8, y0, 5.0, fl, -Math.PI / 2);
+        // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
+        this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
       }
     }
 
@@ -9152,8 +9353,10 @@
         slots.forEach((slot, idx) => {
           if (idx >= shuffledArts.length) return;
           const art = shuffledArts[idx];
+          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + 2.35;
+          slot.y = slotY;
           art.x = slot.x;
-          art.y = slot.y;
+          art.y = slotY;
           art.z = slot.z;
           art.rotY = slot.rotY;
           art.wing = T('floor.' + (f + 1), floorNames[f]);
@@ -9161,7 +9364,7 @@
           const group = new THREE.Group();
           const nx = Math.sin(slot.rotY) * 0.06;
           const nz = Math.cos(slot.rotY) * 0.06;
-          group.position.set(slot.x + nx, slot.y, slot.z + nz);
+          group.position.set(slot.x + nx, slotY, slot.z + nz);
           group.rotation.y = slot.rotY;
 
           const key = `${art.w}_${art.h}`;
@@ -9633,7 +9836,7 @@
 
       // Multi-floor Stairwell Connections
       for (let fl = 0; fl < CONFIG.NUM_FLOORS - 1; fl++) {
-        const yMid = fl * CONFIG.FLOOR_HEIGHT + 2.6;
+        const yMid = fl * CONFIG.FLOOR_HEIGHT + CONFIG.FLOOR_HEIGHT / 2;
         // Stairwell N flights
         const nWestBase = addNode(-2.0, fl * CONFIG.FLOOR_HEIGHT, -15.4, fl, 'stairN_WBase');
         const nWestMid  = addNode(-2.0, yMid, -24.0, fl, 'stairN_WMid');
