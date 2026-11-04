@@ -8468,9 +8468,8 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // West Wing: FULL STANDING SUIT OF KNIGHT PLATE ARMOR & VITRINES (Restored!)
+        // West Wing (Knight statue removed per request)
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x53aa93, 0xc6bc99);
-        this.createKnightArmorDisplay(-26.0, y0, 6.0, fl);
 
         this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
         this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
