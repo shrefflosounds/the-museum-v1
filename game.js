@@ -893,1092 +893,1083 @@
   {
     "floor": 0,
     "x": -35.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": -2.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": -35.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 3.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": -35.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 8.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": -35.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 13.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
-    "x": -32.0,
-    "y": 2.35,
+    "x": -31.5,
+    "y": 2.75,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
-    "x": -20.0,
-    "y": 2.35,
+    "x": -26.0,
+    "y": 2.75,
+    "z": -5.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 0,
+    "x": -20.5,
+    "y": 2.75,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": -16.35,
-    "y": 2.35,
+    "y": 2.75,
     "z": 2.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
     "x": -16.35,
-    "y": 2.35,
+    "y": 2.75,
     "z": 10.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
+    "x": -33.65,
+    "y": 2.75,
+    "z": 23.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 0,
+    "x": -29.0,
+    "y": 2.75,
+    "z": 27.65,
+    "rotY": 3.1416
+  },
+  {
+    "floor": 0,
     "x": -12.5,
-    "y": 2.35,
+    "y": 2.75,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": -7.5,
-    "y": 2.35,
+    "y": 2.75,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": -15.65,
-    "y": 2.35,
-    "z": -12.0,
+    "y": 2.75,
+    "z": -12.5,
     "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": -15.65,
-    "y": 2.35,
+    "y": 2.75,
+    "z": -7.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 0,
+    "x": -15.65,
+    "y": 2.75,
     "z": 2.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": -15.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 10.0,
     "rotY": 1.5708
   },
   {
     "floor": 0,
+    "x": -15.65,
+    "y": 2.75,
+    "z": 24.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 0,
     "x": -4.35,
-    "y": 2.35,
-    "z": -2.0,
+    "y": 2.75,
+    "z": -10.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
     "x": -4.35,
-    "y": 2.35,
-    "z": 13.0,
+    "y": 2.75,
+    "z": -3.0,
     "rotY": -1.5708
+  },
+  {
+    "floor": 0,
+    "x": -4.35,
+    "y": 2.75,
+    "z": 11.5,
+    "rotY": -1.5708
+  },
+  {
+    "floor": 0,
+    "x": -4.35,
+    "y": 2.75,
+    "z": 16.0,
+    "rotY": -1.5708
+  },
+  {
+    "floor": 0,
+    "x": -3.65,
+    "y": 2.75,
+    "z": -33.0,
+    "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": 1.0,
-    "y": 2.35,
+    "y": 2.75,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": 23.0,
-    "y": 2.35,
+    "y": 2.75,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": 9.5,
-    "y": 2.35,
+    "y": 2.75,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
     "x": 14.5,
-    "y": 2.35,
+    "y": 2.75,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
-    "x": -3.65,
-    "y": 2.35,
-    "z": -33.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
     "x": 27.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": -33.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
-    "x": 11.0,
-    "y": 2.35,
-    "z": -26.35,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 0,
-    "x": 8.8,
-    "y": 2.35,
-    "z": -25.65,
-    "rotY": 0.0
-  },
-  {
-    "floor": 0,
     "x": 12.0,
-    "y": 2.35,
-    "z": -25.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 0,
-    "x": 15.2,
-    "y": 2.35,
+    "y": 2.75,
     "z": -25.65,
     "rotY": 0.0
   },
   {
     "floor": 0,
-    "x": -26.0,
-    "y": 2.35,
-    "z": -5.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 0,
-    "x": -15.65,
-    "y": 2.35,
-    "z": -8.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
-    "x": -15.65,
-    "y": 2.35,
-    "z": 16.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
-    "x": 24.5,
-    "y": 2.35,
+    "x": 23.8,
+    "y": 2.75,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": 10.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": 15.0,
+    "rotY": 1.5708
   },
   {
     "floor": 0,
     "x": 32.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": -18.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
     "x": 32.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": -4.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
     "x": 27.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": -11.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
     "x": 27.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 4.0,
     "rotY": -1.5708
   },
   {
     "floor": 0,
-    "x": -33.65,
-    "y": 2.35,
-    "z": 23.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
-    "x": 32.65,
-    "y": 2.35,
-    "z": 13.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 0,
     "x": 4.0,
-    "y": 2.35,
+    "y": 2.75,
     "z": 27.65,
     "rotY": 3.1416
   },
   {
     "floor": 0,
-    "x": 19.0,
-    "y": 2.35,
-    "z": 33.65,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 0,
     "x": 27.65,
-    "y": 2.35,
+    "y": 2.75,
     "z": 23.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": -35.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": -2.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": -35.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 3.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": -35.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 8.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": -35.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 13.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
-    "x": -32.0,
-    "y": 7.55,
+    "x": -31.5,
+    "y": 7.95,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
-    "x": -20.0,
-    "y": 7.55,
+    "x": -26.0,
+    "y": 7.95,
+    "z": -5.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 1,
+    "x": -20.5,
+    "y": 7.95,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": -16.35,
-    "y": 7.55,
+    "y": 7.95,
     "z": 2.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": -16.35,
-    "y": 7.55,
+    "y": 7.95,
     "z": 10.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
+    "x": -33.65,
+    "y": 7.95,
+    "z": 23.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
+    "x": -29.0,
+    "y": 7.95,
+    "z": 27.65,
+    "rotY": 3.1416
+  },
+  {
+    "floor": 1,
     "x": -12.5,
-    "y": 7.55,
+    "y": 7.95,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": -7.5,
-    "y": 7.55,
+    "y": 7.95,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": -15.65,
-    "y": 7.55,
-    "z": -12.0,
+    "y": 7.95,
+    "z": -12.5,
     "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": -15.65,
-    "y": 7.55,
+    "y": 7.95,
+    "z": -7.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
+    "x": -15.65,
+    "y": 7.95,
     "z": 2.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": -15.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 10.0,
     "rotY": 1.5708
   },
   {
     "floor": 1,
+    "x": -15.65,
+    "y": 7.95,
+    "z": 24.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
     "x": -4.35,
-    "y": 7.55,
+    "y": 7.95,
     "z": -10.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": -4.35,
-    "y": 7.55,
-    "z": -2.0,
+    "y": 7.95,
+    "z": -3.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": -4.35,
-    "y": 7.55,
-    "z": 13.0,
+    "y": 7.95,
+    "z": 11.5,
     "rotY": -1.5708
   },
   {
     "floor": 1,
+    "x": -4.35,
+    "y": 7.95,
+    "z": 16.0,
+    "rotY": -1.5708
+  },
+  {
+    "floor": 1,
+    "x": -3.65,
+    "y": 7.95,
+    "z": -33.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
     "x": 1.0,
-    "y": 7.55,
+    "y": 7.95,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": 23.0,
-    "y": 7.55,
+    "y": 7.95,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": 9.5,
-    "y": 7.55,
+    "y": 7.95,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
     "x": 14.5,
-    "y": 7.55,
+    "y": 7.95,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
-    "x": -3.65,
-    "y": 7.55,
-    "z": -33.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
     "x": 27.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": -33.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
-    "x": 11.0,
-    "y": 7.55,
-    "z": -26.35,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 1,
-    "x": 8.8,
-    "y": 7.55,
-    "z": -25.65,
-    "rotY": 0.0
-  },
-  {
-    "floor": 1,
     "x": 12.0,
-    "y": 7.55,
-    "z": -25.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 1,
-    "x": 15.2,
-    "y": 7.55,
+    "y": 7.95,
     "z": -25.65,
     "rotY": 0.0
   },
   {
     "floor": 1,
-    "x": -26.0,
-    "y": 7.55,
-    "z": -5.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 1,
-    "x": -15.65,
-    "y": 7.55,
-    "z": -8.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
-    "x": -15.65,
-    "y": 7.55,
-    "z": 16.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
-    "x": 24.5,
-    "y": 7.55,
+    "x": 23.8,
+    "y": 7.95,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": 10.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": 15.0,
+    "rotY": 1.5708
   },
   {
     "floor": 1,
     "x": 32.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": -18.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": 32.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": -4.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": 27.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": -11.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
     "x": 27.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 4.0,
     "rotY": -1.5708
   },
   {
     "floor": 1,
-    "x": -33.65,
-    "y": 7.55,
-    "z": 23.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
-    "x": 32.65,
-    "y": 7.55,
-    "z": 13.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 1,
     "x": 4.0,
-    "y": 7.55,
+    "y": 7.95,
     "z": 27.65,
     "rotY": 3.1416
   },
   {
     "floor": 1,
-    "x": 19.0,
-    "y": 7.55,
-    "z": 33.65,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 1,
     "x": 27.65,
-    "y": 7.55,
+    "y": 7.95,
     "z": 23.0,
     "rotY": -1.5708
   },
   {
+    "floor": 1,
+    "x": 19.0,
+    "y": 7.95,
+    "z": 33.65,
+    "rotY": 3.1416
+  },
+  {
     "floor": 2,
     "x": -35.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": -2.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": -35.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 3.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": -35.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 8.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": -35.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 13.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
-    "x": -32.0,
-    "y": 12.75,
+    "x": -31.5,
+    "y": 13.15,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
-    "x": -20.0,
-    "y": 12.75,
+    "x": -26.0,
+    "y": 13.15,
+    "z": -5.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 2,
+    "x": -20.5,
+    "y": 13.15,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": -16.35,
-    "y": 12.75,
+    "y": 13.15,
     "z": 2.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": -16.35,
-    "y": 12.75,
+    "y": 13.15,
     "z": 10.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
+    "x": -33.65,
+    "y": 13.15,
+    "z": 23.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
+    "x": -29.0,
+    "y": 13.15,
+    "z": 27.65,
+    "rotY": 3.1416
+  },
+  {
+    "floor": 2,
     "x": -12.5,
-    "y": 12.75,
+    "y": 13.15,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": -7.5,
-    "y": 12.75,
+    "y": 13.15,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": -15.65,
-    "y": 12.75,
-    "z": -12.0,
+    "y": 13.15,
+    "z": -12.5,
     "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": -15.65,
-    "y": 12.75,
+    "y": 13.15,
+    "z": -7.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
+    "x": -15.65,
+    "y": 13.15,
     "z": 2.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": -15.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 10.0,
     "rotY": 1.5708
   },
   {
     "floor": 2,
+    "x": -15.65,
+    "y": 13.15,
+    "z": 24.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
     "x": -4.35,
-    "y": 12.75,
+    "y": 13.15,
     "z": -10.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": -4.35,
-    "y": 12.75,
-    "z": -2.0,
+    "y": 13.15,
+    "z": -3.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": -4.35,
-    "y": 12.75,
-    "z": 13.0,
+    "y": 13.15,
+    "z": 11.5,
     "rotY": -1.5708
   },
   {
     "floor": 2,
+    "x": -4.35,
+    "y": 13.15,
+    "z": 16.0,
+    "rotY": -1.5708
+  },
+  {
+    "floor": 2,
+    "x": -3.65,
+    "y": 13.15,
+    "z": -33.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
     "x": 1.0,
-    "y": 12.75,
+    "y": 13.15,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": 23.0,
-    "y": 12.75,
+    "y": 13.15,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": 9.5,
-    "y": 12.75,
+    "y": 13.15,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
     "x": 14.5,
-    "y": 12.75,
+    "y": 13.15,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
-    "x": -3.65,
-    "y": 12.75,
-    "z": -33.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
     "x": 27.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": -33.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
-    "x": 11.0,
-    "y": 12.75,
-    "z": -26.35,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 2,
-    "x": 8.8,
-    "y": 12.75,
-    "z": -25.65,
-    "rotY": 0.0
-  },
-  {
-    "floor": 2,
     "x": 12.0,
-    "y": 12.75,
-    "z": -25.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 2,
-    "x": 15.2,
-    "y": 12.75,
+    "y": 13.15,
     "z": -25.65,
     "rotY": 0.0
   },
   {
     "floor": 2,
-    "x": -26.0,
-    "y": 12.75,
-    "z": -5.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 2,
-    "x": -15.65,
-    "y": 12.75,
-    "z": -8.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
-    "x": -15.65,
-    "y": 12.75,
-    "z": 16.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
-    "x": 24.5,
-    "y": 12.75,
+    "x": 23.8,
+    "y": 13.15,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": 10.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": 15.0,
+    "rotY": 1.5708
   },
   {
     "floor": 2,
     "x": 32.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": -18.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": 32.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": -4.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": 27.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": -11.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
     "x": 27.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 4.0,
     "rotY": -1.5708
   },
   {
     "floor": 2,
-    "x": -33.65,
-    "y": 12.75,
-    "z": 23.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
-    "x": 32.65,
-    "y": 12.75,
-    "z": 13.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 2,
     "x": 4.0,
-    "y": 12.75,
+    "y": 13.15,
     "z": 27.65,
     "rotY": 3.1416
   },
   {
     "floor": 2,
-    "x": 19.0,
-    "y": 12.75,
-    "z": 33.65,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 2,
     "x": 27.65,
-    "y": 12.75,
+    "y": 13.15,
     "z": 23.0,
     "rotY": -1.5708
   },
   {
+    "floor": 2,
+    "x": 19.0,
+    "y": 13.15,
+    "z": 33.65,
+    "rotY": 3.1416
+  },
+  {
     "floor": 3,
     "x": -35.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": -2.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": -35.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 3.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": -35.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 8.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": -35.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 13.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
-    "x": -32.0,
-    "y": 17.95,
+    "x": -31.5,
+    "y": 18.35,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
-    "x": -20.0,
-    "y": 17.95,
+    "x": -26.0,
+    "y": 18.35,
+    "z": -5.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 3,
+    "x": -20.5,
+    "y": 18.35,
     "z": -5.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": -16.35,
-    "y": 17.95,
+    "y": 18.35,
     "z": 2.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": -16.35,
-    "y": 17.95,
+    "y": 18.35,
     "z": 10.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
+    "x": -33.65,
+    "y": 18.35,
+    "z": 23.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 3,
+    "x": -29.0,
+    "y": 18.35,
+    "z": 27.65,
+    "rotY": 3.1416
+  },
+  {
+    "floor": 3,
     "x": -12.5,
-    "y": 17.95,
+    "y": 18.35,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": -7.5,
-    "y": 17.95,
+    "y": 18.35,
     "z": -17.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": -15.65,
-    "y": 17.95,
-    "z": -12.0,
+    "y": 18.35,
+    "z": -12.5,
     "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": -15.65,
-    "y": 17.95,
+    "y": 18.35,
+    "z": -7.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 3,
+    "x": -15.65,
+    "y": 18.35,
     "z": 2.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": -15.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 10.0,
     "rotY": 1.5708
   },
   {
     "floor": 3,
+    "x": -15.65,
+    "y": 18.35,
+    "z": 24.5,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 3,
     "x": -4.35,
-    "y": 17.95,
+    "y": 18.35,
     "z": -10.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": -4.35,
-    "y": 17.95,
-    "z": -2.0,
+    "y": 18.35,
+    "z": -3.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": -4.35,
-    "y": 17.95,
-    "z": 13.0,
+    "y": 18.35,
+    "z": 11.5,
     "rotY": -1.5708
   },
   {
     "floor": 3,
+    "x": -4.35,
+    "y": 18.35,
+    "z": 16.0,
+    "rotY": -1.5708
+  },
+  {
+    "floor": 3,
+    "x": -3.65,
+    "y": 18.35,
+    "z": -33.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 3,
     "x": 1.0,
-    "y": 17.95,
+    "y": 18.35,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": 23.0,
-    "y": 17.95,
+    "y": 18.35,
     "z": -39.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": 9.5,
-    "y": 17.95,
+    "y": 18.35,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
     "x": 14.5,
-    "y": 17.95,
+    "y": 18.35,
     "z": -41.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
-    "x": -3.65,
-    "y": 17.95,
-    "z": -33.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 3,
     "x": 27.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": -33.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
-    "x": 11.0,
-    "y": 17.95,
-    "z": -26.35,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 3,
-    "x": 8.8,
-    "y": 17.95,
-    "z": -25.65,
-    "rotY": 0.0
-  },
-  {
-    "floor": 3,
     "x": 12.0,
-    "y": 17.95,
-    "z": -25.65,
-    "rotY": 0.0,
-    "isMonumental": true
-  },
-  {
-    "floor": 3,
-    "x": 15.2,
-    "y": 17.95,
+    "y": 18.35,
     "z": -25.65,
     "rotY": 0.0
   },
   {
     "floor": 3,
-    "x": -26.0,
-    "y": 17.95,
-    "z": -5.65,
-    "rotY": 0.0,
-    "isMonumental": true
+    "x": 23.8,
+    "y": 18.35,
+    "z": -25.65,
+    "rotY": 0.0
   },
   {
     "floor": 3,
-    "x": -15.65,
-    "y": 17.95,
-    "z": -8.0,
+    "x": 4.35,
+    "y": 18.35,
+    "z": 10.5,
     "rotY": 1.5708
   },
   {
     "floor": 3,
-    "x": 24.5,
-    "y": 17.95,
-    "z": -25.65,
-    "rotY": 0.0
+    "x": 4.35,
+    "y": 18.35,
+    "z": 15.0,
+    "rotY": 1.5708
   },
   {
     "floor": 3,
     "x": 32.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": -18.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": 32.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": -4.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": 27.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": -11.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
     "x": 27.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 4.0,
     "rotY": -1.5708
   },
   {
     "floor": 3,
-    "x": -33.65,
-    "y": 17.95,
-    "z": 23.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 3,
-    "x": 32.65,
-    "y": 17.95,
-    "z": 13.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 3,
     "x": 4.0,
-    "y": 17.95,
+    "y": 18.35,
     "z": 27.65,
     "rotY": 3.1416
   },
   {
     "floor": 3,
-    "x": 19.0,
-    "y": 17.95,
-    "z": 33.65,
-    "rotY": 3.1416
-  },
-  {
-    "floor": 3,
     "x": 27.65,
-    "y": 17.95,
+    "y": 18.35,
     "z": 23.0,
     "rotY": -1.5708
   }
 ];
 
-  // Curated Exhibition Artworks organized by floor (randomized per floor at runtime)
   const CURATED_ARTWORKS = [
   {
     "id": 1,
@@ -4587,11 +4578,7 @@
       const dentilMat = new THREE.MeshLambertMaterial({
         color: fl === 3 ? 0x64707e : (fl === 1 ? 0xeae4d6 : (fl === 2 ? 0xdfd9cb : 0xe7e2d4))
       });
-      const pictureRailMat = new THREE.MeshStandardMaterial({
-        color: fl === 3 ? 0x475569 : (fl === 1 ? 0x8f724d : (fl === 2 ? 0x5a3d28 : 0x7c6142)),
-        metalness: 0.65,
-        roughness: 0.35
-      });
+
       const skylightGlassMat = new THREE.MeshLambertMaterial({
         color: 0xdff0fc,
         emissive: 0x3b5870,
@@ -4606,7 +4593,7 @@
 
       // 1. Helper: Room-Bounded Classical Entablature & Crown Molding Cornice
       // Cleanly fitted along the top of each enclosed room perimeter - zero wall penetration, zero voids
-      const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ, addPictureRail = true) => {
+      const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ) => {
         const group = new THREE.Group();
         const rw = maxX - minX;
         const rd = maxZ - minZ;
@@ -4664,24 +4651,7 @@
         dE.position.set(maxX - dD / 2, dy, cz);
         group.add(dE);
 
-        // Band 4: Classical Architectural Picture Rail Molding (y = y0 + 5.20m)
-        if (addPictureRail) {
-          const prH = 0.04;
-          const prD = 0.035;
-          const pry = y0 + 5.20;
-          const prN = new THREE.Mesh(new THREE.BoxGeometry(rw, prH, prD), pictureRailMat);
-          prN.position.set(cx, pry, minZ + prD / 2);
-          group.add(prN);
-          const prS = new THREE.Mesh(new THREE.BoxGeometry(rw, prH, prD), pictureRailMat);
-          prS.position.set(cx, pry, maxZ - prD / 2);
-          group.add(prS);
-          const prW = new THREE.Mesh(new THREE.BoxGeometry(prD, prH, rd - prD * 2), pictureRailMat);
-          prW.position.set(minX + prD / 2, pry, cz);
-          group.add(prW);
-          const prE = new THREE.Mesh(new THREE.BoxGeometry(prD, prH, rd - prD * 2), pictureRailMat);
-          prE.position.set(maxX - prD / 2, pry, cz);
-          group.add(prE);
-        }
+
 
         this.scene.add(group);
       };
@@ -4729,13 +4699,13 @@
       };
 
       // Apply classical room-bounded entablature cornices to all exhibition wings
-      addRoomPerimeterCornice(-35.8, -16.2, -5.8, 17.8, true); // West Wing Exhibition Gallery
-      addRoomPerimeterCornice(-15.8, -4.2, -17.8, 27.8, true); // Main Gallery Concourse
-      addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8, true);    // East Main Hall
-      addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2, true); // North Antiquities Gallery
-      addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8, false);   // Arts & Music Office
-      addRoomPerimeterCornice(4.2, 27.8, 18.2, 27.8, true);    // South-East Media Wing
-      addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8, false);// West Office
+      addRoomPerimeterCornice(-35.8, -16.2, -5.8, 17.8); // West Wing Exhibition Gallery
+      addRoomPerimeterCornice(-15.8, -4.2, -17.8, 27.8); // Main Gallery Concourse
+      addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8);    // East Main Hall
+      addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2); // North Antiquities Gallery
+      addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8);   // Arts & Music Office
+      addRoomPerimeterCornice(4.2, 27.8, 18.2, 27.8);    // South-East Media Wing
+      addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8);// West Office
 
       // Apply grand coffered laylights to the elevated ceilings of the monumental halls
       addCofferedSkylight(-26.0, 6.0, 11.0, 15.0, 6, 4);   // West Wing Salon laylight
@@ -9576,7 +9546,7 @@
     }
 
     populateCuratedArtworks(mats) {
-      // Rich gilded walnut/gold frame material that stays warm and visible even with the flashlight off
+      // Rich gilded walnut/gold frame material that stays warm and visible even with flashlight off
       const frameMat = new THREE.MeshPhongMaterial({
         map: mats && mats.mahogany ? mats.mahogany.map : null,
         color: 0xc48f4a,
@@ -9584,13 +9554,17 @@
         specular: 0x665033,
         shininess: 38
       });
-      const cableMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
-      const brassLampMat = new THREE.MeshStandardMaterial({ color: 0xc89842, metalness: 0.85, roughness: 0.28 });
+      const brassLampMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        emissive: 0x3a2a10,
+        metalness: 0.85,
+        roughness: 0.28
+      });
       const planeGeomCache = new Map();
       const frameGeomCache = new Map();
       const plaqueGeom = new THREE.PlaneGeometry(0.85, 0.22);
-      const border = 0.09;
-      const depth = 0.045;
+      const border = 0.08;
+      const depth = 0.04;
 
       const floorNames = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
 
@@ -9610,12 +9584,24 @@
           if (idx >= shuffledArts.length) return;
           const art = shuffledArts[idx];
 
-          // Proportional monumental scaling for grand 7.5m museum walls
-          const artScale = slot.isMonumental ? 1.45 : 1.30;
-          const renderW = +(art.w * artScale).toFixed(3);
-          const renderH = +(art.h * artScale).toFixed(3);
-          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + (slot.isMonumental ? 2.95 : 2.75);
+          // Proportional museum sizing: well-fitted to wall spans, never overflowing entrances
+          const maxW = 2.40;
+          const maxH = 2.05;
+          let renderW = art.w;
+          let renderH = art.h;
+          const aspect = renderW / renderH;
+          if (renderW > maxW) {
+            renderW = maxW;
+            renderH = renderW / aspect;
+          }
+          if (renderH > maxH) {
+            renderH = maxH;
+            renderW = renderH * aspect;
+          }
+          renderW = +renderW.toFixed(3);
+          renderH = +renderH.toFixed(3);
 
+          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + 2.75;
           slot.y = slotY;
           art.x = slot.x;
           art.y = slotY;
@@ -9635,16 +9621,20 @@
             frameGeomCache.set(key, new THREE.BoxGeometry(renderW + border * 2, renderH + border * 2, depth));
           }
 
-          // Single unified museum frame backboard (reduces draw calls by 4x per painting!)
+          // Unified museum frame
           const frameMesh = new THREE.Mesh(frameGeomCache.get(key), frameMat);
           frameMesh.position.set(0, 0, 0);
           group.add(frameMesh);
 
+          // Self-illuminated artwork canvas: emissiveMap matches texture with 0.55 intensity
+          // This keeps the painting beautifully vivid, clear, and true to the original website images
+          // without casting blinding glare into the environment.
           const canvasMesh = new THREE.Mesh(
             planeGeomCache.get(key),
             new THREE.MeshLambertMaterial({
-              color: 0xdedede,
-              emissive: 0x000000,
+              color: 0xffffff,
+              emissive: 0xffffff,
+              emissiveIntensity: 0.55,
               polygonOffset: true,
               polygonOffsetFactor: -2,
               polygonOffsetUnits: -2
@@ -9653,28 +9643,16 @@
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
-          // 1. Classical Picture Hanging Wires ascending up to the 5.20m Picture Rail (matching reference photo)
-          const railY = slot.floor * CONFIG.FLOOR_HEIGHT + 5.20;
-          const cableLen = railY - (slotY + renderH / 2 + border);
-          if (cableLen > 0.15) {
-            const cableGeom = new THREE.CylinderGeometry(0.003, 0.003, cableLen, 6);
-            [-renderW * 0.32, renderW * 0.32].forEach(cx => {
-              const cable = new THREE.Mesh(cableGeom, cableMat);
-              cable.position.set(cx, renderH / 2 + border + cableLen / 2, -depth / 2);
-              group.add(cable);
-            });
-          }
-
-          // 2. Classical Museum Brass Picture Light mounted above the frame
-          const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.24, 8), brassLampMat);
+          // Classical Museum Brass Picture Light mounted above the frame
+          const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 8), brassLampMat);
           lampArm.rotation.x = Math.PI / 4;
-          lampArm.position.set(0, renderH / 2 + border + 0.09, depth / 2 + 0.09);
+          lampArm.position.set(0, renderH / 2 + border + 0.08, depth / 2 + 0.08);
           group.add(lampArm);
 
-          const lampHoodW = Math.min(renderW * 0.55, 0.85);
-          const lampHood = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, lampHoodW, 12), brassLampMat);
+          const lampHoodW = Math.min(renderW * 0.50, 0.75);
+          const lampHood = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, lampHoodW, 12), brassLampMat);
           lampHood.rotation.z = Math.PI / 2;
-          lampHood.position.set(0, renderH / 2 + border + 0.18, depth / 2 + 0.17);
+          lampHood.position.set(0, renderH / 2 + border + 0.16, depth / 2 + 0.15);
           group.add(lampHood);
 
           this.texLoader.load(
@@ -9682,6 +9660,9 @@
             (tex) => {
               tex.colorSpace = THREE.SRGBColorSpace;
               canvasMesh.material.map = tex;
+              canvasMesh.material.emissiveMap = tex;
+              canvasMesh.material.emissive = new THREE.Color(0xffffff);
+              canvasMesh.material.emissiveIntensity = 0.55;
               canvasMesh.material.needsUpdate = true;
               if (this.renderer) {
                 this.renderer.initTexture(tex);
