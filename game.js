@@ -3924,93 +3924,118 @@
     }
 
     // --- MULTI-STORY U-STAIRWELL ELEVATION SOLVER ---
-    updateStairwellElevation(pos, stairState, currentFloor) {
+    updateStairwellElevation(pos, stairState, currentFloor, currentFootY = undefined) {
       const H = CONFIG.FLOOR_HEIGHT;
+      const numFloors = CONFIG.NUM_FLOORS || 4;
 
-      // 1. Check North-Central Stairwell (x: -4..4, z: -26..-14)
-      if (pos.x >= -4.0 && pos.x <= 4.0 && pos.z >= -26.0 && pos.z <= -14.0) {
-        if (pos.z < -16.8) {
-          if (stairState.active !== 'N') {
-            stairState.active = 'N';
-            if (pos.x < 0) {
-              // Entered West flight (going UP from currentFloor)
-              stairState.baseFloor = Math.min(CONFIG.NUM_FLOORS - 2, currentFloor);
-            } else {
-              // Entered East flight (going DOWN from currentFloor)
-              // On Floor 0, there is no downward flight; stay locked to floor 0
-              if (currentFloor === 0) {
-                stairState.baseFloor = 0;
-              } else {
-                stairState.baseFloor = Math.max(0, currentFloor - 1);
-              }
-            }
+      // Determine the entity's actual vertical floor plane
+      let approxFloor = currentFloor;
+      if (typeof currentFootY === 'number' && !isNaN(currentFootY)) {
+        approxFloor = Math.max(0, Math.min(numFloors - 1, Math.round(currentFootY / H)));
+      }
+
+      // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.75..3.75, z: -25.8..-14.2)
+      // Shaft walls are located at x = +/-4.0, z = -26.0, z = -14.0. Using shrunken bounds prevents any
+      // player walking in outer gallery corridors or adjacent hallways from accidentally clipping into stair elevation.
+      if (pos.x >= -3.75 && pos.x <= 3.75 && pos.z >= -25.8 && pos.z <= -14.2) {
+        // A) South Landing (z: -16.8..-14.2)
+        if (pos.z >= -16.8) {
+          stairState.active = null;
+          stairState.baseFloor = approxFloor;
+          return { y: approxFloor * H, floor: approxFloor };
+        }
+
+        // B) North Mid-Landing (z <= -23.2)
+        if (pos.z <= -23.2) {
+          if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, Math.floor(footRef / H)));
           }
           const L = stairState.baseFloor;
-          if (pos.z <= -23.2) {
-            return { y: L * H + 2.6, floor: (pos.x >= 0 && L === 0 && currentFloor === 0) ? 0 : (pos.x < 0 ? L : L + 1) };
+          stairState.active = 'N';
+          // West half of mid-landing corresponds to lower floor L, East half transitions to L + 1
+          const fl = (pos.x < 0) ? L : (L + 1);
+          return { y: L * H + 2.6, floor: fl };
+        }
+
+        // C) Active Flights (z: -23.2..-16.8, length = 6.4)
+        const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
+
+        if (pos.x < 0) {
+          // West Flight: Ascends UP from lower landing (y = L * H) to mid-landing (y = L * H + 2.6)
+          if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            stairState.active = 'N';
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
           }
-          const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
-          if (pos.x < 0) {
-            return { y: L * H + t * 2.6, floor: L };
-          } else {
-            // Guard against teleporting floor 0 player to floor 1 if they brush the East divider
-            if (L === 0 && currentFloor === 0) {
-              return { y: 0, floor: 0 };
-            }
-            return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
-          }
+          const L = stairState.baseFloor;
+          return { y: L * H + t * 2.6, floor: L };
         } else {
-          // On South Landing (z: -16.8..-14.0)
-          if (stairState.active === 'N') {
-            const newFloor = pos.x < 0 ? stairState.baseFloor : ((stairState.baseFloor === 0 && currentFloor === 0) ? 0 : stairState.baseFloor + 1);
-            stairState.active = null;
-            return { y: newFloor * H, floor: newFloor };
+          // East Flight: Ascends UP from mid-landing (y = L * H + 2.6) to upper landing (y = (L + 1) * H)
+          if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            stairState.active = 'N';
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
           }
-          return { y: currentFloor * H, floor: currentFloor };
+          const L = stairState.baseFloor;
+          // Guard: If base floor is 0 and entity is standing on Ground Floor (y < 1.0) without having ascended West flight,
+          // never teleport them to upper floor
+          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+          if (L === 0 && footRef < 1.0 && approxFloor === 0) {
+            return { y: 0, floor: 0 };
+          }
+          return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
         }
       }
 
-      // 2. Check South-West Grand Stairwell (x: -24..-16, z: 18..28)
-      if (pos.x >= -24.0 && pos.x <= -16.0 && pos.z >= 18.0 && pos.z <= 28.0) {
-        if (pos.z > 20.8) {
-          if (stairState.active !== 'SW') {
-            stairState.active = 'SW';
-            if (pos.x < -20.0) {
-              stairState.baseFloor = Math.min(CONFIG.NUM_FLOORS - 2, currentFloor);
-            } else {
-              if (currentFloor === 0) {
-                stairState.baseFloor = 0;
-              } else {
-                stairState.baseFloor = Math.max(0, currentFloor - 1);
-              }
-            }
+      // 2. Check South-West Grand Stairwell Interior Shaft (interior x: -23.75..-16.25, z: 18.2..27.8)
+      if (pos.x >= -23.75 && pos.x <= -16.25 && pos.z >= 18.2 && pos.z <= 27.8) {
+        // A) North Landing (z: 18.2..20.8)
+        if (pos.z <= 20.8) {
+          stairState.active = null;
+          stairState.baseFloor = approxFloor;
+          return { y: approxFloor * H, floor: approxFloor };
+        }
+
+        // B) South Mid-Landing (z >= 25.6)
+        if (pos.z >= 25.6) {
+          if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, Math.floor(footRef / H)));
           }
           const L = stairState.baseFloor;
-          if (pos.z >= 25.6) {
-            return { y: L * H + 2.6, floor: (pos.x >= -20.0 && L === 0 && currentFloor === 0) ? 0 : (pos.x < -20.0 ? L : L + 1) };
+          stairState.active = 'SW';
+          const fl = (pos.x < -20.0) ? L : (L + 1);
+          return { y: L * H + 2.6, floor: fl };
+        }
+
+        // C) Active Flights (z: 20.8..25.6, length = 4.8)
+        const t = Math.max(0, Math.min(1, (pos.z - 20.8) / 4.8));
+
+        if (pos.x < -20.0) {
+          // West Flight: Ascends UP from lower landing to mid-landing
+          if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            stairState.active = 'SW';
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor));
           }
-          const t = Math.max(0, Math.min(1, (pos.z - 20.8) / 4.8));
-          if (pos.x < -20.0) {
-            return { y: L * H + t * 2.6, floor: L };
-          } else {
-            if (L === 0 && currentFloor === 0) {
-              return { y: 0, floor: 0 };
-            }
-            return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
-          }
+          const L = stairState.baseFloor;
+          return { y: L * H + t * 2.6, floor: L };
         } else {
-          // On North Landing (z: 18.0..20.8)
-          if (stairState.active === 'SW') {
-            const newFloor = pos.x < -20.0 ? stairState.baseFloor : ((stairState.baseFloor === 0 && currentFloor === 0) ? 0 : stairState.baseFloor + 1);
-            stairState.active = null;
-            return { y: newFloor * H, floor: newFloor };
+          // East Flight: Ascends UP from mid-landing to upper landing
+          if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
+            stairState.active = 'SW';
+            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
           }
-          return { y: currentFloor * H, floor: currentFloor };
+          const L = stairState.baseFloor;
+          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+          if (L === 0 && footRef < 1.0 && approxFloor === 0) {
+            return { y: 0, floor: 0 };
+          }
+          return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
         }
       }
 
       stairState.active = null;
-      return { y: currentFloor * H, floor: currentFloor };
+      stairState.baseFloor = approxFloor;
+      return { y: approxFloor * H, floor: approxFloor };
     }
 
     createSlab(x, y0, z, w, d, floorMat, ceilMat, h) {
@@ -11428,7 +11453,8 @@
         this.audio.playMarbleFootstep();
       }
 
-      const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor);
+      const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+      const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor, currentFootElevation);
       if (elev.floor !== this.playerFloor) {
         this.playerFloor = elev.floor;
         this.showFloorNotification(this.playerFloor);
@@ -12644,7 +12670,7 @@
         }
       }
 
-      const elev = this.updateStairwellElevation(this.smittyPos, this.smittyStairState, this.smittyFloor);
+      const elev = this.updateStairwellElevation(this.smittyPos, this.smittyStairState, this.smittyFloor, this.smittyPos.y);
       this.smittyFloor = elev.floor;
       this.smittyPos.y = elev.y;
       if (this.smittyMesh) {
