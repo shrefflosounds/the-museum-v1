@@ -4566,34 +4566,51 @@
       const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY))
         ? currentFootY
         : (currentFloor * H);
+      const getLockedStairFloor = (stairName) => (
+        stairState.active === stairName &&
+        Number.isInteger(stairState.baseFloor) &&
+        stairState.baseFloor >= 0 &&
+        stairState.baseFloor < numFloors - 1
+          ? stairState.baseFloor
+          : null
+      );
 
       // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.85..3.85, z: -25.8..-14.2)
       if (pos.x >= -3.85 && pos.x <= 3.85 && pos.z >= -25.8 && pos.z <= -14.2) {
         // A) South Main Landing (z: -16.8..-14.2)
         if (pos.z >= -16.8) {
-          let bestFl = currentFloor;
-          let bestDist = Infinity;
-          for (let fl = 0; fl < numFloors; fl++) {
-            const d = Math.abs(footRef - fl * H);
-            if (d < bestDist) {
-              bestDist = d;
-              bestFl = fl;
+          let landingFloor;
+          const lockedFloor = getLockedStairFloor('N');
+          if (lockedFloor !== null) {
+            landingFloor = pos.x < 0 ? lockedFloor : lockedFloor + 1;
+          } else {
+            landingFloor = currentFloor;
+            let bestDist = Infinity;
+            for (let fl = 0; fl < numFloors; fl++) {
+              const d = Math.abs(footRef - fl * H);
+              if (d < bestDist) {
+                bestDist = d;
+                landingFloor = fl;
+              }
             }
           }
           stairState.active = null;
-          stairState.baseFloor = bestFl;
-          return { y: bestFl * H, floor: bestFl };
+          stairState.baseFloor = landingFloor;
+          return { y: landingFloor * H, floor: landingFloor };
         }
 
         // B) North Mid-Landing (z <= -23.2)
         if (pos.z <= -23.2) {
-          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
-          let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const d = Math.abs(footRef - (l * H + halfH));
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          let bestL = getLockedStairFloor('N');
+          if (bestL === null) {
+            bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+            let bestDist = Infinity;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const d = Math.abs(footRef - (l * H + halfH));
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
           stairState.active = 'N';
@@ -4606,14 +4623,17 @@
 
         if (pos.x < 0) {
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
-          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
-          let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const candY = l * H + t * halfH;
-            const d = Math.abs(footRef - candY);
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          let bestL = getLockedStairFloor('N');
+          if (bestL === null) {
+            bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+            let bestDist = Infinity;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const candY = l * H + t * halfH;
+              const d = Math.abs(footRef - candY);
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
           stairState.active = 'N';
@@ -4621,18 +4641,21 @@
           return { y: bestL * H + t * halfH, floor: currentFloor };
         } else {
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
-          let bestL = 0;
+          let bestL = getLockedStairFloor('N');
           let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const candY = (l + 1) * H - t * halfH;
-            const d = Math.abs(footRef - candY);
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          if (bestL === null) {
+            bestL = 0;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const candY = (l + 1) * H - t * halfH;
+              const d = Math.abs(footRef - candY);
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
           // If player is on ground floor below the first East flight
-          if (footRef < 1.85 && Math.abs(footRef) < bestDist) {
+          if (getLockedStairFloor('N') === null && footRef < 1.85 && Math.abs(footRef) < bestDist) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
@@ -4647,29 +4670,38 @@
       if (pos.x >= -23.85 && pos.x <= -16.15 && pos.z >= 18.2 && pos.z <= 27.8) {
         // A) North Main Landing (z: 18.2..20.8)
         if (pos.z <= 20.8) {
-          let bestFl = currentFloor;
-          let bestDist = Infinity;
-          for (let fl = 0; fl < numFloors; fl++) {
-            const d = Math.abs(footRef - fl * H);
-            if (d < bestDist) {
-              bestDist = d;
-              bestFl = fl;
+          let landingFloor;
+          const lockedFloor = getLockedStairFloor('SW');
+          if (lockedFloor !== null) {
+            landingFloor = pos.x < -20.0 ? lockedFloor : lockedFloor + 1;
+          } else {
+            landingFloor = currentFloor;
+            let bestDist = Infinity;
+            for (let fl = 0; fl < numFloors; fl++) {
+              const d = Math.abs(footRef - fl * H);
+              if (d < bestDist) {
+                bestDist = d;
+                landingFloor = fl;
+              }
             }
           }
           stairState.active = null;
-          stairState.baseFloor = bestFl;
-          return { y: bestFl * H, floor: bestFl };
+          stairState.baseFloor = landingFloor;
+          return { y: landingFloor * H, floor: landingFloor };
         }
 
         // B) South Mid-Landing (z >= 25.6)
         if (pos.z >= 25.6) {
-          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
-          let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const d = Math.abs(footRef - (l * H + halfH));
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          let bestL = getLockedStairFloor('SW');
+          if (bestL === null) {
+            bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+            let bestDist = Infinity;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const d = Math.abs(footRef - (l * H + halfH));
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
           stairState.active = 'SW';
@@ -4682,14 +4714,17 @@
 
         if (pos.x < -20.0) {
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
-          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
-          let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const candY = l * H + t * halfH;
-            const d = Math.abs(footRef - candY);
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          let bestL = getLockedStairFloor('SW');
+          if (bestL === null) {
+            bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+            let bestDist = Infinity;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const candY = l * H + t * halfH;
+              const d = Math.abs(footRef - candY);
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
           stairState.active = 'SW';
@@ -4697,17 +4732,20 @@
           return { y: bestL * H + t * halfH, floor: currentFloor };
         } else {
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
-          let bestL = 0;
+          let bestL = getLockedStairFloor('SW');
           let bestDist = Infinity;
-          for (let l = 0; l < numFloors - 1; l++) {
-            const candY = (l + 1) * H - t * halfH;
-            const d = Math.abs(footRef - candY);
-            if (d < bestDist) {
-              bestDist = d;
-              bestL = l;
+          if (bestL === null) {
+            bestL = 0;
+            for (let l = 0; l < numFloors - 1; l++) {
+              const candY = (l + 1) * H - t * halfH;
+              const d = Math.abs(footRef - candY);
+              if (d < bestDist) {
+                bestDist = d;
+                bestL = l;
+              }
             }
           }
-          if (footRef < 1.85 && Math.abs(footRef) < bestDist) {
+          if (getLockedStairFloor('SW') === null && footRef < 1.85 && Math.abs(footRef) < bestDist) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
