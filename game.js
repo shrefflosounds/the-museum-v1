@@ -855,36 +855,39 @@
       name: "Heknah",
       floor: 0,
       x: -10.0,
-      z: 7.0,
+      z: 5.0,
       rotY: 0,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-heknah.glb",
       fallbackModel: "assets/statues/statue-heknah.glb",
       audio: "assets/audio/statue audio/heknah-song1.mp3",
       duration: 86.73,
       targetHeight: 2.25,
-      walkSpeed: 1.45
+      walkSpeed: 1.55
     },
     {
       id: "jlb3",
       name: "Joe (JLB3)",
       floor: 0,
-      x: -26.0,
+      x: -21.0,
       z: 6.0,
-      rotY: Math.PI / 2,
+      rotY: 0,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-jlb3.glb",
       fallbackModel: "assets/statues/statue-jlb3.glb",
       audio: "assets/audio/statue audio/JLB3-song1.mp3",
       duration: 102.92,
       targetHeight: 2.25,
-      walkSpeed: 1.42
+      walkSpeed: 1.50
     },
     {
       id: "r3e4",
       name: "R3E4",
       floor: 1,
       x: -10.0,
-      z: 7.0,
+      z: 5.0,
       rotY: 0,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-R3E4.glb",
       fallbackModel: "assets/statues/statue-R3E4.glb",
       audio: "assets/audio/statue audio/R3E4-song1.mp3",
@@ -893,21 +896,22 @@
       durationAlt: 21.29,
       altChance: 0.05,
       targetHeight: 2.25,
-      walkSpeed: 1.48
+      walkSpeed: 1.55
     },
     {
       id: "bird_squid",
       name: "Bird-Squid",
       floor: 2,
       x: -10.0,
-      z: 7.0,
+      z: 5.0,
       rotY: 0,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-bird-squid.glb",
       fallbackModel: "assets/statues/statue-bird-squid.glb",
       audio: "assets/audio/statue audio/Bird-sound1.mp3",
       duration: 5.67,
       targetHeight: 2.25,
-      walkSpeed: 1.55
+      walkSpeed: 1.60
     },
     {
       id: "pumppump",
@@ -916,20 +920,22 @@
       x: 12.0,
       z: -30.0,
       rotY: 0,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-pumppump.glb",
       fallbackModel: "assets/statues/statue-pumppump.glb",
       audio: "assets/audio/statue audio/Pumpump-Sound1.mp3",
       duration: 96.00,
       targetHeight: 2.25,
-      walkSpeed: 1.38
+      walkSpeed: 1.48
     },
     {
       id: "silver_smitty",
       name: "Silver Smitty",
       floor: 0,
-      x: 14.0,
+      x: 12.0,
       z: 10.0,
       rotY: Math.PI,
+      faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/Silver Smitty.glb",
       fallbackModel: "assets/statues/Silver Smitty.glb",
       audioPool: [
@@ -942,7 +948,7 @@
       ],
       duration: 2.30,
       targetHeight: 2.15,
-      walkSpeed: 1.40,
+      walkSpeed: 1.50,
       noAnimation: true,
       isSilverSmitty: true
     }
@@ -14489,9 +14495,9 @@
           audioElAlt: null,
           audioPoolEls: null,
           lastPoolIdx: -1,
-          // Minecraft-pig living AI state
+          // Minecraft-pig living AI state (completely independent NPC until player interacts)
           aiState: "IDLE",
-          aiTimer: 2.0 + Math.random() * 4.5,
+          aiTimer: 0.4 + Math.random() * 1.2,
           idleLookYaw: cfg.rotY || 0,
           navPath: null,
           navIndex: 0,
@@ -14507,7 +14513,7 @@
           statueRoot.position.y = 0;
           statueRoot.rotation.set(0, 0, 0);
           statueObj.aiState = "IDLE";
-          statueObj.aiTimer = 1.5 + Math.random() * 3.0;
+          statueObj.aiTimer = 0.6 + Math.random() * 1.8;
         };
 
         if (cfg.audioPool && cfg.audioPool.length > 0) {
@@ -14543,6 +14549,13 @@
               });
             }
           });
+
+          // Turn statue 90 degrees so the face points along local +Z (forward movement & eye contact axis)
+          if (typeof cfg.faceOffset === 'number') {
+            model.rotation.y += cfg.faceOffset;
+          } else {
+            model.rotation.y -= Math.PI / 2;
+          }
 
           // Normalize bounding box so statue rests flush on the floor at y = 0
           model.updateMatrixWorld(true);
@@ -14586,19 +14599,20 @@
     }
 
     pickStatueWanderPath(s) {
-      if (!this.navNodes || this.navNodes.length === 0 || !this.findShortestNavPath) return null;
-      // 75% chance to wander around rooms on current floor, 25% chance to travel to another floor via stairs
-      const stayOnFloor = (Math.random() < 0.75);
+      if (!this.navNodes || this.navNodes.length === 0 || !this.findShortestPath || !this.findNearestNavNode) return null;
+      // 70% chance to wander across rooms on current floor, 30% chance to travel to another floor via the stairwells
+      const stayOnFloor = (Math.random() < 0.70);
       const candidates = this.navNodes.filter(n => {
         if (stayOnFloor && n.floor !== s.floor) return false;
         const d = Math.hypot(n.x - s.x, n.z - s.z);
-        return stayOnFloor ? (d > 4.0 && d < 26.0) : (n.floor !== s.floor);
+        return stayOnFloor ? (d > 5.0 && d < 32.0) : (n.floor !== s.floor);
       });
       if (candidates.length === 0) return null;
       const targetNode = candidates[Math.floor(Math.random() * candidates.length)];
-      const startVec = new THREE.Vector3(s.x, s.y, s.z);
-      const endVec = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
-      const path = this.findShortestNavPath(startVec, s.floor, endVec, targetNode.floor);
+      const startId = this.findNearestNavNode({ x: s.x, z: s.z }, s.floor);
+      const goalId = targetNode.id;
+      if (startId < 0 || goalId < 0) return null;
+      const path = this.findShortestPath(startId, goalId);
       return (path && path.length > 0) ? path : null;
     }
 
@@ -14624,11 +14638,11 @@
             s.statueRoot.rotation.set(0, 0, 0);
             if (s.activeAudioEl && !s.activeAudioEl.paused) s.activeAudioEl.pause();
             s.aiState = "IDLE";
-            s.aiTimer = 1.5 + Math.random() * 3.0;
+            s.aiTimer = 0.6 + Math.random() * 1.5;
             return;
           }
 
-          // Locked eye contact with player while playing sound
+          // Locked eye contact with player ONLY while playing sound
           const dxPlayer = this.playerPos.x - s.x;
           const dzPlayer = this.playerPos.z - s.z;
           if (Math.hypot(dxPlayer, dzPlayer) > 0.05) {
@@ -14657,7 +14671,7 @@
           return;
         }
 
-        // 2. NOT PLAYING AUDIO: Minecraft-Pig Living AI (Idle & Wander across rooms and floors)
+        // 2. NOT PLAYING AUDIO: Independent Minecraft-Pig Living AI (never locks onto player before interaction)
         s.aiTimer -= delta;
 
         if (s.aiState === "IDLE") {
@@ -14665,38 +14679,32 @@
           s.statueRoot.position.y = s.baseY;
           s.statueRoot.rotation.set(0, 0, 0);
 
-          // Occasional subtle pig-like head/body turn toward idleLookYaw (or glance at nearby player)
-          const distToPlayer = (s.floor === this.playerFloor)
-            ? Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z)
-            : 999;
-          const targetYaw = (distToPlayer < 4.2)
-            ? Math.atan2(this.playerPos.x - s.x, this.playerPos.z - s.z)
-            : s.idleLookYaw;
-          s.yaw = this.lerpStatueAngle(s.yaw, targetYaw, Math.min(1, delta * 4.5));
+          // Completely independent idle look direction — ignores player position until interacted with
+          s.yaw = this.lerpStatueAngle(s.yaw, s.idleLookYaw, Math.min(1, delta * 4.5));
           s.group.rotation.y = s.yaw;
 
           if (s.aiTimer <= 0) {
-            if (Math.random() < 0.72) {
+            if (Math.random() < 0.85) {
               const path = this.pickStatueWanderPath(s);
               if (path && path.length > 0) {
                 s.navPath = path;
                 s.navIndex = 0;
                 s.aiState = "WANDER";
-                s.aiTimer = 10.0 + Math.random() * 18.0;
+                s.aiTimer = 18.0 + Math.random() * 25.0;
               } else {
                 s.idleLookYaw = s.yaw + (Math.random() - 0.5) * 2.2;
-                s.aiTimer = 2.5 + Math.random() * 4.5;
+                s.aiTimer = 1.5 + Math.random() * 2.5;
               }
             } else {
               s.idleLookYaw = s.yaw + (Math.random() - 0.5) * 2.4;
-              s.aiTimer = 2.5 + Math.random() * 5.0;
+              s.aiTimer = 1.5 + Math.random() * 3.0;
             }
           }
         } else if (s.aiState === "WANDER") {
           if (s.aiTimer <= 0 || !s.navPath || s.navIndex >= s.navPath.length) {
             s.aiState = "IDLE";
-            s.aiTimer = 3.0 + Math.random() * 5.5;
-            s.idleLookYaw = s.yaw;
+            s.aiTimer = 1.5 + Math.random() * 3.5;
+            s.idleLookYaw = s.yaw + (Math.random() - 0.5) * 1.6;
             s.statueRoot.position.y = s.baseY;
             s.statueRoot.rotation.set(0, 0, 0);
             return;
@@ -14712,22 +14720,20 @@
             return;
           }
 
-          // Don't walk into the player if right in front of them
-          const distToPlayer = (s.floor === this.playerFloor)
-            ? Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z)
-            : 999;
-          if (distToPlayer < 1.35) {
-            s.aiState = "IDLE";
-            s.aiTimer = 2.5 + Math.random() * 3.0;
-            s.idleLookYaw = Math.atan2(this.playerPos.x - s.x, this.playerPos.z - s.z);
-            s.statueRoot.position.y = s.baseY;
-            s.statueRoot.rotation.set(0, 0, 0);
-            return;
-          }
+          const speed = s.cfg.walkSpeed || 1.50;
+          let stepX = (dx / dist) * speed * delta;
+          let stepZ = (dz / dist) * speed * delta;
 
-          const speed = s.cfg.walkSpeed || 1.45;
-          const stepX = (dx / dist) * speed * delta;
-          const stepZ = (dz / dist) * speed * delta;
+          // Sidestep around the player if on the same floor without locking onto the player
+          if (s.floor === this.playerFloor) {
+            const pdx = s.x + stepX - this.playerPos.x;
+            const pdz = s.z + stepZ - this.playerPos.z;
+            const pDist = Math.hypot(pdx, pdz);
+            if (pDist < 1.15 && pDist > 0.001) {
+              stepX += (pdx / pDist) * (1.15 - pDist);
+              stepZ += (pdz / pDist) * (1.15 - pDist);
+            }
+          }
 
           const tempPos = { x: s.x + stepX, y: s.y, z: s.z + stepZ, _ignoreCollider: s.collider };
           this.resolveCollisions(tempPos, 0.48, s.floor, s.y);
