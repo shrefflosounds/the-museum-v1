@@ -846,6 +846,108 @@
     }
   }
 
+  // =========================================================================
+  // LIVING INTERACTIVE STATUES & SILVER SMITTY CONFIGURATION
+  // =========================================================================
+  const STATUES_CONFIG = [
+    {
+      id: "heknah",
+      name: "Heknah",
+      floor: 0,
+      x: -10.0,
+      z: 7.0,
+      rotY: 0,
+      model: "3D_Source_Models/statues/statue-heknah.glb",
+      fallbackModel: "assets/statues/statue-heknah.glb",
+      audio: "assets/audio/statue audio/heknah-song1.mp3",
+      duration: 86.73,
+      targetHeight: 2.25,
+      walkSpeed: 1.45
+    },
+    {
+      id: "jlb3",
+      name: "Joe (JLB3)",
+      floor: 0,
+      x: -26.0,
+      z: 6.0,
+      rotY: Math.PI / 2,
+      model: "3D_Source_Models/statues/statue-jlb3.glb",
+      fallbackModel: "assets/statues/statue-jlb3.glb",
+      audio: "assets/audio/statue audio/JLB3-song1.mp3",
+      duration: 102.92,
+      targetHeight: 2.25,
+      walkSpeed: 1.42
+    },
+    {
+      id: "r3e4",
+      name: "R3E4",
+      floor: 1,
+      x: -10.0,
+      z: 7.0,
+      rotY: 0,
+      model: "3D_Source_Models/statues/statue-R3E4.glb",
+      fallbackModel: "assets/statues/statue-R3E4.glb",
+      audio: "assets/audio/statue audio/R3E4-song1.mp3",
+      duration: 234.42,
+      audioAlt: "assets/audio/statue audio/R3E4-song2.mp3",
+      durationAlt: 21.29,
+      altChance: 0.05,
+      targetHeight: 2.25,
+      walkSpeed: 1.48
+    },
+    {
+      id: "bird_squid",
+      name: "Bird-Squid",
+      floor: 2,
+      x: -10.0,
+      z: 7.0,
+      rotY: 0,
+      model: "3D_Source_Models/statues/statue-bird-squid.glb",
+      fallbackModel: "assets/statues/statue-bird-squid.glb",
+      audio: "assets/audio/statue audio/Bird-sound1.mp3",
+      duration: 5.67,
+      targetHeight: 2.25,
+      walkSpeed: 1.55
+    },
+    {
+      id: "pumppump",
+      name: "PumpPump",
+      floor: 3,
+      x: 12.0,
+      z: -30.0,
+      rotY: 0,
+      model: "3D_Source_Models/statues/statue-pumppump.glb",
+      fallbackModel: "assets/statues/statue-pumppump.glb",
+      audio: "assets/audio/statue audio/Pumpump-Sound1.mp3",
+      duration: 96.00,
+      targetHeight: 2.25,
+      walkSpeed: 1.38
+    },
+    {
+      id: "silver_smitty",
+      name: "Silver Smitty",
+      floor: 0,
+      x: 14.0,
+      z: 10.0,
+      rotY: Math.PI,
+      model: "3D_Source_Models/statues/Silver Smitty.glb",
+      fallbackModel: "assets/statues/Silver Smitty.glb",
+      audioPool: [
+        { src: "assets/audio/statue audio/silversmitty1.mp3", duration: 2.22 },
+        { src: "assets/audio/statue audio/silversmitty2.mp3", duration: 1.36 },
+        { src: "assets/audio/statue audio/silversmitty3.mp3", duration: 1.46 },
+        { src: "assets/audio/statue audio/silversmitty4.mp3", duration: 1.57 },
+        { src: "assets/audio/statue audio/silversmitty5.mp3", duration: 1.46 },
+        { src: "assets/audio/statue audio/silversmitty6.mp3", duration: 2.30 }
+      ],
+      duration: 2.30,
+      targetHeight: 2.15,
+      walkSpeed: 1.40,
+      noAnimation: true,
+      isSilverSmitty: true
+    }
+  ];
+
   // --- CONFIGURATION ---
   const CONFIG = {
     TOTAL_RELICS: 14,
@@ -4320,73 +4422,84 @@
       const t = 0.4;
       const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
 
+      // Helper to build a solid sloped under-carriage stringer slab beneath a stair flight
+      const addFlightCarriage = (cx, yStart, zStart, yEnd, zEnd, width) => {
+        const dz = zEnd - zStart;
+        const dy = yEnd - yStart;
+        const len = Math.hypot(dz, dy);
+        const angleX = Math.atan2(dy, dz);
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(width, 0.26, len + 0.25), mats.stairStone);
+        slab.position.set(cx, (yStart + yEnd) / 2 - 0.22, (zStart + zEnd) / 2);
+        slab.rotation.x = -angleX;
+        this.scene.add(slab);
+      };
+
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
-      // Note: Outer shaft walls at x=-4, x=4, z=-26 are built per-floor in buildSingleFloor (full height h)
-      // Center divider wall between West flight and East flight (x = 0, z: -23.2..-16.8)
       this.createWall(0, midY, -20.0, 0.34, totalH, 6.4, mats.wallConcrete, true, 'all');
-      // Roof over Stairwell N (exact 8.0 x 12.0 shaft bounds — zero overlap with adjacent ceilings)
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
-      // Build landings & steps for each floor in Stairwell N:
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0) with thick vertical face to eliminate any gaps
-        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.8), mats.stairStone);
-        landBox.position.set(0, y0 - 0.14, -15.4);
+        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0)
+        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
+        landBox.position.set(0, y0 - 0.16, -15.4);
         this.scene.add(landBox);
 
         if (fl > 0) {
           this.createCeiling(0, y0 - 0.06, -15.4, 7.6, 2.8, mats.ceiling);
         }
 
-        // Stairwell Floor Number Sign on South wall of landing (z = -14.28)
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
 
         if (fl < CONFIG.NUM_FLOORS - 1) {
           const halfH = CONFIG.FLOOR_HEIGHT / 2;
           // Solid North Mid-Landing box at y0 + halfH (x: -4.0..4.0, z: -26.0..-23.2)
-          const nLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.8), mats.stairStone);
-          nLand.position.set(0, y0 + halfH - 0.14, -24.6);
+          const nLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
+          nLand.position.set(0, y0 + halfH - 0.16, -24.6);
           this.scene.add(nLand);
 
-          const numSteps = 18;
+          // Sloped structural stringer carriages for 7.5m floor height
+          addFlightCarriage(-1.98, y0, -16.8, y0 + halfH, -23.2, 3.62);
+          addFlightCarriage( 1.98, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 3.62);
+
+          const numSteps = 22;
           const stepLen = 6.4 / numSteps;
           const stepH = halfH / numSteps;
+          const boxH = stepH + 0.30;
           for (let s = 0; s < numSteps; s++) {
             const sz = -16.8 - (s + 0.5) * stepLen;
-            // West Flight (x: -1.98, goes UP from y0 at z=-16.8 to y0+halfH at z=-23.2)
-            const wy = y0 + (s + 1) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
-            wStep.position.set(-1.98, wy - stepH / 2 - 0.06, sz);
+            // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
+            const wTopY = y0 + (s + 0.5) * stepH;
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-1.98, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
-            // East Flight (x: 1.98, goes UP from y0+halfH at z=-23.2 to y0+CONFIG.FLOOR_HEIGHT at z=-16.8)
-            const ey = (y0 + CONFIG.FLOOR_HEIGHT) - s * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
-            eStep.position.set(1.98, ey - stepH / 2 - 0.06, sz);
+            // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
+            const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(1.98, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
       }
-      // Guardrail on Floor 0 East Flight (full solid collider sealing x: 0..4 to prevent stepping into shaft)
+      // Guardrail on Floor 0 East Flight
       this.createWall(1.98, 1.22, -16.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
-      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight (sealing upper shaft completely, zero gap)
+      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-1.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
       this.scene.add(blockNW);
       this.colliders.push({ type: 'box', floor: 3, minX: -3.85, maxX: -0.15, minZ: -17.15, maxZ: -16.75 });
 
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
-      this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');       // South outer wall (-23.8..-16.2)
-      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.8, mats.wallConcrete, true, 'all');  // Center divider
-      // Roof over Stairwell SW (exact 8.0 x 10.0 shaft bounds — zero overlap with adjacent ceilings)
+      this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
+      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.8, mats.wallConcrete, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
         // Solid North Landing box at Floor fl (x: -24.0..-16.0, z: 18.0..20.8)
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.8), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.14, 19.4);
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.4);
         this.scene.add(landBoxSW);
 
         if (fl > 0) {
@@ -4398,167 +4511,200 @@
         if (fl < CONFIG.NUM_FLOORS - 1) {
           const halfH = CONFIG.FLOOR_HEIGHT / 2;
           // Solid South Mid-Landing box at y0 + halfH (x: -24.0..-16.0, z: 25.6..28.0)
-          const sLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.28, 2.4), mats.stairStone);
-          sLand.position.set(-20, y0 + halfH - 0.14, 26.8);
+          const sLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.44), mats.stairStone);
+          sLand.position.set(-20, y0 + halfH - 0.16, 26.8);
           this.scene.add(sLand);
 
-          const numSteps = 14;
+          // Sloped structural stringer carriages for 7.5m floor height
+          addFlightCarriage(-21.98, y0, 20.8, y0 + halfH, 25.6, 3.62);
+          addFlightCarriage(-18.02, y0 + halfH, 25.6, y0 + CONFIG.FLOOR_HEIGHT, 20.8, 3.62);
+
+          const numSteps = 20;
           const stepLen = 4.8 / numSteps;
           const stepH = halfH / numSteps;
+          const boxH = stepH + 0.32;
           for (let s = 0; s < numSteps; s++) {
             const sz = 20.8 + (s + 0.5) * stepLen;
-            // West Flight (x: -21.98, goes UP from y0 at z=20.8 to y0+halfH at z=25.6)
-            const wy = y0 + (s + 1) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
-            wStep.position.set(-21.98, wy - stepH / 2 - 0.06, sz);
+            // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
+            const wTopY = y0 + (s + 0.5) * stepH;
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-21.98, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
-            // East Flight (x: -18.02, goes UP from y0+halfH at z=25.6 to y0+CONFIG.FLOOR_HEIGHT at z=20.8)
-            const ey = (y0 + CONFIG.FLOOR_HEIGHT) - s * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, stepH + 0.22, stepLen + 0.02), mats.stairStone);
-            eStep.position.set(-18.02, ey - stepH / 2 - 0.06, sz);
+            // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
+            const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(-18.02, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
       }
-      // Guardrail on Floor 0 East Flight of Stairwell SW (full solid collider sealing x: -20..-16 to prevent stepping into shaft)
+      // Guardrail on Floor 0 East Flight of Stairwell SW
       this.createWall(-18.02, 1.22, 20.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
-      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight (sealing upper shaft completely, zero gap)
+      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
       this.scene.add(blockSWW);
       this.colliders.push({ type: 'box', floor: 3, minX: -23.85, maxX: -20.15, minZ: 20.75, maxZ: 21.15 });
     }
 
-    // --- MULTI-STORY U-STAIRWELL ELEVATION SOLVER ---
+    // --- MULTI-STORY U-STAIRWELL CONTINUOUS SURFACE ELEVATION SOLVER ---
     updateStairwellElevation(pos, stairState, currentFloor, currentFootY = undefined) {
       const H = CONFIG.FLOOR_HEIGHT;
+      const halfH = H / 2;
       const numFloors = CONFIG.NUM_FLOORS || 4;
+      const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY))
+        ? currentFootY
+        : (currentFloor * H);
 
       // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.85..3.85, z: -25.8..-14.2)
       if (pos.x >= -3.85 && pos.x <= 3.85 && pos.z >= -25.8 && pos.z <= -14.2) {
-        const halfH = H / 2;
-
-        // A) South Landing (z: -16.8..-14.2)
+        // A) South Main Landing (z: -16.8..-14.2)
         if (pos.z >= -16.8) {
-          if (stairState.active === 'N') {
-            if (pos.x >= 0) {
-              // Exiting at top of East flight to upper landing
-              const targetFl = Math.min(numFloors - 1, (stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor) + 1);
-              stairState.active = null;
-              stairState.baseFloor = targetFl;
-              return { y: targetFl * H, floor: targetFl };
-            } else {
-              // Exiting at bottom of West flight to lower landing
-              const targetFl = Math.max(0, stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor);
-              stairState.active = null;
-              stairState.baseFloor = targetFl;
-              return { y: targetFl * H, floor: targetFl };
+          let bestFl = currentFloor;
+          let bestDist = Infinity;
+          for (let fl = 0; fl < numFloors; fl++) {
+            const d = Math.abs(footRef - fl * H);
+            if (d < bestDist) {
+              bestDist = d;
+              bestFl = fl;
             }
           }
-          // Walking or standing normally on current floor landing
           stairState.active = null;
-          stairState.baseFloor = currentFloor;
-          return { y: currentFloor * H, floor: currentFloor };
+          stairState.baseFloor = bestFl;
+          return { y: bestFl * H, floor: bestFl };
         }
 
         // B) North Mid-Landing (z <= -23.2)
         if (pos.z <= -23.2) {
-          if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const d = Math.abs(footRef - (l * H + halfH));
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
           }
-          const L = stairState.baseFloor;
           stairState.active = 'N';
-          const fl = (pos.x < 0) ? L : Math.min(numFloors - 1, L + 1);
-          return { y: L * H + halfH, floor: fl };
+          stairState.baseFloor = bestL;
+          return { y: bestL * H + halfH, floor: currentFloor };
         }
 
         // C) Active Flights (z: -23.2..-16.8, length = 6.4)
         const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
 
         if (pos.x < 0) {
-          // West Flight: Ascends UP from lower landing (y = L * H) to mid-landing (y = L * H + halfH)
-          if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.active = 'N';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
+          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const candY = l * H + t * halfH;
+            const d = Math.abs(footRef - candY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
           }
-          const L = stairState.baseFloor;
-          return { y: L * H + t * halfH, floor: L };
+          stairState.active = 'N';
+          stairState.baseFloor = bestL;
+          return { y: bestL * H + t * halfH, floor: currentFloor };
         } else {
-          // East Flight: Ascends UP from mid-landing (y = L * H + halfH) to upper landing (y = (L + 1) * H)
-          if (currentFloor === 0 && (stairState.active !== 'N' || stairState.baseFloor === 0)) {
+          // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
+          let bestL = 0;
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const candY = (l + 1) * H - t * halfH;
+            const d = Math.abs(footRef - candY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
+          }
+          // If player is on ground floor below the first East flight
+          if (footRef < 1.85 && Math.abs(footRef) < bestDist) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
           }
-          if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.active = 'N';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor - 1));
-          }
-          const L = stairState.baseFloor;
-          return { y: (L + 1) * H - t * halfH, floor: Math.min(numFloors - 1, L + 1) };
+          stairState.active = 'N';
+          stairState.baseFloor = bestL;
+          return { y: (bestL + 1) * H - t * halfH, floor: currentFloor };
         }
       }
 
       // 2. Check South-West Grand Stairwell Interior Shaft (interior x: -23.85..-16.15, z: 18.2..27.8)
       if (pos.x >= -23.85 && pos.x <= -16.15 && pos.z >= 18.2 && pos.z <= 27.8) {
-        const halfH = H / 2;
-
-        // A) North Landing (z: 18.2..20.8)
+        // A) North Main Landing (z: 18.2..20.8)
         if (pos.z <= 20.8) {
-          if (stairState.active === 'SW') {
-            if (pos.x >= -20.0) {
-              const targetFl = Math.min(numFloors - 1, (stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor) + 1);
-              stairState.active = null;
-              stairState.baseFloor = targetFl;
-              return { y: targetFl * H, floor: targetFl };
-            } else {
-              const targetFl = Math.max(0, stairState.baseFloor !== undefined ? stairState.baseFloor : currentFloor);
-              stairState.active = null;
-              stairState.baseFloor = targetFl;
-              return { y: targetFl * H, floor: targetFl };
+          let bestFl = currentFloor;
+          let bestDist = Infinity;
+          for (let fl = 0; fl < numFloors; fl++) {
+            const d = Math.abs(footRef - fl * H);
+            if (d < bestDist) {
+              bestDist = d;
+              bestFl = fl;
             }
           }
           stairState.active = null;
-          stairState.baseFloor = currentFloor;
-          return { y: currentFloor * H, floor: currentFloor };
+          stairState.baseFloor = bestFl;
+          return { y: bestFl * H, floor: bestFl };
         }
 
         // B) South Mid-Landing (z >= 25.6)
         if (pos.z >= 25.6) {
-          if (stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const d = Math.abs(footRef - (l * H + halfH));
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
           }
-          const L = stairState.baseFloor;
           stairState.active = 'SW';
-          const fl = (pos.x < -20.0) ? L : Math.min(numFloors - 1, L + 1);
-          return { y: L * H + halfH, floor: fl };
+          stairState.baseFloor = bestL;
+          return { y: bestL * H + halfH, floor: currentFloor };
         }
 
         // C) Active Flights (z: 20.8..25.6, length = 4.8)
         const t = Math.max(0, Math.min(1, (pos.z - 20.8) / 4.8));
 
         if (pos.x < -20.0) {
-          // West Flight: Ascends UP from lower landing to mid-landing
-          if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.active = 'SW';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
+          let bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const candY = l * H + t * halfH;
+            const d = Math.abs(footRef - candY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
           }
-          const L = stairState.baseFloor;
-          return { y: L * H + t * halfH, floor: L };
+          stairState.active = 'SW';
+          stairState.baseFloor = bestL;
+          return { y: bestL * H + t * halfH, floor: currentFloor };
         } else {
-          // East Flight: Ascends UP from mid-landing to upper landing
-          if (currentFloor === 0 && (stairState.active !== 'SW' || stairState.baseFloor === 0)) {
+          // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
+          let bestL = 0;
+          let bestDist = Infinity;
+          for (let l = 0; l < numFloors - 1; l++) {
+            const candY = (l + 1) * H - t * halfH;
+            const d = Math.abs(footRef - candY);
+            if (d < bestDist) {
+              bestDist = d;
+              bestL = l;
+            }
+          }
+          if (footRef < 1.85 && Math.abs(footRef) < bestDist) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
           }
-          if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
-            stairState.active = 'SW';
-            stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, currentFloor - 1));
-          }
-          const L = stairState.baseFloor;
-          return { y: (L + 1) * H - t * halfH, floor: Math.min(numFloors - 1, L + 1) };
+          stairState.active = 'SW';
+          stairState.baseFloor = bestL;
+          return { y: (bestL + 1) * H - t * halfH, floor: currentFloor };
         }
       }
 
@@ -12338,9 +12484,8 @@
       const platformSurfaceY = this.getPlatformSurfaceY(this.playerPos.x, this.playerPos.z, this.playerFloor);
       let groundY = Math.max(elev.y, platformSurfaceY);
 
-      // Antigravity Step Protection: Prevent any sudden vertical launch greater than 0.85m above current feet
-      // unless player is intentionally jumping, flying in spectator mode, or falling
-      if (this.isGrounded && groundY > (currentFootElevation + 0.85)) {
+      // Antigravity Step Protection (outside stairwells): Prevent sudden vertical launch > 0.85m above current feet
+      if (this.isGrounded && !this.playerStairState.active && groundY > (currentFootElevation + 0.85)) {
         groundY = currentFootElevation;
       }
 
@@ -12381,9 +12526,10 @@
           this.jumpOffset = currentFootY - groundY;
           this.playerPos.y = targetCamY;
         } else {
-          // Smoothly adapt to stairs, slopes, or platform surface
+          // Smoothly and tightly adapt to stairs, slopes, or platform surface (zero stair clipping)
           this.jumpOffset = 0;
-          this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * 16));
+          const verticalFollowRate = this.playerStairState.active ? 42 : 18;
+          this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * verticalFollowRate));
         }
       }
 
@@ -12459,7 +12605,7 @@
       for (let iter = 0; iter < 3; iter++) {
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
-          if (c.disabled) continue;
+          if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
           if (c.floor !== 'all' && c.floor !== floorIdx) continue;
 
           // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
@@ -14291,7 +14437,7 @@
 
 
     // =========================================================================
-    // INTERACTIVE STATUES (Squash-and-Stretch Dancing, Unique Music, Built-In Platforms)
+    // LIVING INTERACTIVE STATUES & SILVER SMITTY (Minecraft-Pig Wandering + Eye Contact + Audio)
     // =========================================================================
     buildStatues(fl, y0, mats) {
       if (!this.statues) this.statues = [];
@@ -14304,47 +14450,95 @@
         group.position.set(cfg.x, y0, cfg.z);
         group.rotation.y = cfg.rotY || 0;
 
-        // Statues already include their own modeled platforms — rest directly flush on the floor at y = 0.0!
+        // Statues include their own modeled platforms — rest flush on the floor at y = 0.0!
         const statueRoot = new THREE.Group();
         statueRoot.position.set(0, 0, 0);
         group.add(statueRoot);
 
-        const spot = new THREE.PointLight(0xfff6eb, 0.60, 10.0, 1.4);
-        spot.position.set(0, 3.8, 0);
-        group.add(spot);
+        const colliderObj = {
+          type: "cylinder",
+          floor: fl,
+          x: cfg.x,
+          z: cfg.z,
+          radius: 0.62,
+          minY: y0,
+          maxY: y0 + 2.35,
+          isStatue: true
+        };
+        if (this.colliders) {
+          this.colliders.push(colliderObj);
+        }
 
         const statueObj = {
           cfg: cfg,
           group: group,
           statueRoot: statueRoot,
+          collider: colliderObj,
           floor: fl,
           x: cfg.x,
-          z: cfg.z,
           y: y0,
+          z: cfg.z,
+          yaw: cfg.rotY || 0,
           baseY: 0,
+          isPlayingAudio: false,
           isDancing: false,
           danceStartTime: 0,
-          audioEl: null
+          activeDuration: cfg.duration || 10.0,
+          activeAudioEl: null,
+          audioEl: null,
+          audioElAlt: null,
+          audioPoolEls: null,
+          lastPoolIdx: -1,
+          // Minecraft-pig living AI state
+          aiState: "IDLE",
+          aiTimer: 2.0 + Math.random() * 4.5,
+          idleLookYaw: cfg.rotY || 0,
+          navPath: null,
+          navIndex: 0,
+          walkPhase: Math.random() * Math.PI * 2,
+          stairState: { active: null, baseFloor: fl },
+          teleportCooldown: 45.0 + Math.random() * 40.0
         };
 
-        const audio = new Audio(cfg.audio);
-        audio.preload = "auto";
-        audio.onended = () => {
+        const resetStatuePose = () => {
+          statueObj.isPlayingAudio = false;
           statueObj.isDancing = false;
           statueRoot.scale.set(1, 1, 1);
           statueRoot.position.y = 0;
           statueRoot.rotation.set(0, 0, 0);
+          statueObj.aiState = "IDLE";
+          statueObj.aiTimer = 1.5 + Math.random() * 3.0;
         };
-        statueObj.audioEl = audio;
 
-        gltfLoader.load(cfg.model, (gltf) => {
+        if (cfg.audioPool && cfg.audioPool.length > 0) {
+          statueObj.audioPoolEls = cfg.audioPool.map(item => {
+            const a = new Audio(encodeURI(item.src));
+            a.preload = "auto";
+            a.onended = resetStatuePose;
+            return { el: a, duration: item.duration || 2.0 };
+          });
+        } else if (cfg.audio) {
+          const audio = new Audio(encodeURI(cfg.audio));
+          audio.preload = "auto";
+          audio.onended = resetStatuePose;
+          statueObj.audioEl = audio;
+
+          if (cfg.audioAlt) {
+            const audioAlt = new Audio(encodeURI(cfg.audioAlt));
+            audioAlt.preload = "auto";
+            audioAlt.onended = resetStatuePose;
+            statueObj.audioElAlt = audioAlt;
+          }
+        }
+
+        const onModelLoaded = (gltf) => {
           const model = gltf.scene;
           model.traverse(child => {
             if (child.isMesh && child.material) {
               const matsList = Array.isArray(child.material) ? child.material : [child.material];
               matsList.forEach(m => {
                 m.side = THREE.DoubleSide;
-                if (typeof m.metalness === 'number' && m.metalness > 0.25) m.metalness = 0.20;
+                if (typeof m.metalness === 'number' && m.metalness > 0.28) m.metalness = 0.22;
                 if (typeof m.roughness === 'number' && m.roughness < 0.35) m.roughness = 0.45;
               });
             }
@@ -14366,64 +14560,238 @@
           box2.getCenter(center2);
           model.position.x -= center2.x;
           model.position.z -= center2.z;
-          model.position.y -= box2.min.y; // Base touches floor exactly at y = 0
+          model.position.y -= box2.min.y;
 
           statueRoot.add(model);
-        }, undefined, () => {});
+        };
+
+        gltfLoader.load(
+          encodeURI(cfg.model),
+          onModelLoaded,
+          undefined,
+          () => {
+            if (cfg.fallbackModel) {
+              gltfLoader.load(encodeURI(cfg.fallbackModel), onModelLoaded, undefined, () => {});
+            }
+          }
+        );
 
         this.scene.add(group);
         this.statues.push(statueObj);
-
-        if (this.colliders) {
-          this.colliders.push({
-            type: "cylinder",
-            floor: fl,
-            x: cfg.x,
-            z: cfg.z,
-            radius: 0.80,
-            minY: y0,
-            maxY: y0 + 2.5
-          });
-        }
       });
+    }
+
+    buildSilverSmitty(fl, y0, mats) {
+      // Handled inside unified STATUES_CONFIG & buildStatues
+    }
+
+    pickStatueWanderPath(s) {
+      if (!this.navNodes || this.navNodes.length === 0 || !this.findShortestNavPath) return null;
+      // 75% chance to wander around rooms on current floor, 25% chance to travel to another floor via stairs
+      const stayOnFloor = (Math.random() < 0.75);
+      const candidates = this.navNodes.filter(n => {
+        if (stayOnFloor && n.floor !== s.floor) return false;
+        const d = Math.hypot(n.x - s.x, n.z - s.z);
+        return stayOnFloor ? (d > 4.0 && d < 26.0) : (n.floor !== s.floor);
+      });
+      if (candidates.length === 0) return null;
+      const targetNode = candidates[Math.floor(Math.random() * candidates.length)];
+      const startVec = new THREE.Vector3(s.x, s.y, s.z);
+      const endVec = new THREE.Vector3(targetNode.x, targetNode.y, targetNode.z);
+      const path = this.findShortestNavPath(startVec, s.floor, endVec, targetNode.floor);
+      return (path && path.length > 0) ? path : null;
+    }
+
+    lerpStatueAngle(a, b, t) {
+      let diff = ((b - a + Math.PI) % (Math.PI * 2)) - Math.PI;
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      return a + diff * t;
     }
 
     updateStatues(delta) {
-      if (!this.statues) return;
+      if (!this.statues || this.statues.length === 0) return;
       const now = performance.now() / 1000;
+
       this.statues.forEach(s => {
-        if (!s.isDancing) return;
-        const elapsed = now - s.danceStartTime;
-        if (elapsed > s.cfg.duration || (s.audioEl && s.audioEl.ended)) {
-          s.isDancing = false;
-          s.statueRoot.scale.set(1, 1, 1);
-          s.statueRoot.position.y = s.baseY;
-          s.statueRoot.rotation.set(0, 0, 0);
-          if (s.audioEl && !s.audioEl.paused) s.audioEl.pause();
+        // 1. IF CURRENTLY PLAYING AUDIO: Stop walking & maintain locked eye contact with the player!
+        if (s.isPlayingAudio) {
+          const elapsed = now - s.danceStartTime;
+          if (elapsed > s.activeDuration || (s.activeAudioEl && s.activeAudioEl.ended)) {
+            s.isPlayingAudio = false;
+            s.isDancing = false;
+            s.statueRoot.scale.set(1, 1, 1);
+            s.statueRoot.position.y = s.baseY;
+            s.statueRoot.rotation.set(0, 0, 0);
+            if (s.activeAudioEl && !s.activeAudioEl.paused) s.activeAudioEl.pause();
+            s.aiState = "IDLE";
+            s.aiTimer = 1.5 + Math.random() * 3.0;
+            return;
+          }
+
+          // Locked eye contact with player while playing sound
+          const dxPlayer = this.playerPos.x - s.x;
+          const dzPlayer = this.playerPos.z - s.z;
+          if (Math.hypot(dxPlayer, dzPlayer) > 0.05) {
+            const targetYaw = Math.atan2(dxPlayer, dzPlayer);
+            s.yaw = this.lerpStatueAngle(s.yaw, targetYaw, Math.min(1, delta * 18));
+            s.group.rotation.y = s.yaw;
+          }
+
+          // Silver Smitty does NOT animate when playing audio; the other 5 statues bounce & dance!
+          if (s.cfg.noAnimation) {
+            s.statueRoot.scale.set(1, 1, 1);
+            s.statueRoot.position.y = s.baseY;
+            s.statueRoot.rotation.set(0, 0, 0);
+          } else if (s.isDancing) {
+            const freq = 9.2;
+            const phase = elapsed * freq;
+            const osc = Math.sin(phase);
+            const squash = 1.0 + 0.30 * osc;
+            const stretch = 1.0 / Math.sqrt(Math.max(0.4, squash));
+
+            s.statueRoot.scale.set(stretch, squash, stretch);
+            s.statueRoot.position.y = s.baseY + Math.max(0, osc) * 0.42;
+            s.statueRoot.rotation.z = Math.sin(phase * 0.5) * 0.14;
+            s.statueRoot.rotation.y = 0; // Keep root aligned with group.rotation.y for locked eye contact!
+          }
           return;
         }
 
-        // Elastic Squash-and-Stretch dancing bounce + playful rhythm sway
-        const freq = 9.2;
-        const phase = elapsed * freq;
-        const osc = Math.sin(phase);
-        const squash = 1.0 + 0.30 * osc;
-        const stretch = 1.0 / Math.sqrt(Math.max(0.4, squash));
+        // 2. NOT PLAYING AUDIO: Minecraft-Pig Living AI (Idle & Wander across rooms and floors)
+        s.aiTimer -= delta;
 
-        s.statueRoot.scale.set(stretch, squash, stretch);
-        s.statueRoot.position.y = s.baseY + Math.max(0, osc) * 0.42;
-        s.statueRoot.rotation.z = Math.sin(phase * 0.5) * 0.14;
-        s.statueRoot.rotation.y = Math.cos(phase * 0.5) * 0.22;
+        if (s.aiState === "IDLE") {
+          s.statueRoot.scale.set(1, 1, 1);
+          s.statueRoot.position.y = s.baseY;
+          s.statueRoot.rotation.set(0, 0, 0);
+
+          // Occasional subtle pig-like head/body turn toward idleLookYaw (or glance at nearby player)
+          const distToPlayer = (s.floor === this.playerFloor)
+            ? Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z)
+            : 999;
+          const targetYaw = (distToPlayer < 4.2)
+            ? Math.atan2(this.playerPos.x - s.x, this.playerPos.z - s.z)
+            : s.idleLookYaw;
+          s.yaw = this.lerpStatueAngle(s.yaw, targetYaw, Math.min(1, delta * 4.5));
+          s.group.rotation.y = s.yaw;
+
+          if (s.aiTimer <= 0) {
+            if (Math.random() < 0.72) {
+              const path = this.pickStatueWanderPath(s);
+              if (path && path.length > 0) {
+                s.navPath = path;
+                s.navIndex = 0;
+                s.aiState = "WANDER";
+                s.aiTimer = 10.0 + Math.random() * 18.0;
+              } else {
+                s.idleLookYaw = s.yaw + (Math.random() - 0.5) * 2.2;
+                s.aiTimer = 2.5 + Math.random() * 4.5;
+              }
+            } else {
+              s.idleLookYaw = s.yaw + (Math.random() - 0.5) * 2.4;
+              s.aiTimer = 2.5 + Math.random() * 5.0;
+            }
+          }
+        } else if (s.aiState === "WANDER") {
+          if (s.aiTimer <= 0 || !s.navPath || s.navIndex >= s.navPath.length) {
+            s.aiState = "IDLE";
+            s.aiTimer = 3.0 + Math.random() * 5.5;
+            s.idleLookYaw = s.yaw;
+            s.statueRoot.position.y = s.baseY;
+            s.statueRoot.rotation.set(0, 0, 0);
+            return;
+          }
+
+          const wp = s.navPath[s.navIndex];
+          const dx = wp.x - s.x;
+          const dz = wp.z - s.z;
+          const dist = Math.hypot(dx, dz);
+
+          if (dist < 0.55) {
+            s.navIndex++;
+            return;
+          }
+
+          // Don't walk into the player if right in front of them
+          const distToPlayer = (s.floor === this.playerFloor)
+            ? Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z)
+            : 999;
+          if (distToPlayer < 1.35) {
+            s.aiState = "IDLE";
+            s.aiTimer = 2.5 + Math.random() * 3.0;
+            s.idleLookYaw = Math.atan2(this.playerPos.x - s.x, this.playerPos.z - s.z);
+            s.statueRoot.position.y = s.baseY;
+            s.statueRoot.rotation.set(0, 0, 0);
+            return;
+          }
+
+          const speed = s.cfg.walkSpeed || 1.45;
+          const stepX = (dx / dist) * speed * delta;
+          const stepZ = (dz / dist) * speed * delta;
+
+          const tempPos = { x: s.x + stepX, y: s.y, z: s.z + stepZ, _ignoreCollider: s.collider };
+          this.resolveCollisions(tempPos, 0.48, s.floor, s.y);
+
+          // Avoid overlapping other statues
+          for (let other of this.statues) {
+            if (other === s || other.floor !== s.floor) continue;
+            const odx = tempPos.x - other.x;
+            const odz = tempPos.z - other.z;
+            const od = Math.hypot(odx, odz);
+            if (od < 1.25 && od > 0.001) {
+              tempPos.x += (odx / od) * (1.25 - od);
+              tempPos.z += (odz / od) * (1.25 - od);
+            }
+          }
+
+          s.x = tempPos.x;
+          s.z = tempPos.z;
+
+          // Update elevation & floor if walking up/down stairwells
+          const elev = this.updateStairwellElevation(s, s.stairState, s.floor, s.y);
+          s.y = elev.y;
+          s.floor = elev.floor;
+
+          s.group.position.set(s.x, s.y, s.z);
+
+          // Update live collider position
+          if (s.collider) {
+            s.collider.x = s.x;
+            s.collider.z = s.z;
+            s.collider.floor = s.floor;
+            s.collider.minY = s.y;
+            s.collider.maxY = s.y + 2.35;
+          }
+
+          // Smoothly face movement direction
+          const moveYaw = Math.atan2(dx, dz);
+          s.yaw = this.lerpStatueAngle(s.yaw, moveYaw, Math.min(1, delta * 8.0));
+          s.group.rotation.y = s.yaw;
+
+          // Cute subtle waddle while walking (except Silver Smitty who glides smoothly)
+          if (!s.cfg.noAnimation) {
+            s.walkPhase += delta * 9.5;
+            s.statueRoot.position.y = s.baseY + Math.abs(Math.sin(s.walkPhase)) * 0.055;
+            s.statueRoot.rotation.z = Math.sin(s.walkPhase) * 0.035;
+          }
+        }
       });
     }
 
+    updateSilverSmitty(delta) {
+      // Handled inside updateStatues
+    }
+
     interactStatue(s) {
-      if (s.isDancing) return; // Anti-spam lockout while track is playing
+      if (s.isPlayingAudio) return; // Anti-spam lockout while track is playing
+
+      // Stop any other currently playing statue audio
       if (this.activeStatueAudio && !this.activeStatueAudio.paused) {
         this.activeStatueAudio.pause();
         this.activeStatueAudio.currentTime = 0;
         this.statues.forEach(other => {
           if (other !== s) {
+            other.isPlayingAudio = false;
             other.isDancing = false;
             other.statueRoot.scale.set(1, 1, 1);
             other.statueRoot.position.y = other.baseY;
@@ -14431,104 +14799,51 @@
           }
         });
       }
-      s.isDancing = true;
-      s.danceStartTime = performance.now() / 1000;
-      this.activeStatueAudio = s.audioEl;
-      if (s.audioEl) {
-        s.audioEl.currentTime = 0;
-        s.audioEl.volume = 0.85;
-        s.audioEl.play().catch(() => {});
-      }
-      this.showSystemNotification(`♪ PLAYING STATUE: ${s.cfg.name.toUpperCase()} ♪`);
-      if (this.triggerLeftHandGrab) this.triggerLeftHandGrab();
-    }
 
-    // =========================================================================
-    // SILVER SMITTY (Quietly Roaming Exhibit Statue — subtle relocation)
-    // =========================================================================
-    buildSilverSmitty(fl, y0, mats) {
-      if (fl !== 0 || this.silverSmitty) return;
-      const gltfLoader = new THREE.GLTFLoader();
-      const modelPath = "assets/statues/Silver Smitty.glb";
+      // Select audio track:
+      // - Silver Smitty: random track from his 6-track pool
+      // - R3E4: 5% chance for 2nd track (R3E4-song2.mp3), 95% chance for 1st track (R3E4-song1.mp3)
+      // - Others: primary track
+      let chosenAudio = s.audioEl;
+      let chosenDuration = s.cfg.duration || 10.0;
 
-      gltfLoader.load(modelPath, (gltf) => {
-        const model = gltf.scene;
-        model.traverse(child => {
-          if (child.isMesh && child.material) {
-            const matsList = Array.isArray(child.material) ? child.material : [child.material];
-            matsList.forEach(m => {
-              m.side = THREE.DoubleSide;
-              if (typeof m.metalness === 'number' && m.metalness > 0.3) m.metalness = 0.25;
-            });
-          }
-        });
-
-        model.updateMatrixWorld(true);
-        const box = new THREE.Box3().setFromObject(model);
-        const size = new THREE.Vector3();
-        box.getSize(size);
-        const currentH = Math.max(0.001, size.y);
-        const targetH = 2.15;
-        const normScale = targetH / currentH;
-        model.scale.set(normScale, normScale, normScale);
-        model.updateMatrixWorld(true);
-
-        const box2 = new THREE.Box3().setFromObject(model);
-        const center2 = new THREE.Vector3();
-        box2.getCenter(center2);
-        model.position.x -= center2.x;
-        model.position.z -= center2.z;
-        model.position.y -= box2.min.y;
-
-        const group = new THREE.Group();
-        group.position.set(23.0, 0, -33.0);
-        group.add(model);
-        this.scene.add(group);
-
-        this.silverSmitty = {
-          mesh: group,
-          cooldown: 50.0 + Math.random() * 40.0,
-          currentFloor: 0
-        };
-      }, undefined, () => {});
-    }
-
-    updateSilverSmitty(delta) {
-      if (!this.silverSmitty || !this.silverSmitty.mesh) return;
-      this.silverSmitty.cooldown -= delta;
-      if (this.silverSmitty.cooldown > 0) return;
-
-      const frustum = new THREE.Frustum();
-      const projScreenMatrix = new THREE.Matrix4();
-      projScreenMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
-      frustum.setFromProjectionMatrix(projScreenMatrix);
-
-      const smittyWorldPos = new THREE.Vector3();
-      this.silverSmitty.mesh.getWorldPosition(smittyWorldPos);
-
-      // Only relocate if player cannot see Silver Smitty!
-      if (!frustum.containsPoint(smittyWorldPos)) {
-        const waypoints = [
-          { x: -10.0, z: -10.0, floor: 0 },
-          { x: -26.0, z: -2.0, floor: 0 },
-          { x: 14.0, z: 12.0, floor: 0 },
-          { x: 23.0, z: -33.0, floor: 0 },
-          { x: -10.0, z: 10.0, floor: 1 },
-          { x: 12.0, z: -30.0, floor: 1 },
-          { x: 22.0, z: 12.0, floor: 2 },
-          { x: -10.0, z: -5.0, floor: 2 }
-        ];
-        const nextWp = waypoints[Math.floor(Math.random() * waypoints.length)];
-        const targetY = nextWp.floor * CONFIG.FLOOR_HEIGHT;
-        const candidatePos = new THREE.Vector3(nextWp.x, targetY + 1.2, nextWp.z);
-
-        if (!frustum.containsPoint(candidatePos)) {
-          this.silverSmitty.mesh.position.set(nextWp.x, targetY, nextWp.z);
-          this.silverSmitty.mesh.lookAt(this.playerPos.x, targetY, this.playerPos.z);
-          this.silverSmitty.currentFloor = nextWp.floor;
-          this.silverSmitty.cooldown = 60.0 + Math.random() * 45.0; // Random interval: 60 to 105 seconds
+      if (s.audioPoolEls && s.audioPoolEls.length > 0) {
+        let idx = Math.floor(Math.random() * s.audioPoolEls.length);
+        if (s.audioPoolEls.length > 1 && idx === s.lastPoolIdx) {
+          idx = (idx + 1) % s.audioPoolEls.length;
+        }
+        s.lastPoolIdx = idx;
+        chosenAudio = s.audioPoolEls[idx].el;
+        chosenDuration = s.audioPoolEls[idx].duration;
+      } else if (s.audioElAlt && typeof s.cfg.altChance === "number") {
+        if (Math.random() < s.cfg.altChance) {
+          chosenAudio = s.audioElAlt;
+          chosenDuration = s.cfg.durationAlt || 21.29;
         }
       }
+
+      s.isPlayingAudio = true;
+      s.isDancing = !s.cfg.noAnimation;
+      s.danceStartTime = performance.now() / 1000;
+      s.activeDuration = chosenDuration;
+      s.activeAudioEl = chosenAudio;
+      this.activeStatueAudio = chosenAudio;
+
+      // Immediately snap eye contact toward player
+      const dx = this.playerPos.x - s.x;
+      const dz = this.playerPos.z - s.z;
+      if (Math.hypot(dx, dz) > 0.05) {
+        s.yaw = Math.atan2(dx, dz);
+        s.group.rotation.y = s.yaw;
+      }
+
+      if (chosenAudio) {
+        chosenAudio.currentTime = 0;
+        chosenAudio.volume = 0.88;
+        chosenAudio.play().catch(() => {});
+      }
+      this.showSystemNotification(`♪ ${s.cfg.name.toUpperCase()} ♪`);
+      if (this.triggerLeftHandGrab) this.triggerLeftHandGrab();
     }
 
     exportLevelJSON() {

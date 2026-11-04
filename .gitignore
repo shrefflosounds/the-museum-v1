@@ -1,5 +1,6 @@
 # Raw 3D Blender models & intermediate source assets (not needed to play)
-3D_Source_Models/
+3D_Source_Models/*
+!3D_Source_Models/statues/
 assets/relics_original_raw/
 assets/relics_original_uncompressed/
 assets/*_original_raw.glb
