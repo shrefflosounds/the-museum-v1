@@ -7781,54 +7781,139 @@
       this.audio.playCrateImpact();
     }
 
-    resolveCrateWallCollisions(crate, floorIdx) {
+    resolveCrateStaticCollisions(crate, floorIdx, previousY = crate.y) {
       const cosY = Math.abs(Math.cos(crate.rotY));
       const sinY = Math.abs(Math.sin(crate.rotY));
       const halfX = (cosY * crate.w + sinY * crate.d) / 2;
       const halfZ = (sinY * crate.w + cosY * crate.d) / 2;
       let impact = false;
 
-      for (const wall of this.colliders) {
-        if (wall.disabled || !wall.isWall || wall.isCrate ||
-            (wall.floor !== 'all' && wall.floor !== floorIdx)) continue;
-        if (wall.type !== 'box' || wall.minX === wall.maxX || wall.minZ === wall.maxZ) continue;
-        if (wall.minY !== undefined && wall.maxY !== undefined &&
-            (crate.y >= wall.maxY || crate.y + crate.h <= wall.minY)) continue;
+      const resolveObstacle = (obstacle) => {
+        if (obstacle.disabled || obstacle.isCrate ||
+            (obstacle.floor !== 'all' && obstacle.floor !== floorIdx)) return;
+        if (obstacle.type !== 'box' && obstacle.type !== 'cylinder') return;
+        if (obstacle.type === 'box' &&
+            (obstacle.minX === obstacle.maxX || obstacle.minZ === obstacle.maxZ)) return;
 
-        const minX = wall.minX - halfX;
-        const maxX = wall.maxX + halfX;
-        const minZ = wall.minZ - halfZ;
-        const maxZ = wall.maxZ + halfZ;
-        if (crate.x <= minX || crate.x >= maxX || crate.z <= minZ || crate.z >= maxZ) continue;
+        const floorY = floorIdx * CONFIG.FLOOR_HEIGHT;
+        const hasVerticalBounds = obstacle.minY !== undefined || obstacle.maxY !== undefined;
+        const obstacleMinY = obstacle.minY === undefined ? floorY : obstacle.minY;
+        const obstacleMaxY = obstacle.maxY === undefined
+          ? floorY + CONFIG.FLOOR_HEIGHT
+          : obstacle.maxY;
+        const overlapY = Math.min(crate.y + crate.h, obstacleMaxY) -
+                         Math.max(crate.y, obstacleMinY);
 
-        const penLeft = crate.x - minX;
-        const penRight = maxX - crate.x;
-        const penTop = crate.z - minZ;
-        const penBottom = maxZ - crate.z;
         let nx = 0;
         let nz = 0;
-        const minPen = Math.min(penLeft, penRight, penTop, penBottom);
-        if (minPen === penLeft) {
-          crate.x = minX;
-          nx = -1;
-        } else if (minPen === penRight) {
-          crate.x = maxX;
-          nx = 1;
-        } else if (minPen === penTop) {
-          crate.z = minZ;
-          nz = -1;
+        let horizontalPenetration = 0;
+
+        if (obstacle.type === 'box') {
+          const minX = obstacle.minX - halfX;
+          const maxX = obstacle.maxX + halfX;
+          const minZ = obstacle.minZ - halfZ;
+          const maxZ = obstacle.maxZ + halfZ;
+          if (crate.x <= minX || crate.x >= maxX || crate.z <= minZ || crate.z >= maxZ) return;
+
+          const penLeft = crate.x - minX;
+          const penRight = maxX - crate.x;
+          const penNear = crate.z - minZ;
+          const penFar = maxZ - crate.z;
+          horizontalPenetration = Math.min(penLeft, penRight, penNear, penFar);
+          if (horizontalPenetration === penLeft) nx = -1;
+          else if (horizontalPenetration === penRight) nx = 1;
+          else if (horizontalPenetration === penNear) nz = -1;
+          else nz = 1;
         } else {
-          crate.z = maxZ;
-          nz = 1;
+          const closestX = Math.max(crate.x - halfX, Math.min(obstacle.x, crate.x + halfX));
+          const closestZ = Math.max(crate.z - halfZ, Math.min(obstacle.z, crate.z + halfZ));
+          let dx = closestX - obstacle.x;
+          let dz = closestZ - obstacle.z;
+          const distance = Math.hypot(dx, dz);
+          if (distance >= obstacle.radius) return;
+          if (distance > 0.0001) {
+            nx = dx / distance;
+            nz = dz / distance;
+          } else {
+            const marginX = halfX - Math.abs(obstacle.x - crate.x);
+            const marginZ = halfZ - Math.abs(obstacle.z - crate.z);
+            if (marginX <= marginZ) {
+              nx = crate.x >= obstacle.x ? 1 : -1;
+              horizontalPenetration = obstacle.radius + marginX;
+            } else {
+              nz = crate.z >= obstacle.z ? 1 : -1;
+              horizontalPenetration = obstacle.radius + marginZ;
+            }
+          }
+          if (distance > 0.0001) horizontalPenetration = obstacle.radius - distance;
         }
 
-        const normalVelocity = crate.vx * nx + crate.vz * nz;
-        if (normalVelocity < 0) {
-          const impulse = (1 + 0.35) * normalVelocity;
-          crate.vx -= impulse * nx;
-          crate.vz -= impulse * nz;
-          if (Math.abs(normalVelocity) > 2.0) impact = true;
+        const landedOnObstacle = hasVerticalBounds && crate.vy <= 0 &&
+          previousY >= obstacleMaxY && crate.y < obstacleMaxY;
+        const hitObstacleUnderside = hasVerticalBounds && crate.vy > 0 &&
+          previousY + crate.h <= obstacleMinY && crate.y + crate.h > obstacleMinY;
+        if (landedOnObstacle) {
+          crate.y = obstacleMaxY;
+          if (Math.abs(crate.vy) > 1.4) {
+            crate.vy = -crate.vy * 0.18;
+            crate.vx *= 0.55;
+            crate.vz *= 0.55;
+            impact = true;
+          } else {
+            crate.vy = 0;
+          }
+        } else if (hitObstacleUnderside) {
+          crate.y = obstacleMinY - crate.h;
+          if (crate.vy > 1.4) {
+            crate.vy = -crate.vy * 0.18;
+            impact = true;
+          } else {
+            crate.vy = 0;
+          }
+        } else if (overlapY <= 0) {
+          return;
+        } else {
+          crate.x += nx * horizontalPenetration;
+          crate.z += nz * horizontalPenetration;
+          const horizontalNormalVelocity = crate.vx * nx + crate.vz * nz;
+          if (horizontalNormalVelocity < 0) {
+            const impulse = (1 + 0.35) * horizontalNormalVelocity;
+            crate.vx -= impulse * nx;
+            crate.vz -= impulse * nz;
+            if (Math.abs(horizontalNormalVelocity) > 2.0) impact = true;
+          }
         }
+      };
+
+      for (const obstacle of this.colliders) {
+        resolveObstacle(obstacle);
+      }
+
+      const playerFootY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+      if (this.playerFloor === floorIdx) {
+        resolveObstacle({
+          type: 'cylinder',
+          floor: this.playerFloor,
+          x: this.playerPos.x,
+          z: this.playerPos.z,
+          radius: CONFIG.PLAYER.RADIUS || 0.35,
+          minY: playerFootY,
+          maxY: playerFootY + this.currentCamHeight
+        });
+      }
+
+      if (this.smittyPos && this.smittyFloor === floorIdx &&
+          this.smittyState !== 'DEAD' && this.smittyState !== 'RESPAWNING' &&
+          this.smittyEnabled) {
+        resolveObstacle({
+          type: 'cylinder',
+          floor: this.smittyFloor,
+          x: this.smittyPos.x,
+          z: this.smittyPos.z,
+          radius: 0.40,
+          minY: this.smittyPos.y,
+          maxY: this.smittyPos.y + 2.35
+        });
       }
 
       return impact;
@@ -7986,6 +8071,7 @@
           const cCeilY = cGroundBase + CONFIG.FLOOR_HEIGHT - 0.12;
 
           // Realistic gravity acceleration
+          const previousY = c.y;
           c.vy -= 15.0 * delta;
           c.y += c.vy * delta;
 
@@ -7995,13 +8081,13 @@
             Math.ceil(Math.max(Math.abs(c.vx), Math.abs(c.vz)) * delta / 0.08)
           ));
           const stepDelta = delta / horizontalSteps;
-          let wallImpact = false;
+          let collisionImpact = false;
           for (let step = 0; step < horizontalSteps; step++) {
             c.x += c.vx * stepDelta;
             c.z += c.vz * stepDelta;
-            if (this.resolveCrateWallCollisions(c, cFloor)) wallImpact = true;
+            if (this.resolveCrateStaticCollisions(c, cFloor, previousY)) collisionImpact = true;
           }
-          if (wallImpact) this.audio.playCrateImpact();
+          if (collisionImpact) this.audio.playCrateImpact();
 
           c.rotX += c.angVx * delta;
           c.rotY += c.angVy * delta;
