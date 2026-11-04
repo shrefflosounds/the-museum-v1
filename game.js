@@ -13695,42 +13695,88 @@
     }
 
     raycastBullet() {
-      if (!this.smittyMesh || this.smittyState === 'DEAD') return;
-
+      this.camera.updateMatrixWorld(true);
       const raycaster = new THREE.Raycaster();
       raycaster.setFromCamera(new THREE.Vector2(0, 0), this.camera);
+      const candidates = [];
 
       // Fast analytical AABB hitbox test around Smitty (avoids CPU-skinning 275,360 vertices on SkinnedMesh.raycast)
-      const sx = this.smittyPos.x;
-      const sy = this.smittyPos.y;
-      const sz = this.smittyPos.z;
-      const hitBox = new THREE.Box3(
-        new THREE.Vector3(sx - 0.58, sy, sz - 0.58),
-        new THREE.Vector3(sx + 0.58, sy + 2.35, sz + 0.58)
-      );
-
-      const hitPoint = new THREE.Vector3();
-      const hit = raycaster.ray.intersectBox(hitBox, hitPoint);
-      if (!hit) return;
-
-      const dist = this.camera.position.distanceTo(hitPoint);
-      if (dist > 38) return;
-
-      // Verify no wall on the current floor blocks the shot
-      const x0 = this.playerPos.x;
-      const z0 = this.playerPos.z;
-      for (let i = 0; i < this.colliders.length; i++) {
-        const c = this.colliders[i];
-        if (c.floor !== 'all' && c.floor !== this.playerFloor) continue;
-        if (c.type === 'box') {
-          if (lineIntersectsBox(x0, z0, sx, sz, c.minX, c.maxX, c.minZ, c.maxZ)) {
-            return;
-          }
+      if (this.smittyMesh && this.smittyState !== 'DEAD') {
+        const sx = this.smittyPos.x;
+        const sy = this.smittyPos.y;
+        const sz = this.smittyPos.z;
+        const hitBox = new THREE.Box3(
+          new THREE.Vector3(sx - 0.58, sy, sz - 0.58),
+          new THREE.Vector3(sx + 0.58, sy + 2.35, sz + 0.58)
+        );
+        const hitPoint = new THREE.Vector3();
+        if (raycaster.ray.intersectBox(hitBox, hitPoint)) {
+          candidates.push({
+            target: this.smittyPos,
+            hitPoint,
+            hit: () => this.damageSmitty(CONFIG.WEAPON.DAMAGE, hitPoint, raycaster.ray.direction)
+          });
         }
       }
 
-      this.shotsHit++;
-      this.damageSmitty(CONFIG.WEAPON.DAMAGE, hitPoint, raycaster.ray.direction);
+      if (this.statues) {
+        this.statues.forEach(statue => {
+          if (statue.cfg.isSilverSmitty || !statue.group.visible || statue.floor !== this.playerFloor) return;
+          const hitPoint = new THREE.Vector3();
+          const hitBox = new THREE.Box3(
+            new THREE.Vector3(statue.x - 0.85, statue.y, statue.z - 0.85),
+            new THREE.Vector3(statue.x + 0.85, statue.y + (statue.cfg.targetHeight || 2.25), statue.z + 0.85)
+          );
+          if (raycaster.ray.intersectBox(hitBox, hitPoint)) {
+            candidates.push({
+              target: statue,
+              hitPoint,
+              hit: () => this.hitStatue(statue, hitPoint, raycaster.ray.direction)
+            });
+          }
+        });
+      }
+
+      const visibleHits = candidates
+        .map(candidate => ({
+          ...candidate,
+          distance: this.camera.position.distanceTo(candidate.hitPoint)
+        }))
+        .filter(candidate => candidate.distance <= 38)
+        .filter(candidate => {
+          const blockedByCollider = this.colliders.some(c => {
+            if ((c.floor !== 'all' && c.floor !== this.playerFloor) || c.type !== 'box') return false;
+            if (c.minY === undefined || c.maxY === undefined) return false;
+            const colliderBox = new THREE.Box3(
+              new THREE.Vector3(c.minX, c.minY, c.minZ),
+              new THREE.Vector3(c.maxX, c.maxY, c.maxZ)
+            );
+            const obstructionPoint = raycaster.ray.intersectBox(colliderBox, new THREE.Vector3());
+            return obstructionPoint &&
+              this.camera.position.distanceTo(obstructionPoint) < candidate.distance - 0.05;
+          });
+          return !blockedByCollider;
+        })
+        .sort((a, b) => a.distance - b.distance);
+
+      if (visibleHits.length > 0) {
+        this.shotsHit++;
+        visibleHits[0].hit();
+      }
+    }
+
+    hitStatue(statue, hitPoint, shotDir) {
+      const recoilDistance = 0.42;
+      const yaw = statue.group.rotation.y;
+      const pushX = shotDir.x * recoilDistance;
+      const pushZ = shotDir.z * recoilDistance;
+      statue.hitRecoil = {
+        x: Math.cos(yaw) * pushX - Math.sin(yaw) * pushZ,
+        z: Math.sin(yaw) * pushX + Math.cos(yaw) * pushZ,
+        timer: 0.42,
+        duration: 0.42
+      };
+      this.spawnLiquidBlood(hitPoint, shotDir, 24, statue.y);
     }
 
     spawnBloodPuddle(x, floorY, z, targetRadius = 0.38) {
@@ -13765,10 +13811,12 @@
       });
     }
 
-    spawnLiquidBlood(hitPoint, shotDir, count = 38) {
+    spawnLiquidBlood(hitPoint, shotDir, count = 38, floorY = null) {
       if (!this.bloodDropGeom || !this.bloodDropMat) return;
 
-      const floorY = this.smittyPos ? this.smittyPos.y : (this.playerFloor * CONFIG.FLOOR_HEIGHT);
+      const bloodFloorY = floorY === null
+        ? (this.smittyPos ? this.smittyPos.y : (this.playerFloor * CONFIG.FLOOR_HEIGHT))
+        : floorY;
       const dir = shotDir ? shotDir.clone().normalize() : new THREE.Vector3(0, 0, 1);
 
       for (let i = 0; i < count; i++) {
@@ -13800,7 +13848,7 @@
           mesh,
           vel,
           radius,
-          floorY,
+          floorY: bloodFloorY,
           life: 2.2
         });
       }
@@ -15229,6 +15277,20 @@
       const now = performance.now() / 1000;
 
       this.statues.forEach(s => {
+        if (s.hitRecoil) {
+          s.hitRecoil.timer -= delta;
+          if (s.hitRecoil.timer <= 0) {
+            s.hitRecoil = null;
+            s.statueRoot.position.x = 0;
+            s.statueRoot.position.z = 0;
+          } else {
+            const progress = 1 - s.hitRecoil.timer / s.hitRecoil.duration;
+            const strength = Math.sin(progress * Math.PI);
+            s.statueRoot.position.x = s.hitRecoil.x * strength;
+            s.statueRoot.position.z = s.hitRecoil.z * strength;
+          }
+        }
+
         // Silver Smitty never walks — he only teleports (unless he's playing audio for the player)
         if (s.cfg.isSilverSmitty) {
           this.updateSilverSmittyTeleport(s, delta);
