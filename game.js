@@ -12752,8 +12752,9 @@
           this.playerPos.z += (moveZ / moveLen) * flySpeed * delta;
         }
 
-        // Keep inside reasonable museum altitude bounds (-1m floor 0 to 22m roof level)
-        this.playerPos.y = Math.max(-1.0, Math.min(22.0, this.playerPos.y));
+        // Keep no-clip movement within the full museum height, including the fourth floor.
+        const maxMuseumY = CONFIG.NUM_FLOORS * CONFIG.FLOOR_HEIGHT;
+        this.playerPos.y = Math.max(-1.0, Math.min(maxMuseumY, this.playerPos.y));
 
         const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
         if (approxFloor !== this.playerFloor) {
