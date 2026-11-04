@@ -1046,10 +1046,47 @@
   },
   {
     "floor": 0,
-    "x": 11.0,
+    "x": 8.8,
     "y": 2.35,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 0,
+    "x": 12.0,
+    "y": 2.35,
+    "z": -25.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 0,
+    "x": 15.2,
+    "y": 2.35,
+    "z": -25.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 0,
+    "x": -26.0,
+    "y": 2.35,
+    "z": -5.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 0,
+    "x": -15.65,
+    "y": 2.35,
+    "z": -8.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 0,
+    "x": -15.65,
+    "y": 2.35,
+    "z": 16.0,
+    "rotY": 1.5708
   },
   {
     "floor": 0,
@@ -1284,10 +1321,47 @@
   },
   {
     "floor": 1,
-    "x": 11.0,
+    "x": 8.8,
     "y": 7.55,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 1,
+    "x": 12.0,
+    "y": 7.55,
+    "z": -25.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 1,
+    "x": 15.2,
+    "y": 7.55,
+    "z": -25.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 1,
+    "x": -26.0,
+    "y": 7.55,
+    "z": -5.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 1,
+    "x": -15.65,
+    "y": 7.55,
+    "z": -8.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 1,
+    "x": -15.65,
+    "y": 7.55,
+    "z": 16.0,
+    "rotY": 1.5708
   },
   {
     "floor": 1,
@@ -1522,10 +1596,47 @@
   },
   {
     "floor": 2,
-    "x": 11.0,
+    "x": 8.8,
     "y": 12.75,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 2,
+    "x": 12.0,
+    "y": 12.75,
+    "z": -25.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 2,
+    "x": 15.2,
+    "y": 12.75,
+    "z": -25.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 2,
+    "x": -26.0,
+    "y": 12.75,
+    "z": -5.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 2,
+    "x": -15.65,
+    "y": 12.75,
+    "z": -8.0,
+    "rotY": 1.5708
+  },
+  {
+    "floor": 2,
+    "x": -15.65,
+    "y": 12.75,
+    "z": 16.0,
+    "rotY": 1.5708
   },
   {
     "floor": 2,
@@ -1760,10 +1871,40 @@
   },
   {
     "floor": 3,
-    "x": 11.0,
+    "x": 8.8,
     "y": 17.95,
     "z": -25.65,
     "rotY": 0.0
+  },
+  {
+    "floor": 3,
+    "x": 12.0,
+    "y": 17.95,
+    "z": -25.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 3,
+    "x": 15.2,
+    "y": 17.95,
+    "z": -25.65,
+    "rotY": 0.0
+  },
+  {
+    "floor": 3,
+    "x": -26.0,
+    "y": 17.95,
+    "z": -5.65,
+    "rotY": 0.0,
+    "isMonumental": true
+  },
+  {
+    "floor": 3,
+    "x": -15.65,
+    "y": 17.95,
+    "z": -8.0,
+    "rotY": 1.5708
   },
   {
     "floor": 3,
@@ -3053,6 +3194,177 @@
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 2.15
+  },
+  {
+    "id": 136,
+    "floor": 0,
+    "title": "Piano Chase",
+    "file": "assets/gallery/137_piano-chase.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.2,
+    "h": 1.93
+  },
+  {
+    "id": 137,
+    "floor": 0,
+    "title": "Tiffin Spacelint",
+    "file": "assets/gallery/138_Tiffin_Spacelint_render1.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.1,
+    "h": 2.1
+  },
+  {
+    "id": 138,
+    "floor": 0,
+    "title": "Chloe Bailey Portrait",
+    "file": "assets/gallery/139_Chloe-Bailey-portrait.jpg",
+    "wing": "1ST FLOOR",
+    "w": 1.95,
+    "h": 2.1
+  },
+  {
+    "id": 139,
+    "floor": 0,
+    "title": "Pre Watered Drawing",
+    "file": "assets/gallery/140_pre-watered-drawing.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.1,
+    "h": 2.1
+  },
+  {
+    "id": 140,
+    "floor": 0,
+    "title": "Rat YMCA",
+    "file": "assets/gallery/141_rat-ymca.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.3,
+    "h": 1.78
+  },
+  {
+    "id": 141,
+    "floor": 1,
+    "title": "Est FNI First Cover",
+    "file": "assets/gallery/142_est-fni-first-cover.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.1,
+    "h": 2.1
+  },
+  {
+    "id": 142,
+    "floor": 1,
+    "title": "Scooby Fan",
+    "file": "assets/gallery/143_scooby-fan.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.05,
+    "h": 2.1
+  },
+  {
+    "id": 143,
+    "floor": 1,
+    "title": "Coach Nun",
+    "file": "assets/gallery/144_coach-nun.jpg",
+    "wing": "2ND FLOOR",
+    "w": 1.65,
+    "h": 2.2
+  },
+  {
+    "id": 144,
+    "floor": 1,
+    "title": "Smitty 0 Bigman Shirt",
+    "file": "assets/gallery/145_smitty-0-bigman-shirt.jpg",
+    "wing": "2ND FLOOR",
+    "w": 1.65,
+    "h": 2.2
+  },
+  {
+    "id": 145,
+    "floor": 1,
+    "title": "I Love Watching You",
+    "file": "assets/gallery/146_i-love-watching-you.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.0,
+    "h": 2.1
+  },
+  {
+    "id": 146,
+    "floor": 2,
+    "title": "Smitty QR Code",
+    "file": "assets/gallery/147_smitty-qr-code.jpg",
+    "wing": "3RD FLOOR",
+    "w": 2.1,
+    "h": 2.1
+  },
+  {
+    "id": 147,
+    "floor": 2,
+    "title": "Smittys First Appearance",
+    "file": "assets/gallery/148_smittys-first-appearance.jpg",
+    "wing": "3RD FLOOR",
+    "w": 1.65,
+    "h": 2.2
+  },
+  {
+    "id": 148,
+    "floor": 2,
+    "title": "Harbinger Smitty Live Action",
+    "file": "assets/gallery/149_Harbinger-Smitty-Live-Action.jpg",
+    "wing": "3RD FLOOR",
+    "w": 1.65,
+    "h": 2.2
+  },
+  {
+    "id": 149,
+    "floor": 2,
+    "title": "Smitty Colorful Mask Edit",
+    "file": "assets/gallery/150_129_smitty-colorful-mask-edit.jpg",
+    "wing": "3RD FLOOR",
+    "w": 2.4,
+    "h": 1.8
+  },
+  {
+    "id": 150,
+    "floor": 2,
+    "title": "Smitty Crouching Disco Colors",
+    "file": "assets/gallery/151_smitty-crouching-disco-colors.jpg",
+    "wing": "3RD FLOOR",
+    "w": 2.1,
+    "h": 2.1
+  },
+  {
+    "id": 151,
+    "floor": 3,
+    "title": "2019 Red Phone Face Drawing",
+    "file": "assets/gallery/152_2019-red-phone-face-drawing.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.5,
+    "h": 2.25
+  },
+  {
+    "id": 152,
+    "floor": 3,
+    "title": "Smitty Face Headshot New",
+    "file": "assets/gallery/153_smitty-face-headshot-new.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.05,
+    "h": 2.1
+  },
+  {
+    "id": 153,
+    "floor": 3,
+    "title": "Shrefflo Store 2025 Ad",
+    "file": "assets/gallery/154_Shrefflo-store-2025-ad.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.4,
+    "h": 1.8
+  },
+  {
+    "id": 154,
+    "floor": 3,
+    "title": "Shrefflo Symbol",
+    "file": "assets/gallery/155_shrefflo-symbol.gif",
+    "wing": "4TH FLOOR",
+    "w": 2.4,
+    "h": 1.18
   }
 ];
 
@@ -3524,9 +3836,13 @@
         wallBrick: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/basement_brick.jpg', 10, 2, 0x8c685c),
         wallConcrete: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 10, 2, 0x888e96),
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
-        ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 16, 16, 0x6e7684),
+        ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 12, 12, 0xf6f3eb),
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8)
       };
+
+      mats.ceiling.emissive = new THREE.Color(0x322f28);
+      mats.ceiling.shininess = 16;
+      mats.ceiling.specular = new THREE.Color(0x222222);
 
       mats.mahogany.polygonOffset = true;
       mats.mahogany.polygonOffsetFactor = -1;
@@ -3687,7 +4003,7 @@
 
       // Entire z = -26 wall from x = -3.8 to 27.8 (disjoint collinear segments):
       this.createWall(0.0, ycFull, -26, 7.6, h, t, mainWallMat, true, fl);        // -3.8..3.8 (Stairwell N North)
-      this.createWall(4.4, yc, -26, 0.4, wallH, t, mainWallMat, true, fl);        // 4.2..4.6 (West door jamb)
+      this.createWall(4.2, yc, -26, 0.8, wallH, t, mainWallMat, true, fl);        // 3.8..4.6 (West door jamb connecting to Stairwell N)
       this.createLintel(6.0, y0, -26, 2.8, t, ceilH, mainWallMat);                // 4.6..7.4
       this.createWall(12.0, yc, -26, 9.2, wallH, t, mainWallMat, true, fl);       // 7.4..16.6
       this.createLintel(18.2, y0, -26, 3.2, t, ceilH, mainWallMat);               // 16.6..19.8
@@ -3788,25 +4104,35 @@
                        : fl === 1 ? 0xffd27d
                        : fl === 2 ? 0x93c5fd
                        : 0xef4444;
-      const lightInt = fl === 3 ? 0.48 : 0.42;
+      const lightInt = fl === 3 ? 0.55 : 0.58;
       const roomLightCoords = [
-        [-26, 6],   // West Wing
-        [-10, 6],   // Main Gallery
-        [12, -33],  // North Gallery
-        [15, -10],  // East Main Hall Stacks Aisle
-        [18, 24]    // South-East Media Wing
+        [-26, -1],  // West Wing North
+        [-26, 13],  // West Wing South
+        [-29, 23],  // West Office
+        [-10, -10], // Main Gallery North
+        [-10, 5],   // Main Gallery Center
+        [-10, 20],  // Main Gallery South
+        [4, -33],   // North Gallery West
+        [12, -33],  // North Gallery Center
+        [20, -33],  // North Gallery East
+        [12, -14],  // East Main Hall North
+        [22, -14],  // East Main Hall North-East
+        [12, -2],   // East Main Hall Mid
+        [22, -2],   // East Main Hall Mid-East
+        [26, 13],   // Arts & Music Office
+        [16, 23]    // South-East Media Wing
       ];
       roomLightCoords.forEach(([lx, lz], idx) => {
         const fix = new THREE.Mesh(
-          new THREE.CylinderGeometry(0.4, 0.4, 0.10, 8),
+          new THREE.CylinderGeometry(0.35, 0.35, 0.08, 12),
           new THREE.MeshBasicMaterial({ color: lightColor })
         );
-        fix.position.set(lx, y0 + ceilH - 0.06, lz);
+        fix.position.set(lx, y0 + ceilH - 0.04, lz);
         this.scene.add(fix);
 
-        const pl = new THREE.PointLight(lightColor, fl === this.playerFloor ? lightInt : 0, 18);
+        const pl = new THREE.PointLight(lightColor, fl === this.playerFloor ? lightInt : 0, 24.0, 1.25);
         pl._origIntensity = lightInt;
-        pl.position.set(lx, y0 + ceilH - 0.35, lz);
+        pl.position.set(lx, y0 + ceilH - 0.45, lz);
         this.scene.add(pl);
         if (this.floorLights[fl]) this.floorLights[fl].push(pl);
       });
@@ -4254,230 +4580,119 @@
     }
 
     createClassicalBeauxArtsArchitecture(fl, y0, mats, ceilH, wallH) {
-      // Classical Beaux-Arts architectural materials for smooth coved vaulting, coffered laylights & portal architraves
+      // Classical Beaux-Arts architectural moldings & coffered laylights
       const corniceMat = new THREE.MeshLambertMaterial({
-        color: fl === 3 ? 0x9ca3af : (fl === 1 ? 0xf8f5ee : (fl === 2 ? 0xeae6dc : 0xf5f2eb)),
-        side: THREE.DoubleSide
+        color: fl === 3 ? 0x828b96 : (fl === 1 ? 0xfbf8f1 : (fl === 2 ? 0xeee9dd : 0xf6f3eb))
       });
-      const architraveMat = new THREE.MeshLambertMaterial({ color: fl === 3 ? 0x64748b : 0xe4e0d5 });
+      const dentilMat = new THREE.MeshLambertMaterial({
+        color: fl === 3 ? 0x64707e : (fl === 1 ? 0xeae4d6 : (fl === 2 ? 0xdfd9cb : 0xe7e2d4))
+      });
+      const pictureRailMat = new THREE.MeshStandardMaterial({
+        color: fl === 3 ? 0x475569 : (fl === 1 ? 0x8f724d : (fl === 2 ? 0x5a3d28 : 0x7c6142)),
+        metalness: 0.65,
+        roughness: 0.35
+      });
       const skylightGlassMat = new THREE.MeshLambertMaterial({
-        color: 0xcfeafe,
-        emissive: 0x22384f,
-        emissiveIntensity: 0.42,
+        color: 0xdff0fc,
+        emissive: 0x3b5870,
+        emissiveIntensity: 0.52,
         transparent: true,
-        opacity: 0.90,
+        opacity: 0.92,
         polygonOffset: true,
         polygonOffsetFactor: -1,
         polygonOffsetUnits: -1
       });
-      const mullionMat = new THREE.MeshLambertMaterial({ color: 0x1f242d });
+      const mullionMat = new THREE.MeshLambertMaterial({ color: 0x1e242d });
 
-      // Helper: Generate a smooth parametric 2D quad mesh grid with smooth vertex normals
-      const buildGridGeom = (getVertex, nx, ny) => {
-        const geom = new THREE.BufferGeometry();
-        const positions = [];
-        const indices = [];
-
-        for (let iy = 0; iy <= ny; iy++) {
-          for (let ix = 0; ix <= nx; ix++) {
-            const v = getVertex(ix / nx, iy / ny);
-            positions.push(v.x, v.y, v.z);
-          }
-        }
-
-        for (let iy = 0; iy < ny; iy++) {
-          for (let ix = 0; ix < nx; ix++) {
-            const a = iy * (nx + 1) + ix;
-            const b = iy * (nx + 1) + (ix + 1);
-            const c = (iy + 1) * (nx + 1) + ix;
-            const d = (iy + 1) * (nx + 1) + (ix + 1);
-            indices.push(a, b, c);
-            indices.push(b, d, c);
-          }
-        }
-
-        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geom.setIndex(indices);
-        geom.computeVertexNormals();
-        return geom;
-      };
-
-      // 1. Helper: Grand Concave Coved Vault with Seamless Curved Corners across a gallery hall
-      const addVaultedCovedCeiling = (minX, maxX, minZ, maxZ, coveH = 2.0, coveDepth = 1.6) => {
-        const yBase = y0 + ceilH - coveH;
-        const segs = 14;
+      // 1. Helper: Room-Bounded Classical Entablature & Crown Molding Cornice
+      // Cleanly fitted along the top of each enclosed room perimeter - zero wall penetration, zero voids
+      const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ, addPictureRail = true) => {
         const group = new THREE.Group();
+        const rw = maxX - minX;
+        const rd = maxZ - minZ;
+        const cx = (minX + maxX) / 2;
+        const cz = (minZ + maxZ) / 2;
 
-        // A. Classical Frieze / Entablature Molding Band along the base of the cove (y = yBase)
-        const friezeH = 0.16;
-        const friezeD = 0.10;
-        const fy = yBase - friezeH / 2;
-
-        const fN = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, friezeH, friezeD), architraveMat);
-        fN.position.set((minX + maxX) / 2, fy, minZ + friezeD / 2);
+        // Band 1: Top Projection Fillet (flush with ceiling plane at y = y0 + ceilH)
+        const fH = 0.05;
+        const fD = 0.12;
+        const fy = y0 + ceilH - fH / 2;
+        const fN = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
+        fN.position.set(cx, fy, minZ + fD / 2);
         group.add(fN);
-
-        const fS = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, friezeH, friezeD), architraveMat);
-        fS.position.set((minX + maxX) / 2, fy, maxZ - friezeD / 2);
+        const fS = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
+        fS.position.set(cx, fy, maxZ - fD / 2);
         group.add(fS);
-
-        const fW = new THREE.Mesh(new THREE.BoxGeometry(friezeD, friezeH, (maxZ - minZ) - friezeD * 2), architraveMat);
-        fW.position.set(minX + friezeD / 2, fy, (minZ + maxZ) / 2);
+        const fW = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
+        fW.position.set(minX + fD / 2, fy, cz);
         group.add(fW);
-
-        const fE = new THREE.Mesh(new THREE.BoxGeometry(friezeD, friezeH, (maxZ - minZ) - friezeD * 2), architraveMat);
-        fE.position.set(maxX - friezeD / 2, fy, (minZ + maxZ) / 2);
+        const fE = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
+        fE.position.set(maxX - fD / 2, fy, cz);
         group.add(fE);
 
-        // B. North Coved Wall Vault (minZ)
-        const northCoveGeom = buildGridGeom((u, v) => {
-          const x = (minX + coveDepth) + u * ((maxX - coveDepth) - (minX + coveDepth));
-          const theta = v * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const z = minZ + coveDepth * (1 - Math.cos(theta));
-          return { x, y, z };
-        }, 16, segs);
-        group.add(new THREE.Mesh(northCoveGeom, corniceMat));
+        // Band 2: Cyma-Reversa Crown Cove Bed Molding (beneath fillet)
+        const cH = 0.08;
+        const cD = 0.08;
+        const cy = y0 + ceilH - fH - cH / 2;
+        const cN = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
+        cN.position.set(cx, cy, minZ + cD / 2);
+        group.add(cN);
+        const cS = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
+        cS.position.set(cx, cy, maxZ - cD / 2);
+        group.add(cS);
+        const cW = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
+        cW.position.set(minX + cD / 2, cy, cz);
+        group.add(cW);
+        const cE = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
+        cE.position.set(maxX - cD / 2, cy, cz);
+        group.add(cE);
 
-        // C. South Coved Wall Vault (maxZ)
-        const southCoveGeom = buildGridGeom((u, v) => {
-          const x = (minX + coveDepth) + u * ((maxX - coveDepth) - (minX + coveDepth));
-          const theta = v * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const z = maxZ - coveDepth * (1 - Math.cos(theta));
-          return { x, y, z };
-        }, 16, segs);
-        group.add(new THREE.Mesh(southCoveGeom, corniceMat));
+        // Band 3: Classical Dentil / Bed Fascia Trim (beneath cove)
+        const dH = 0.06;
+        const dD = 0.05;
+        const dy = y0 + ceilH - fH - cH - dH / 2;
+        const dN = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
+        dN.position.set(cx, dy, minZ + dD / 2);
+        group.add(dN);
+        const dS = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
+        dS.position.set(cx, dy, maxZ - dD / 2);
+        group.add(dS);
+        const dW = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
+        dW.position.set(minX + dD / 2, dy, cz);
+        group.add(dW);
+        const dE = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
+        dE.position.set(maxX - dD / 2, dy, cz);
+        group.add(dE);
 
-        // D. West Coved Wall Vault (minX)
-        const westCoveGeom = buildGridGeom((u, v) => {
-          const z = (minZ + coveDepth) + u * ((maxZ - coveDepth) - (minZ + coveDepth));
-          const theta = v * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const x = minX + coveDepth * (1 - Math.cos(theta));
-          return { x, y, z };
-        }, 16, segs);
-        group.add(new THREE.Mesh(westCoveGeom, corniceMat));
-
-        // E. East Coved Wall Vault (maxX)
-        const eastCoveGeom = buildGridGeom((u, v) => {
-          const z = (minZ + coveDepth) + u * ((maxZ - coveDepth) - (minZ + coveDepth));
-          const theta = v * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const x = maxX - coveDepth * (1 - Math.cos(theta));
-          return { x, y, z };
-        }, 16, segs);
-        group.add(new THREE.Mesh(eastCoveGeom, corniceMat));
-
-        // F. Four Seamless Coved Corner Transitions (Spherical Quadrant Sweeps)
-        // North-West Corner
-        const nwCornerGeom = buildGridGeom((u, v) => {
-          const theta = v * (Math.PI / 2);
-          const phi = u * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const r = coveDepth * Math.cos(theta);
-          const x = (minX + coveDepth) - r * Math.cos(phi);
-          const z = (minZ + coveDepth) - r * Math.sin(phi);
-          return { x, y, z };
-        }, 10, segs);
-        group.add(new THREE.Mesh(nwCornerGeom, corniceMat));
-
-        // North-East Corner
-        const neCornerGeom = buildGridGeom((u, v) => {
-          const theta = v * (Math.PI / 2);
-          const phi = u * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const r = coveDepth * Math.cos(theta);
-          const x = (maxX - coveDepth) + r * Math.cos(phi);
-          const z = (minZ + coveDepth) - r * Math.sin(phi);
-          return { x, y, z };
-        }, 10, segs);
-        group.add(new THREE.Mesh(neCornerGeom, corniceMat));
-
-        // South-West Corner
-        const swCornerGeom = buildGridGeom((u, v) => {
-          const theta = v * (Math.PI / 2);
-          const phi = u * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const r = coveDepth * Math.cos(theta);
-          const x = (minX + coveDepth) - r * Math.cos(phi);
-          const z = (maxZ - coveDepth) + r * Math.sin(phi);
-          return { x, y, z };
-        }, 10, segs);
-        group.add(new THREE.Mesh(swCornerGeom, corniceMat));
-
-        // South-East Corner
-        const seCornerGeom = buildGridGeom((u, v) => {
-          const theta = v * (Math.PI / 2);
-          const phi = u * (Math.PI / 2);
-          const y = yBase + coveH * Math.sin(theta);
-          const r = coveDepth * Math.cos(theta);
-          const x = (maxX - coveDepth) + r * Math.cos(phi);
-          const z = (maxZ - coveDepth) + r * Math.sin(phi);
-          return { x, y, z };
-        }, 10, segs);
-        group.add(new THREE.Mesh(seCornerGeom, corniceMat));
+        // Band 4: Classical Architectural Picture Rail Molding (y = y0 + 5.20m)
+        if (addPictureRail) {
+          const prH = 0.04;
+          const prD = 0.035;
+          const pry = y0 + 5.20;
+          const prN = new THREE.Mesh(new THREE.BoxGeometry(rw, prH, prD), pictureRailMat);
+          prN.position.set(cx, pry, minZ + prD / 2);
+          group.add(prN);
+          const prS = new THREE.Mesh(new THREE.BoxGeometry(rw, prH, prD), pictureRailMat);
+          prS.position.set(cx, pry, maxZ - prD / 2);
+          group.add(prS);
+          const prW = new THREE.Mesh(new THREE.BoxGeometry(prD, prH, rd - prD * 2), pictureRailMat);
+          prW.position.set(minX + prD / 2, pry, cz);
+          group.add(prW);
+          const prE = new THREE.Mesh(new THREE.BoxGeometry(prD, prH, rd - prD * 2), pictureRailMat);
+          prE.position.set(maxX - prD / 2, pry, cz);
+          group.add(prE);
+        }
 
         this.scene.add(group);
       };
 
-      // 2. Helper: Transverse Arched Ribs Spanning the Vault (matching the reference museum photo)
-      const addTransverseArchRib = (minX, maxX, z, coveH = 2.0, coveDepth = 1.6) => {
-        const yBase = y0 + ceilH - coveH;
-        const ribW = 0.28;
-        const ribThick = 0.05;
-        const segs = 14;
-
-        const geom = new THREE.BufferGeometry();
-        const positions = [];
-        const indices = [];
-
-        const curvePts = [];
-        // West cove arc
-        for (let s = 0; s <= segs; s++) {
-          const theta = (s / segs) * (Math.PI / 2);
-          const x = minX + coveDepth * (1 - Math.cos(theta));
-          const y = yBase + coveH * Math.sin(theta);
-          curvePts.push({ x, y });
-        }
-        // East cove arc
-        for (let s = segs; s >= 0; s--) {
-          const theta = (s / segs) * (Math.PI / 2);
-          const x = maxX - coveDepth * (1 - Math.cos(theta));
-          const y = yBase + coveH * Math.sin(theta);
-          curvePts.push({ x, y });
-        }
-
-        for (let i = 0; i < curvePts.length; i++) {
-          const p = curvePts[i];
-          positions.push(p.x, p.y - ribThick, z - ribW / 2);
-          positions.push(p.x, p.y - ribThick, z + ribW / 2);
-        }
-
-        for (let i = 0; i < curvePts.length - 1; i++) {
-          const a = i * 2;
-          const b = i * 2 + 1;
-          const c = (i + 1) * 2;
-          const d = (i + 1) * 2 + 1;
-          indices.push(a, b, c);
-          indices.push(b, d, c);
-        }
-
-        geom.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-        geom.setIndex(indices);
-        geom.computeVertexNormals();
-
-        const ribMesh = new THREE.Mesh(geom, architraveMat);
-        this.scene.add(ribMesh);
-      };
-
-      // 3. Helper: Grand Beaux-Arts Coffered Laylight / Skylight Grid (clean layering, zero Z-fighting)
+      // 2. Helper: Grand Beaux-Arts Coffered Laylight / Skylight Grid (flush ceiling integration)
       const addCofferedSkylight = (cx, cz, w, d, rows = 8, cols = 4) => {
         const skylightGroup = new THREE.Group();
-        skylightGroup.position.set(cx, y0 + ceilH - 0.03, cz);
+        skylightGroup.position.set(cx, y0 + ceilH - 0.02, cz);
 
         // Outer stepped architrave border
-        const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.36, 0.06, d + 0.36), architraveMat);
+        const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.36, 0.05, d + 0.36), corniceMat);
         outerFrame.position.set(0, -0.01, 0);
         skylightGroup.add(outerFrame);
 
@@ -4487,96 +4702,47 @@
         glassPanel.position.set(0, 0.005, 0);
         skylightGroup.add(glassPanel);
 
-        // Classical architectural bronze/steel glazing mullions
-        const barH = 0.035;
-        const barW = 0.045;
+        // Classical architectural bronze glazing mullions
+        const barH = 0.030;
+        const barW = 0.040;
         for (let c = 1; c < cols; c++) {
           const mx = -w / 2 + (w / cols) * c;
           const bar = new THREE.Mesh(new THREE.BoxGeometry(barW, barH, d), mullionMat);
-          bar.position.set(mx, -0.015, 0);
+          bar.position.set(mx, -0.012, 0);
           skylightGroup.add(bar);
         }
         for (let r = 1; r < rows; r++) {
           const mz = -d / 2 + (d / rows) * r;
           const bar = new THREE.Mesh(new THREE.BoxGeometry(w, barH, barW), mullionMat);
-          bar.position.set(0, -0.015, mz);
+          bar.position.set(0, -0.012, mz);
           skylightGroup.add(bar);
         }
 
         // Soft ambient daylight glow radiating down from the laylight
-        const skyLight = new THREE.PointLight(0xcfeafe, fl === this.playerFloor ? 0.35 : 0, 18.0, 1.4);
-        skyLight._origIntensity = 0.35;
-        skyLight.position.set(0, -0.65, 0);
+        const skyLight = new THREE.PointLight(0xdff0fc, fl === this.playerFloor ? 0.40 : 0, 20.0, 1.3);
+        skyLight._origIntensity = 0.40;
+        skyLight.position.set(0, -0.75, 0);
         skylightGroup.add(skyLight);
         if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(skyLight);
 
         this.scene.add(skylightGroup);
       };
 
-      // 4. Helper: Classical Stepped Portal Architrave Casings & Headers around Major Passages
-      const addPortalArchitrave = (px, pz, openW, openH, isXWall = false) => {
-        const archGroup = new THREE.Group();
-        archGroup.position.set(px, y0, pz);
-        const trimW = 0.18;
-        const trimD = 0.44; // 44cm trim depth cleanly wraps around 40cm wall faces with 2cm reveal
-        const capH = 0.22;
-
-        if (!isXWall) {
-          const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(trimW, openH, trimD), architraveMat);
-          leftJamb.position.set(-openW / 2 - trimW / 2, openH / 2, 0);
-          archGroup.add(leftJamb);
-
-          const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(trimW, openH, trimD), architraveMat);
-          rightJamb.position.set(openW / 2 + trimW / 2, openH / 2, 0);
-          archGroup.add(rightJamb);
-
-          const header = new THREE.Mesh(new THREE.BoxGeometry(openW + trimW * 2 + 0.14, capH, trimD + 0.04), architraveMat);
-          header.position.set(0, openH + capH / 2, 0);
-          archGroup.add(header);
-        } else {
-          const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(trimD, openH, trimW), architraveMat);
-          leftJamb.position.set(0, openH / 2, -openW / 2 - trimW / 2);
-          archGroup.add(leftJamb);
-
-          const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(trimD, openH, trimW), architraveMat);
-          rightJamb.position.set(0, openH / 2, openW / 2 + trimW / 2);
-          archGroup.add(rightJamb);
-
-          const header = new THREE.Mesh(new THREE.BoxGeometry(trimD + 0.04, capH, openW + trimW * 2 + 0.14), architraveMat);
-          header.position.set(0, openH + capH / 2, 0);
-          archGroup.add(header);
-        }
-        this.scene.add(archGroup);
-      };
-
-      // Apply authentic smooth coved vaulting to the monumental museum halls
-      addVaultedCovedCeiling(-16.0, -4.0, -18.0, 28.0, 2.2, 1.6); // Main Gallery (46m Concourse)
-      addVaultedCovedCeiling(4.0, 28.0, -26.0, 18.0, 2.2, 1.8);   // East Main Hall (44m Grand Hall)
-      addVaultedCovedCeiling(-36.0, -16.0, -6.0, 18.0, 2.0, 1.6); // West Wing Salon
-      addVaultedCovedCeiling(-4.0, 28.0, -40.0, -26.0, 2.0, 1.6); // North Gallery Antiquities Pavilion
-
-      // Apply transverse arched ribs spanning the vault bays (matching European museum architecture)
-      [-10.0, -2.0, 6.0, 14.0, 22.0].forEach(rz => {
-        addTransverseArchRib(-16.0, -4.0, rz, 2.2, 1.6);
-      });
-      [-18.0, -10.0, -2.0, 6.0, 14.0].forEach(rz => {
-        addTransverseArchRib(4.0, 28.0, rz, 2.2, 1.8);
-      });
+      // Apply classical room-bounded entablature cornices to all exhibition wings
+      addRoomPerimeterCornice(-35.8, -16.2, -5.8, 17.8, true); // West Wing Exhibition Gallery
+      addRoomPerimeterCornice(-15.8, -4.2, -17.8, 27.8, true); // Main Gallery Concourse
+      addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8, true);    // East Main Hall
+      addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2, true); // North Antiquities Gallery
+      addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8, false);   // Arts & Music Office
+      addRoomPerimeterCornice(4.2, 27.8, 18.2, 27.8, true);    // South-East Media Wing
+      addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8, false);// West Office
 
       // Apply grand coffered laylights to the elevated ceilings of the monumental halls
-      addCofferedSkylight(-10.0, 5.0, 5.6, 32.0, 10, 4);  // Main Gallery central spine
-      addCofferedSkylight(16.0, -4.0, 12.0, 32.0, 10, 6); // East Main Hall grand skylight
-      addCofferedSkylight(12.0, -33.0, 18.0, 7.0, 4, 8);  // North Gallery central laylight
-      addCofferedSkylight(-26.0, 6.0, 10.0, 14.0, 6, 4);  // West Wing Salon laylight
-
-      // Apply stepped classical portal architraves to major room thresholds
-      addPortalArchitrave(-16.0, -2.0, 3.0, 3.2, true);
-      addPortalArchitrave(-24.0, 19.7, 2.2, 3.2, true);
-      addPortalArchitrave(6.0, -26.0, 2.8, 3.2, false);
-      addPortalArchitrave(18.2, -26.0, 3.2, 3.2, false);
-      addPortalArchitrave(4.0, 5.0, 5.0, 3.4, true);
-      addPortalArchitrave(19.0, 13.0, 3.0, 3.2, true);
-      addPortalArchitrave(23.0, 18.0, 3.0, 3.2, false);
+      addCofferedSkylight(-26.0, 6.0, 11.0, 15.0, 6, 4);   // West Wing Salon laylight
+      addCofferedSkylight(-10.0, 5.0, 5.6, 30.0, 10, 4);   // Main Gallery central spine
+      addCofferedSkylight(16.0, -9.0, 14.0, 22.0, 8, 6);   // East Main Hall grand skylight
+      addCofferedSkylight(12.0, -33.0, 18.0, 7.0, 4, 8);   // North Gallery central laylight
+      addCofferedSkylight(16.0, 23.0, 12.0, 5.4, 4, 6);    // South-East Media Wing laylight
     }
 
     createRealisticRestrooms(fl, y0, mats) {
@@ -5569,10 +5735,19 @@
       const leatherButtonMat = new THREE.MeshLambertMaterial({ color: 0x150b07 });
       const greenBlotterMat = new THREE.MeshLambertMaterial({ color: 0x064e3b });
       const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef3c7 });
-      const bookRedMat = new THREE.MeshLambertMaterial({ color: 0x7f1d1d });
-      const bookBlueMat = new THREE.MeshLambertMaterial({ color: 0x1e3a8a });
-      const bookGreenMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
-      const bookGoldMat = new THREE.MeshLambertMaterial({ color: 0xb45309 });
+
+      // Authentic antique library bindings (deep leather, morocco, dark cloth, gilt tooling)
+      const antiqueBindings = [
+        new THREE.MeshLambertMaterial({ color: 0x3d1c1f }), // Deep Morocco Red
+        new THREE.MeshLambertMaterial({ color: 0x241812 }), // Antique Calfskin Brown
+        new THREE.MeshLambertMaterial({ color: 0x162330 }), // Oxford Navy Cloth
+        new THREE.MeshLambertMaterial({ color: 0x15281b }), // Archival Forest Green
+        new THREE.MeshLambertMaterial({ color: 0x301d14 }), // Dark Chocolate Leather
+        new THREE.MeshLambertMaterial({ color: 0x3b3024 }), // Aged Vellum
+        new THREE.MeshLambertMaterial({ color: 0x281926 }), // Deep Aubergine
+        new THREE.MeshLambertMaterial({ color: 0x48291a })  // Antique Russet
+      ];
+      const giltMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.8, roughness: 0.3 });
       const feltMat = new THREE.MeshLambertMaterial({ color: 0x14532d });
       const inkGlassMat = new THREE.MeshPhongMaterial({ color: 0x0f172a, specular: 0xffffff, shininess: 100 });
 
@@ -5887,7 +6062,7 @@
         stackGroup.position.set(x, y, z);
         stackGroup.rotation.y = rotY;
 
-        const colors = [bookRedMat, bookBlueMat, bookGoldMat];
+        const colors = [antiqueBindings[0], antiqueBindings[2], antiqueBindings[4]];
         const sizes = [[0.32, 0.045, 0.24], [0.30, 0.04, 0.22], [0.27, 0.035, 0.20]];
         let curY = 0;
 
@@ -5916,7 +6091,7 @@
         bookGroup.position.set(x, y, z);
         bookGroup.rotation.y = rotY;
 
-        const cover = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.01, 0.30), bookGreenMat);
+        const cover = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.01, 0.30), antiqueBindings[3]);
         cover.position.y = 0.005;
         bookGroup.add(cover);
 
@@ -6148,22 +6323,33 @@
         });
 
         // 5. Five inset open horizontal shelves across all bays
-        const shelfColors = [bookRedMat, bookBlueMat, bookGreenMat, bookGoldMat];
         for (let s = 0; s < 5; s++) {
           const sy = 0.50 + s * 0.60;
           const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.04, 6.50), darkWoodMat);
           shelfPlank.position.set(0.01, sy, 0);
           wallBookshelfGroup.add(shelfPlank);
 
-          // Richly populated rows of books resting on this shelf, clearly visible from the room
-          for (let b = -3.0; b < 3.0; b += 0.28) {
+          // Populate shelf with realistic individual book volumes with varied heights & gold spine ribbing
+          for (let b = -3.05; b < 3.05; b += 0.054) {
             // Leave a small gap near dividers
-            if (Math.abs(b - (-1.65)) < 0.08 || Math.abs(b) < 0.08 || Math.abs(b - 1.65) < 0.08) continue;
-            const bMat = shelfColors[Math.abs(Math.round(b * 5 + s)) % 4];
-            const bHeight = 0.38 + ((b + 3.0) % 0.15);
-            const bookRow = new THREE.Mesh(new THREE.BoxGeometry(0.26, bHeight, 0.24), bMat);
-            bookRow.position.set(-0.06, sy + bHeight / 2 + 0.02, b);
-            wallBookshelfGroup.add(bookRow);
+            if (Math.abs(b - (-1.65)) < 0.06 || Math.abs(b) < 0.06 || Math.abs(b - 1.65) < 0.06) continue;
+            // Occasional book gap / natural book stack spacing
+            if (Math.sin(b * 12.3 + s * 4.7) > 0.82) continue;
+            const bIdx = Math.abs(Math.round(b * 19 + s * 7)) % antiqueBindings.length;
+            const bMat = antiqueBindings[bIdx];
+            const bWidth = 0.038 + ((Math.abs(b * 3 + s) % 3) * 0.008);
+            const bHeight = 0.30 + ((Math.abs(b * 7 + s) % 5) * 0.024);
+            const bookDepth = 0.22;
+            const book = new THREE.Mesh(new THREE.BoxGeometry(bookDepth, bHeight, bWidth), bMat);
+            book.position.set(-0.06, sy + bHeight / 2 + 0.02, b);
+            wallBookshelfGroup.add(book);
+
+            // Subtle gold-embossed spine ribbing on select volumes
+            if (bIdx % 2 === 0) {
+              const spineRib = new THREE.Mesh(new THREE.BoxGeometry(0.004, 0.010, bWidth * 0.88), giltMat);
+              spineRib.position.set(-0.06 + bookDepth / 2 + 0.002, sy + bHeight * 0.7 + 0.02, b);
+              wallBookshelfGroup.add(spineRib);
+            }
           }
         }
         this.scene.add(wallBookshelfGroup);
@@ -6395,7 +6581,7 @@
         scroll.rotation.x = Math.PI / 2;
         deskGroup.add(scroll);
 
-        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.04, 12), bookRedMat);
+        const ribbon = new THREE.Mesh(new THREE.CylinderGeometry(0.042, 0.042, 0.04, 12), antiqueBindings[0]);
         ribbon.position.set(-0.75, 0.84, -0.25);
         ribbon.rotation.x = Math.PI / 2;
         deskGroup.add(ribbon);
@@ -8565,53 +8751,121 @@
       const daisGroup = new THREE.Group();
       daisGroup.position.set(x, y0, z);
 
-      const basaltMat = new THREE.MeshStandardMaterial({ color: 0x18181b, roughness: 0.40 });
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xeab308, metalness: 0.88, roughness: 0.22 });
-      const turquoiseMat = new THREE.MeshStandardMaterial({ color: 0x06b6d4, roughness: 0.35 });
-      const velvetMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.85 });
+      const marblePlinthMat = new THREE.MeshStandardMaterial({ color: 0xf4f1eb, roughness: 0.35 });
+      const walnutMat = new THREE.MeshStandardMaterial({ color: 0x2e1a12, roughness: 0.45 });
+      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.88, roughness: 0.24 });
+      const lapisMat = new THREE.MeshStandardMaterial({ color: 0x1d3557, roughness: 0.40 });
+      const velvetMat = new THREE.MeshStandardMaterial({ color: 0x881337, roughness: 0.85 });
 
-      // Stepped Basalt Dais (Tier 1 & Tier 2)
-      const t1 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.16, 2.6), basaltMat);
-      t1.position.y = 0.08;
+      // 1. Stepped Museum Gallery Plinth (Tier 1 Honed White Stone & Tier 2 Inset Riser matching reference photo)
+      const t1 = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.14, 2.6), marblePlinthMat);
+      t1.position.y = 0.07;
       daisGroup.add(t1);
 
-      const t2 = new THREE.Mesh(new THREE.BoxGeometry(3.8, 0.16, 2.0), basaltMat);
-      t2.position.y = 0.24;
+      const t2 = new THREE.Mesh(new THREE.BoxGeometry(3.9, 0.12, 2.1), marblePlinthMat);
+      t2.position.y = 0.20;
       daisGroup.add(t2);
 
-      // Gilded Sarcophagus / Pharaoh Mask display (all uniform gold)
-      const sarc = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.65, 0.95), goldMat);
-      sarc.position.y = 0.32 + 0.325;
-      daisGroup.add(sarc);
+      // 2. Classical Carved Antiquities Cassone / Sarcophagus Chest
+      // Molded Walnut Base Molding
+      const baseMold = new THREE.Mesh(new THREE.BoxGeometry(2.7, 0.08, 1.25), walnutMat);
+      baseMold.position.y = 0.30;
+      daisGroup.add(baseMold);
 
-      // Nemes royal headdress bands (all gold per curator request)
-      const headdress = new THREE.Mesh(new THREE.BoxGeometry(0.70, 0.45, 0.98), goldMat);
-      headdress.position.set(-0.75, 0.75, 0);
-      daisGroup.add(headdress);
+      // Main Sarcophagus Chest Body
+      const chestBody = new THREE.Mesh(new THREE.BoxGeometry(2.5, 0.54, 1.1), walnutMat);
+      chestBody.position.y = 0.61;
+      daisGroup.add(chestBody);
 
-      // Golden Pharaoh Mask face
-      const maskFace = new THREE.Mesh(new THREE.SphereGeometry(0.24, 16, 16), goldMat);
-      maskFace.scale.set(1.1, 0.8, 1.0);
-      maskFace.position.set(-0.72, 0.98, 0);
-      daisGroup.add(maskFace);
+      // Gold-Leaf Fluted Corner Pilasters & Base Accents
+      const pilW = 0.10;
+      const pilH = 0.54;
+      [
+        [-1.25 + pilW / 2, -0.55 + pilW / 2],
+        [1.25 - pilW / 2, -0.55 + pilW / 2],
+        [-1.25 + pilW / 2, 0.55 - pilW / 2],
+        [1.25 - pilW / 2, 0.55 - pilW / 2]
+      ].forEach(([px, pz]) => {
+        const pilaster = new THREE.Mesh(new THREE.BoxGeometry(pilW, pilH, pilW), goldMat);
+        pilaster.position.set(px, 0.61, pz);
+        daisGroup.add(pilaster);
+      });
 
-      // (Crossed Crook & Flail royal regalia sticks removed per curator request)
+      // Carved Gilded Frieze Relief Panels on North and South faces
+      [-0.56, 0.56].forEach(fz => {
+        const frieze = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.36, 0.04), goldMat);
+        frieze.position.set(0, 0.61, fz);
+        daisGroup.add(frieze);
+
+        const lapisMedallion = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 0.05, 16), lapisMat);
+        lapisMedallion.rotation.x = Math.PI / 2;
+        lapisMedallion.position.set(0, 0.61, fz + (fz > 0 ? 0.02 : -0.02));
+        daisGroup.add(lapisMedallion);
+      });
+
+      // Classical Beveled Tiered Lid with Corner Acroteria & Finials
+      const lidTier1 = new THREE.Mesh(new THREE.BoxGeometry(2.62, 0.08, 1.18), walnutMat);
+      lidTier1.position.y = 0.92;
+      daisGroup.add(lidTier1);
+
+      const lidTier2 = new THREE.Mesh(new THREE.BoxGeometry(2.40, 0.14, 0.96), walnutMat);
+      lidTier2.position.y = 1.03;
+      daisGroup.add(lidTier2);
+
+      const lidCrest = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.06, 0.65), goldMat);
+      lidCrest.position.y = 1.13;
+      daisGroup.add(lidCrest);
+
+      // Corner Gilded Finial Ornaments on Lid
+      [[-1.15, -0.42], [1.15, -0.42], [-1.15, 0.42], [1.15, 0.42]].forEach(([fx, fz]) => {
+        const finial = new THREE.Mesh(new THREE.SphereGeometry(0.045, 10, 10), goldMat);
+        finial.position.set(fx, 1.15, fz);
+        daisGroup.add(finial);
+      });
+
+      // 3. Angled Museum Didactic Placard Stanchion (matching the reference photo stand)
+      const labelStandGroup = new THREE.Group();
+      labelStandGroup.position.set(2.1, 0, -1.1);
+
+      const standBase = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.04, 0.24), marblePlinthMat);
+      standBase.position.y = 0.02;
+      labelStandGroup.add(standBase);
+
+      const standPole = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.86, 0.04), marblePlinthMat);
+      standPole.position.y = 0.47;
+      labelStandGroup.add(standPole);
+
+      const angledDesk = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.03, 0.24), marblePlinthMat);
+      angledDesk.position.set(0, 0.92, 0);
+      angledDesk.rotation.x = 0.45;
+      labelStandGroup.add(angledDesk);
+
+      const plaqueTex = TextureFactory.createPlaqueTexture('ROYAL SARCOPHAGUS', 'EGYPTIAN ANTIQUITIES • 1250 BCE');
+      const plaqueMesh = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.28, 0.18),
+        new THREE.MeshBasicMaterial({ map: plaqueTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })
+      );
+      plaqueMesh.position.set(0, 0.935, 0.005);
+      plaqueMesh.rotation.x = -Math.PI / 2 + 0.45;
+      labelStandGroup.add(plaqueMesh);
+
+      daisGroup.add(labelStandGroup);
 
       this.scene.add(daisGroup);
 
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: x - 2.2,
-        maxX: x + 2.2,
-        minZ: z - 1.3,
-        maxZ: z + 1.3,
+        minX: x - 2.4,
+        maxX: x + 2.4,
+        minZ: z - 1.4,
+        maxZ: z + 1.4,
         minY: y0,
-        maxY: y0 + 1.00
+        maxY: y0 + 1.25
       });
 
       // 4 Brass Stanchions and velvet ropes enclosing the sarcophagus
-      const sOffsets = [[-2.4, -1.5], [2.4, -1.5], [2.4, 1.5], [-2.4, 1.5]];
+      const sOffsets = [[-2.5, -1.6], [2.5, -1.6], [2.5, 1.6], [-2.5, 1.6]];
       sOffsets.forEach(([ox, oz]) => {
         const sBase = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.16, 0.04, 12), goldMat);
         sBase.position.set(x + ox, y0 + 0.02, z + oz);
@@ -9330,11 +9584,13 @@
         specular: 0x665033,
         shininess: 38
       });
+      const cableMat = new THREE.MeshBasicMaterial({ color: 0x222222 });
+      const brassLampMat = new THREE.MeshStandardMaterial({ color: 0xc89842, metalness: 0.85, roughness: 0.28 });
       const planeGeomCache = new Map();
       const frameGeomCache = new Map();
       const plaqueGeom = new THREE.PlaneGeometry(0.85, 0.22);
-      const border = 0.08;
-      const depth = 0.04;
+      const border = 0.09;
+      const depth = 0.045;
 
       const floorNames = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
 
@@ -9353,7 +9609,13 @@
         slots.forEach((slot, idx) => {
           if (idx >= shuffledArts.length) return;
           const art = shuffledArts[idx];
-          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + 2.35;
+
+          // Proportional monumental scaling for grand 7.5m museum walls
+          const artScale = slot.isMonumental ? 1.45 : 1.30;
+          const renderW = +(art.w * artScale).toFixed(3);
+          const renderH = +(art.h * artScale).toFixed(3);
+          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + (slot.isMonumental ? 2.95 : 2.75);
+
           slot.y = slotY;
           art.x = slot.x;
           art.y = slotY;
@@ -9367,10 +9629,10 @@
           group.position.set(slot.x + nx, slotY, slot.z + nz);
           group.rotation.y = slot.rotY;
 
-          const key = `${art.w}_${art.h}`;
+          const key = `${renderW}_${renderH}`;
           if (!planeGeomCache.has(key)) {
-            planeGeomCache.set(key, new THREE.PlaneGeometry(art.w, art.h));
-            frameGeomCache.set(key, new THREE.BoxGeometry(art.w + border * 2, art.h + border * 2, depth));
+            planeGeomCache.set(key, new THREE.PlaneGeometry(renderW, renderH));
+            frameGeomCache.set(key, new THREE.BoxGeometry(renderW + border * 2, renderH + border * 2, depth));
           }
 
           // Single unified museum frame backboard (reduces draw calls by 4x per painting!)
@@ -9390,6 +9652,30 @@
           );
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
+
+          // 1. Classical Picture Hanging Wires ascending up to the 5.20m Picture Rail (matching reference photo)
+          const railY = slot.floor * CONFIG.FLOOR_HEIGHT + 5.20;
+          const cableLen = railY - (slotY + renderH / 2 + border);
+          if (cableLen > 0.15) {
+            const cableGeom = new THREE.CylinderGeometry(0.003, 0.003, cableLen, 6);
+            [-renderW * 0.32, renderW * 0.32].forEach(cx => {
+              const cable = new THREE.Mesh(cableGeom, cableMat);
+              cable.position.set(cx, renderH / 2 + border + cableLen / 2, -depth / 2);
+              group.add(cable);
+            });
+          }
+
+          // 2. Classical Museum Brass Picture Light mounted above the frame
+          const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.24, 8), brassLampMat);
+          lampArm.rotation.x = Math.PI / 4;
+          lampArm.position.set(0, renderH / 2 + border + 0.09, depth / 2 + 0.09);
+          group.add(lampArm);
+
+          const lampHoodW = Math.min(renderW * 0.55, 0.85);
+          const lampHood = new THREE.Mesh(new THREE.CylinderGeometry(0.020, 0.020, lampHoodW, 12), brassLampMat);
+          lampHood.rotation.z = Math.PI / 2;
+          lampHood.position.set(0, renderH / 2 + border + 0.18, depth / 2 + 0.17);
+          group.add(lampHood);
 
           this.texLoader.load(
             art.file,
@@ -9415,7 +9701,7 @@
               polygonOffsetUnits: -2
             })
           );
-          plaqueMesh.position.set(0, -art.h / 2 - border - 0.14, depth / 2 + 0.005);
+          plaqueMesh.position.set(0, -renderH / 2 - border - 0.16, depth / 2 + 0.005);
           group.add(plaqueMesh);
 
           this.scene.add(group);
