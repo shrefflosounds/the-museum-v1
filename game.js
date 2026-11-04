@@ -919,6 +919,19 @@
       stayOnFloor: true
     },
     {
+      id: "tourist",
+      name: "Tourist",
+      floor: 3,
+      x: 12.0,
+      z: 23.0,
+      rotY: 0,
+      faceOffset: -Math.PI / 2,
+      model: "assets/statues/statue-Tourist.glb",
+      targetHeight: 2.25,
+      walkSpeed: 1.50,
+      stayOnFloor: true
+    },
+    {
       id: "bird_squid",
       name: "Bird",
       floor: 0,
