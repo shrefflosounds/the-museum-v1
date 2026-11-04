@@ -3861,8 +3861,8 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight
-      this.createWall(1.98, 1.22, -16.95, 3.64, 2.4, 0.24, mats.mahogany, true, 0);
+      // Guardrail on Floor 0 East Flight (full solid collider sealing x: 0..4 to prevent stepping into shaft)
+      this.createWall(1.98, 1.22, -16.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight (sealing upper shaft completely, zero gap)
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-1.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
@@ -3913,8 +3913,8 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight of Stairwell SW
-      this.createWall(-18.02, 1.22, 20.95, 3.64, 2.4, 0.24, mats.mahogany, true, 0);
+      // Guardrail on Floor 0 East Flight of Stairwell SW (full solid collider sealing x: -20..-16 to prevent stepping into shaft)
+      this.createWall(-18.02, 1.22, 20.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight (sealing upper shaft completely, zero gap)
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
@@ -3936,23 +3936,32 @@
               stairState.baseFloor = Math.min(CONFIG.NUM_FLOORS - 2, currentFloor);
             } else {
               // Entered East flight (going DOWN from currentFloor)
-              stairState.baseFloor = Math.max(0, currentFloor - 1);
+              // On Floor 0, there is no downward flight; stay locked to floor 0
+              if (currentFloor === 0) {
+                stairState.baseFloor = 0;
+              } else {
+                stairState.baseFloor = Math.max(0, currentFloor - 1);
+              }
             }
           }
           const L = stairState.baseFloor;
           if (pos.z <= -23.2) {
-            return { y: L * H + 2.6, floor: pos.x < 0 ? L : L + 1 };
+            return { y: L * H + 2.6, floor: (pos.x >= 0 && L === 0 && currentFloor === 0) ? 0 : (pos.x < 0 ? L : L + 1) };
           }
           const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
           if (pos.x < 0) {
             return { y: L * H + t * 2.6, floor: L };
           } else {
+            // Guard against teleporting floor 0 player to floor 1 if they brush the East divider
+            if (L === 0 && currentFloor === 0) {
+              return { y: 0, floor: 0 };
+            }
             return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
           }
         } else {
           // On South Landing (z: -16.8..-14.0)
           if (stairState.active === 'N') {
-            const newFloor = pos.x < 0 ? stairState.baseFloor : stairState.baseFloor + 1;
+            const newFloor = pos.x < 0 ? stairState.baseFloor : ((stairState.baseFloor === 0 && currentFloor === 0) ? 0 : stairState.baseFloor + 1);
             stairState.active = null;
             return { y: newFloor * H, floor: newFloor };
           }
@@ -3968,23 +3977,30 @@
             if (pos.x < -20.0) {
               stairState.baseFloor = Math.min(CONFIG.NUM_FLOORS - 2, currentFloor);
             } else {
-              stairState.baseFloor = Math.max(0, currentFloor - 1);
+              if (currentFloor === 0) {
+                stairState.baseFloor = 0;
+              } else {
+                stairState.baseFloor = Math.max(0, currentFloor - 1);
+              }
             }
           }
           const L = stairState.baseFloor;
           if (pos.z >= 25.6) {
-            return { y: L * H + 2.6, floor: pos.x < -20.0 ? L : L + 1 };
+            return { y: L * H + 2.6, floor: (pos.x >= -20.0 && L === 0 && currentFloor === 0) ? 0 : (pos.x < -20.0 ? L : L + 1) };
           }
           const t = Math.max(0, Math.min(1, (pos.z - 20.8) / 4.8));
           if (pos.x < -20.0) {
             return { y: L * H + t * 2.6, floor: L };
           } else {
+            if (L === 0 && currentFloor === 0) {
+              return { y: 0, floor: 0 };
+            }
             return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
           }
         } else {
           // On North Landing (z: 18.0..20.8)
           if (stairState.active === 'SW') {
-            const newFloor = pos.x < -20.0 ? stairState.baseFloor : stairState.baseFloor + 1;
+            const newFloor = pos.x < -20.0 ? stairState.baseFloor : ((stairState.baseFloor === 0 && currentFloor === 0) ? 0 : stairState.baseFloor + 1);
             stairState.active = null;
             return { y: newFloor * H, floor: newFloor };
           }
