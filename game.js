@@ -12910,7 +12910,7 @@
       if (this.keys['KeyA'] || this.keys['ArrowLeft']) _tempMoveDir.sub(_tempRight);
 
       const isMoving = _tempMoveDir.lengthSq() > 0.001;
-      const isCrouching = !!(this.keys['KeyC'] || this.keys['ControlLeft'] || this.keys['ControlRight']);
+      const isCrouching = !!this.keys['KeyC'];
       this.isCrouching = isCrouching;
 
       const wantsSprint = isMoving && (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
