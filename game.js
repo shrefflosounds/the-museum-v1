@@ -4498,7 +4498,17 @@
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-1.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
       this.scene.add(blockNW);
-      this.colliders.push({ type: 'box', floor: 3, minX: -3.85, maxX: -0.15, minZ: -17.15, maxZ: -16.75 });
+      this.colliders.push({
+        type: 'box',
+        floor: 3,
+        minX: -3.85,
+        maxX: -0.15,
+        minZ: -17.15,
+        maxZ: -16.75,
+        minY: 3 * CONFIG.FLOOR_HEIGHT,
+        maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
+        isWall: true
+      });
 
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
@@ -4555,7 +4565,17 @@
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
       this.scene.add(blockSWW);
-      this.colliders.push({ type: 'box', floor: 3, minX: -23.85, maxX: -20.15, minZ: 20.75, maxZ: 21.15 });
+      this.colliders.push({
+        type: 'box',
+        floor: 3,
+        minX: -23.85,
+        maxX: -20.15,
+        minZ: 20.75,
+        maxZ: 21.15,
+        minY: 3 * CONFIG.FLOOR_HEIGHT,
+        maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
+        isWall: true
+      });
     }
 
     // --- MULTI-STORY U-STAIRWELL CONTINUOUS SURFACE ELEVATION SOLVER ---
