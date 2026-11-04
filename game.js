@@ -4334,7 +4334,10 @@
         color: 0xffffff,
         transparent: true,
         opacity: 0.65,
-        depthWrite: true
+        depthWrite: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       });
       const sensorPodMat = new THREE.MeshStandardMaterial({
         color: 0x0f172a,
@@ -4381,7 +4384,7 @@
       const createSlidingRestroomDoor = (doorZ, signTitle, isMen) => {
         const frameW = 0.08;
         const frameH = 2.40;
-        const frameD = 0.38; // Contained cleanly within the 0.40m wall thickness
+        const frameD = 0.36; // 36cm frame depth leaves clean 2cm gap from 40cm wall faces, eliminating coplanar Z-fighting
 
         // Recessed pocket jamb frames on North and South sides of doorway opening
         const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(frameD, frameH, frameW), doorAlumMat);
@@ -4392,19 +4395,19 @@
         rightJamb.position.set(4.0, y0 + frameH / 2, doorZ + 0.96);
         this.scene.add(rightJamb);
 
-        // Commercial aluminum overhead track operator housing (spans exactly within 2.0m doorway opening without protruding into drywall)
-        const trackHeader = new THREE.Mesh(new THREE.BoxGeometry(0.38, 0.18, 2.00), doorAlumMat);
+        // Commercial aluminum overhead track operator housing (spans within 2.0m doorway opening without drywall intersection)
+        const trackHeader = new THREE.Mesh(new THREE.BoxGeometry(frameD, 0.18, 1.96), doorAlumMat);
         trackHeader.position.set(4.0, y0 + frameH - 0.09, doorZ);
         this.scene.add(trackHeader);
 
         // Floor guide threshold groove
-        const floorGuide = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 1.92), doorAlumMat);
+        const floorGuide = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.02, 1.84), doorAlumMat);
         floorGuide.position.set(4.0, y0 + 0.01, doorZ);
         this.scene.add(floorGuide);
 
         // Dual motion sensor housings mounted directly on vertical faces of track header within opening
         const sensorLEDMat = new THREE.MeshBasicMaterial({ color: 0x00e5ff });
-        [-0.20, 0.20].forEach((ox) => {
+        [-0.19, 0.19].forEach((ox) => {
           const pod = new THREE.Mesh(new THREE.BoxGeometry(0.03, 0.05, 0.22), sensorPodMat);
           pod.position.set(4.0 + ox, y0 + frameH - 0.09, doorZ);
           this.scene.add(pod);
@@ -4414,10 +4417,11 @@
           this.scene.add(led);
         });
 
-        // Helper to construct one sliding glass door leaf (width: 1.04m, height: 2.26m)
+        // Helper to construct one sliding glass door leaf (width: 0.96m, height: 2.26m)
+        // Perfectly sized to seal the 1.84m clear opening with a 4cm center meeting overlap without ever penetrating jambs or walls
         const createLeaf = (isLeft) => {
           const leafGroup = new THREE.Group();
-          const leafW = 1.04;
+          const leafW = 0.96;
           const leafH = 2.26;
           const glassThick = 0.02;
 
@@ -4435,9 +4439,9 @@
           railBot.position.set(0, 0.06, 0);
           leafGroup.add(railBot);
 
-          // Vertical perimeter stiles
-          const stileOuter = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.02, leafH, 0.045), doorAlumMat);
-          stileOuter.position.set(0, leafH / 2, isLeft ? -leafW / 2 + 0.0225 : leafW / 2 - 0.0225);
+          // Vertical perimeter stiles (contained cleanly within leaf bounds)
+          const stileOuter = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.02, leafH, 0.04), doorAlumMat);
+          stileOuter.position.set(0, leafH / 2, isLeft ? -leafW / 2 + 0.02 : leafW / 2 - 0.02);
           leafGroup.add(stileOuter);
 
           const stileInner = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.015, leafH, 0.035), doorAlumMat);
@@ -4449,9 +4453,9 @@
           bumper.position.set(0, leafH / 2, isLeft ? leafW / 2 : -leafW / 2);
           leafGroup.add(bumper);
 
-          // Dual horizontal frosted safety decals across the glass (standard grocery/convenience store pattern)
+          // Dual horizontal frosted safety decals across the glass (clear of stiles with polygonOffset)
           [-0.06, 0.06].forEach((dy) => {
-            const decal = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.004, 0.035, leafW - 0.09), frostedDecalMat);
+            const decal = new THREE.Mesh(new THREE.BoxGeometry(glassThick + 0.004, 0.035, leafW - 0.10), frostedDecalMat);
             decal.position.set(0, 1.15 + dy, 0);
             leafGroup.add(decal);
           });
@@ -4462,13 +4466,13 @@
         const leftLeaf = createLeaf(true);
         const rightLeaf = createLeaf(false);
 
-        // Closed positions: leaves meet at doorZ in center
-        const closedZLeft = doorZ - 0.51;
-        const closedZRight = doorZ + 0.51;
+        // Closed positions: leaves meet at doorZ in center with 4cm overlap; outer edges stop cleanly at ±0.94m (6cm before wall!)
+        const closedZLeft = doorZ - 0.46;
+        const closedZRight = doorZ + 0.46;
 
-        // Open positions: leaves retreat inside the wall pockets without reaching stairwell
-        const openZLeft = doorZ - 1.35;
-        const openZRight = doorZ + 1.35;
+        // Open positions: leaves retreat safely inside opening
+        const openZLeft = doorZ - 1.25;
+        const openZRight = doorZ + 1.25;
 
         leftLeaf.position.set(4.0, y0, closedZLeft);
         rightLeaf.position.set(4.0, y0, closedZRight);
@@ -4481,8 +4485,8 @@
           floor: fl,
           minX: 3.82,
           maxX: 4.18,
-          minZ: doorZ - 0.98,
-          maxZ: doorZ + 0.98
+          minZ: doorZ - 0.94,
+          maxZ: doorZ + 0.94
         };
         this.colliders.push(collider);
 
@@ -5776,29 +5780,56 @@
           });
         });
 
-        // West Wall Perimeter Bookcase with individual shelves and book rows (x = -3.55, z: -5.4..1.4)
+        // West Wall Perimeter Bookcase: Authentic open casing with visible shelves and book rows (x = -3.55, z: -5.4..1.4)
         const wallBookshelfGroup = new THREE.Group();
         wallBookshelfGroup.position.set(-3.55, y0, -2.0);
 
-        // Outer case frame
-        const bCaseFrame = new THREE.Mesh(new THREE.BoxGeometry(0.50, 3.4, 6.6), woodMat);
-        bCaseFrame.position.y = 1.7;
-        wallBookshelfGroup.add(bCaseFrame);
+        // 1. Back panel resting flush against West wall
+        const backPanel = new THREE.Mesh(new THREE.BoxGeometry(0.04, 3.40, 6.60), woodMat);
+        backPanel.position.set(-0.23, 1.70, 0);
+        wallBookshelfGroup.add(backPanel);
 
-        // 5 Inset open shelves populated with books
+        // 2. Top crown cornice and bottom base plinth
+        const topCornice = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 6.60), woodMat);
+        topCornice.position.set(0, 3.36, 0);
+        wallBookshelfGroup.add(topCornice);
+
+        const basePlinth = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 6.60), woodMat);
+        basePlinth.position.set(0, 0.04, 0);
+        wallBookshelfGroup.add(basePlinth);
+
+        // 3. Left and right outer side gable uprights
+        const leftGable = new THREE.Mesh(new THREE.BoxGeometry(0.48, 3.24, 0.05), woodMat);
+        leftGable.position.set(0.01, 1.70, -3.275);
+        wallBookshelfGroup.add(leftGable);
+
+        const rightGable = new THREE.Mesh(new THREE.BoxGeometry(0.48, 3.24, 0.05), woodMat);
+        rightGable.position.set(0.01, 1.70, 3.275);
+        wallBookshelfGroup.add(rightGable);
+
+        // 4. Intermediate vertical bay dividers (creating 4 handsome bookcase bays)
+        [-1.65, 0.0, 1.65].forEach((divZ) => {
+          const divider = new THREE.Mesh(new THREE.BoxGeometry(0.44, 3.24, 0.04), woodMat);
+          divider.position.set(0.01, 1.70, divZ);
+          wallBookshelfGroup.add(divider);
+        });
+
+        // 5. Five inset open horizontal shelves across all bays
         const shelfColors = [bookRedMat, bookBlueMat, bookGreenMat, bookGoldMat];
         for (let s = 0; s < 5; s++) {
           const sy = 0.50 + s * 0.60;
-          const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(0.46, 0.04, 6.4), darkWoodMat);
-          shelfPlank.position.set(0.02, sy, 0);
+          const shelfPlank = new THREE.Mesh(new THREE.BoxGeometry(0.44, 0.04, 6.50), darkWoodMat);
+          shelfPlank.position.set(0.01, sy, 0);
           wallBookshelfGroup.add(shelfPlank);
 
-          // Row of books on this shelf
+          // Richly populated rows of books resting on this shelf, clearly visible from the room
           for (let b = -3.0; b < 3.0; b += 0.28) {
+            // Leave a small gap near dividers
+            if (Math.abs(b - (-1.65)) < 0.08 || Math.abs(b) < 0.08 || Math.abs(b - 1.65) < 0.08) continue;
             const bMat = shelfColors[Math.abs(Math.round(b * 5 + s)) % 4];
             const bHeight = 0.38 + ((b + 3.0) % 0.15);
-            const bookRow = new THREE.Mesh(new THREE.BoxGeometry(0.38, bHeight, 0.24), bMat);
-            bookRow.position.set(0.04, sy + bHeight / 2 + 0.02, b);
+            const bookRow = new THREE.Mesh(new THREE.BoxGeometry(0.26, bHeight, 0.24), bMat);
+            bookRow.position.set(-0.06, sy + bHeight / 2 + 0.02, b);
             wallBookshelfGroup.add(bookRow);
           }
         }
@@ -8566,12 +8597,7 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Floor 1 Large Open Salon (x: 4..28, z: -26..0): Curated Classical Sculpture Gallery
-        this.createClassicalSculpturePedestal( 8.5, y0, -18.0, 'winged_victory', fl, true);
-        this.createClassicalSculpturePedestal(21.5, y0, -18.0, 'venus', fl, true);
-        this.createClassicalSculpturePedestal( 8.5, y0,  -6.0, 'bust_augustus', fl, false);
-        this.createClassicalSculpturePedestal(21.5, y0,  -6.0, 'bronze_philosopher', fl, false);
-        this.createClassicalSculpturePedestal(15.0, y0, -22.0, 'bronze_urn', fl, false);
+        // (Floor 1 Library section sculptures removed per curator request)
 
       } else if (fl === 2) {
         // =========================================================================
