@@ -316,10 +316,11 @@
     startHeartbeatLoop() {
       const beat = () => {
         if (this.initialized && this.gameplayActive && this.ctx && this.ctx.state === 'running') {
-          if (this.currentBpm > 65) {
-            const intensity = Math.min(1.0, (this.currentBpm - 60) / 110);
+          // Heartbeat pulse only plays during genuine danger / active escalation (BPM >= 95)
+          // Completely suppresses repetitive background thumping during calm exploration
+          if (this.currentBpm >= 95) {
+            const intensity = Math.min(1.0, (this.currentBpm - 90) / 75);
             if (this.customBuffers && this.customBuffers['heartbeat_pulse.wav']) {
-              // The audio asset heartbeat_pulse.wav is a pre-recorded heartbeat pulse; trigger once per beat
               this.triggerThump(0, 52, 0.38 * intensity);
             } else {
               // Procedural two-part anatomical pulse (lub-dub)
@@ -461,9 +462,9 @@
     }
 
     playSmittyFootstep(distance) {
-      if (!this.ctx || distance > 38) return;
-      const atten = Math.max(0, 1 - distance / 38);
-      const vol = atten * atten * 1.12; // Boosted by +60% (from 0.70)
+      if (!this.ctx || distance > 24) return;
+      const atten = Math.max(0, 1 - distance / 24);
+      const vol = atten * atten * 0.45; // Gentle muffled footfall to prevent repetitive thumping
       if (this.playCustom('smitty_footstep.wav', null, vol)) return;
       if (!this.noiseBuffer) return;
       const now = this.ctx.currentTime;
@@ -6666,23 +6667,29 @@
       this.heldCrate = null;
       this.audio.playCrateImpact();
     }
-    triggerCrateStackCollapse(baseCrate) {
+    triggerCrateStackCollapse(baseCrate, impactVx = 0, impactVz = 0) {
       if (!baseCrate || baseCrate.isCollapsed) return;
       baseCrate.isCollapsed = true;
-      baseCrate.vx += (Math.random() - 0.5) * 4.2;
-      baseCrate.vz += (Math.random() - 0.5) * 4.2;
-      baseCrate.vy += 0.8 + Math.random() * 0.5;
-      baseCrate.angVx = (Math.random() - 0.5) * 12.0;
-      baseCrate.angVz = (Math.random() - 0.5) * 12.0;
+
+      // Realistic Half-Life 2 prop impulse: absorb incoming momentum + scatter burst
+      baseCrate.vx = impactVx * 0.65 + (Math.random() - 0.5) * 3.2;
+      baseCrate.vz = impactVz * 0.65 + (Math.random() - 0.5) * 3.2;
+      baseCrate.vy = Math.max(0.6, Math.abs(impactVx + impactVz) * 0.25) + Math.random() * 0.8;
+      baseCrate.angVx = (Math.random() - 0.5) * 14.0;
+      baseCrate.angVz = (Math.random() - 0.5) * 14.0;
+      baseCrate.angVy = (Math.random() - 0.5) * 8.0;
 
       if (baseCrate.supportedCrates && baseCrate.supportedCrates.length > 0) {
-        baseCrate.supportedCrates.forEach(child => {
-          this.triggerCrateStackCollapse(child);
+        baseCrate.supportedCrates.forEach((child, idx) => {
+          // Propagate cascade toppling upwards through the stack
+          this.triggerCrateStackCollapse(child, baseCrate.vx * 0.85, baseCrate.vz * 0.85);
         });
         baseCrate.supportedCrates = [];
       }
 
-      this.audio.playCrateImpact();
+      if (Math.hypot(baseCrate.vx, baseCrate.vz, baseCrate.vy) > 1.8) {
+        this.audio.playCrateImpact();
+      }
     }
 
     updatePhysicsCrates(delta) {
@@ -6838,34 +6845,46 @@
 
           if (c.y <= groundY) {
             c.y = groundY;
-            if (Math.abs(c.vy) > 0.6) {
-              c.vy = -c.vy * 0.28;
-              c.vx *= 0.72;
-              c.vz *= 0.72;
-              c.angVx *= 0.65;
-              c.angVz *= 0.65;
+            if (Math.abs(c.vy) > 1.4) {
+              c.vy = -c.vy * 0.18;
+              c.vx *= 0.55;
+              c.vz *= 0.55;
+              c.angVx *= 0.45;
+              c.angVz *= 0.45;
               this.audio.playCrateImpact();
             } else {
               c.vy = 0;
-              const fDamp = Math.max(0, 1 - delta * 7.5);
+              // Half-Life 2 style snappy ground friction: prevents ice-skating across polished floor
+              const fDamp = Math.max(0, 1 - delta * 24.0);
               c.vx *= fDamp;
               c.vz *= fDamp;
-              c.angVx *= fDamp;
-              c.angVy *= fDamp;
-              c.angVz *= fDamp;
-              if (Math.abs(c.vx) < 0.02) c.vx = 0;
-              if (Math.abs(c.vz) < 0.02) c.vz = 0;
+              const angDamp = Math.max(0, 1 - delta * 26.0);
+              c.angVx *= angDamp;
+              c.angVy *= angDamp;
+              c.angVz *= angDamp;
+
+              // Immediately freeze micro-velocities to prevent perpetual jitter/sliding
+              if (Math.hypot(c.vx, c.vz) < 0.08) {
+                c.vx = 0;
+                c.vz = 0;
+              }
+              if (Math.hypot(c.angVx, c.angVy, c.angVz) < 0.12) {
+                c.angVx = 0;
+                c.angVy = 0;
+                c.angVz = 0;
+              }
+
               // Settle resting angle smoothly toward flat
-              c.rotX = THREE.MathUtils.lerp(c.rotX, 0, Math.min(1, delta * 6.0));
-              c.rotZ = THREE.MathUtils.lerp(c.rotZ, 0, Math.min(1, delta * 6.0));
+              c.rotX = THREE.MathUtils.lerp(c.rotX, 0, Math.min(1, delta * 12.0));
+              c.rotZ = THREE.MathUtils.lerp(c.rotZ, 0, Math.min(1, delta * 12.0));
             }
           }
 
           // Museum outer perimeter boundary containment
-          if (c.x < -36.5) { c.x = -36.5; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = Math.abs(c.vx) * 0.5; }
-          if (c.x > 32.5) { c.x = 32.5; if (Math.abs(c.vx) > 1.2) this.audio.playCrateImpact(); c.vx = -Math.abs(c.vx) * 0.5; }
-          if (c.z < -42.5) { c.z = -42.5; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = Math.abs(c.vz) * 0.5; }
-          if (c.z > 37.5) { c.z = 37.5; if (Math.abs(c.vz) > 1.2) this.audio.playCrateImpact(); c.vz = -Math.abs(c.vz) * 0.5; }
+          if (c.x < -36.5) { c.x = -36.5; if (Math.abs(c.vx) > 2.0) this.audio.playCrateImpact(); c.vx = Math.abs(c.vx) * 0.4; }
+          if (c.x > 32.5) { c.x = 32.5; if (Math.abs(c.vx) > 2.0) this.audio.playCrateImpact(); c.vx = -Math.abs(c.vx) * 0.4; }
+          if (c.z < -42.5) { c.z = -42.5; if (Math.abs(c.vz) > 2.0) this.audio.playCrateImpact(); c.vz = Math.abs(c.vz) * 0.4; }
+          if (c.z > 37.5) { c.z = 37.5; if (Math.abs(c.vz) > 2.0) this.audio.playCrateImpact(); c.vz = -Math.abs(c.vz) * 0.4; }
         } else {
           // Stable resting in stack: spring restore minor tilts
           c.y = c.baseY;
@@ -6888,7 +6907,7 @@
         c.collider.maxY = c.isCollapsed ? (c.y + 0.16) : (c.y + c.h);
       }
 
-      // 5. CRATE-ON-CRATE 3D Collisions & Momentum Exchange ("thrown crates at crates, etc.")
+      // 5. CRATE-ON-CRATE 3D Collisions & Momentum Exchange ("Half-Life 2 style prop physics")
       for (let i = 0; i < this.physicsCrates.length; i++) {
         const c1 = this.physicsCrates[i];
         if (c1.isHeld) continue;
@@ -6912,11 +6931,17 @@
           const overlapZ = halfD - Math.abs(dz);
           const overlapY = halfH - Math.abs(dy);
 
-          // Require physical 3cm penetration threshold to prevent floating-point noise
-          if (overlapX > 0.03 && overlapZ > 0.03 && overlapY > 0.03) {
-            // Collision between crates c1 and c2!
-            if (!c1.isCollapsed) this.triggerCrateStackCollapse(c1);
-            if (!c2.isCollapsed) this.triggerCrateStackCollapse(c2);
+          // Require physical 2cm penetration threshold
+          if (overlapX > 0.02 && overlapZ > 0.02 && overlapY > 0.02) {
+            // Half-Life 2 style prop reaction: when a moving/thrown crate strikes an intact crate,
+            // the intact crate and its entire stack topples and absorbs the impact momentum!
+            const impactVx1 = c1.vx;
+            const impactVz1 = c1.vz;
+            const impactVx2 = c2.vx;
+            const impactVz2 = c2.vz;
+
+            if (!c1.isCollapsed) this.triggerCrateStackCollapse(c1, impactVx2 * 0.8, impactVz2 * 0.8);
+            if (!c2.isCollapsed) this.triggerCrateStackCollapse(c2, impactVx1 * 0.8, impactVz1 * 0.8);
 
             if (overlapY < overlapX && overlapY < overlapZ) {
               // Vertical collision (landing or stacking)
@@ -6948,7 +6973,7 @@
               const normVel = relVx * nx + relVz * nz;
 
               if (normVel < 0) {
-                const restitution = 0.55; // plastic crate bounce
+                const restitution = 0.40; // snappy plastic bounce
                 const impulse = -(1 + restitution) * normVel * 0.5;
 
                 c2.vx += impulse * nx;
@@ -6962,7 +6987,7 @@
                 c1.angVx += (Math.random() - 0.5) * impulse * 1.8;
                 c2.angVz += (Math.random() - 0.5) * impulse * 1.8;
 
-                if (Math.abs(impulse) > 0.8) {
+                if (Math.abs(impulse) > 1.5) {
                   this.audio.playCrateImpact();
                 }
               }
@@ -8279,33 +8304,80 @@
 
       const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.60 });
       const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 });
+      const brassMat = new THREE.MeshStandardMaterial({ color: 0xc5a059, metalness: 0.85, roughness: 0.28 });
       const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
 
-      // Tripod Legs
-      [-0.24, 0.24].forEach((lx, li) => {
-        const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.70, 8), woodMat);
-        leg.position.set(lx, 0.84, 0.05);
-        leg.rotation.z = (li === 0 ? 0.12 : -0.12);
+      // Authentic Artist / Display Studio Easel:
+      // An A-frame easel has two front legs canted inward to an apex hinge at y = 1.82, z = 0.
+      // Rear stay leg angles backward from the apex hinge at (0, 1.82, 0) down to the floor at (0, 0, -0.62).
+      // A horizontal shelf/mast clamp firmly cradles and locks the sign board directly onto the frame.
+
+      // Apex Hinge Collar & Hardware
+      const apexHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.16, 12), brassMat);
+      apexHinge.rotation.z = Math.PI / 2;
+      apexHinge.position.set(0, 1.82, 0);
+      easelGroup.add(apexHinge);
+
+      // 2 Front A-Frame Struts (extending from apex y = 1.82, x = 0 to floor y = 0, x = ±0.32 at z = 0)
+      const frontLegLen = Math.hypot(0.32, 1.82); // ~1.848m
+      const frontAngle = Math.atan2(0.32, 1.82); // ~0.174 rad
+      [-1, 1].forEach((dir) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.035, frontLegLen, 0.035), woodMat);
+        leg.position.set(dir * 0.16, 0.91, 0);
+        leg.rotation.z = -dir * frontAngle;
         easelGroup.add(leg);
       });
-      const rearLeg = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 1.70, 8), woodMat);
-      rearLeg.position.set(0, 0.84, -0.35);
-      rearLeg.rotation.x = -0.22;
+
+      // Rear Prop Leg (extending from apex y = 1.82, z = 0 to floor y = 0, z = -0.62)
+      const rearLegLen = Math.hypot(0.62, 1.82); // ~1.923m
+      const rearAngle = Math.atan2(0.62, 1.82); // ~0.328 rad
+      const rearLeg = new THREE.Mesh(new THREE.BoxGeometry(0.035, rearLegLen, 0.032), woodMat);
+      rearLeg.position.set(0, 0.91, -0.31);
+      rearLeg.rotation.x = -rearAngle;
       easelGroup.add(rearLeg);
 
-      // Crossbar support
-      const bar = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.04, 0.06), woodMat);
-      bar.position.set(0, 0.95, 0.08);
-      easelGroup.add(bar);
+      // Lower Horizontal Cross-Stretcher connecting the front legs
+      const crossStretcher = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.035, 0.03), woodMat);
+      crossStretcher.position.set(0, 0.45, 0);
+      easelGroup.add(crossStretcher);
 
-      // Framed Gallery Floorplan Board
+      // Central Vertical Mast Spine
+      const centralMast = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.55, 0.035), woodMat);
+      centralMast.position.set(0, 1.05, 0.015);
+      easelGroup.add(centralMast);
+
+      // Adjustable Canvas / Plaque Rest Shelf Ledge (projecting forward to hold the board)
+      const shelfLedge = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.045, 0.09), woodMat);
+      shelfLedge.position.set(0, 0.96, 0.045);
+      easelGroup.add(shelfLedge);
+
+      // Shelf Clamp Knobs (Brass thumbscrews securing the shelf to the mast)
+      [-0.12, 0.12].forEach(kx => {
+        const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 12), brassMat);
+        knob.rotation.x = Math.PI / 2;
+        knob.position.set(kx, 0.96, -0.015);
+        easelGroup.add(knob);
+      });
+
+      // Framed Gallery Floorplan Board (resting securely flat on shelfLedge and leaning against mast)
+      const boardGroup = new THREE.Group();
+      boardGroup.position.set(0, 1.36, 0.035);
+      // Slight authentic backward lean of 3.5 degrees to rest naturally against the easel mast
+      boardGroup.rotation.x = -0.06;
+
       const frame = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.035), goldMat);
-      frame.position.set(0, 1.35, 0.08);
-      easelGroup.add(frame);
+      boardGroup.add(frame);
 
       const planPaper = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.01), paperMat);
-      planPaper.position.set(0, 1.35, 0.10);
-      easelGroup.add(planPaper);
+      planPaper.position.set(0, 0, 0.018);
+      boardGroup.add(planPaper);
+
+      // Top Clamp (wooden retainer clamp holding top of frame)
+      const topClamp = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.06), woodMat);
+      topClamp.position.set(0, 0.39, 0.01);
+      boardGroup.add(topClamp);
+
+      easelGroup.add(boardGroup);
 
       this.scene.add(easelGroup);
 
@@ -8506,24 +8578,14 @@
 
       } else {
         // =========================================================================
-        // FLOOR 3 ("4TH FLOOR"): RESTRICTED RELIQUARY VAULT & ARCHIVAL PALLETS
+        // FLOOR 3 ("4TH FLOOR"): RESTRICTED ARCHIVAL STORAGE & MILK CRATES
+        // Storage pallet racks are strictly positioned in the large East Main Hall
+        // with the milk crates, and nowhere else.
         // =========================================================================
         this.createPalletRackStorage(10.0, y0, -21.0, fl);
         this.createPalletRackStorage(20.0, y0, -21.0, fl);
         this.createPalletRackStorage(10.0, y0,   1.0, fl);
         this.createPalletRackStorage(20.0, y0,   1.0, fl);
-
-        this.createPalletRackStorage(-14.2, y0, -10.0, fl);
-        this.createPalletRackStorage( -5.8, y0,   7.0, fl);
-        this.createPalletRackStorage(-14.2, y0,  21.0, fl);
-
-        this.createPalletRackStorage(-31.0, y0,  0.0, fl);
-        this.createPalletRackStorage(-21.0, y0,  0.0, fl);
-        this.createPalletRackStorage(-31.0, y0, 12.0, fl);
-        this.createPalletRackStorage(-21.0, y0, 12.0, fl);
-
-        this.createPalletRackStorage(6.0, y0, -33.0, fl);
-        this.createPalletRackStorage(18.0, y0, -33.0, fl);
       }
     }
 
