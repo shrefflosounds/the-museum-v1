@@ -3935,8 +3935,7 @@
       }
 
       // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.75..3.75, z: -25.8..-14.2)
-      // Shaft walls are located at x = +/-4.0, z = -26.0, z = -14.0. Using shrunken bounds prevents any
-      // player walking in outer gallery corridors or adjacent hallways from accidentally clipping into stair elevation.
+      // Shaft walls are located at x = +/-4.0, z = -26.0, z = -14.0.
       if (pos.x >= -3.75 && pos.x <= 3.75 && pos.z >= -25.8 && pos.z <= -14.2) {
         // A) South Landing (z: -16.8..-14.2)
         if (pos.z >= -16.8) {
@@ -3971,15 +3970,20 @@
           return { y: L * H + t * 2.6, floor: L };
         } else {
           // East Flight: Ascends UP from mid-landing (y = L * H + 2.6) to upper landing (y = (L + 1) * H)
+          // On Floor 0, there is NO downward flight below floor 0.
+          // If entity is on Floor 0 and hasn't ascended West flight (footRef < 2.0), lock strictly to Floor 0 ground.
+          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+          if (currentFloor === 0 && footRef < 2.0) {
+            stairState.active = null;
+            return { y: 0, floor: 0 };
+          }
+
           if (stairState.active !== 'N' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'N';
             stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
           }
           const L = stairState.baseFloor;
-          // Guard: If base floor is 0 and entity is standing on Ground Floor (y < 1.0) without having ascended West flight,
-          // never teleport them to upper floor
-          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-          if (L === 0 && footRef < 1.0 && approxFloor === 0) {
+          if (L === 0 && footRef < 2.0) {
             return { y: 0, floor: 0 };
           }
           return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
@@ -4020,13 +4024,18 @@
           return { y: L * H + t * 2.6, floor: L };
         } else {
           // East Flight: Ascends UP from mid-landing to upper landing
+          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
+          if (currentFloor === 0 && footRef < 2.0) {
+            stairState.active = null;
+            return { y: 0, floor: 0 };
+          }
+
           if (stairState.active !== 'SW' || stairState.baseFloor === undefined || stairState.baseFloor === null) {
             stairState.active = 'SW';
             stairState.baseFloor = Math.max(0, Math.min(numFloors - 2, approxFloor > 0 ? (approxFloor - 1) : 0));
           }
           const L = stairState.baseFloor;
-          const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY)) ? currentFootY : (currentFloor * H);
-          if (L === 0 && footRef < 1.0 && approxFloor === 0) {
+          if (L === 0 && footRef < 2.0) {
             return { y: 0, floor: 0 };
           }
           return { y: (L + 1) * H - t * 2.6, floor: L + 1 };
@@ -8323,98 +8332,98 @@
     }
 
     createMuseumEasel(x, y0, z, fl, rotY = 0) {
-      const easelGroup = new THREE.Group();
-      easelGroup.position.set(x, y0, z);
-      easelGroup.rotation.y = rotY;
+      const standGroup = new THREE.Group();
+      standGroup.position.set(x, y0, z);
+      standGroup.rotation.y = rotY;
 
-      const woodMat = new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.60 });
-      const goldMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.85, roughness: 0.25 });
+      // Authentic museum-grade brass and rich mahogany materials
+      const darkMahogany = new THREE.MeshStandardMaterial({ color: 0x22130c, roughness: 0.45, metalness: 0.05 });
       const brassMat = new THREE.MeshStandardMaterial({ color: 0xc5a059, metalness: 0.85, roughness: 0.28 });
-      const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef08a });
+      const goldFrameMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.80, roughness: 0.25 });
+      const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef9c3 });
+      const backingMat = new THREE.MeshLambertMaterial({ color: 0x18181b });
 
-      // Authentic Artist / Display Studio Easel:
-      // An A-frame easel has two front legs canted inward to an apex hinge at y = 1.82, z = 0.
-      // Rear stay leg angles backward from the apex hinge at (0, 1.82, 0) down to the floor at (0, 0, -0.62).
-      // A horizontal shelf/mast clamp firmly cradles and locks the sign board directly onto the frame.
+      // 1. Heavy Weighted Architectural Plinth Base (circular stepped cast brass & mahogany, rock solid on floor)
+      const baseTier1 = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.26, 0.035, 24), brassMat);
+      baseTier1.position.y = 0.0175;
+      standGroup.add(baseTier1);
 
-      // Apex Hinge Collar & Hardware
-      const apexHinge = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, 0.16, 12), brassMat);
-      apexHinge.rotation.z = Math.PI / 2;
-      apexHinge.position.set(0, 1.82, 0);
-      easelGroup.add(apexHinge);
+      const baseTier2 = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.20, 0.030, 24), darkMahogany);
+      baseTier2.position.y = 0.045;
+      standGroup.add(baseTier2);
 
-      // 2 Front A-Frame Struts (extending from apex y = 1.82, x = 0 to floor y = 0, x = ±0.32 at z = 0)
-      const frontLegLen = Math.hypot(0.32, 1.82); // ~1.848m
-      const frontAngle = Math.atan2(0.32, 1.82); // ~0.174 rad
-      [-1, 1].forEach((dir) => {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.035, frontLegLen, 0.035), woodMat);
-        leg.position.set(dir * 0.16, 0.91, 0);
-        leg.rotation.z = -dir * frontAngle;
-        easelGroup.add(leg);
-      });
+      const baseCollar = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.065, 0.040, 16), brassMat);
+      baseCollar.position.y = 0.075;
+      standGroup.add(baseCollar);
 
-      // Rear Prop Leg (extending from apex y = 1.82, z = 0 to floor y = 0, z = -0.62)
-      const rearLegLen = Math.hypot(0.62, 1.82); // ~1.923m
-      const rearAngle = Math.atan2(0.62, 1.82); // ~0.328 rad
-      const rearLeg = new THREE.Mesh(new THREE.BoxGeometry(0.035, rearLegLen, 0.032), woodMat);
-      rearLeg.position.set(0, 0.91, -0.31);
-      rearLeg.rotation.x = -rearAngle;
-      easelGroup.add(rearLeg);
+      // 2. Upright Stanchion Post (solid seamless brass display column)
+      const post = new THREE.Mesh(new THREE.CylinderGeometry(0.026, 0.026, 0.96, 16), brassMat);
+      post.position.y = 0.55;
+      standGroup.add(post);
 
-      // Lower Horizontal Cross-Stretcher connecting the front legs
-      const crossStretcher = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.035, 0.03), woodMat);
-      crossStretcher.position.set(0, 0.45, 0);
-      easelGroup.add(crossStretcher);
+      // Decorative central collar ring
+      const midRing = new THREE.Mesh(new THREE.TorusGeometry(0.034, 0.007, 8, 20), brassMat);
+      midRing.rotation.x = Math.PI / 2;
+      midRing.position.y = 0.55;
+      standGroup.add(midRing);
 
-      // Central Vertical Mast Spine
-      const centralMast = new THREE.Mesh(new THREE.BoxGeometry(0.04, 1.55, 0.035), woodMat);
-      centralMast.position.set(0, 1.05, 0.015);
-      easelGroup.add(centralMast);
+      // Stanchion capital collar below mount
+      const capital = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.030, 0.05, 16), brassMat);
+      capital.position.y = 1.04;
+      standGroup.add(capital);
 
-      // Adjustable Canvas / Plaque Rest Shelf Ledge (projecting forward to hold the board)
-      const shelfLedge = new THREE.Mesh(new THREE.BoxGeometry(0.68, 0.045, 0.09), woodMat);
-      shelfLedge.position.set(0, 0.96, 0.045);
-      easelGroup.add(shelfLedge);
+      // 3. Ergonomic Angled Reading Head Bracket (tilted 18 degrees back for natural eye-level viewing)
+      const headGroup = new THREE.Group();
+      headGroup.position.set(0, 1.05, 0);
+      headGroup.rotation.x = -0.28; // ~16 deg tilt
 
-      // Shelf Clamp Knobs (Brass thumbscrews securing the shelf to the mast)
-      [-0.12, 0.12].forEach(kx => {
-        const knob = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, 0.03, 12), brassMat);
-        knob.rotation.x = Math.PI / 2;
-        knob.position.set(kx, 0.96, -0.015);
-        easelGroup.add(knob);
-      });
+      // Heavy mounting knuckle fixture clamped directly atop the stanchion post
+      const mountKnuckle = new THREE.Mesh(new THREE.BoxGeometry(0.07, 0.05, 0.07), brassMat);
+      mountKnuckle.position.set(0, 0.025, 0);
+      headGroup.add(mountKnuckle);
 
-      // Framed Gallery Floorplan Board (resting securely flat on shelfLedge and leaning against mast)
-      const boardGroup = new THREE.Group();
-      boardGroup.position.set(0, 1.36, 0.035);
-      // Slight authentic backward lean of 3.5 degrees to rest naturally against the easel mast
-      boardGroup.rotation.x = -0.06;
+      // Rigid backing support plate connecting mount to frame
+      const backPlate = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.50, 0.018), backingMat);
+      backPlate.position.set(0, 0.38, -0.012);
+      headGroup.add(backPlate);
 
-      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.62, 0.78, 0.035), goldMat);
-      boardGroup.add(frame);
+      // 4. Framed Gallery Floorplan / Directory Board (clean, solid, perfectly unified)
+      const frameW = 0.58;
+      const frameH = 0.74;
+      const frameD = 0.032;
 
-      const planPaper = new THREE.Mesh(new THREE.BoxGeometry(0.56, 0.72, 0.01), paperMat);
-      planPaper.position.set(0, 0, 0.018);
-      boardGroup.add(planPaper);
+      // Outer Gilded Exhibition Frame
+      const frameMesh = new THREE.Mesh(new THREE.BoxGeometry(frameW, frameH, frameD), goldFrameMat);
+      frameMesh.position.set(0, 0.38, 0.012);
+      headGroup.add(frameMesh);
 
-      // Top Clamp (wooden retainer clamp holding top of frame)
-      const topClamp = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.04, 0.06), woodMat);
-      topClamp.position.set(0, 0.39, 0.01);
-      boardGroup.add(topClamp);
+      // Inner Mat Board
+      const matBoard = new THREE.Mesh(new THREE.BoxGeometry(frameW - 0.08, frameH - 0.08, 0.008), backingMat);
+      matBoard.position.set(0, 0.38, 0.026);
+      headGroup.add(matBoard);
 
-      easelGroup.add(boardGroup);
+      // Gallery Directory & Floorplan Parchment Print
+      const planParchment = new THREE.Mesh(new THREE.BoxGeometry(frameW - 0.12, frameH - 0.12, 0.006), paperMat);
+      planParchment.position.set(0, 0.38, 0.031);
+      headGroup.add(planParchment);
 
-      this.scene.add(easelGroup);
+      // Bottom Ledge Lip (cradles the frame)
+      const bottomLedge = new THREE.Mesh(new THREE.BoxGeometry(frameW + 0.04, 0.026, 0.045), brassMat);
+      bottomLedge.position.set(0, 0.015, 0.022);
+      headGroup.add(bottomLedge);
 
+      standGroup.add(headGroup);
+      this.scene.add(standGroup);
+
+      // Accurate compact cylinder obstacle collider for the pedestal sign stand
       this.colliders.push({
-        type: 'box',
+        type: 'cylinder',
         floor: fl,
-        minX: x - 0.40,
-        maxX: x + 0.40,
-        minZ: z - 0.40,
-        maxZ: z + 0.40,
+        x: x,
+        z: z,
+        radius: 0.28,
         minY: y0,
-        maxY: y0 + 1.20
+        maxY: y0 + 1.25
       });
     }
 
@@ -11455,16 +11464,26 @@
 
       const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
       const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor, currentFootElevation);
-      if (elev.floor !== this.playerFloor) {
+      
+      // Strict floor transition protection: Player can only change floors if their physical foot elevation
+      // is genuinely within 1.4m of the target floor elevation plane
+      const targetFloorBaseY = elev.floor * CONFIG.FLOOR_HEIGHT;
+      if (elev.floor !== this.playerFloor && Math.abs(currentFootElevation - targetFloorBaseY) < 1.4) {
         this.playerFloor = elev.floor;
         this.showFloorNotification(this.playerFloor);
-      } else {
+      } else if (elev.floor === this.playerFloor) {
         this.playerFloor = elev.floor;
       }
 
       // Check platform standing surface (benches, plinths, desks, crates)
       const platformSurfaceY = this.getPlatformSurfaceY(this.playerPos.x, this.playerPos.z, this.playerFloor);
-      const groundY = Math.max(elev.y, platformSurfaceY);
+      let groundY = Math.max(elev.y, platformSurfaceY);
+
+      // Antigravity Step Protection: Prevent any sudden vertical launch greater than 0.85m above current feet
+      // unless player is intentionally jumping, flying in spectator mode, or falling
+      if (this.isGrounded && groundY > (currentFootElevation + 0.85)) {
+        groundY = currentFootElevation;
+      }
 
       const targetEyeH = isCrouching ? CONFIG.PLAYER.CROUCH_HEIGHT : CONFIG.PLAYER.CAMERA_HEIGHT;
       this.currentCamHeight = THREE.MathUtils.lerp(this.currentCamHeight, targetEyeH, Math.min(1, delta * 12));
