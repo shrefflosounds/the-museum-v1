@@ -4774,7 +4774,10 @@
           minX: x - w / 2,
           maxX: x + w / 2,
           minZ: z - d / 2,
-          maxZ: z + d / 2
+          maxZ: z + d / 2,
+          minY: y - h / 2,
+          maxY: y + h / 2,
+          isWall: true
         });
       }
       return mesh;
@@ -12702,7 +12705,7 @@
           this.playerPos.x += _tempMoveDir.x * moveSpeed * stepDt;
           this.playerPos.z += _tempMoveDir.z * moveSpeed * stepDt;
           const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
-          this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation);
+          this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation, this.currentCamHeight);
         }
 
         if (isNaN(this.playerPos.x) || isNaN(this.playerPos.z)) {
@@ -12857,7 +12860,7 @@
       let maxSurfaceY = 0;
       for (let i = 0; i < this.colliders.length; i++) {
         const c = this.colliders[i];
-        if (c.floor !== 'all' && c.floor !== floorIdx) continue;
+        if (c.isWall || (c.floor !== 'all' && c.floor !== floorIdx)) continue;
         if (c.maxY === undefined) continue;
         if (c.type === 'box') {
           if (x >= c.minX && x <= c.maxX && z >= c.minZ && z <= c.maxZ) {
@@ -12874,15 +12877,18 @@
       return maxSurfaceY;
     }
 
-    resolveCollisions(pos, radius, floorIdx, footElevation = -999) {
+    resolveCollisions(pos, radius, floorIdx, footElevation = -999, bodyHeight = 2.4) {
       for (let iter = 0; iter < 3; iter++) {
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
           if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
           if (c.floor !== 'all' && c.floor !== floorIdx) continue;
 
+          if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
+              (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) continue;
+
           // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
-          if (c.maxY !== undefined && footElevation >= (c.maxY - 0.12)) continue;
+          if (!c.isWall && c.maxY !== undefined && footElevation >= (c.maxY - 0.12)) continue;
 
           // Dynamic physics crates are pushed realistically by player contact in updatePhysicsCrates
           if (c.isCrate && c.crate) continue;
@@ -13964,7 +13970,7 @@
         for (let s = 0; s < subSteps; s++) {
           this.smittyPos.x += vx * stepDt;
           this.smittyPos.z += vz * stepDt;
-          this.resolveCollisions(this.smittyPos, 0.40, this.smittyFloor);
+          this.resolveCollisions(this.smittyPos, 0.40, this.smittyFloor, this.smittyPos.y, 2.35);
         }
 
         const movedDist = Math.hypot(this.smittyPos.x - oldX, this.smittyPos.z - oldZ);
@@ -15087,7 +15093,7 @@
           }
 
           const tempPos = { x: s.x + stepX, y: s.y, z: s.z + stepZ, _ignoreCollider: s.collider };
-          this.resolveCollisions(tempPos, 0.48, s.floor, s.y);
+          this.resolveCollisions(tempPos, 0.48, s.floor, s.y, 2.35);
 
           // Avoid overlapping other statues
           for (let other of this.statues) {
