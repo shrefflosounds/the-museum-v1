@@ -6954,6 +6954,7 @@
         // Realistic antique leather and cloth bindings (burgundy, forest calfskin, dark navy, saddle brown)
         const bookColors = [0x421b1f, 0x1c3024, 0x1a2636, 0x4d321d, 0x241812, 0x302018, 0x223042, 0x58262b];
         const bookMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, metalness: 0.08 });
+        const cartBookMats = bookColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.65, metalness: 0.08 }));
         const bookColorValues = bookColors.map(c => new THREE.Color(c));
         const paperPageMat = new THREE.MeshLambertMaterial({ color: 0xf5eedc });
         const bookGeometryCache = new Map();
@@ -7228,7 +7229,7 @@
 
             for (let v = 0; v < 4; v++) {
               const vy = v * 0.045;
-              const vMat = bookMats[(bi * 3 + v) % bookMats.length];
+              const vMat = cartBookMats[(bi * 3 + v) % cartBookMats.length];
               const volMesh = new THREE.Mesh(new THREE.BoxGeometry(0.24, 0.042, 0.34), vMat);
               volMesh.position.y = vy + 0.021;
               if (v === 3) volMesh.rotation.y = 0.06;
