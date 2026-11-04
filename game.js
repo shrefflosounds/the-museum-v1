@@ -6953,10 +6953,36 @@
 
         // Realistic antique leather and cloth bindings (burgundy, forest calfskin, dark navy, saddle brown)
         const bookColors = [0x421b1f, 0x1c3024, 0x1a2636, 0x4d321d, 0x241812, 0x302018, 0x223042, 0x58262b];
-        const bookMats = bookColors.map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.65, metalness: 0.08 }));
+        const bookMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 0.65, metalness: 0.08 });
+        const bookColorValues = bookColors.map(c => new THREE.Color(c));
         const paperPageMat = new THREE.MeshLambertMaterial({ color: 0xf5eedc });
+        const bookGeometryCache = new Map();
+        const bookTransform = new THREE.Object3D();
+        const bookOffsetMatrix = new THREE.Matrix4();
 
         rangeZCoords.forEach((rz, rIdx) => {
+          const bookInstanceBatches = new Map();
+          const addBookInstance = (
+            key, geometryKey, material, createGeometry, matrix,
+            regionIndex, regionCenterX, regionRadius, instanceColor = null
+          ) => {
+            const batchKey = `${regionIndex}_${key}`;
+            let batch = bookInstanceBatches.get(batchKey);
+            if (!batch) {
+              const regionalGeometryKey = `${regionIndex}_${geometryKey}`;
+              let geometry = bookGeometryCache.get(regionalGeometryKey);
+              if (!geometry) {
+                geometry = createGeometry();
+                geometry.boundingSphere = new THREE.Sphere(new THREE.Vector3(regionCenterX, rangeH / 2, 0), regionRadius);
+                bookGeometryCache.set(regionalGeometryKey, geometry);
+              }
+              batch = { geometry, material, matrices: [], colors: [] };
+              bookInstanceBatches.set(batchKey, batch);
+            }
+            batch.matrices.push(matrix);
+            if (instanceColor) batch.colors.push(instanceColor);
+          };
+
           const rangeGroup = new THREE.Group();
           rangeGroup.position.set(15.0, y0, rz);
 
@@ -7005,35 +7031,69 @@
               // Populate each bay with rows of vintage colorful books
               for (let b = 0; b < numBays; b++) {
                 const bayCenterX = -rangeW / 2 + 0.10 + (b + 0.5) * bayW;
+                const regionIndex = b;
+                const regionCenterX = bayCenterX;
+                const regionRadius = Math.sqrt(
+                  (bayW / 2 + 0.15) ** 2 +
+                  (rangeH / 2 + 0.15) ** 2 +
+                  (rangeD / 2 + 0.15) ** 2
+                );
                 const bookCount = 9;
                 for (let k = 0; k < bookCount; k++) {
                   const bkW = 0.035 + (k % 3) * 0.015;
                   const bkH = tierH * 0.72 + (k % 4) * 0.035;
                   const bkD = 0.26 + (k % 2) * 0.03;
                   const bkX = bayCenterX - bayW / 2 + 0.08 + k * (bayW - 0.16) / bookCount;
-                  const bkMat = bookMats[(rIdx * 3 + b * 2 + k) % bookMats.length];
+                  const materialIndex = (rIdx * 3 + b * 2 + k) % bookColors.length;
+                  const angled = k === bookCount - 1 && b % 2 === 0;
+                  bookTransform.position.set(
+                    bkX + (angled ? 0.02 : 0),
+                    sy + 0.02 + bkH / 2,
+                    sideDir * (rangeD / 4)
+                  );
+                  bookTransform.rotation.set(0, 0, angled ? -0.16 : 0);
+                  bookTransform.updateMatrix();
 
-                  const book = new THREE.Mesh(new THREE.BoxGeometry(bkW, bkH, bkD), bkMat);
+                  const bodyGeometryKey = `body_${bkW}_${bkH}_${bkD}`;
+                  addBookInstance(
+                    bodyGeometryKey,
+                    bodyGeometryKey,
+                    bookMat,
+                    () => new THREE.BoxGeometry(bkW, bkH, bkD),
+                    bookTransform.matrix.clone(),
+                    regionIndex,
+                    regionCenterX,
+                    regionRadius,
+                    bookColorValues[materialIndex]
+                  );
 
-                  // Realistic exposed cream paper pages inside the binding
-                  const pages = new THREE.Mesh(new THREE.BoxGeometry(bkW - 0.006, bkH - 0.014, bkD * 0.88), paperPageMat);
-                  pages.position.set(0, 0, -sideDir * 0.016);
-                  book.add(pages);
+                  const pagesGeometryKey = `pages_${bkW}_${bkH}_${bkD}`;
+                  bookOffsetMatrix.makeTranslation(0, 0, -sideDir * 0.016);
+                  addBookInstance(
+                    pagesGeometryKey,
+                    pagesGeometryKey,
+                    paperPageMat,
+                    () => new THREE.BoxGeometry(bkW - 0.006, bkH - 0.014, bkD * 0.88),
+                    bookTransform.matrix.clone().multiply(bookOffsetMatrix),
+                    regionIndex,
+                    regionCenterX,
+                    regionRadius
+                  );
 
-                  // Gilded gold foil tooling bands along the spine
                   if (k % 2 === 0) {
-                    const goldLine = new THREE.Mesh(new THREE.BoxGeometry(bkW + 0.002, 0.008, 0.012), brassMat);
-                    goldLine.position.set(0, bkH * 0.22, sideDir * (bkD / 2 - 0.004));
-                    book.add(goldLine);
+                    const goldGeometryKey = `gold_${bkW}`;
+                    bookOffsetMatrix.makeTranslation(0, bkH * 0.22, sideDir * (bkD / 2 - 0.004));
+                    addBookInstance(
+                      goldGeometryKey,
+                      goldGeometryKey,
+                      brassMat,
+                      () => new THREE.BoxGeometry(bkW + 0.002, 0.008, 0.012),
+                      bookTransform.matrix.clone().multiply(bookOffsetMatrix),
+                      regionIndex,
+                      regionCenterX,
+                      regionRadius
+                    );
                   }
-
-                  if (k === bookCount - 1 && b % 2 === 0) {
-                    book.rotation.z = -0.16;
-                    book.position.set(bkX + 0.02, sy + 0.02 + bkH / 2, sideDir * (rangeD / 4));
-                  } else {
-                    book.position.set(bkX, sy + 0.02 + bkH / 2, sideDir * (rangeD / 4));
-                  }
-                  rangeGroup.add(book);
                 }
               }
             });
@@ -7082,6 +7142,21 @@
             ladGroup.add(rung);
           }
           rangeGroup.add(ladGroup);
+
+          for (const batch of bookInstanceBatches.values()) {
+            const instancedBooks = new THREE.InstancedMesh(batch.geometry, batch.material, batch.matrices.length);
+            instancedBooks.instanceMatrix.setUsage(THREE.StaticDrawUsage);
+            batch.matrices.forEach((matrix, index) => {
+              instancedBooks.setMatrixAt(index, matrix);
+              if (batch.colors.length > 0) instancedBooks.setColorAt(index, batch.colors[index]);
+            });
+            if (instancedBooks.instanceColor) {
+              instancedBooks.instanceColor.setUsage(THREE.StaticDrawUsage);
+              instancedBooks.instanceColor.needsUpdate = true;
+            }
+            instancedBooks.frustumCulled = true;
+            rangeGroup.add(instancedBooks);
+          }
 
           this.scene.add(rangeGroup);
 
@@ -15165,8 +15240,14 @@
       let best = null;
       let bestD = maxDist;
       for (let s of this.statues) {
-        if (s.floor !== this.playerFloor || !s.group.visible) continue;
-        const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
+        if (!s.group.visible || (!this.isSpectatorMode && s.floor !== this.playerFloor)) continue;
+        const d = this.isSpectatorMode
+          ? Math.hypot(
+            this.playerPos.x - s.x,
+            this.playerPos.y - (s.y + (s.cfg.targetHeight || 2.25) / 2),
+            this.playerPos.z - s.z
+          )
+          : Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
         if (d < bestD) { bestD = d; best = s; }
       }
       return best;
