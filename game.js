@@ -4904,7 +4904,8 @@
           minX: Math.min(x1, x2) - 0.25,
           maxX: Math.max(x1, x2) + 0.25,
           minZ: Math.min(z1, z2) - 0.25,
-          maxZ: Math.max(z1, z2) + 0.25
+          maxZ: Math.max(z1, z2) + 0.25,
+          isWall: true
         });
       }
 
@@ -7750,6 +7751,60 @@
       this.heldCrate = null;
       this.audio.playCrateImpact();
     }
+
+    resolveCrateWallCollisions(crate, floorIdx) {
+      const cosY = Math.abs(Math.cos(crate.rotY));
+      const sinY = Math.abs(Math.sin(crate.rotY));
+      const halfX = (cosY * crate.w + sinY * crate.d) / 2;
+      const halfZ = (sinY * crate.w + cosY * crate.d) / 2;
+      let impact = false;
+
+      for (const wall of this.colliders) {
+        if (wall.disabled || !wall.isWall || wall.isCrate ||
+            (wall.floor !== 'all' && wall.floor !== floorIdx)) continue;
+        if (wall.type !== 'box' || wall.minX === wall.maxX || wall.minZ === wall.maxZ) continue;
+        if (wall.minY !== undefined && wall.maxY !== undefined &&
+            (crate.y >= wall.maxY || crate.y + crate.h <= wall.minY)) continue;
+
+        const minX = wall.minX - halfX;
+        const maxX = wall.maxX + halfX;
+        const minZ = wall.minZ - halfZ;
+        const maxZ = wall.maxZ + halfZ;
+        if (crate.x <= minX || crate.x >= maxX || crate.z <= minZ || crate.z >= maxZ) continue;
+
+        const penLeft = crate.x - minX;
+        const penRight = maxX - crate.x;
+        const penTop = crate.z - minZ;
+        const penBottom = maxZ - crate.z;
+        let nx = 0;
+        let nz = 0;
+        const minPen = Math.min(penLeft, penRight, penTop, penBottom);
+        if (minPen === penLeft) {
+          crate.x = minX;
+          nx = -1;
+        } else if (minPen === penRight) {
+          crate.x = maxX;
+          nx = 1;
+        } else if (minPen === penTop) {
+          crate.z = minZ;
+          nz = -1;
+        } else {
+          crate.z = maxZ;
+          nz = 1;
+        }
+
+        const normalVelocity = crate.vx * nx + crate.vz * nz;
+        if (normalVelocity < 0) {
+          const impulse = (1 + 0.35) * normalVelocity;
+          crate.vx -= impulse * nx;
+          crate.vz -= impulse * nz;
+          if (Math.abs(normalVelocity) > 2.0) impact = true;
+        }
+      }
+
+      return impact;
+    }
+
     triggerCrateStackCollapse(baseCrate, impactVx = 0, impactVz = 0) {
       if (!baseCrate || baseCrate.isCollapsed) return;
       baseCrate.isCollapsed = true;
@@ -7903,9 +7958,21 @@
 
           // Realistic gravity acceleration
           c.vy -= 15.0 * delta;
-          c.x += c.vx * delta;
           c.y += c.vy * delta;
-          c.z += c.vz * delta;
+
+          // Substep horizontal motion so fast throws cannot tunnel through thin wall colliders.
+          const horizontalSteps = Math.min(64, Math.max(
+            1,
+            Math.ceil(Math.max(Math.abs(c.vx), Math.abs(c.vz)) * delta / 0.08)
+          ));
+          const stepDelta = delta / horizontalSteps;
+          let wallImpact = false;
+          for (let step = 0; step < horizontalSteps; step++) {
+            c.x += c.vx * stepDelta;
+            c.z += c.vz * stepDelta;
+            if (this.resolveCrateWallCollisions(c, cFloor)) wallImpact = true;
+          }
+          if (wallImpact) this.audio.playCrateImpact();
 
           c.rotX += c.angVx * delta;
           c.rotY += c.angVy * delta;
