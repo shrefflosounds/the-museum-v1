@@ -1012,9 +1012,17 @@
   },
   {
     "floor": 0,
-    "x": -15.65,
+    "x": 4.35,
     "y": 2.75,
-    "z": 24.5,
+    "z": -23.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": -19.2,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -1316,9 +1324,17 @@
   },
   {
     "floor": 1,
-    "x": -15.65,
+    "x": 4.35,
     "y": 7.95,
-    "z": 24.5,
+    "z": -23.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": -19.2,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -1628,9 +1644,17 @@
   },
   {
     "floor": 2,
-    "x": -15.65,
+    "x": 4.35,
     "y": 13.15,
-    "z": 24.5,
+    "z": -23.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": -19.2,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -1940,9 +1964,17 @@
   },
   {
     "floor": 3,
-    "x": -15.65,
+    "x": 4.35,
     "y": 18.35,
-    "z": 24.5,
+    "z": -23.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 3,
+    "x": 4.35,
+    "y": 18.35,
+    "z": -19.2,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -9729,14 +9761,13 @@
         }
 
         slots.forEach((slot, idx) => {
-          if (idx >= shuffledArts.length) return;
-          const art = shuffledArts[idx];
+          const art = shuffledArts[idx % shuffledArts.length];
 
           // Proportional museum sizing: larger grand scale on open walls, clamped on narrower piers to never hang over walkways
-          const maxW = slot.maxW || 2.85;
-          const maxH = 2.40;
-          let renderW = art.w;
-          let renderH = art.h;
+          const maxW = (slot.maxW || 2.85) * 1.12;
+          const maxH = 2.70;
+          let renderW = art.w * 1.22;
+          let renderH = art.h * 1.22;
           const aspect = renderW / renderH;
           if (renderW > maxW) {
             renderW = maxW;
