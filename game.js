@@ -9540,7 +9540,6 @@
       const darkMahogany = new THREE.MeshStandardMaterial({ color: 0x22130c, roughness: 0.45, metalness: 0.05 });
       const brassMat = new THREE.MeshStandardMaterial({ color: 0xc5a059, metalness: 0.85, roughness: 0.28 });
       const goldFrameMat = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.80, roughness: 0.25 });
-      const paperMat = new THREE.MeshLambertMaterial({ color: 0xfef9c3 });
       const backingMat = new THREE.MeshLambertMaterial({ color: 0x18181b });
 
       // 1. Heavy Weighted Architectural Plinth Base (circular stepped cast brass & mahogany, rock solid on floor)
@@ -9602,10 +9601,16 @@
       matBoard.position.set(0, 0.38, 0.026);
       headGroup.add(matBoard);
 
-      // Gallery Directory & Floorplan Parchment Print
-      const planParchment = new THREE.Mesh(new THREE.BoxGeometry(frameW - 0.12, frameH - 0.12, 0.006), paperMat);
-      planParchment.position.set(0, 0.38, 0.031);
-      headGroup.add(planParchment);
+      // Face1 stand portrait print
+      const face1Texture = this.texLoader.load('assets/textures/museum-sign.jpeg', (texture) => {
+        texture.colorSpace = THREE.SRGBColorSpace;
+      });
+      const face1 = new THREE.Mesh(
+        new THREE.PlaneGeometry(frameW - 0.12, frameH - 0.12),
+        new THREE.MeshBasicMaterial({ map: face1Texture })
+      );
+      face1.position.set(0, 0.38, 0.035);
+      headGroup.add(face1);
 
       // Bottom Ledge Lip (cradles the frame)
       const bottomLedge = new THREE.Mesh(new THREE.BoxGeometry(frameW + 0.04, 0.026, 0.045), brassMat);
