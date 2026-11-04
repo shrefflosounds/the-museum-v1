@@ -3728,6 +3728,9 @@
       // Accurate Semi-Circular Beaux-Arts Rotunda Apse & Colonnade (x: 12..26, z: 28..36)
       this.createAccurateRotunda(fl, y0, mats, ceilH, wallH);
 
+      // Classical Beaux-Arts Coved Ceilings, Skylight Laylights & Stepped Portal Architraves
+      this.createClassicalBeauxArtsArchitecture(fl, y0, mats, ceilH, wallH);
+
       // --- ARCHITECTURAL SIGNAGE, BOOKSTACKS & PERIOD FURNITURE PER FLOOR ---
       this.populateFloorFurnitureAndSignage(fl, y0, mats);
     }
@@ -4244,6 +4247,138 @@
       chanLight.position.set(cx, y0 + ceilH - 1.3, 30.5);
       this.scene.add(chanLight);
       if (this.floorLights[fl]) this.floorLights[fl].push(chanLight);
+    }
+
+    createClassicalBeauxArtsArchitecture(fl, y0, mats, ceilH, wallH) {
+      // Classical architectural materials for molded cornices, coffered laylights & portal casings
+      const corniceMat = new THREE.MeshLambertMaterial({ color: fl === 3 ? 0x9ca3af : (fl === 1 ? 0xf8f5ee : (fl === 2 ? 0xeae6dc : 0xf4f1ea)) });
+      const architraveMat = new THREE.MeshLambertMaterial({ color: fl === 3 ? 0x64748b : 0xe4e0d5 });
+      const skylightGlassMat = new THREE.MeshLambertMaterial({
+        color: 0xbae6fd,
+        emissive: 0x1e3a5f,
+        emissiveIntensity: 0.38,
+        transparent: true,
+        opacity: 0.88
+      });
+      const mullionMat = new THREE.MeshLambertMaterial({ color: 0x27272a });
+
+      // 1. Helper: Multi-tiered Classical Coved Cornice Molding along a gallery perimeter
+      const addRoomCornice = (minX, maxX, minZ, maxZ) => {
+        const cDepth = 0.28;
+        const cH = 0.38;
+        const cy = y0 + ceilH - cH / 2;
+        const group = new THREE.Group();
+
+        // North cornice (at minZ)
+        const cNorth = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, cH, cDepth), corniceMat);
+        cNorth.position.set((minX + maxX) / 2, cy, minZ + cDepth / 2);
+        group.add(cNorth);
+
+        // South cornice (at maxZ)
+        const cSouth = new THREE.Mesh(new THREE.BoxGeometry(maxX - minX, cH, cDepth), corniceMat);
+        cSouth.position.set((minX + maxX) / 2, cy, maxZ - cDepth / 2);
+        group.add(cSouth);
+
+        // West cornice (at minX)
+        const cWest = new THREE.Mesh(new THREE.BoxGeometry(cDepth, cH, (maxZ - minZ) - cDepth * 2), corniceMat);
+        cWest.position.set(minX + cDepth / 2, cy, (minZ + maxZ) / 2);
+        group.add(cWest);
+
+        // East cornice (at maxX)
+        const cEast = new THREE.Mesh(new THREE.BoxGeometry(cDepth, cH, (maxZ - minZ) - cDepth * 2), corniceMat);
+        cEast.position.set(maxX - cDepth / 2, cy, (minZ + maxZ) / 2);
+        group.add(cEast);
+
+        this.scene.add(group);
+      };
+
+      // 2. Helper: Grand Beaux-Arts Coffered Laylight / Skylight Grid (matching reference image)
+      const addCofferedSkylight = (cx, cz, w, d, rows = 6, cols = 3) => {
+        const skylightGroup = new THREE.Group();
+        skylightGroup.position.set(cx, y0 + ceilH - 0.04, cz);
+
+        // Outer coved architrave surround
+        const outerFrame = new THREE.Mesh(new THREE.BoxGeometry(w + 0.30, 0.08, d + 0.30), architraveMat);
+        skylightGroup.add(outerFrame);
+
+        // Diffuse luminous glazed sky panel
+        const glassPanel = new THREE.Mesh(new THREE.PlaneGeometry(w, d), skylightGlassMat);
+        glassPanel.rotation.x = Math.PI / 2;
+        skylightGroup.add(glassPanel);
+
+        // Classical architectural bronze/steel glazing mullions
+        const barH = 0.04;
+        const barW = 0.05;
+        for (let c = 1; c < cols; c++) {
+          const mx = -w / 2 + (w / cols) * c;
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(barW, barH, d), mullionMat);
+          bar.position.set(mx, -0.02, 0);
+          skylightGroup.add(bar);
+        }
+        for (let r = 1; r < rows; r++) {
+          const mz = -d / 2 + (d / rows) * r;
+          const bar = new THREE.Mesh(new THREE.BoxGeometry(w, barH, barW), mullionMat);
+          bar.position.set(0, -0.02, mz);
+          skylightGroup.add(bar);
+        }
+
+        this.scene.add(skylightGroup);
+      };
+
+      // 3. Helper: Classical Stepped Portal Architrave Casings & Headers around Major Passages
+      const addPortalArchitrave = (px, pz, openW, openH, isXWall = false) => {
+        const archGroup = new THREE.Group();
+        archGroup.position.set(px, y0, pz);
+        const trimW = 0.18;
+        const trimD = 0.44; // 44cm trim depth wraps around 40cm wall faces with clean 2cm reveal
+        const capH = 0.22;
+
+        if (!isXWall) {
+          const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(trimW, openH, trimD), architraveMat);
+          leftJamb.position.set(-openW / 2 - trimW / 2, openH / 2, 0);
+          archGroup.add(leftJamb);
+
+          const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(trimW, openH, trimD), architraveMat);
+          rightJamb.position.set(openW / 2 + trimW / 2, openH / 2, 0);
+          archGroup.add(rightJamb);
+
+          const header = new THREE.Mesh(new THREE.BoxGeometry(openW + trimW * 2 + 0.14, capH, trimD + 0.04), architraveMat);
+          header.position.set(0, openH + capH / 2, 0);
+          archGroup.add(header);
+        } else {
+          const leftJamb = new THREE.Mesh(new THREE.BoxGeometry(trimD, openH, trimW), architraveMat);
+          leftJamb.position.set(0, openH / 2, -openW / 2 - trimW / 2);
+          archGroup.add(leftJamb);
+
+          const rightJamb = new THREE.Mesh(new THREE.BoxGeometry(trimD, openH, trimW), architraveMat);
+          rightJamb.position.set(0, openH / 2, openW / 2 + trimW / 2);
+          archGroup.add(rightJamb);
+
+          const header = new THREE.Mesh(new THREE.BoxGeometry(trimD + 0.04, capH, openW + trimW * 2 + 0.14), architraveMat);
+          header.position.set(0, openH + capH / 2, 0);
+          archGroup.add(header);
+        }
+        this.scene.add(archGroup);
+      };
+
+      // Apply classical coved cornices to major museum halls
+      addRoomCornice(-16.0, -4.0, -18.0, 28.0); // Main Gallery (46m Concourse)
+      addRoomCornice(4.0, 28.0, -26.0, 18.0);   // East Main Hall
+      addRoomCornice(-36.0, -16.0, -6.0, 18.0); // West Wing Salon
+      addRoomCornice(-4.0, 28.0, -40.0, -26.0); // North Gallery
+
+      // Apply grand coffered laylights to the monumental halls
+      addCofferedSkylight(-10.0, 5.0, 5.2, 26.0, 8, 3);
+      addCofferedSkylight(16.0, -4.0, 9.6, 26.0, 8, 4);
+
+      // Apply stepped classical portal architraves to major room thresholds
+      addPortalArchitrave(-16.0, -2.0, 3.0, 3.2, true);
+      addPortalArchitrave(-24.0, 19.7, 2.2, 3.2, true);
+      addPortalArchitrave(6.0, -26.0, 2.8, 3.2, false);
+      addPortalArchitrave(18.2, -26.0, 3.2, 3.2, false);
+      addPortalArchitrave(4.0, 5.0, 5.0, 3.4, true);
+      addPortalArchitrave(19.0, 13.0, 3.0, 3.2, true);
+      addPortalArchitrave(23.0, 18.0, 3.0, 3.2, false);
     }
 
     createRealisticRestrooms(fl, y0, mats) {
@@ -6546,23 +6681,24 @@
         group.add(barZ);
       }
 
-      // Molded side walls with handle openings and diamond/diagonal open lattice ribs
+      // Molded side walls with handle openings, solid horizontal blockage bar, and fully enclosed lattice grid
       // North & South walls (Z = ±(d/2 - 0.012))
       [-d / 2 + 0.012, d / 2 - 0.012].forEach((sz) => {
-        // Lower solid molded label/reinforcement panel
-        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.048, 0.014), plasticMat);
-        lowPanel.position.set(0, -h / 2 + botH + 0.024, sz);
+        // Lower solid molded label/reinforcement panel (spans y: -0.119 to -0.079)
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.040, 0.014), plasticMat);
+        lowPanel.position.set(0, -h / 2 + botH + 0.020, sz);
         group.add(lowPanel);
 
-        // Handle cutout flanks (width: 0.16m opening)
+        // Handle cutout flanks (width: 0.15m handle opening in center)
         const handleCutoutW = 0.15;
         const flankW = (w - 0.06 - handleCutoutW) / 2;
-        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, 0.054, 0.014), plasticMat);
-        leftHandleFlank.position.set(-(w - 0.06 + handleCutoutW) / 4, h / 2 - rimH - 0.027, sz);
+        const handleH = 0.059; // from y = 0.054 up to top rim (0.113)
+        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, handleH, 0.014), plasticMat);
+        leftHandleFlank.position.set(-(w - 0.06 + handleCutoutW) / 4, 0.054 + handleH / 2, sz);
         group.add(leftHandleFlank);
 
-        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, 0.054, 0.014), plasticMat);
-        rightHandleFlank.position.set((w - 0.06 + handleCutoutW) / 4, h / 2 - rimH - 0.027, sz);
+        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(flankW, handleH, 0.014), plasticMat);
+        rightHandleFlank.position.set((w - 0.06 + handleCutoutW) / 4, 0.054 + handleH / 2, sz);
         group.add(rightHandleFlank);
 
         // Smooth molded ergonomic rounded grip bar over handle opening
@@ -6571,37 +6707,48 @@
         gripBar.position.set(0, h / 2 - rimH - 0.008, sz);
         group.add(gripBar);
 
-        // Molded open lattice grid (horizontal bands & diagonal diamond braces)
+        // Continuous full-width horizontal blockage beam directly beneath handle opening
+        // Caps all vertical support beams so no lattice line is left open or floating in air
+        const handleLedge = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.016, 0.014), plasticMat);
+        handleLedge.position.set(0, 0.046, sz);
+        group.add(handleLedge);
+
+        // Intermediate horizontal lattice ribs evenly spaced between bottom plate and handle ledge
         for (let r = 0; r < 3; r++) {
-          const ry = -h / 2 + botH + 0.048 + r * 0.038;
+          const ry = -0.079 + 0.031 * (r + 1);
           const hRib = new THREE.Mesh(new THREE.BoxGeometry(w - 0.06, 0.012, 0.014), plasticMat);
           hRib.position.set(0, ry, sz);
           group.add(hRib);
         }
+
+        // Vertical support ribs: run solidly from bottom panel to the top horizontal blockage bar
+        const vRibH = 0.135;
+        const vRibY = -0.0165;
         for (let c = -3; c <= 3; c++) {
           const vx = c * 0.042;
-          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.115, 0.014), plasticMat);
-          vRib.position.set(vx, -0.018, sz);
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.012, vRibH, 0.014), plasticMat);
+          vRib.position.set(vx, vRibY, sz);
           group.add(vRib);
         }
       });
 
       // East & West walls (X = ±(w/2 - 0.012))
       [-w / 2 + 0.012, w / 2 - 0.012].forEach((sx) => {
-        // Lower solid molded label/reinforcement panel
-        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.048, d - 0.06), plasticMat);
-        lowPanel.position.set(sx, -h / 2 + botH + 0.024, 0);
+        // Lower solid molded label/reinforcement panel (spans y: -0.119 to -0.079)
+        const lowPanel = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.040, d - 0.06), plasticMat);
+        lowPanel.position.set(sx, -h / 2 + botH + 0.020, 0);
         group.add(lowPanel);
 
         // Handle cutout flanks
         const handleCutoutW = 0.15;
         const flankD = (d - 0.06 - handleCutoutW) / 2;
-        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.054, flankD), plasticMat);
-        leftHandleFlank.position.set(sx, h / 2 - rimH - 0.027, -(d - 0.06 + handleCutoutW) / 4);
+        const handleH = 0.059;
+        const leftHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, handleH, flankD), plasticMat);
+        leftHandleFlank.position.set(sx, 0.054 + handleH / 2, -(d - 0.06 + handleCutoutW) / 4);
         group.add(leftHandleFlank);
 
-        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.054, flankD), plasticMat);
-        rightHandleFlank.position.set(sx, h / 2 - rimH - 0.027, (d - 0.06 + handleCutoutW) / 4);
+        const rightHandleFlank = new THREE.Mesh(new THREE.BoxGeometry(0.014, handleH, flankD), plasticMat);
+        rightHandleFlank.position.set(sx, 0.054 + handleH / 2, (d - 0.06 + handleCutoutW) / 4);
         group.add(rightHandleFlank);
 
         // Smooth molded ergonomic rounded grip bar
@@ -6610,17 +6757,26 @@
         gripBar.position.set(sx, h / 2 - rimH - 0.008, 0);
         group.add(gripBar);
 
-        // Molded open lattice grid
+        // Continuous full-width horizontal blockage beam directly beneath handle opening
+        const handleLedge = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.016, d - 0.06), plasticMat);
+        handleLedge.position.set(sx, 0.046, 0);
+        group.add(handleLedge);
+
+        // Intermediate horizontal lattice ribs evenly spaced
         for (let r = 0; r < 3; r++) {
-          const ry = -h / 2 + botH + 0.048 + r * 0.038;
+          const ry = -0.079 + 0.031 * (r + 1);
           const hRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.012, d - 0.06), plasticMat);
           hRib.position.set(sx, ry, 0);
           group.add(hRib);
         }
+
+        // Vertical support ribs: run solidly from bottom panel to the top horizontal blockage bar
+        const vRibH = 0.135;
+        const vRibY = -0.0165;
         for (let c = -3; c <= 3; c++) {
           const vz = c * 0.042;
-          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, 0.115, 0.012), plasticMat);
-          vRib.position.set(sx, -0.018, vz);
+          const vRib = new THREE.Mesh(new THREE.BoxGeometry(0.014, vRibH, 0.012), plasticMat);
+          vRib.position.set(sx, vRibY, vz);
           group.add(vRib);
         }
       });
@@ -7626,10 +7782,23 @@
         bubbles.push({ mesh: bMesh, speed: 0.28 + b * 0.06, startX: -0.45, startZ: 0.10 });
       }
 
-      // Top sleek aquarium canopy with integrated LED gallery strip (emissive glow, no PointLight!)
+      // Top sleek aquarium canopy with integrated LED gallery strip and downward blue glow
       const canopy = new THREE.Mesh(geoms.canopy, mats.cabinet);
       canopy.position.y = 0.72 + 0.70;
       group.add(canopy);
+
+      // Luminous blue LED fixture bar mounted inside lid
+      const blueBarMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
+      const blueLightBar = new THREE.Mesh(new THREE.BoxGeometry(1.40, 0.02, 0.14), blueBarMat);
+      blueLightBar.position.set(0, 0.72 + 0.69, 0);
+      group.add(blueLightBar);
+
+      // Downward aquatic blue glow radiating from the lid down through the water and tank
+      const aquaBlueLight = new THREE.PointLight(0x38bdf8, fl === this.playerFloor ? 0.95 : 0, 4.2, 1.2);
+      aquaBlueLight._origIntensity = 0.95;
+      aquaBlueLight.position.set(0, 0.72 + 0.65, 0);
+      group.add(aquaBlueLight);
+      if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(aquaBlueLight);
 
       this.scene.add(group);
 
@@ -8568,6 +8737,9 @@
         this.createGalleryRunnerRug(19.0, y0, 24.5, 3.0, 13.0, 0xb47488, 0xc6bc99);
         // (Floor 0 South-East Wing sculptures removed per curator request)
 
+        // Living aquatic exhibition tank (Main Gallery East wall alcove with blue lid glow)
+        this.createAquariumTank(-4.8, y0, 5.0, fl, -Math.PI / 2);
+
       } else if (fl === 1) {
         // =========================================================================
         // FLOOR 1 ("2ND FLOOR"): THE GREAT LIBRARY & CARTOGRAPHY
@@ -8598,6 +8770,9 @@
         });
 
         // (Floor 1 Library section sculptures removed per curator request)
+
+        // Living aquatic exhibition tank (South-East Gallery wall with blue lid glow)
+        this.createAquariumTank(10.0, y0, 27.2, fl, Math.PI);
 
       } else if (fl === 2) {
         // =========================================================================
@@ -8636,6 +8811,9 @@
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
+        // Living aquatic exhibition tank (West Wing South wall between doorways with blue lid glow)
+        this.createAquariumTank(-25.0, y0, 17.2, fl, Math.PI);
+
       } else {
         // =========================================================================
         // FLOOR 3 ("4TH FLOOR"): RESTRICTED ARCHIVAL STORAGE & MILK CRATES
@@ -8646,6 +8824,9 @@
         this.createPalletRackStorage(20.0, y0, -21.0, fl);
         this.createPalletRackStorage(10.0, y0,   1.0, fl);
         this.createPalletRackStorage(20.0, y0,   1.0, fl);
+
+        // Living aquatic exhibition tank (Main Gallery East wall alcove with blue lid glow)
+        this.createAquariumTank(-4.8, y0, 5.0, fl, -Math.PI / 2);
       }
     }
 
@@ -13441,7 +13622,34 @@
 
       this.renderer.render(this.scene, this.camera);
     }
+
+    exportLevelJSON() {
+      try {
+        const sceneData = this.scene.toJSON();
+        const jsonStr = JSON.stringify(sceneData);
+        const blob = new Blob([jsonStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'The_Museum_Level.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        console.log('Successfully exported The_Museum_Level.json for https://threejs.org/editor/');
+      } catch (err) {
+        console.error('Failed to export level JSON:', err);
+      }
+    }
   }
+
+  window.exportMuseumScene = () => {
+    if (window.gameInstance) {
+      window.gameInstance.exportLevelJSON();
+    } else {
+      console.warn('MuseumGame instance not ready yet.');
+    }
+  };
 
   if (document.readyState === 'loading') {
     window.addEventListener('DOMContentLoaded', () => {
