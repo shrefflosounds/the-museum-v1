@@ -903,6 +903,21 @@
       walkSpeed: 1.55
     },
     {
+      id: "rat_hat_toing",
+      name: "Rat Hat Toing",
+      floor: 3,
+      x: 14.0,
+      z: 10.0,
+      rotY: 0,
+      faceOffset: -Math.PI / 2,
+      model: "assets/statues/statue-Rat Hat Toing.glb",
+      audio: "assets/audio/statue audio/Rat Hat Toing-song1.mp3",
+      songTitle: "Smitty Fantastic - Hexagram 27",
+      duration: 165.49,
+      targetHeight: 2.25,
+      walkSpeed: 1.50
+    },
+    {
       id: "bird_squid",
       name: "Bird",
       floor: 0,
@@ -926,7 +941,7 @@
       rotY: 0,
       faceOffset: -Math.PI / 2,
       model: "3D_Source_Models/statues/statue-pumppump.glb",
-      fallbackModel: "assets/statues/statue-pumppump.glb",
+      fallbackModel: "assets/statues/statue-pumpump.glb",
       audio: "assets/audio/statue audio/Pumpump-Sound1.mp3",
       duration: 96.00,
       targetHeight: 2.25,
