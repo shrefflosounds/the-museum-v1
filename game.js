@@ -895,1078 +895,1232 @@
     "x": -35.65,
     "y": 2.75,
     "z": -2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -35.65,
     "y": 2.75,
     "z": 3.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
-    "x": -35.65,
-    "y": 2.75,
-    "z": 8.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -35.65,
     "y": 2.75,
     "z": 13.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -31.5,
     "y": 2.75,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -26.0,
     "y": 2.75,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -20.5,
     "y": 2.75,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -16.35,
     "y": 2.75,
     "z": 2.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 0,
     "x": -16.35,
     "y": 2.75,
     "z": 10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 0,
     "x": -33.65,
     "y": 2.75,
     "z": 23.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -29.0,
     "y": 2.75,
     "z": 27.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -12.5,
     "y": 2.75,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -7.5,
     "y": 2.75,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
     "z": -12.5,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 0,
-    "x": -15.65,
-    "y": 2.75,
-    "z": -7.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
     "z": 2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
     "z": 10.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
     "z": 24.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
     "z": -10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
     "z": -3.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
     "z": 11.5,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
     "z": 16.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": -3.65,
     "y": 2.75,
     "z": -33.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 1.0,
     "y": 2.75,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 23.0,
     "y": 2.75,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 9.5,
     "y": 2.75,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 0,
     "x": 14.5,
     "y": 2.75,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 0,
     "x": 27.65,
     "y": 2.75,
     "z": -33.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 12.0,
     "y": 2.75,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 23.8,
     "y": 2.75,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 4.35,
     "y": 2.75,
-    "z": 10.5,
-    "rotY": 1.5708
+    "z": -5.25,
+    "rotY": 1.5708,
+    "maxW": 2.3
   },
   {
     "floor": 0,
     "x": 4.35,
     "y": 2.75,
-    "z": 15.0,
-    "rotY": 1.5708
+    "z": 1.0,
+    "rotY": 1.5708,
+    "maxW": 2.2
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": 9.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": 13.0,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 0,
+    "x": 4.35,
+    "y": 2.75,
+    "z": 16.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
   },
   {
     "floor": 0,
     "x": 32.65,
     "y": 2.75,
     "z": -18.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 32.65,
     "y": 2.75,
     "z": -4.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 27.65,
     "y": 2.75,
     "z": -11.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 27.65,
     "y": 2.75,
     "z": 4.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 0,
-    "x": 4.0,
-    "y": 2.75,
-    "z": 27.65,
-    "rotY": 3.1416
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 0,
     "x": 27.65,
     "y": 2.75,
     "z": 23.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -35.65,
     "y": 7.95,
     "z": -2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -35.65,
     "y": 7.95,
     "z": 3.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
-    "x": -35.65,
-    "y": 7.95,
-    "z": 8.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -35.65,
     "y": 7.95,
     "z": 13.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -31.5,
     "y": 7.95,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -26.0,
     "y": 7.95,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -20.5,
     "y": 7.95,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -16.35,
     "y": 7.95,
     "z": 2.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 1,
     "x": -16.35,
     "y": 7.95,
     "z": 10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 1,
     "x": -33.65,
     "y": 7.95,
     "z": 23.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -29.0,
     "y": 7.95,
     "z": 27.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -12.5,
     "y": 7.95,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -7.5,
     "y": 7.95,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -15.65,
     "y": 7.95,
     "z": -12.5,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 1,
-    "x": -15.65,
-    "y": 7.95,
-    "z": -7.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -15.65,
     "y": 7.95,
     "z": 2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 1,
     "x": -15.65,
     "y": 7.95,
     "z": 10.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 1,
     "x": -15.65,
     "y": 7.95,
     "z": 24.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -4.35,
     "y": 7.95,
     "z": -10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -4.35,
     "y": 7.95,
     "z": -3.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 1,
     "x": -4.35,
     "y": 7.95,
     "z": 11.5,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -4.35,
     "y": 7.95,
     "z": 16.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": -3.65,
     "y": 7.95,
     "z": -33.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 1.0,
     "y": 7.95,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 23.0,
     "y": 7.95,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 9.5,
     "y": 7.95,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 1,
     "x": 14.5,
     "y": 7.95,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 1,
     "x": 27.65,
     "y": 7.95,
     "z": -33.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 12.0,
     "y": 7.95,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 23.8,
     "y": 7.95,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 4.35,
     "y": 7.95,
-    "z": 10.5,
-    "rotY": 1.5708
+    "z": -5.25,
+    "rotY": 1.5708,
+    "maxW": 2.3
   },
   {
     "floor": 1,
     "x": 4.35,
     "y": 7.95,
-    "z": 15.0,
-    "rotY": 1.5708
+    "z": 1.0,
+    "rotY": 1.5708,
+    "maxW": 2.2
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": 9.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": 13.0,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 1,
+    "x": 4.35,
+    "y": 7.95,
+    "z": 16.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
   },
   {
     "floor": 1,
     "x": 32.65,
     "y": 7.95,
     "z": -18.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 32.65,
     "y": 7.95,
     "z": -4.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 27.65,
     "y": 7.95,
     "z": -11.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 27.65,
     "y": 7.95,
     "z": 4.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 1,
-    "x": 4.0,
-    "y": 7.95,
-    "z": 27.65,
-    "rotY": 3.1416
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 27.65,
     "y": 7.95,
     "z": 23.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 1,
     "x": 19.0,
     "y": 7.95,
     "z": 33.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -35.65,
     "y": 13.15,
     "z": -2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -35.65,
     "y": 13.15,
     "z": 3.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
-    "x": -35.65,
-    "y": 13.15,
-    "z": 8.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -35.65,
     "y": 13.15,
     "z": 13.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -31.5,
     "y": 13.15,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -26.0,
     "y": 13.15,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -20.5,
     "y": 13.15,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -16.35,
     "y": 13.15,
     "z": 2.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 2,
     "x": -16.35,
     "y": 13.15,
     "z": 10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 2,
     "x": -33.65,
     "y": 13.15,
     "z": 23.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -29.0,
     "y": 13.15,
     "z": 27.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -12.5,
     "y": 13.15,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -7.5,
     "y": 13.15,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -15.65,
     "y": 13.15,
     "z": -12.5,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 2,
-    "x": -15.65,
-    "y": 13.15,
-    "z": -7.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -15.65,
     "y": 13.15,
     "z": 2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 2,
     "x": -15.65,
     "y": 13.15,
     "z": 10.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 2,
     "x": -15.65,
     "y": 13.15,
     "z": 24.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -4.35,
     "y": 13.15,
     "z": -10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -4.35,
     "y": 13.15,
     "z": -3.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 2,
     "x": -4.35,
     "y": 13.15,
     "z": 11.5,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -4.35,
     "y": 13.15,
     "z": 16.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": -3.65,
     "y": 13.15,
     "z": -33.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 1.0,
     "y": 13.15,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 23.0,
     "y": 13.15,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 9.5,
     "y": 13.15,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 2,
     "x": 14.5,
     "y": 13.15,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 2,
     "x": 27.65,
     "y": 13.15,
     "z": -33.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 12.0,
     "y": 13.15,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 23.8,
     "y": 13.15,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 4.35,
     "y": 13.15,
-    "z": 10.5,
-    "rotY": 1.5708
+    "z": -5.25,
+    "rotY": 1.5708,
+    "maxW": 2.3
   },
   {
     "floor": 2,
     "x": 4.35,
     "y": 13.15,
-    "z": 15.0,
-    "rotY": 1.5708
+    "z": 1.0,
+    "rotY": 1.5708,
+    "maxW": 2.2
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": 9.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": 13.0,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 2,
+    "x": 4.35,
+    "y": 13.15,
+    "z": 16.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
   },
   {
     "floor": 2,
     "x": 32.65,
     "y": 13.15,
     "z": -18.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 32.65,
     "y": 13.15,
     "z": -4.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 27.65,
     "y": 13.15,
     "z": -11.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 27.65,
     "y": 13.15,
     "z": 4.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 2,
-    "x": 4.0,
-    "y": 13.15,
-    "z": 27.65,
-    "rotY": 3.1416
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 27.65,
     "y": 13.15,
     "z": 23.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 2,
     "x": 19.0,
     "y": 13.15,
     "z": 33.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -35.65,
     "y": 18.35,
     "z": -2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -35.65,
     "y": 18.35,
     "z": 3.0,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 3,
-    "x": -35.65,
-    "y": 18.35,
-    "z": 8.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -35.65,
     "y": 18.35,
     "z": 13.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -31.5,
     "y": 18.35,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -26.0,
     "y": 18.35,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -20.5,
     "y": 18.35,
     "z": -5.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -16.35,
     "y": 18.35,
     "z": 2.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 3,
     "x": -16.35,
     "y": 18.35,
     "z": 10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 3,
     "x": -33.65,
     "y": 18.35,
     "z": 23.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -29.0,
     "y": 18.35,
     "z": 27.65,
-    "rotY": 3.1416
+    "rotY": 3.1416,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -12.5,
     "y": 18.35,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -7.5,
     "y": 18.35,
     "z": -17.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -15.65,
     "y": 18.35,
     "z": -12.5,
-    "rotY": 1.5708
-  },
-  {
-    "floor": 3,
-    "x": -15.65,
-    "y": 18.35,
-    "z": -7.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -15.65,
     "y": 18.35,
     "z": 2.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 3,
     "x": -15.65,
     "y": 18.35,
     "z": 10.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 3,
     "x": -15.65,
     "y": 18.35,
     "z": 24.5,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -4.35,
     "y": 18.35,
     "z": -10.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -4.35,
     "y": 18.35,
     "z": -3.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.4
   },
   {
     "floor": 3,
     "x": -4.35,
     "y": 18.35,
     "z": 11.5,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -4.35,
     "y": 18.35,
     "z": 16.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": -3.65,
     "y": 18.35,
     "z": -33.0,
-    "rotY": 1.5708
+    "rotY": 1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 1.0,
     "y": 18.35,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 23.0,
     "y": 18.35,
     "z": -39.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 9.5,
     "y": 18.35,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 3,
     "x": 14.5,
     "y": 18.35,
     "z": -41.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.6
   },
   {
     "floor": 3,
     "x": 27.65,
     "y": 18.35,
     "z": -33.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 12.0,
     "y": 18.35,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 23.8,
     "y": 18.35,
     "z": -25.65,
-    "rotY": 0.0
+    "rotY": 0.0,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 4.35,
     "y": 18.35,
-    "z": 10.5,
-    "rotY": 1.5708
+    "z": -5.25,
+    "rotY": 1.5708,
+    "maxW": 2.3
   },
   {
     "floor": 3,
     "x": 4.35,
     "y": 18.35,
-    "z": 15.0,
-    "rotY": 1.5708
+    "z": 1.0,
+    "rotY": 1.5708,
+    "maxW": 2.2
+  },
+  {
+    "floor": 3,
+    "x": 4.35,
+    "y": 18.35,
+    "z": 9.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 3,
+    "x": 4.35,
+    "y": 18.35,
+    "z": 13.0,
+    "rotY": 1.5708,
+    "maxW": 2.85
+  },
+  {
+    "floor": 3,
+    "x": 4.35,
+    "y": 18.35,
+    "z": 16.5,
+    "rotY": 1.5708,
+    "maxW": 2.85
   },
   {
     "floor": 3,
     "x": 32.65,
     "y": 18.35,
     "z": -18.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 32.65,
     "y": 18.35,
     "z": -4.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 27.65,
     "y": 18.35,
     "z": -11.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 27.65,
     "y": 18.35,
     "z": 4.0,
-    "rotY": -1.5708
-  },
-  {
-    "floor": 3,
-    "x": 4.0,
-    "y": 18.35,
-    "z": 27.65,
-    "rotY": 3.1416
+    "rotY": -1.5708,
+    "maxW": 2.8
   },
   {
     "floor": 3,
     "x": 27.65,
     "y": 18.35,
     "z": 23.0,
-    "rotY": -1.5708
+    "rotY": -1.5708,
+    "maxW": 2.8
   }
 ];
 
@@ -9554,12 +9708,6 @@
         specular: 0x665033,
         shininess: 38
       });
-      const brassLampMat = new THREE.MeshStandardMaterial({
-        color: 0xd4af37,
-        emissive: 0x3a2a10,
-        metalness: 0.85,
-        roughness: 0.28
-      });
       const planeGeomCache = new Map();
       const frameGeomCache = new Map();
       const plaqueGeom = new THREE.PlaneGeometry(0.85, 0.22);
@@ -9584,9 +9732,9 @@
           if (idx >= shuffledArts.length) return;
           const art = shuffledArts[idx];
 
-          // Proportional museum sizing: well-fitted to wall spans, never overflowing entrances
-          const maxW = 2.40;
-          const maxH = 2.05;
+          // Proportional museum sizing: larger grand scale on open walls, clamped on narrower piers to never hang over walkways
+          const maxW = slot.maxW || 2.85;
+          const maxH = 2.40;
           let renderW = art.w;
           let renderH = art.h;
           const aspect = renderW / renderH;
@@ -9626,15 +9774,11 @@
           frameMesh.position.set(0, 0, 0);
           group.add(frameMesh);
 
-          // Self-illuminated artwork canvas: emissiveMap matches texture with 0.55 intensity
-          // This keeps the painting beautifully vivid, clear, and true to the original website images
-          // without casting blinding glare into the environment.
+          // Standard artwork canvas (pure non-emissive natural lighting, no artificial illumination or frame lamps)
           const canvasMesh = new THREE.Mesh(
             planeGeomCache.get(key),
             new THREE.MeshLambertMaterial({
               color: 0xffffff,
-              emissive: 0xffffff,
-              emissiveIntensity: 0.55,
               polygonOffset: true,
               polygonOffsetFactor: -2,
               polygonOffsetUnits: -2
@@ -9643,26 +9787,11 @@
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
-          // Classical Museum Brass Picture Light mounted above the frame
-          const lampArm = new THREE.Mesh(new THREE.CylinderGeometry(0.006, 0.006, 0.22, 8), brassLampMat);
-          lampArm.rotation.x = Math.PI / 4;
-          lampArm.position.set(0, renderH / 2 + border + 0.08, depth / 2 + 0.08);
-          group.add(lampArm);
-
-          const lampHoodW = Math.min(renderW * 0.50, 0.75);
-          const lampHood = new THREE.Mesh(new THREE.CylinderGeometry(0.018, 0.018, lampHoodW, 12), brassLampMat);
-          lampHood.rotation.z = Math.PI / 2;
-          lampHood.position.set(0, renderH / 2 + border + 0.16, depth / 2 + 0.15);
-          group.add(lampHood);
-
           this.texLoader.load(
             art.file,
             (tex) => {
               tex.colorSpace = THREE.SRGBColorSpace;
               canvasMesh.material.map = tex;
-              canvasMesh.material.emissiveMap = tex;
-              canvasMesh.material.emissive = new THREE.Color(0xffffff);
-              canvasMesh.material.emissiveIntensity = 0.55;
               canvasMesh.material.needsUpdate = true;
               if (this.renderer) {
                 this.renderer.initTexture(tex);
