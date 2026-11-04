@@ -861,6 +861,7 @@
       model: "3D_Source_Models/statues/statue-heknah.glb",
       fallbackModel: "assets/statues/statue-heknah.glb",
       audio: "assets/audio/statue audio/heknah-song1.mp3",
+      songTitle: "Heknah - At The Whim",
       duration: 86.73,
       targetHeight: 2.25,
       walkSpeed: 1.55
@@ -876,6 +877,7 @@
       model: "3D_Source_Models/statues/statue-jlb3.glb",
       fallbackModel: "assets/statues/statue-jlb3.glb",
       audio: "assets/audio/statue audio/JLB3-song1.mp3",
+      songTitle: "Joe Lee Bridges III - Back To Joe",
       duration: 102.92,
       targetHeight: 2.25,
       walkSpeed: 1.50
@@ -891,6 +893,8 @@
       model: "3D_Source_Models/statues/statue-R3E4.glb",
       fallbackModel: "assets/statues/statue-R3E4.glb",
       audio: "assets/audio/statue audio/R3E4-song1.mp3",
+      songTitle: "R3E4 - Pantone 448 C",
+      songTitleAlt: "R3E4 - Beat And Boxx",
       duration: 234.42,
       audioAlt: "assets/audio/statue audio/R3E4-song2.mp3",
       durationAlt: 21.29,
@@ -931,7 +935,7 @@
     {
       id: "silver_smitty",
       name: "Silver Smitty",
-      floor: 0,
+      floor: 2, // 3rd floor — never walks; only teleports (unseen, random 60-105s intervals)
       x: 12.0,
       z: 10.0,
       rotY: Math.PI,
@@ -10561,6 +10565,272 @@
       return path.length > 1 ? path[1] : path[0];
     }
 
+    // =========================================================================
+    // OBSTACLE-AWARE NAVIGATION GRID (shared by The Curator, Silver Smitty & statues)
+    // Rasterizes every static collider (walls, benches, vitrines, plinths, desks,
+    // racks...) into a per-floor occupancy grid so NPCs path AROUND furniture
+    // instead of walking straight into it between nav-graph waypoints.
+    // =========================================================================
+    buildObstacleGrid() {
+      const CELL = 0.4;
+      const AGENT_R = 0.42;
+      let minX = Infinity, maxX = -Infinity, minZ = Infinity, maxZ = -Infinity;
+      for (const n of this.navNodes) {
+        if (n.x < minX) minX = n.x;
+        if (n.x > maxX) maxX = n.x;
+        if (n.z < minZ) minZ = n.z;
+        if (n.z > maxZ) maxZ = n.z;
+      }
+      minX -= 12; maxX += 12; minZ -= 12; maxZ += 12;
+      const w = Math.ceil((maxX - minX) / CELL) + 1;
+      const h = Math.ceil((maxZ - minZ) / CELL) + 1;
+      const NF = CONFIG.NUM_FLOORS;
+      const grids = [];
+      for (let fl = 0; fl < NF; fl++) grids.push(new Uint8Array(w * h));
+
+      const markBox = (g, x0, x1, z0, z1) => {
+        const i0 = Math.max(0, Math.ceil((x0 - minX) / CELL));
+        const i1 = Math.min(w - 1, Math.floor((x1 - minX) / CELL));
+        const j0 = Math.max(0, Math.ceil((z0 - minZ) / CELL));
+        const j1 = Math.min(h - 1, Math.floor((z1 - minZ) / CELL));
+        for (let j = j0; j <= j1; j++) {
+          const row = j * w;
+          for (let i = i0; i <= i1; i++) g[row + i] = 1;
+        }
+      };
+      const markCyl = (g, cx, cz, r) => {
+        const i0 = Math.max(0, Math.ceil((cx - r - minX) / CELL));
+        const i1 = Math.min(w - 1, Math.floor((cx + r - minX) / CELL));
+        const j0 = Math.max(0, Math.ceil((cz - r - minZ) / CELL));
+        const j1 = Math.min(h - 1, Math.floor((cz + r - minZ) / CELL));
+        const r2 = r * r;
+        for (let j = j0; j <= j1; j++) {
+          const z = minZ + j * CELL - cz;
+          for (let i = i0; i <= i1; i++) {
+            const x = minX + i * CELL - cx;
+            if (x * x + z * z <= r2) g[j * w + i] = 1;
+          }
+        }
+      };
+
+      for (const c of this.colliders) {
+        if (c.disabled || c.isStatue || c.isCrate) continue;
+        const floors = (c.floor === 'all') ? [0, 1, 2, 3].slice(0, NF) : [c.floor];
+        for (const fl of floors) {
+          if (typeof fl !== 'number' || fl < 0 || fl >= NF) continue;
+          const base = fl * CONFIG.FLOOR_HEIGHT;
+          if (c.minY !== undefined && c.minY > base + 2.0) continue;   // overhead
+          if (c.maxY !== undefined && c.maxY < base + 0.25) continue;  // flush with floor
+          if (c.type === 'box') {
+            if (c.minX === c.maxX || c.minZ === c.maxZ) continue;
+            markBox(grids[fl], c.minX - AGENT_R, c.maxX + AGENT_R, c.minZ - AGENT_R, c.maxZ + AGENT_R);
+          } else if (c.type === 'cylinder') {
+            markCyl(grids[fl], c.x, c.z, (c.radius || 0.3) + AGENT_R);
+          }
+        }
+      }
+      this.navGrid = { CELL, minX, minZ, w, h, grids };
+      this.navSegCache = new Map();
+    }
+
+    gridBlocked(fl, x, z) {
+      const G = this.navGrid;
+      const i = Math.round((x - G.minX) / G.CELL);
+      const j = Math.round((z - G.minZ) / G.CELL);
+      if (i < 0 || j < 0 || i >= G.w || j >= G.h) return true;
+      return G.grids[fl][j * G.w + i] === 1;
+    }
+
+    gridLOS(fl, a, b) {
+      const dx = b.x - a.x, dz = b.z - a.z;
+      const len = Math.hypot(dx, dz);
+      const steps = Math.max(1, Math.ceil(len / (this.navGrid.CELL * 0.5)));
+      for (let k = 1; k < steps; k++) {
+        const t = k / steps;
+        if (this.gridBlocked(fl, a.x + dx * t, a.z + dz * t)) return false;
+      }
+      return true;
+    }
+
+    gridNearestFree(fl, x, z, maxRing = 8) {
+      const G = this.navGrid;
+      const ci = Math.round((x - G.minX) / G.CELL);
+      const cj = Math.round((z - G.minZ) / G.CELL);
+      const g = G.grids[fl];
+      const ok = (i, j) => i >= 0 && j >= 0 && i < G.w && j < G.h && g[j * G.w + i] === 0;
+      if (ok(ci, cj)) return { i: ci, j: cj };
+      for (let r = 1; r <= maxRing; r++) {
+        let best = null, bestD = Infinity;
+        for (let dj = -r; dj <= r; dj++) {
+          for (let di = -r; di <= r; di++) {
+            if (Math.abs(di) !== r && Math.abs(dj) !== r) continue;
+            if (!ok(ci + di, cj + dj)) continue;
+            const d = di * di + dj * dj;
+            if (d < bestD) { bestD = d; best = { i: ci + di, j: cj + dj }; }
+          }
+        }
+        if (best) return best;
+      }
+      return null;
+    }
+
+    gridAStar(fl, from, to) {
+      const G = this.navGrid;
+      const s = this.gridNearestFree(fl, from.x, from.z);
+      const e = this.gridNearestFree(fl, to.x, to.z);
+      if (!s || !e) return null;
+      const w = G.w, g = G.grids[fl];
+      const N = w * G.h;
+      const startIdx = s.j * w + s.i, goalIdx = e.j * w + e.i;
+      if (!this._astarBufs || this._astarBufs.N !== N) {
+        this._astarBufs = {
+          N,
+          gScore: new Float32Array(N),
+          came: new Int32Array(N),
+          stamp: new Uint32Array(N),
+          closed: new Uint32Array(N),
+          gen: 0
+        };
+      }
+      const B = this._astarBufs;
+      B.gen++;
+      const gen = B.gen;
+      const heapIdx = [], heapF = [];
+      const push = (idx, f) => {
+        heapIdx.push(idx); heapF.push(f);
+        let c = heapIdx.length - 1;
+        while (c > 0) {
+          const p = (c - 1) >> 1;
+          if (heapF[p] <= heapF[c]) break;
+          [heapF[p], heapF[c]] = [heapF[c], heapF[p]];
+          [heapIdx[p], heapIdx[c]] = [heapIdx[c], heapIdx[p]];
+          c = p;
+        }
+      };
+      const pop = () => {
+        const top = heapIdx[0];
+        const li = heapIdx.pop(), lf = heapF.pop();
+        if (heapIdx.length > 0) {
+          heapIdx[0] = li; heapF[0] = lf;
+          let c = 0;
+          for (;;) {
+            const l = c * 2 + 1, r = l + 1;
+            let m = c;
+            if (l < heapF.length && heapF[l] < heapF[m]) m = l;
+            if (r < heapF.length && heapF[r] < heapF[m]) m = r;
+            if (m === c) break;
+            [heapF[m], heapF[c]] = [heapF[c], heapF[m]];
+            [heapIdx[m], heapIdx[c]] = [heapIdx[c], heapIdx[m]];
+            c = m;
+          }
+        }
+        return top;
+      };
+      const hfn = (i, j) => {
+        const dx = Math.abs(i - e.i), dz = Math.abs(j - e.j);
+        return (dx + dz) + (Math.SQRT2 - 2) * Math.min(dx, dz);
+      };
+      B.gScore[startIdx] = 0; B.stamp[startIdx] = gen; B.came[startIdx] = -1;
+      push(startIdx, hfn(s.i, s.j));
+      const DIRS = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
+      let found = false, expansions = 0;
+      while (heapIdx.length > 0 && expansions < 40000) {
+        const cur = pop();
+        if (B.closed[cur] === gen) continue;
+        B.closed[cur] = gen;
+        expansions++;
+        if (cur === goalIdx) { found = true; break; }
+        const ci = cur % w, cj = (cur - ci) / w;
+        for (const [di, dj, cost] of DIRS) {
+          const ni = ci + di, nj = cj + dj;
+          if (ni < 0 || nj < 0 || ni >= w || nj >= G.h) continue;
+          const nIdx = nj * w + ni;
+          if (g[nIdx] === 1 || B.closed[nIdx] === gen) continue;
+          if (di !== 0 && dj !== 0 && (g[cj * w + ni] === 1 || g[nj * w + ci] === 1)) continue; // no corner cutting
+          const ng = B.gScore[cur] + cost;
+          if (B.stamp[nIdx] !== gen || ng < B.gScore[nIdx]) {
+            B.stamp[nIdx] = gen;
+            B.gScore[nIdx] = ng;
+            B.came[nIdx] = cur;
+            push(nIdx, ng + hfn(ni, nj));
+          }
+        }
+      }
+      if (!found) return null;
+      const cells = [];
+      for (let c = goalIdx; c !== -1; c = B.came[c]) {
+        const ci = c % w, cj = (c - ci) / w;
+        cells.push({ x: G.minX + ci * G.CELL, z: G.minZ + cj * G.CELL });
+        if (c === startIdx) break;
+      }
+      cells.reverse();
+      // String-pull smoothing so NPCs walk natural straight lines around furniture
+      const out = [];
+      let anchor = { x: from.x, z: from.z };
+      let k = 0;
+      while (k < cells.length) {
+        let far = k;
+        for (let m = cells.length - 1; m > k; m--) {
+          if (this.gridLOS(fl, anchor, cells[m])) { far = m; break; }
+        }
+        out.push(cells[far]);
+        anchor = cells[far];
+        k = far + 1;
+      }
+      return out;
+    }
+
+    // Returns intermediate obstacle-free waypoints from `from` to `to` on floor `fl` (ending at `to`)
+    gridSegment(fl, from, to) {
+      if (!this.navGrid) this.buildObstacleGrid();
+      const endBlocked = this.gridBlocked(fl, to.x, to.z);
+      let endPt = to;
+      if (endBlocked && !to.isStairNode) {
+        const ef = this.gridNearestFree(fl, to.x, to.z);
+        if (ef) {
+          endPt = Object.assign({}, to, {
+            x: this.navGrid.minX + ef.i * this.navGrid.CELL,
+            z: this.navGrid.minZ + ef.j * this.navGrid.CELL
+          });
+        }
+      }
+      if (this.gridLOS(fl, from, endPt)) return [endPt];
+      const pts = this.gridAStar(fl, from, endPt);
+      if (!pts || pts.length === 0) return [endPt];
+      const out = [];
+      for (let p = 0; p < pts.length - 1; p++) {
+        out.push({ x: pts[p].x, y: endPt.y, z: pts[p].z, floor: fl, refined: true });
+      }
+      out.push(endPt);
+      return out;
+    }
+
+    // Expands a nav-node path into an obstacle-aware waypoint list
+    refineNavPath(nodes, startPos, startFloor) {
+      if (!nodes || nodes.length === 0) return nodes;
+      if (!this.navGrid) this.buildObstacleGrid();
+      const out = [];
+      let prev = { x: startPos.x, z: startPos.z, floor: startFloor };
+      for (let k = 0; k < nodes.length; k++) {
+        const n = nodes[k];
+        if (n.floor === prev.floor && !this.isInStairwell(prev) && !this.isInStairwell(n)) {
+          let seg;
+          const key = (prev.id !== undefined) ? (prev.id + '_' + n.id) : null;
+          if (key && this.navSegCache.has(key)) {
+            seg = this.navSegCache.get(key);
+          } else {
+            seg = this.gridSegment(n.floor, prev, n);
+            if (key) this.navSegCache.set(key, seg);
+          }
+          for (const p of seg) out.push(p);
+        } else {
+          out.push(n);
+        }
+        prev = n;
+      }
+      return out;
+    }
+
     hasClearNavPath(fromPos, toPos, floor, margin = 0.25) {
       const x0 = fromPos.x;
       const z0 = fromPos.z;
@@ -12235,13 +12505,10 @@
     interact() {
       // 0. Check Interactive Statues
       if (this.statues && this.statues.length > 0) {
-        for (let s of this.statues) {
-          if (s.floor !== this.playerFloor) continue;
-          const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
-          if (d < 3.8) {
-            this.interactStatue(s);
-            return;
-          }
+        const nearS = this.getNearestStatue(3.8);
+        if (nearS) {
+          this.interactStatue(nearS);
+          return;
         }
       }
       // 1. Check Relics
@@ -12738,13 +13005,12 @@
 
       // Check near interactive statues
       if (this.statues && this.statues.length > 0) {
-        for (let s of this.statues) {
-          if (s.floor !== this.playerFloor) continue;
-          const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
-          if (d < 3.8) {
-            this.setInteractPrompt(`[E] COMMUNE: ${s.cfg.name.toUpperCase()}`);
-            return;
-          }
+        const nearS = this.getNearestStatue ? this.getNearestStatue(3.8) : null;
+        if (nearS) {
+          this.setInteractPrompt(nearS.isPlayingAudio
+            ? `[E] STOP: ${nearS.cfg.name.toUpperCase()}`
+            : `[E] COMMUNE: ${nearS.cfg.name.toUpperCase()}`);
+          return;
         }
       }
 
@@ -13619,6 +13885,13 @@
       let tx = goalPos.x;
       let tz = goalPos.z;
 
+      // Only rush straight at the goal if the obstacle grid confirms no furniture is in the way
+      if (directLOS && goalFloor === this.smittyFloor) {
+        if (!this.navGrid) this.buildObstacleGrid();
+        const closeIn = Math.hypot(this.smittyPos.x - goalPos.x, this.smittyPos.z - goalPos.z) < 1.6;
+        if (!closeIn && !this.gridLOS(this.smittyFloor, this.smittyPos, goalPos)) directLOS = false;
+      }
+
       if (!directLOS || goalFloor !== this.smittyFloor) {
         const goalId = this.findNearestNavNode(goalPos, goalFloor);
         if (
@@ -13628,7 +13901,7 @@
           this.smittyPathIndex >= this.smittyPath.length
         ) {
           const startId = this.findNearestNavNode(this.smittyPos, this.smittyFloor);
-          this.smittyPath = this.findShortestPath(startId, goalId);
+          this.smittyPath = this.refineNavPath(this.findShortestPath(startId, goalId), this.smittyPos, this.smittyFloor);
           this.smittyPathGoalId = goalId;
           this.smittyPathIndex = 0;
           if (this.smittyPath.length > 1) {
@@ -13641,7 +13914,7 @@
 
         let targetNode = this.smittyPath[this.smittyPathIndex] || goalPos;
         const distToTarget = Math.hypot(this.smittyPos.x - targetNode.x, this.smittyPos.z - targetNode.z);
-        if (distToTarget < 1.1) {
+        if (distToTarget < (targetNode.refined ? 0.6 : 1.1)) {
           if (this.smittyPathIndex < this.smittyPath.length - 1) {
             this.smittyPathIndex++;
             targetNode = this.smittyPath[this.smittyPathIndex];
@@ -14603,6 +14876,7 @@
       // 70% chance to wander across rooms on current floor, 30% chance to travel to another floor via the stairwells
       const stayOnFloor = (Math.random() < 0.70);
       const candidates = this.navNodes.filter(n => {
+        if (!this.isRoomNavNode(n)) return false;
         if (stayOnFloor && n.floor !== s.floor) return false;
         const d = Math.hypot(n.x - s.x, n.z - s.z);
         return stayOnFloor ? (d > 5.0 && d < 32.0) : (n.floor !== s.floor);
@@ -14612,8 +14886,79 @@
       const startId = this.findNearestNavNode({ x: s.x, z: s.z }, s.floor);
       const goalId = targetNode.id;
       if (startId < 0 || goalId < 0) return null;
-      const path = this.findShortestPath(startId, goalId);
+      const path = this.refineNavPath(this.findShortestPath(startId, goalId), { x: s.x, z: s.z }, s.floor);
       return (path && path.length > 0) ? path : null;
+    }
+
+    isRoomNavNode(n) {
+      const t = n.tag || '';
+      return !t.includes('Mid') && !t.includes('Stair') && !t.includes('stair') &&
+             !t.includes('door') && !t.includes('portal') && !t.includes('Base') && !t.includes('ext');
+    }
+
+    // Silver Smitty never walks/glides. He only teleports — and only while the player can't see him —
+    // to a random room on a random floor, at random 60–105 second intervals.
+    updateSilverSmittyTeleport(s, delta) {
+      if (!this.navNodes || this.navNodes.length === 0) return;
+      if (!this.navGrid) this.buildObstacleGrid();
+
+      const placeAt = (n) => {
+        let x = n.x, z = n.z;
+        const free = this.gridNearestFree(n.floor, x, z);
+        if (free) {
+          x = this.navGrid.minX + free.i * this.navGrid.CELL;
+          z = this.navGrid.minZ + free.j * this.navGrid.CELL;
+        }
+        s.x = x; s.z = z; s.floor = n.floor;
+        s.y = n.floor * CONFIG.FLOOR_HEIGHT;
+        s.group.position.set(s.x, s.y, s.z);
+        // Face the player the moment he appears somewhere new
+        s.yaw = Math.atan2(this.playerPos.x - s.x, this.playerPos.z - s.z);
+        s.group.rotation.y = s.yaw;
+        if (s.collider) {
+          s.collider.x = s.x; s.collider.z = s.z; s.collider.floor = s.floor;
+          s.collider.minY = s.y; s.collider.maxY = s.y + 2.35;
+        }
+      };
+
+      if (!s.placedInitially) {
+        // Start out on the 3rd floor in a random room
+        const startPool = this.navNodes.filter(n => n.floor === s.cfg.floor && this.isRoomNavNode(n) && !this.isNearStairwell(n));
+        if (startPool.length > 0) placeAt(startPool[Math.floor(Math.random() * startPool.length)]);
+        s.placedInitially = true;
+        s.teleportCooldown = 50.0 + Math.random() * 40.0;
+        return;
+      }
+
+      if (s.isPlayingAudio) return;
+      s.teleportCooldown -= delta;
+      if (s.teleportCooldown > 0) return;
+
+      if (!this._ssFrustum) {
+        this._ssFrustum = new THREE.Frustum();
+        this._ssMatrix = new THREE.Matrix4();
+        this._ssVec = new THREE.Vector3();
+      }
+      this.camera.updateMatrixWorld();
+      this._ssMatrix.multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+      this._ssFrustum.setFromProjectionMatrix(this._ssMatrix);
+      const inView = (x, y, z) => {
+        this._ssVec.set(x, y, z);
+        return this._ssFrustum.containsPoint(this._ssVec);
+      };
+
+      // Only relocate if the player cannot currently see him
+      if (inView(s.x, s.y + 1.2, s.z)) return;
+
+      const pool = this.navNodes.filter(n => {
+        if (!this.isRoomNavNode(n) || this.isNearStairwell(n)) return false;
+        if (n.floor === s.floor && Math.hypot(n.x - s.x, n.z - s.z) < 6.0) return false;
+        if (n.floor === this.playerFloor && Math.hypot(n.x - this.playerPos.x, n.z - this.playerPos.z) < 7.0) return false;
+        return !inView(n.x, n.floor * CONFIG.FLOOR_HEIGHT + 1.2, n.z);
+      });
+      if (pool.length === 0) return;
+      placeAt(pool[Math.floor(Math.random() * pool.length)]);
+      s.teleportCooldown = 60.0 + Math.random() * 45.0; // Random interval: 60 to 105 seconds
     }
 
     lerpStatueAngle(a, b, t) {
@@ -14627,6 +14972,12 @@
       const now = performance.now() / 1000;
 
       this.statues.forEach(s => {
+        // Silver Smitty never walks — he only teleports (unless he's playing audio for the player)
+        if (s.cfg.isSilverSmitty) {
+          this.updateSilverSmittyTeleport(s, delta);
+          if (!s.isPlayingAudio) return;
+        }
+
         // 1. IF CURRENTLY PLAYING AUDIO: Stop walking & maintain locked eye contact with the player!
         if (s.isPlayingAudio) {
           const elapsed = now - s.danceStartTime;
@@ -14750,6 +15101,21 @@
             }
           }
 
+          // Stuck detection: if blocked by something for ~0.7s, replan a fresh obstacle-aware route
+          const intended = Math.hypot(stepX, stepZ);
+          const actual = Math.hypot(tempPos.x - s.x, tempPos.z - s.z);
+          if (intended > 0.001 && actual < intended * 0.25) {
+            s.stuckTimer = (s.stuckTimer || 0) + delta;
+            if (s.stuckTimer > 0.7) {
+              s.stuckTimer = 0;
+              const np = this.pickStatueWanderPath(s);
+              if (np && np.length > 0) { s.navPath = np; s.navIndex = 0; }
+              else { s.aiState = "IDLE"; s.aiTimer = 1.0; }
+            }
+          } else {
+            s.stuckTimer = 0;
+          }
+
           s.x = tempPos.x;
           s.z = tempPos.z;
 
@@ -14788,23 +15154,45 @@
       // Handled inside updateStatues
     }
 
-    interactStatue(s) {
-      if (s.isPlayingAudio) return; // Anti-spam lockout while track is playing
-
-      // Stop any other currently playing statue audio
-      if (this.activeStatueAudio && !this.activeStatueAudio.paused) {
-        this.activeStatueAudio.pause();
-        this.activeStatueAudio.currentTime = 0;
-        this.statues.forEach(other => {
-          if (other !== s) {
-            other.isPlayingAudio = false;
-            other.isDancing = false;
-            other.statueRoot.scale.set(1, 1, 1);
-            other.statueRoot.position.y = other.baseY;
-            other.statueRoot.rotation.set(0, 0, 0);
-          }
-        });
+    getNearestStatue(maxDist) {
+      if (!this.statues) return null;
+      let best = null;
+      let bestD = maxDist;
+      for (let s of this.statues) {
+        if (s.floor !== this.playerFloor || !s.group.visible) continue;
+        const d = Math.hypot(this.playerPos.x - s.x, this.playerPos.z - s.z);
+        if (d < bestD) { bestD = d; best = s; }
       }
+      return best;
+    }
+
+    stopStatueAudio(s) {
+      if (s.activeAudioEl) {
+        s.activeAudioEl.pause();
+        s.activeAudioEl.currentTime = 0;
+      }
+      if (this.activeStatueAudio === s.activeAudioEl) this.activeStatueAudio = null;
+      s.activeAudioEl = null;
+      s.isPlayingAudio = false;
+      s.isDancing = false;
+      s.statueRoot.scale.set(1, 1, 1);
+      s.statueRoot.position.y = s.baseY;
+      s.statueRoot.rotation.set(0, 0, 0);
+      s.aiState = "IDLE";
+      s.aiTimer = 0.8 + Math.random() * 1.5;
+    }
+
+    interactStatue(s) {
+      // Pressing E on a statue that's already playing stops its audio & animation
+      if (s.isPlayingAudio) {
+        this.stopStatueAudio(s);
+        return;
+      }
+
+      // Stop any other currently playing statue
+      this.statues.forEach(other => {
+        if (other !== s && other.isPlayingAudio) this.stopStatueAudio(other);
+      });
 
       // Select audio track:
       // - Silver Smitty: random track from his 6-track pool
@@ -14848,7 +15236,9 @@
         chosenAudio.volume = 0.88;
         chosenAudio.play().catch(() => {});
       }
-      this.showSystemNotification(`♪ ${s.cfg.name.toUpperCase()} ♪`);
+      // Song title notification only for statues with a song title (JLB3, Heknah, R3E4)
+      const title = (chosenAudio && chosenAudio === s.audioElAlt) ? s.cfg.songTitleAlt : s.cfg.songTitle;
+      if (title) this.showSystemNotification(title);
       if (this.triggerLeftHandGrab) this.triggerLeftHandGrab();
     }
 
