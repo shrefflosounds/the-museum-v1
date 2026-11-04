@@ -4445,7 +4445,8 @@
       };
 
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
-      this.createWall(0, midY, -20.0, 0.34, totalH, 6.4, mats.wallConcrete, true, 'all');
+      // Stop the divider short of both landings so the player can turn between flights.
+      this.createWall(0, midY, -20.0, 0.34, totalH, 5.56, mats.wallConcrete, true, 'all');
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
@@ -4512,7 +4513,8 @@
 
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
-      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.8, mats.wallConcrete, true, 'all');
+      // Leave the same turning clearance at each end of the second stairwell divider.
+      this.createWall(-20, midY, 23.2, 0.34, totalH, 3.96, mats.wallConcrete, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
