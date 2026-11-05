@@ -15325,9 +15325,6 @@
           if (this.navGridRefreshTimer <= 0) {
             this.buildObstacleGrid();
             this.navGridRefreshTimer = 2.0;
-            this.smittyPath = [];
-            this.smittyPathIndex = 0;
-            this.smittyPathGoalId = -1;
           }
         }
         this.updateSmitty(delta);
