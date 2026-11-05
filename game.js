@@ -863,7 +863,7 @@
       audio: "assets/audio/statue audio/heknah-song1.mp3",
       songTitle: "Heknah - At The Whim",
       duration: 86.73,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.55
     },
     {
@@ -879,7 +879,7 @@
       audio: "assets/audio/statue audio/JLB3-song1.mp3",
       songTitle: "Joe Lee Bridges III - Back To Joe",
       duration: 102.92,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.50
     },
     {
@@ -899,7 +899,7 @@
       audioAlt: "assets/audio/statue audio/R3E4-song2.mp3",
       durationAlt: 21.29,
       altChance: 0.05,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.55
     },
     {
@@ -914,7 +914,7 @@
       audio: "assets/audio/statue audio/Rat Hat Toing-song1.mp3",
       songTitle: "Smitty Fantastic - Hexagram 27",
       duration: 165.49,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.50,
       stayOnFloor: true
     },
@@ -927,7 +927,7 @@
       rotY: 0,
       faceOffset: -Math.PI / 2,
       model: "assets/statues/statue-Tourist.glb",
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.50,
       stayOnFloor: true
     },
@@ -943,7 +943,7 @@
       fallbackModel: "assets/statues/statue-bird-squid.glb",
       audio: "assets/audio/statue audio/Bird-sound1.mp3",
       duration: 5.67,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.60
     },
     {
@@ -958,7 +958,7 @@
       fallbackModel: "assets/statues/statue-pumpump.glb",
       audio: "assets/audio/statue audio/Pumpump-Sound1.mp3",
       duration: 96.00,
-      targetHeight: 2.025,
+      targetHeight: 1.8225,
       walkSpeed: 1.48
     },
     {
@@ -980,7 +980,7 @@
         { src: "assets/audio/statue audio/silversmitty6.mp3", duration: 2.30 }
       ],
       duration: 2.30,
-      targetHeight: 1.935,
+      targetHeight: 1.7415,
       walkSpeed: 1.50,
       noAnimation: true,
       isSilverSmitty: true
@@ -4132,6 +4132,15 @@
       this.mirrorCamera = new THREE.PerspectiveCamera(74, 512/1024, 0.1, 150);
       this.scene.add(this.mirrorCamera);
 
+      // Full-body Mirror Setup
+      this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 1024, {
+        minFilter: THREE.LinearFilter,
+        magFilter: THREE.LinearFilter,
+        format: THREE.RGBAFormat
+      });
+      this.mirrorCamera = new THREE.PerspectiveCamera(74, 512/1024, 0.1, 150);
+      this.scene.add(this.mirrorCamera);
+
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
       this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
       this.scene.add(this.ambientLight);
@@ -4260,6 +4269,17 @@
       this.createSlab(0, y0, 7, 8.0, 42.0, floorMat, mats.ceiling, ceilH);
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
+
+      if (fl === 0) {
+        const mirrorGeom = new THREE.PlaneGeometry(2.0, 3.0);
+        const mirrorMat = new THREE.MeshBasicMaterial({ map: this.mirrorRenderTarget.texture });
+        this.hallwayMirror = new THREE.Mesh(mirrorGeom, mirrorMat);
+        // Wall is at x=4, facing East => x=4.01, z=1.0
+        this.hallwayMirror.position.set(4.01, y0 + 1.5, 1.0);
+        this.hallwayMirror.rotation.y = Math.PI / 2; // Facing positive X
+        this.hallwayMirror.visible = false; // Initially hidden
+        this.scene.add(this.hallwayMirror);
+      }
 
       if (fl === 0) {
         const mirrorGeom = new THREE.PlaneGeometry(2.0, 3.0);
@@ -15486,6 +15506,34 @@
           this.renderer.render(this.scene, this.mirrorCamera);
 
           // Restore main renderer
+          this.renderer.setRenderTarget(null);
+          this.hallwayMirror.visible = true;
+        } else {
+          this.hallwayMirror.visible = false;
+        }
+      }
+
+      // Third-person Hallway Mirror logic
+      if (this.hallwayMirror) {
+        if (this.isThirdPersonView() && this.playerFloor === 0) {
+          this.hallwayMirror.visible = true;
+
+          const camPos = this.camera.position.clone();
+          const mirrorX = 4.01;
+          const distToMirror = camPos.x - mirrorX;
+          this.mirrorCamera.position.set(mirrorX - distToMirror, camPos.y, camPos.z);
+
+          const camDir = new THREE.Vector3();
+          this.camera.getWorldDirection(camDir);
+          camDir.x = -camDir.x; // Reflect X direction
+
+          const lookTarget = this.mirrorCamera.position.clone().add(camDir);
+          this.mirrorCamera.lookAt(lookTarget);
+
+          this.hallwayMirror.visible = false;
+          this.renderer.setRenderTarget(this.mirrorRenderTarget);
+          this.renderer.render(this.scene, this.mirrorCamera);
+
           this.renderer.setRenderTarget(null);
           this.hallwayMirror.visible = true;
         } else {
