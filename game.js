@@ -4281,16 +4281,6 @@
         this.scene.add(this.hallwayMirror);
       }
 
-      if (fl === 0) {
-        const mirrorGeom = new THREE.PlaneGeometry(2.0, 3.0);
-        const mirrorMat = new THREE.MeshBasicMaterial({ map: this.mirrorRenderTarget.texture });
-        this.hallwayMirror = new THREE.Mesh(mirrorGeom, mirrorMat);
-        // Wall is at x=4, facing East => x=4.01, z=1.0
-        this.hallwayMirror.position.set(4.01, y0 + 1.5, 1.0);
-        this.hallwayMirror.rotation.y = Math.PI / 2; // Facing positive X
-        this.hallwayMirror.visible = false; // Initially hidden
-        this.scene.add(this.hallwayMirror);
-      }
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
@@ -15506,34 +15496,6 @@
           this.renderer.render(this.scene, this.mirrorCamera);
 
           // Restore main renderer
-          this.renderer.setRenderTarget(null);
-          this.hallwayMirror.visible = true;
-        } else {
-          this.hallwayMirror.visible = false;
-        }
-      }
-
-      // Third-person Hallway Mirror logic
-      if (this.hallwayMirror) {
-        if (this.isThirdPersonView() && this.playerFloor === 0) {
-          this.hallwayMirror.visible = true;
-
-          const camPos = this.camera.position.clone();
-          const mirrorX = 4.01;
-          const distToMirror = camPos.x - mirrorX;
-          this.mirrorCamera.position.set(mirrorX - distToMirror, camPos.y, camPos.z);
-
-          const camDir = new THREE.Vector3();
-          this.camera.getWorldDirection(camDir);
-          camDir.x = -camDir.x; // Reflect X direction
-
-          const lookTarget = this.mirrorCamera.position.clone().add(camDir);
-          this.mirrorCamera.lookAt(lookTarget);
-
-          this.hallwayMirror.visible = false;
-          this.renderer.setRenderTarget(this.mirrorRenderTarget);
-          this.renderer.render(this.scene, this.mirrorCamera);
-
           this.renderer.setRenderTarget(null);
           this.hallwayMirror.visible = true;
         } else {
