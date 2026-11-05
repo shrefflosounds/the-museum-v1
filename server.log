@@ -1,0 +1,587 @@
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:49] "GET /GAME_TEXT.txt?t=1793913589780 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:19:50] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:14] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:14] "GET /assets/PlayerHand.glb?v=1793913590522 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:52] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /GAME_TEXT.txt?t=1793913653044 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:20:53] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:17] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:17] "GET /assets/PlayerHand.glb?v=1793913653709 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:23] "GET /assets/LeftHand.glb?v=1793913653709 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:23] "GET /assets/relics/AsceticSebring.glb?v=1793913653711 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:23] "GET /assets/relics/BlackNose.glb?v=1793913653712 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:23] "GET /assets/relics/ChickenLeg.glb?v=1793913653712 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:23] "GET /assets/relics/FighterBoots.glb?v=1793913653713 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:54] "GET /GAME_TEXT.txt?t=1793913714805 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:21:55] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:23] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:23] "GET /assets/PlayerHand.glb?v=1793913715486 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:29] "GET /assets/LeftHand.glb?v=1793913715486 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:29] "GET /assets/relics/AsceticSebring.glb?v=1793913715488 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:29] "GET /assets/relics/BlackNose.glb?v=1793913715489 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:29] "GET /assets/relics/ChickenLeg.glb?v=1793913715489 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:29] "GET /assets/relics/FighterBoots.glb?v=1793913715490 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/HarbingersBoot.glb?v=1793913715490 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/MonaLisa.glb?v=1793913715491 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/PlushMonkey.glb?v=1793913715491 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/R3E4ActionFigure.glb?v=1793913715491 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/Scorpion.glb?v=1793913715492 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/ShreffloHelm.glb?v=1793913715492 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/SmittyDoll.glb?v=1793913715493 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:41] "GET /assets/relics/Snake.glb?v=1793913715493 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:42] "GET /assets/relics/StoneTablet.glb?v=1793913715493 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:42] "GET /assets/relics/VictoryBust.glb?v=1793913715494 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:42] "GET /assets/cushioning.glb?v=1793913715495 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:22:54] "GET /assets/smitty.glb?v=1793913715496 HTTP/1.1" 200 -
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 55614)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /GAME_TEXT.txt?t=1793913820590 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:40] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:41] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:41] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:41] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:41] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:23:41] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:05] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:06] "GET /assets/PlayerHand.glb?v=1793913821312 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:12] "GET /assets/LeftHand.glb?v=1793913821312 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:12] "GET /assets/relics/AsceticSebring.glb?v=1793913821314 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:12] "GET /assets/relics/BlackNose.glb?v=1793913821315 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:12] "GET /assets/relics/ChickenLeg.glb?v=1793913821315 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:12] "GET /assets/relics/FighterBoots.glb?v=1793913821316 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/HarbingersBoot.glb?v=1793913821317 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/MonaLisa.glb?v=1793913821317 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/PlushMonkey.glb?v=1793913821318 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/R3E4ActionFigure.glb?v=1793913821318 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/Scorpion.glb?v=1793913821318 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/ShreffloHelm.glb?v=1793913821319 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/SmittyDoll.glb?v=1793913821319 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/Snake.glb?v=1793913821320 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/StoneTablet.glb?v=1793913821320 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/relics/VictoryBust.glb?v=1793913821320 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:25] "GET /assets/cushioning.glb?v=1793913821322 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:38] "GET /assets/cushioning.glb?v=1793913821323 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:51] "GET /assets/smitty.glb?v=1793913821323 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/audio/player_footstep.wav?v=1793913821931 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/marble_floor.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/wood_parquet.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/wood_floor_dark.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/stone_tiles.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/gallery_plaster.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/basement_brick.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/vault_concrete.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/mahogany_wood.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/ceiling_plaster.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/exit_door_left.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/exit_door_right.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/exit_doors_wood.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/stall_sign.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/textures/museum-sign.jpeg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/034_mocha-slip.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/009_leadership-lemon.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/024_smittys-room-live-action.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/137_piano-chase.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/010_star-ez-duz-it.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/022_spongeclownbob.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/013_gemini.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/139_Chloe-Bailey-portrait.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/029_Shrefflo-SmittyFantastic.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/015_E9e.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/138_Tiffin_Spacelint_render1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/006_Curator_s_Assets.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/016_bathbomb.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/018_elderly-portrait.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/021_heknah-wallpaper-AS.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/008_Smitty-wild-animal-framed.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/002_Emoji-movie.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/007_painting-grey-face.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/020_sf-astonishment-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/027_2008-red-fox.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/005_frenchhouse.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/025_pinocchio.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/028_rip-odi.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/032_dynamic.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/001_Smitty-silly.gif HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/140_pre-watered-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/017_crate-challenge.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/011_smitty-cola-melt-shirtless.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/031_trumpa.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/003_pinkthing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/012_shocksites.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/019_astonishment.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/030_cherry-drink.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/004_iwanttolivebythesea.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/023_smittys-room-toon.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/033_work-breakroom.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/141_rat-ymca.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/026_shawtys-mix.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/062_dogandghostthings.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/145_smitty-0-bigman-shirt.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/067_grafeetee.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/043_dog-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/065_messages-from-God.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/061_annoyeornej.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/044_Smitty-pixels-mussel-heart.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/053_purple-smile.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/068_SF-penguin-1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/052_spew.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/051_imagen.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/039_bird-mouth.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/035_spotify-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/045_Hans.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/056_smitty-cow.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/040_4Who.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/048_Sand.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/037_misty-morning.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/038_omelette-on_paper.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/050_peter-griffin-tribute.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/041_Joyous_Protection.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/055_liberal-lawn-sign.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/142_est-fni-first-cover.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/143_scooby-fan.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/042_made-u-a-bird.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/046_blip-vision-pizza-reach.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/057_ancient-predators.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/058_hey-guy-tv.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/064_Space-planet.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/054_Smitty-ocean-storm.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/146_i-love-watching-you.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/036_shake-it-for-me.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/144_coach-nun.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/060_Smitty-BlackBox_Sigil_Tee.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/059_yellow-guy-cute.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/047_lake-excursion-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/049_floating-boxer-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/066_beach-video.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/063_thin-blue-line.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/094_escapism-by-medication.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/079_paint-red-house.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/151_smitty-crouching-disco-colors.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/089_snapchat-athlete-gun-woman-boo.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/070_SF_beach_photo_drawn_eyebrows.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/148_smittys-first-appearance.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/076_consumer-sculpture.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/093_saxophone-fight.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/091_painted-smitty-red.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/097_Ascetic_Sebring_ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/096_dr-coach-incubation.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/080_the-harbinger.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:24:59] "GET /assets/gallery/078_pointy-world-car-fire.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/077_green-guy-with-wings.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/149_Harbinger-Smitty-Live-Action.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/074_cow-flag.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/075_the-big-man.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/090_smitty-shirt-handmade.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/101_green-beanie-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/095_Minnesota-fish-painting.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/083_luv-graffiti-shirt-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/087_photo-turned-drawing-creatureg.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/099_lake-blue-violet.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/150_129_smitty-colorful-mask-edit.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/086_person-with-mask-behind.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/088_goblin-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/082_now-watch-me-whip.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/100_orange-stick-figure.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/085_painting-with-a-bed.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/069_penguin-2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/098_hairy-guy-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/071_yellow-ball-face.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/092_three-creatures.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/102_person-on-fire.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/072_evil-purple-pixelated-face.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/147_smitty-qr-code.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/081_monkey-full-body.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/073_fancy.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/084_sf-mini-drawing-red.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/120_yoda-smoking-weed.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/105_shirt-ad-flight.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/111_run-your-shit-2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/153_smitty-face-headshot-new.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/108_darling-actor-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/130_dr-coach-full-face.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/155_shrefflo-symbol.gif HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/106_simple-drawing-flower.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/103_painting-red-abstract.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/115_Shrefflo-ocean-cap-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/119_intense-face-clown.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/123_Bird.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/129_winter-2022-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/121_Agressive-Defensive-Stance.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/107_framed-sf-animal-2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/126_older-bald-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/122_meg-chain-sf-crate-challenge.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/154_Shrefflo-store-2025-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/113_early-memorial-2.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/135_Most-Famous-cover.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/116_cartoon-ampersand-face.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/133_2-hands-drawing-at-once.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/136_big-party-weather.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/118_orange-kitchen-visions.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/124_gaiter-mask-dr-coach-ad.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/134_no-weather-data.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/127_selfie-in-the-woods.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/117_painted-sheet-mouse-shapes.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/152_2019-red-phone-face-drawing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/125_tissue.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/104_clown-fast-food.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/131_Auto-shop-nightmare.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/132_pink-slime-thing.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/110_run-your-shit-1.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/109_beekeeper.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/112_hundred-percent-can.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/114_cheetah-in-space.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/gallery/128_curly-hair-low-res-guy.jpg HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/audio/statue%20audio/heknah-song1.mp3 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:00] "GET /assets/audio/statue%20audio/Bird-sound1.mp3 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:01] "GET /assets/audio/statue%20audio/JLB3-song1.mp3 HTTP/1.1" 200 -
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 46664)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 59946)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:46] "GET /GAME_TEXT.txt?t=1793913946782 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:25:47] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:10] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:10] "GET /assets/PlayerHand.glb?v=1793913947472 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:16] "GET /assets/LeftHand.glb?v=1793913947473 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:16] "GET /assets/relics/AsceticSebring.glb?v=1793913947474 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:16] "GET /assets/relics/BlackNose.glb?v=1793913947475 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:16] "GET /assets/relics/ChickenLeg.glb?v=1793913947476 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:16] "GET /assets/relics/FighterBoots.glb?v=1793913947476 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/HarbingersBoot.glb?v=1793913947477 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/MonaLisa.glb?v=1793913947477 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/PlushMonkey.glb?v=1793913947478 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/R3E4ActionFigure.glb?v=1793913947478 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/Scorpion.glb?v=1793913947478 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/ShreffloHelm.glb?v=1793913947479 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/SmittyDoll.glb?v=1793913947479 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/Snake.glb?v=1793913947480 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/StoneTablet.glb?v=1793913947480 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/relics/VictoryBust.glb?v=1793913947480 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:28] "GET /assets/cushioning.glb?v=1793913947481 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:41] "GET /assets/cushioning.glb?v=1793913947482 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:26:41] "GET /assets/cushioning.glb?v=1793913947483 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:00] "GET /assets/smitty.glb?v=1793913947483 HTTP/1.1" 200 -
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 37966)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 53212)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 53220)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /index.html HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /style.css?v=1.6.1 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /icon.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /libs/three.min.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /libs/GLTFLoader.js HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /text_loader.js?v=615_1793780000 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /game.js?v=2.2.13 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/ui/hud_relic_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/ui/blob_blue.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/ui/hud_health_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/ui/blob_strip.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/ui/hud_ammo_bg.png HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /assets/fonts/Caryn.ttf HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:29] "GET /GAME_TEXT.txt?t=1793914049932 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/statue-bird-squid.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/statue-heknah.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/statue-jlb3.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/statue-pumppump.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/Silver%20Smitty.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /3D_Source_Models/statues/statue-R3E4.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:30] "GET /assets/statues/statue-Rat%20Hat%20Toing.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:53] "GET /assets/statues/statue-Tourist.glb HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:27:53] "GET /assets/PlayerHand.glb?v=1793914050640 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:00] "GET /assets/LeftHand.glb?v=1793914050641 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:00] "GET /assets/relics/AsceticSebring.glb?v=1793914050642 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:00] "GET /assets/relics/BlackNose.glb?v=1793914050643 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:00] "GET /assets/relics/ChickenLeg.glb?v=1793914050644 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:00] "GET /assets/relics/FighterBoots.glb?v=1793914050644 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:12] "GET /assets/relics/HarbingersBoot.glb?v=1793914050645 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:18] "GET /assets/relics/MonaLisa.glb?v=1793914050645 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:18] "GET /assets/relics/PlushMonkey.glb?v=1793914050646 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:18] "GET /assets/relics/R3E4ActionFigure.glb?v=1793914050646 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:18] "GET /assets/relics/Scorpion.glb?v=1793914050646 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/relics/ShreffloHelm.glb?v=1793914050647 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/relics/SmittyDoll.glb?v=1793914050647 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/relics/Snake.glb?v=1793914050647 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/relics/StoneTablet.glb?v=1793914050648 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/relics/VictoryBust.glb?v=1793914050648 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:19] "GET /assets/cushioning.glb?v=1793914050649 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:31] "GET /assets/cushioning.glb?v=1793914050650 HTTP/1.1" 200 -
+127.0.0.1 - - [05/Nov/2026 21:28:31] "GET /assets/smitty.glb?v=1793914050651 HTTP/1.1" 200 -
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 54470)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
+----------------------------------------
+Exception occurred during processing of request from ('127.0.0.1', 42026)
+Traceback (most recent call last):
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 697, in process_request_thread
+    self.finish_request(request, client_address)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 1326, in finish_request
+    self.RequestHandlerClass(request, client_address, self,
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 676, in __init__
+    super().__init__(*args, **kwargs)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 766, in __init__
+    self.handle()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 440, in handle
+    self.handle_one_request()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 428, in handle_one_request
+    method()
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 683, in do_GET
+    self.copyfile(f, self.wfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/http/server.py", line 882, in copyfile
+    shutil.copyfileobj(source, outputfile)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/shutil.py", line 204, in copyfileobj
+    fdst_write(buf)
+  File "/home/jules/.pyenv/versions/3.12.13/lib/python3.12/socketserver.py", line 845, in write
+    self._sock.sendall(b)
+ConnectionResetError: [Errno 104] Connection reset by peer
+----------------------------------------
