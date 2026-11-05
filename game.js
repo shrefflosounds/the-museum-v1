@@ -3874,6 +3874,16 @@
 
       // Input Map & Movement State
       this.keys = {};
+      this.viewMode = localStorage.getItem('the_museum_view_mode') === 'third-person' ? 'third-person' : 'first-person';
+      const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter < 4 ? savedCharacter : 0;
+      this.playerModelRoot = null;
+      this.playerModel = null;
+      this.playerMixer = null;
+      this.playerActions = {};
+      this.playerCurrentAction = null;
+      this.playerModelLoadId = 0;
+      this.thirdPersonCameraReady = false;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
       this.recoilOffset = { z: 0, rotX: 0 };
@@ -4019,6 +4029,10 @@
         settingsBubbleBtn: document.getElementById('settings-bubble-btn'),
         settingsCloseBtn: document.getElementById('settings-close-btn'),
         settingsBackBtn: document.getElementById('settings-back-btn'),
+        firstPersonViewBtn: document.getElementById('view-first-person-btn'),
+        thirdPersonViewBtn: document.getElementById('view-third-person-btn'),
+        playerCharacterSelect: document.getElementById('player-character-select'),
+        playerCharacterStatus: document.getElementById('player-character-status'),
         aboutModal: document.getElementById('about-modal'),
         aboutBubbleBtn: document.getElementById('about-bubble-btn'),
         aboutCloseBtn: document.getElementById('about-close-btn'),
@@ -4061,6 +4075,7 @@
       this.randomizeSmittySpawn();
       this.buildWeaponViewmodel();
       this.buildLeftHandViewmodel();
+      this.createPlayerModelRig();
       this.spawnRelics();
       this.spawnAmmoPickups();
       this.updateRelicFloorVisibility();
@@ -4071,6 +4086,7 @@
       this.setupEventListeners();
       this.updateSmittyModeUI();
       this.updateMusicModeUI();
+      this.updatePlayerViewUI();
       if (this.dom.aboutBuildTag) {
         this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
       }
@@ -11304,6 +11320,248 @@
       });
     }
 
+    createPlayerModelRig() {
+      this.playerModelRoot = new THREE.Group();
+      this.playerModelRoot.name = 'player-character';
+      this.playerModelRoot.visible = false;
+      this.scene.add(this.playerModelRoot);
+      if (this.viewMode === 'third-person') this.loadPlayerCharacter();
+      this.updatePlayerViewVisibility();
+    }
+
+    isThirdPersonView() {
+      return this.viewMode === 'third-person' && !this.isSpectatorMode;
+    }
+
+    updatePlayerViewUI() {
+      const firstPerson = this.viewMode === 'first-person';
+      [[this.dom.firstPersonViewBtn, firstPerson], [this.dom.thirdPersonViewBtn, !firstPerson]].forEach(([button, active]) => {
+        if (!button) return;
+        button.classList.toggle('active', active);
+        button.classList.toggle('mode-on', active);
+        button.classList.toggle('mode-off', !active);
+        button.setAttribute('aria-pressed', String(active));
+      });
+      if (this.dom.playerCharacterSelect) {
+        this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
+      }
+      this.updatePlayerViewVisibility();
+    }
+
+    updatePlayerViewVisibility() {
+      const thirdPerson = this.isThirdPersonView();
+      const showHands = !thirdPerson && !this.isSpectatorHudHidden;
+      if (this.weaponRig) this.weaponRig.visible = showHands;
+      if (this.leftArmRig) this.leftArmRig.visible = showHands;
+      if (this.playerModelRoot) this.playerModelRoot.visible = thirdPerson && !!this.playerModel;
+    }
+
+    setPlayerViewMode(mode) {
+      if (mode !== 'first-person' && mode !== 'third-person') return;
+      this.viewMode = mode;
+      localStorage.setItem('the_museum_view_mode', mode);
+      this.thirdPersonCameraReady = false;
+      this.updatePlayerViewUI();
+      if (mode === 'third-person' && !this.playerModel) this.loadPlayerCharacter();
+      if (this.dom.playerCharacterStatus) {
+        this.dom.playerCharacterStatus.textContent = mode === 'third-person'
+          ? 'Third-person camera and character enabled.'
+          : 'First-person view restored.';
+      }
+    }
+
+    setPlayerCharacter(index) {
+      const next = Number(index);
+      if (!Number.isInteger(next) || next < 0 || next > 3) return;
+      this.selectedPlayerCharacter = next;
+      localStorage.setItem('the_museum_player_character', String(next));
+      this.updatePlayerViewUI();
+      if (this.viewMode === 'third-person') this.loadPlayerCharacter();
+    }
+
+    disposePlayerModel(model) {
+      if (!model) return;
+      model.traverse((child) => {
+        if (!child.isMesh) return;
+        if (child.geometry) child.geometry.dispose();
+        const materials = Array.isArray(child.material) ? child.material : [child.material];
+        materials.forEach((material) => {
+          if (!material) return;
+          Object.keys(material).forEach((key) => {
+            const value = material[key];
+            if (value && value.isTexture) value.dispose();
+          });
+          material.dispose();
+        });
+      });
+    }
+
+    loadPlayerCharacter() {
+      const characters = [
+        { name: 'The Animal', file: 'the-animal.glb' },
+        { name: 'The Man', file: 'the-man.glb' },
+        { name: 'Sand', file: 'sand.glb' },
+        { name: 'Cook', file: 'cook.glb' }
+      ];
+      const character = characters[this.selectedPlayerCharacter];
+      if (!character || !this.playerModelRoot) return;
+      const loadId = ++this.playerModelLoadId;
+      if (this.dom.playerCharacterStatus) this.dom.playerCharacterStatus.textContent = `Loading ${character.name}…`;
+      const loader = new THREE.GLTFLoader();
+      const cacheKey = window._ASSET_VERSION || APP_VERSION;
+      loader.load(`assets/playermodels/${character.file}?v=${cacheKey}`, (gltf) => {
+        if (loadId !== this.playerModelLoadId) {
+          this.disposePlayerModel(gltf.scene);
+          return;
+        }
+
+        try {
+          const box = new THREE.Box3().setFromObject(gltf.scene);
+          const size = box.getSize(new THREE.Vector3());
+          if (!Number.isFinite(size.y) || size.y <= 0) {
+            throw new Error(`Player model "${character.name}" has invalid bounds.`);
+          }
+
+          this.disposePlayerModel(this.playerModel);
+          this.playerModelRoot.clear();
+          this.playerModel = gltf.scene;
+          this.playerModel.scale.setScalar(1.75 / size.y);
+          this.playerModel.position.y = -box.min.y * this.playerModel.scale.y;
+          this.playerModel.traverse((child) => {
+            if (!child.isMesh) return;
+            child.castShadow = false;
+            child.receiveShadow = false;
+            child.frustumCulled = false;
+            if (child.isSkinnedMesh) this.validatePlayerSkin(child, character.name);
+          });
+          this.playerModelRoot.add(this.playerModel);
+          this.playerMixer = new THREE.AnimationMixer(this.playerModel);
+          this.playerActions = {};
+          gltf.animations.forEach((clip) => {
+            const action = this.playerMixer.clipAction(clip);
+            action.setEffectiveTimeScale(1);
+            action.setEffectiveWeight(1);
+            const name = clip.name.toLowerCase();
+            if (name.includes('jump')) this.playerActions.Jump = action;
+            else if (name.includes('run')) this.playerActions.Run = action;
+            else if (name.includes('walk')) this.playerActions.Walk = action;
+            else if (name.includes('idle')) this.playerActions.Idle = action;
+          });
+          this.playerCurrentAction = null;
+          this.playPlayerAnimation('Idle');
+          this.playerModelRoot.visible = this.isThirdPersonView();
+          if (this.dom.playerCharacterStatus) this.dom.playerCharacterStatus.textContent = `${character.name} loaded.`;
+        } catch (error) {
+          this.disposePlayerModel(gltf.scene);
+          this.playerModel = null;
+          this.playerMixer = null;
+          this.playerModelRoot.clear();
+          this.playerModelRoot.visible = false;
+          console.error(`Could not prepare player model "${character.name}".`, error);
+          if (this.dom.playerCharacterStatus) this.dom.playerCharacterStatus.textContent = `Could not prepare ${character.name}. See console for details.`;
+        }
+      }, undefined, (error) => {
+        if (loadId !== this.playerModelLoadId) return;
+        console.error(`Could not load player model "${character.name}".`, error);
+        if (this.dom.playerCharacterStatus) this.dom.playerCharacterStatus.textContent = `Could not load ${character.name}. Check the model asset.`;
+      });
+    }
+
+    validatePlayerSkin(mesh, characterName) {
+      const geometry = mesh.geometry;
+      const joints = geometry && geometry.attributes && geometry.attributes.skinIndex;
+      const weights = geometry && geometry.attributes && geometry.attributes.skinWeight;
+      const positions = geometry && geometry.attributes && geometry.attributes.position;
+      if (!positions || !joints || !weights || joints.count !== weights.count || positions.count !== joints.count ||
+          joints.itemSize !== 4 || weights.itemSize !== 4) {
+        throw new Error(`Player model "${characterName}" has incomplete skin attributes.`);
+      }
+
+      const jointCount = mesh.skeleton ? mesh.skeleton.bones.length : 0;
+      const jointData = joints.array;
+      const weightData = weights.array;
+      const normalizedWeightScale = weights.normalized && weightData instanceof Uint16Array ? 65535
+        : (weights.normalized && weightData instanceof Uint8Array ? 255 : 1);
+      let weightsChanged = false;
+      for (let i = 0; i < joints.count; i++) {
+        let totalWeight = 0;
+        for (let c = 0; c < 4; c++) {
+          const attributeIndex = i * 4 + c;
+          const weight = weightData[attributeIndex] / normalizedWeightScale;
+          const joint = jointData[attributeIndex];
+          if (!Number.isFinite(weight) || weight < 0 || !Number.isInteger(joint) || joint < 0 || joint >= jointCount) {
+            throw new Error(`Player model "${characterName}" has invalid skin data at vertex ${i}.`);
+          }
+          totalWeight += weight;
+        }
+        if (totalWeight <= 0) {
+          throw new Error(`Player model "${characterName}" has an unweighted vertex at ${i}.`);
+        }
+        if (Math.abs(totalWeight - 1) > 0.001) {
+          for (let c = 0; c < 4; c++) {
+            const attributeIndex = i * 4 + c;
+            weightData[attributeIndex] = Math.round(weightData[attributeIndex] / totalWeight);
+          }
+          weightsChanged = true;
+        }
+      }
+      if (weightsChanged) weights.needsUpdate = true;
+    }
+
+    playPlayerAnimation(name) {
+      const next = this.playerActions[name] || this.playerActions.Idle;
+      if (!next || next === this.playerCurrentAction) return;
+      const previous = this.playerCurrentAction;
+      next.reset();
+      next.setEffectiveTimeScale(1);
+      next.setEffectiveWeight(1);
+      next.play();
+      if (previous) previous.crossFadeTo(next, 0.18, false);
+      this.playerCurrentAction = next;
+    }
+
+    updatePlayerCharacter(delta, isMoving) {
+      if (!this.playerModelRoot) return;
+      const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+      this.playerModelRoot.position.set(this.playerPos.x, footY, this.playerPos.z);
+      this.playerModelRoot.rotation.y = this.playerYaw + Math.PI;
+      this.updatePlayerViewVisibility();
+      if (!this.playerModel || !this.isThirdPersonView()) return;
+
+      const animation = !this.isGrounded
+        ? 'Jump'
+        : (isMoving ? (this.isSprinting ? 'Run' : 'Walk') : 'Idle');
+      this.playPlayerAnimation(animation);
+      if (this.playerMixer) this.playerMixer.update(delta);
+    }
+
+    updateThirdPersonCamera(delta) {
+      const target = new THREE.Vector3(
+        this.playerPos.x,
+        this.playerPos.y - this.currentCamHeight + this.jumpOffset + 1.15,
+        this.playerPos.z
+      );
+      const distance = this.isAiming ? 3.25 : 4.4;
+      const horizontal = Math.cos(this.playerPitch) * distance;
+      const desired = new THREE.Vector3(
+        target.x + Math.sin(this.playerYaw) * horizontal,
+        target.y + 0.75 + Math.sin(this.playerPitch) * distance,
+        target.z + Math.cos(this.playerYaw) * horizontal
+      );
+      if (!this.thirdPersonCameraReady) {
+        this.camera.position.copy(desired);
+        this.thirdPersonCameraReady = true;
+      } else {
+        this.camera.position.lerp(desired, Math.min(1, delta * 8));
+      }
+      const lookAhead = new THREE.Vector3(
+        target.x - Math.sin(this.playerYaw) * Math.cos(this.playerPitch) * 5,
+        target.y + Math.sin(this.playerPitch) * 5,
+        target.z - Math.cos(this.playerYaw) * Math.cos(this.playerPitch) * 5
+      );
+      this.camera.lookAt(lookAhead);
+    }
+
     triggerLeftHandGrab() {
       this.leftHandGrabTimer = 0.55;
       this.leftHandGrabDuration = 0.55;
@@ -12127,6 +12385,15 @@
       }
       if (this.dom.settingsBackBtn) {
         this.dom.settingsBackBtn.addEventListener('click', () => this.closeSettingsModal());
+      }
+      if (this.dom.firstPersonViewBtn) {
+        this.dom.firstPersonViewBtn.addEventListener('click', () => this.setPlayerViewMode('first-person'));
+      }
+      if (this.dom.thirdPersonViewBtn) {
+        this.dom.thirdPersonViewBtn.addEventListener('click', () => this.setPlayerViewMode('third-person'));
+      }
+      if (this.dom.playerCharacterSelect) {
+        this.dom.playerCharacterSelect.addEventListener('change', (e) => this.setPlayerCharacter(e.target.value));
       }
       if (this.dom.settingsModal) {
         this.dom.settingsModal.addEventListener('click', (e) => {
@@ -12987,8 +13254,13 @@
           this.showFloorNotification(this.playerFloor);
         }
 
-        this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-        this.camera.rotation.set(this.playerPitch, this.playerYaw, 0, 'YXZ');
+        const thirdPerson = this.isThirdPersonView();
+        if (!thirdPerson) {
+          this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+          this.camera.rotation.set(this.playerPitch, this.playerYaw, 0, 'YXZ');
+        }
+        this.updatePlayerCharacter(delta, moveLen > 0.001);
+        if (thirdPerson) this.updateThirdPersonCamera(delta);
 
         this.flashlightTarget.position.set(
           this.camera.position.x - Math.sin(this.playerYaw) * 10,
@@ -13164,8 +13436,13 @@
 
       const bobAmp = isCrouching ? 0.010 : (this.isSprinting ? 0.035 : 0.018);
       const bobY = isMoving ? Math.sin(this.headBobTimer) * bobAmp : 0;
-      this.camera.position.set(this.playerPos.x, this.playerPos.y + bobY + this.jumpOffset, this.playerPos.z);
-      this.camera.rotation.set(this.playerPitch, this.playerYaw, 0, 'YXZ');
+      const thirdPerson = this.isThirdPersonView();
+      if (!thirdPerson) {
+        this.camera.position.set(this.playerPos.x, this.playerPos.y + bobY + this.jumpOffset, this.playerPos.z);
+        this.camera.rotation.set(this.playerPitch, this.playerYaw, 0, 'YXZ');
+      }
+      this.updatePlayerCharacter(delta, isMoving);
+      if (thirdPerson) this.updateThirdPersonCamera(delta);
 
       this.flashlightTarget.position.set(
         this.camera.position.x - Math.sin(this.playerYaw) * 10,
@@ -13485,6 +13762,7 @@
 
     toggleSpectatorMode() {
       this.isSpectatorMode = !this.isSpectatorMode;
+      this.updatePlayerViewVisibility();
 
       if (this.isSpectatorMode) {
         // Disengage Smitty if currently pursuing or stalking player

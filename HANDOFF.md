@@ -12,6 +12,7 @@
 - **Relic Scavenger Quest:** 14 randomized relic pedestals and plinths, floor checklists, and emergency exit unlock.
 - **Gallery Artwork System:** 136 curated paintings with [E] artwork lightboxes and live Neocities artist links.
 - **Controls & Menus:** Clean minimalist HUD, Controls modal with Spectator keybinds (`V` for No-Clip, `N` for Red Outline, `H` for Hide HUD & Arms), Options modal with Curator toggle and Music toggle, About modal, and native QUIT buttons on Start, Pause, Game Over, and Victory screens.
+- **Player Views:** Controls modal switches between first-person and third-person, with four selectable animated characters in `assets/playermodels/`.
 
 ---
 
