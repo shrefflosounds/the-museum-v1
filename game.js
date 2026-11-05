@@ -3850,6 +3850,7 @@
       this.health = CONFIG.PLAYER.MAX_HEALTH;
       this.stamina = CONFIG.PLAYER.MAX_STAMINA;
       this.isSprinting = false;
+      this.sprintExhausted = false;
       this.relicsCollected = 0;
       this.isGameOver = false;
       this.isVictory = false;
@@ -12303,6 +12304,7 @@
         this.startTime = Date.now();
         this.keys = {};
         this.isSprinting = false;
+        this.sprintExhausted = false;
         this.stamina = CONFIG.PLAYER.MAX_STAMINA;
         this.audio.init();
         this.audio.startGameplayAudio();
@@ -13312,9 +13314,11 @@
       this.isCrouching = isCrouching;
 
       const wantsSprint = isMoving && (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
-      if (wantsSprint && this.stamina > 5) {
+      if (!wantsSprint) this.sprintExhausted = false;
+      if (wantsSprint && !this.sprintExhausted && this.stamina > 5) {
         this.isSprinting = true;
         this.stamina = Math.max(0, this.stamina - delta * 22);
+        if (this.stamina <= 5) this.sprintExhausted = true;
       } else {
         this.isSprinting = false;
         this.stamina = Math.min(CONFIG.PLAYER.MAX_STAMINA, this.stamina + delta * 16);
