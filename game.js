@@ -4119,6 +4119,7 @@
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio) * 0.85);
+      this.renderer.setPixelRatio(window.devicePixelRatio * 0.85);
       this.renderer.shadowMap.enabled = false;
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
@@ -15418,6 +15419,7 @@
           if (this.statues) {
             for (let s of this.statues) {
               if (s.floor === d.floor && Math.hypot(s.statueRoot.position.x - d.x, s.statueRoot.position.z - d.doorZ) < 3.4) {
+              if (s.floor === d.floor && Math.hypot(s.x - d.x, s.z - d.doorZ) < 3.4) {
                 statueNear = true;
                 break;
               }
@@ -15464,6 +15466,7 @@
       // Third-person Hallway Mirror logic
       if (this.hallwayMirror) {
         if (this.playerFloor === 0) {
+        if (this.isThirdPersonView() && this.playerFloor === 0) {
           this.hallwayMirror.visible = true;
 
           // Position the mirror camera opposite the player camera relative to the mirror plane (x=4.01)
