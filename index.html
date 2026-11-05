@@ -151,6 +151,22 @@
         </div>
       </div>
 
+      <div class="settings-card player-view-settings">
+        <h3 class="settings-card-title">PLAYER VIEW</h3>
+        <div class="smitty-mode-bar player-view-mode-bar">
+          <button id="view-first-person-btn" class="smitty-mode-btn active mode-on" type="button" aria-pressed="true">FIRST PERSON</button>
+          <button id="view-third-person-btn" class="smitty-mode-btn mode-off" type="button" aria-pressed="false">THIRD PERSON</button>
+        </div>
+        <label class="player-character-label" for="player-character-select">CHARACTER</label>
+        <select id="player-character-select" class="player-character-select">
+          <option value="0">The Animal</option>
+          <option value="1">The Man</option>
+          <option value="2">Sand</option>
+          <option value="3">Cook</option>
+        </select>
+        <p id="player-character-status" class="player-character-status" aria-live="polite">Choose a view and character.</p>
+      </div>
+
       <div class="settings-card" style="margin-top: 12px;">
         <h3 class="settings-card-title" data-text="settings.spectator_heading">SPECTATOR MODE</h3>
         <ul class="settings-list" style="margin: 0; padding-left: 18px;">
