@@ -863,7 +863,7 @@
       audio: "assets/audio/statue audio/heknah-song1.mp3",
       songTitle: "Heknah - At The Whim",
       duration: 86.73,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.55
     },
     {
@@ -879,7 +879,7 @@
       audio: "assets/audio/statue audio/JLB3-song1.mp3",
       songTitle: "Joe Lee Bridges III - Back To Joe",
       duration: 102.92,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.50
     },
     {
@@ -899,7 +899,7 @@
       audioAlt: "assets/audio/statue audio/R3E4-song2.mp3",
       durationAlt: 21.29,
       altChance: 0.05,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.55
     },
     {
@@ -914,7 +914,7 @@
       audio: "assets/audio/statue audio/Rat Hat Toing-song1.mp3",
       songTitle: "Smitty Fantastic - Hexagram 27",
       duration: 165.49,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.50,
       stayOnFloor: true
     },
@@ -927,7 +927,7 @@
       rotY: 0,
       faceOffset: -Math.PI / 2,
       model: "assets/statues/statue-Tourist.glb",
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.50,
       stayOnFloor: true
     },
@@ -943,7 +943,7 @@
       fallbackModel: "assets/statues/statue-bird-squid.glb",
       audio: "assets/audio/statue audio/Bird-sound1.mp3",
       duration: 5.67,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.60
     },
     {
@@ -958,7 +958,7 @@
       fallbackModel: "assets/statues/statue-pumpump.glb",
       audio: "assets/audio/statue audio/Pumpump-Sound1.mp3",
       duration: 96.00,
-      targetHeight: 1.8225,
+      targetHeight: 2.025,
       walkSpeed: 1.48
     },
     {
@@ -980,7 +980,7 @@
         { src: "assets/audio/statue audio/silversmitty6.mp3", duration: 2.30 }
       ],
       duration: 2.30,
-      targetHeight: 1.7415,
+      targetHeight: 1.935,
       walkSpeed: 1.50,
       noAnimation: true,
       isSilverSmitty: true
@@ -4118,19 +4118,10 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(window.devicePixelRatio * 0.85);
+      this.renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio) * 0.85);
       this.renderer.shadowMap.enabled = false;
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
-
-      // Full-body Mirror Setup
-      this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 1024, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat
-      });
-      this.mirrorCamera = new THREE.PerspectiveCamera(74, 512/1024, 0.1, 150);
-      this.scene.add(this.mirrorCamera);
 
       // Full-body Mirror Setup
       this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 1024, {
@@ -4277,10 +4268,10 @@
         // Wall is at x=4, facing East => x=4.01, z=1.0
         this.hallwayMirror.position.set(4.01, y0 + 1.5, 1.0);
         this.hallwayMirror.rotation.y = Math.PI / 2; // Facing positive X
+        this.hallwayMirror.scale.x = -1; // Flip X-axis to act as a mirror
         this.hallwayMirror.visible = false; // Initially hidden
         this.scene.add(this.hallwayMirror);
       }
-
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
@@ -15426,7 +15417,7 @@
           let statueNear = false;
           if (this.statues) {
             for (let s of this.statues) {
-              if (s.floor === d.floor && Math.hypot(s.x - d.x, s.z - d.doorZ) < 3.4) {
+              if (s.floor === d.floor && Math.hypot(s.statueRoot.position.x - d.x, s.statueRoot.position.z - d.doorZ) < 3.4) {
                 statueNear = true;
                 break;
               }
@@ -15472,7 +15463,7 @@
 
       // Third-person Hallway Mirror logic
       if (this.hallwayMirror) {
-        if (this.isThirdPersonView() && this.playerFloor === 0) {
+        if (this.playerFloor === 0) {
           this.hallwayMirror.visible = true;
 
           // Position the mirror camera opposite the player camera relative to the mirror plane (x=4.01)
@@ -15481,6 +15472,9 @@
           const mirrorX = 4.01;
           const distToMirror = camPos.x - mirrorX;
           this.mirrorCamera.position.set(mirrorX - distToMirror, camPos.y, camPos.z);
+          // Prevent the wall from occluding the mirror camera
+          this.mirrorCamera.near = Math.max(0.1, distToMirror);
+          this.mirrorCamera.updateProjectionMatrix();
 
           // The view direction needs to be reflected
           const camDir = new THREE.Vector3();
