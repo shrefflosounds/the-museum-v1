@@ -15727,10 +15727,10 @@
             return;
           }
 
-          // Locked eye contact with player ONLY while playing sound
+          // Other statues track the player during audio; Silver Smitty holds his interaction pose.
           const dxPlayer = this.playerPos.x - s.x;
           const dzPlayer = this.playerPos.z - s.z;
-          if (Math.hypot(dxPlayer, dzPlayer) > 0.05) {
+          if (!s.cfg.isSilverSmitty && Math.hypot(dxPlayer, dzPlayer) > 0.05) {
             const targetYaw = Math.atan2(dxPlayer, dzPlayer);
             s.yaw = this.lerpStatueAngle(s.yaw, targetYaw, Math.min(1, delta * 18));
             s.group.rotation.y = s.yaw;
