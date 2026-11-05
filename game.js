@@ -3875,7 +3875,7 @@
 
       // Input Map & Movement State
       this.keys = {};
-      this.viewMode = localStorage.getItem('the_museum_view_mode') === 'third-person' ? 'third-person' : 'first-person';
+      this.viewMode = 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
       this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter < 4 ? savedCharacter : 0;
       this.playerModelRoot = null;
@@ -3885,10 +3885,11 @@
       this.playerCurrentAction = null;
       this.playerModelLoadId = 0;
       this.thirdPersonCameraReady = false;
-      const savedCameraDistance = Number(localStorage.getItem('the_museum_camera_distance'));
-      this.thirdPersonCameraDistance = Number.isFinite(savedCameraDistance)
-        ? THREE.MathUtils.clamp(savedCameraDistance, 2.0, 8.0)
-        : 3.0;
+      const savedCameraDistance = localStorage.getItem('the_museum_camera_distance');
+      const parsedCameraDistance = Number(savedCameraDistance);
+      this.thirdPersonCameraDistance = savedCameraDistance !== null && Number.isFinite(parsedCameraDistance)
+        ? THREE.MathUtils.clamp(parsedCameraDistance, 0.6, 2.6)
+        : 2.0;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
       this.recoilOffset = { z: 0, rotX: 0 };
@@ -11364,7 +11365,6 @@
     setPlayerViewMode(mode) {
       if (mode !== 'first-person' && mode !== 'third-person') return;
       this.viewMode = mode;
-      localStorage.setItem('the_museum_view_mode', mode);
       this.thirdPersonCameraReady = false;
       this.updatePlayerViewUI();
       if (mode === 'third-person' && !this.playerModel) this.loadPlayerCharacter();
@@ -11574,8 +11574,8 @@
 
     zoomThirdPersonCamera(deltaY) {
       if (!Number.isFinite(deltaY) || deltaY === 0) return;
-      const zoomStep = Math.sign(deltaY) * Math.min(0.65, Math.abs(deltaY) * 0.0015);
-      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 2.0, 8.0);
+      const zoomStep = Math.sign(deltaY) * Math.min(0.65, Math.max(0.025, Math.abs(deltaY) * 0.012));
+      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 0.6, 2.6);
       localStorage.setItem('the_museum_camera_distance', String(this.thirdPersonCameraDistance));
     }
 
