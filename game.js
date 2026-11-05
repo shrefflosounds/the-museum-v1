@@ -4118,6 +4118,7 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
+      this.renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio) * 0.85);
       this.renderer.setPixelRatio(window.devicePixelRatio * 0.85);
       this.renderer.shadowMap.enabled = false;
       this.renderer.toneMapping = THREE.LinearToneMapping;
@@ -4268,6 +4269,7 @@
         // Wall is at x=4, facing East => x=4.01, z=1.0
         this.hallwayMirror.position.set(4.01, y0 + 1.5, 1.0);
         this.hallwayMirror.rotation.y = Math.PI / 2; // Facing positive X
+        this.hallwayMirror.scale.x = -1; // Flip X-axis to act as a mirror
         this.hallwayMirror.visible = false; // Initially hidden
         this.scene.add(this.hallwayMirror);
       }
@@ -15416,6 +15418,7 @@
           let statueNear = false;
           if (this.statues) {
             for (let s of this.statues) {
+              if (s.floor === d.floor && Math.hypot(s.statueRoot.position.x - d.x, s.statueRoot.position.z - d.doorZ) < 3.4) {
               if (s.floor === d.floor && Math.hypot(s.x - d.x, s.z - d.doorZ) < 3.4) {
                 statueNear = true;
                 break;
@@ -15462,6 +15465,7 @@
 
       // Third-person Hallway Mirror logic
       if (this.hallwayMirror) {
+        if (this.playerFloor === 0) {
         if (this.isThirdPersonView() && this.playerFloor === 0) {
           this.hallwayMirror.visible = true;
 
@@ -15471,6 +15475,9 @@
           const mirrorX = 4.01;
           const distToMirror = camPos.x - mirrorX;
           this.mirrorCamera.position.set(mirrorX - distToMirror, camPos.y, camPos.z);
+          // Prevent the wall from occluding the mirror camera
+          this.mirrorCamera.near = Math.max(0.1, distToMirror);
+          this.mirrorCamera.updateProjectionMatrix();
 
           // The view direction needs to be reflected
           const camDir = new THREE.Vector3();
