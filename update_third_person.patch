@@ -1,0 +1,11 @@
+--- game.js
++++ game.js
+@@ -11336,7 +11336,7 @@
+     }
+
+     isThirdPersonView() {
+-      return this.viewMode === 'third-person' && !this.isSpectatorMode;
++      return this.viewMode === 'third-person';
+     }
+
+     updatePlayerViewUI() {
