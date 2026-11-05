@@ -3884,6 +3884,10 @@
       this.playerCurrentAction = null;
       this.playerModelLoadId = 0;
       this.thirdPersonCameraReady = false;
+      const savedCameraDistance = Number(localStorage.getItem('the_museum_camera_distance'));
+      this.thirdPersonCameraDistance = Number.isFinite(savedCameraDistance)
+        ? THREE.MathUtils.clamp(savedCameraDistance, 2.0, 8.0)
+        : 3.0;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
       this.recoilOffset = { z: 0, rotX: 0 };
@@ -11536,17 +11540,21 @@
     }
 
     updateThirdPersonCamera(delta) {
+      const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const target = new THREE.Vector3(
         this.playerPos.x,
-        this.playerPos.y - this.currentCamHeight + this.jumpOffset + 1.15,
+        footY + 1.3,
         this.playerPos.z
       );
-      const distance = this.isAiming ? 3.25 : 4.4;
-      const horizontal = Math.cos(this.playerPitch) * distance;
+      const distance = this.thirdPersonCameraDistance;
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const sinYaw = Math.sin(this.playerYaw);
+      const cosYaw = Math.cos(this.playerYaw);
       const desired = new THREE.Vector3(
-        target.x + Math.sin(this.playerYaw) * horizontal,
-        target.y + 0.75 + Math.sin(this.playerPitch) * distance,
-        target.z + Math.cos(this.playerYaw) * horizontal
+        target.x + sinYaw * cosPitch * distance,
+        Math.max(footY + 0.35, target.y - sinPitch * distance),
+        target.z + cosYaw * cosPitch * distance
       );
       if (!this.thirdPersonCameraReady) {
         this.camera.position.copy(desired);
@@ -11555,11 +11563,19 @@
         this.camera.position.lerp(desired, Math.min(1, delta * 8));
       }
       const lookAhead = new THREE.Vector3(
-        target.x - Math.sin(this.playerYaw) * Math.cos(this.playerPitch) * 5,
-        target.y + Math.sin(this.playerPitch) * 5,
-        target.z - Math.cos(this.playerYaw) * Math.cos(this.playerPitch) * 5
+        target.x - sinYaw * cosPitch * 5,
+        target.y + sinPitch * 5,
+        target.z - cosYaw * cosPitch * 5
       );
+      if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
+    }
+
+    zoomThirdPersonCamera(deltaY) {
+      if (!Number.isFinite(deltaY) || deltaY === 0) return;
+      const zoomStep = Math.sign(deltaY) * Math.min(0.65, Math.abs(deltaY) * 0.0015);
+      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 2.0, 8.0);
+      localStorage.setItem('the_museum_camera_distance', String(this.thirdPersonCameraDistance));
     }
 
     triggerLeftHandGrab() {
@@ -12243,7 +12259,8 @@
 
       this.playerYaw -= mx * sens;
       this.playerPitch -= my * sens;
-      this.playerPitch = Math.max(-1.42, Math.min(1.42, this.playerPitch));
+      const pitchLimit = this.isThirdPersonView() ? 1.05 : 1.42;
+      this.playerPitch = Math.max(-pitchLimit, Math.min(pitchLimit, this.playerPitch));
     }
 
     setupEventListeners() {
@@ -12593,6 +12610,13 @@
         this.lastClientY = e.clientY;
         this.applyMouseLook(rawMx, rawMy);
       });
+
+      window.addEventListener('wheel', (e) => {
+        if (!this.gameStarted || !this.isThirdPersonView() || this.isPaused || this.isGameOver || this.isVictory ||
+            this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;
+        e.preventDefault();
+        this.zoomThirdPersonCamera(e.deltaY);
+      }, { passive: false });
 
       window.addEventListener('mousedown', (e) => {
         if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;

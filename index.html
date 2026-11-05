@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=1.6.0">
+  <link rel="stylesheet" href="style.css?v=1.6.1">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -125,6 +125,23 @@
         </div>
       </div>
 
+      <div class="settings-card player-view-settings">
+        <h3 class="settings-card-title">PLAYER VIEW</h3>
+        <div class="smitty-mode-bar player-view-mode-bar">
+          <button id="view-first-person-btn" class="smitty-mode-btn active mode-on" type="button" aria-pressed="true">FIRST PERSON</button>
+          <button id="view-third-person-btn" class="smitty-mode-btn mode-off" type="button" aria-pressed="false">THIRD PERSON</button>
+        </div>
+        <label class="player-character-label" for="player-character-select">CHARACTER</label>
+        <select id="player-character-select" class="player-character-select">
+          <option value="0">The Animal</option>
+          <option value="1">The Man</option>
+          <option value="2">Sand</option>
+          <option value="3">Cook</option>
+        </select>
+        <p id="player-character-status" class="player-character-status" aria-live="polite">Choose a view and character.</p>
+        <p class="player-camera-help">In third person, move the mouse to look around and scroll to zoom.</p>
+      </div>
+
       <button id="options-back-btn" class="museum-btn" type="button" data-text="options.done">DONE</button>
     </div>
   </div>
@@ -149,22 +166,6 @@
           <div class="ctrl-col" data-html-text="ctrl.aim"><strong>Right Click</strong>: Aim</div>
           <div class="ctrl-col" data-html-text="ctrl.map"><strong>Tab</strong>: Inventory &amp; Map</div>
         </div>
-      </div>
-
-      <div class="settings-card player-view-settings">
-        <h3 class="settings-card-title">PLAYER VIEW</h3>
-        <div class="smitty-mode-bar player-view-mode-bar">
-          <button id="view-first-person-btn" class="smitty-mode-btn active mode-on" type="button" aria-pressed="true">FIRST PERSON</button>
-          <button id="view-third-person-btn" class="smitty-mode-btn mode-off" type="button" aria-pressed="false">THIRD PERSON</button>
-        </div>
-        <label class="player-character-label" for="player-character-select">CHARACTER</label>
-        <select id="player-character-select" class="player-character-select">
-          <option value="0">The Animal</option>
-          <option value="1">The Man</option>
-          <option value="2">Sand</option>
-          <option value="3">Cook</option>
-        </select>
-        <p id="player-character-status" class="player-character-status" aria-live="polite">Choose a view and character.</p>
       </div>
 
       <div class="settings-card" style="margin-top: 12px;">
@@ -306,6 +307,6 @@
   <script src="libs/GLTFLoader.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1793780000"></script>
-  <script src="game.js?v=2.2.6"></script>
+  <script src="game.js?v=2.2.7"></script>
 </body>
 </html>
