@@ -1,0 +1,3 @@
+I need to check the exact `isRoomNavNode` to allow bathrooms for statues.
+I'll also implement a real time `WebGLRenderTarget` mirror in the first-floor open hallway. But real-time mirror requires `this.renderer.setRenderTarget` and a second camera. I will try to implement `THREE.Reflector` if available, or just a `WebGLRenderTarget` if not.
+Let's see if `Reflector` is included in `libs` or standard Three.js bundle.
