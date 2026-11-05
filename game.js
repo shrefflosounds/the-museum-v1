@@ -4119,7 +4119,6 @@
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
       this.renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio) * 0.85);
-      this.renderer.setPixelRatio(window.devicePixelRatio * 0.85);
       this.renderer.shadowMap.enabled = false;
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
@@ -13339,7 +13338,8 @@
       if (!wantsSprint) this.sprintExhausted = false;
       if (wantsSprint && !this.sprintExhausted && this.stamina > 5) {
         this.isSprinting = true;
-        this.stamina = Math.max(0, this.stamina - delta * 22);
+        // Halve the depletion rate to double the sprint time (22 -> 11)
+        this.stamina = Math.max(0, this.stamina - delta * 11);
         if (this.stamina <= 5) this.sprintExhausted = true;
       } else {
         this.isSprinting = false;
@@ -15418,8 +15418,7 @@
           let statueNear = false;
           if (this.statues) {
             for (let s of this.statues) {
-              if (s.floor === d.floor && Math.hypot(s.statueRoot.position.x - d.x, s.statueRoot.position.z - d.doorZ) < 3.4) {
-              if (s.floor === d.floor && Math.hypot(s.x - d.x, s.z - d.doorZ) < 3.4) {
+              if (s.statueRoot && s.floor === d.floor && Math.hypot(s.statueRoot.position.x - d.x, s.statueRoot.position.z - d.doorZ) < 3.4) {
                 statueNear = true;
                 break;
               }
@@ -15463,10 +15462,9 @@
         }
       }
 
-      // Third-person Hallway Mirror logic
+      // First-floor Hallway Mirror logic
       if (this.hallwayMirror) {
         if (this.playerFloor === 0) {
-        if (this.isThirdPersonView() && this.playerFloor === 0) {
           this.hallwayMirror.visible = true;
 
           // Position the mirror camera opposite the player camera relative to the mirror plane (x=4.01)
