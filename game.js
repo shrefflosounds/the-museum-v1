@@ -10437,15 +10437,8 @@
         const slots = WALL_FRAME_SLOTS.filter(s => s.floor === f);
         const arts = CURATED_ARTWORKS.filter(a => a.floor === f).slice(0, 38);
 
-        // Fisher-Yates shuffle the artworks for this floor
-        const shuffledArts = [...arts];
-        for (let i = shuffledArts.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [shuffledArts[i], shuffledArts[j]] = [shuffledArts[j], shuffledArts[i]];
-        }
-
         slots.forEach((slot, idx) => {
-          const art = shuffledArts[idx % shuffledArts.length];
+          const art = arts[idx % arts.length];
 
           // Proportional museum sizing: larger grand scale on open walls, clamped on narrower piers to never hang over walkways
           const maxW = (slot.maxW || 2.85) * 1.12;
