@@ -15468,10 +15468,10 @@
         this.updatePhysicsCrates(delta);
         this.updateAquariumFish(delta);
         if (this.navGrid) {
-          this.navGridRefreshTimer = (this.navGridRefreshTimer ?? 2.0) - delta;
+          this.navGridRefreshTimer = (this.navGridRefreshTimer ?? 5.0) - delta;
           if (this.navGridRefreshTimer <= 0) {
             this.buildObstacleGrid();
-            this.navGridRefreshTimer = 2.0;
+            this.navGridRefreshTimer = 5.0;
           }
         }
         this.updateSmitty(delta);
