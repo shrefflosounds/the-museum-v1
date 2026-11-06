@@ -8488,7 +8488,7 @@
     // third-person player model both show up naturally.
     createHallwayMirror(y0) {
       const MX = 9.0, MZ = 3.0;          // world position of the mirror
-      const W = 1.3, H = 2.1;            // reflective surface size
+      const W = 2.015, H = 2.1;            // reflective surface size
       const bottom = 0.18;               // gap between floor and glass
 
       const group = new THREE.Group();
