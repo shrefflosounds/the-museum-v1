@@ -11718,8 +11718,6 @@
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.55) / 0.2, 0, 1);
-      if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = fade; c.material.needsUpdate = true; } });
     }
 
     zoomThirdPersonCamera(deltaY) {
