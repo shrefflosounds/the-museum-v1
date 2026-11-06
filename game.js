@@ -3877,7 +3877,7 @@
       this.keys = {};
       this.viewMode = 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
-      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter < 5 ? savedCharacter : 0;
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter < 6 ? savedCharacter : 0;
       this.playerModelRoot = null;
       this.playerModel = null;
       this.playerMixer = null;
@@ -11523,7 +11523,7 @@
 
     setPlayerCharacter(index) {
       const next = Number(index);
-      if (!Number.isInteger(next) || next < 0 || next > 4) return;
+      if (!Number.isInteger(next) || next < 0 || next > 5) return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
@@ -11553,7 +11553,8 @@
         { name: 'The Man', file: 'the-man.glb' },
         { name: 'Sand', file: 'sand.glb' },
         { name: 'Cook', file: 'cook.glb' },
-        { name: 'The Tundra', file: 'the-tundra.glb' }
+        { name: 'The Arse', file: 'the-tundra.glb' },
+        { name: 'The Clown', file: 'the-clown.glb' }
       ];
       const character = characters[this.selectedPlayerCharacter];
       if (!character || !this.playerModelRoot) return;
