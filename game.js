@@ -10435,7 +10435,7 @@
       // Randomize artworks per floor across available wall frame slots on every playthrough
       for (let f = 0; f < 4; f++) {
         const slots = WALL_FRAME_SLOTS.filter(s => s.floor === f);
-        const arts = CURATED_ARTWORKS.filter(a => a.floor === f);
+        const arts = CURATED_ARTWORKS.filter(a => a.floor === f).slice(0, 38);
 
         // Fisher-Yates shuffle the artworks for this floor
         const shuffledArts = [...arts];
