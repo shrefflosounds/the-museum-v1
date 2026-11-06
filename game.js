@@ -8610,6 +8610,7 @@
         projectionMatrix.elements[10] = clipPlane.z + 1.0 - clipBias;
         projectionMatrix.elements[14] = clipPlane.w;
 
+        if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
         glass.visible = false;
         const currentRenderTarget = renderer.getRenderTarget();
         renderer.setRenderTarget(renderTarget);
@@ -8618,6 +8619,8 @@
         renderer.render(scene, virtualCamera);
         renderer.setRenderTarget(currentRenderTarget);
         glass.visible = true;
+        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.55) / 0.2, 0, 1);
+        if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
       };
 
       // Collision so the player/NPCs can't walk through the mirror stand
@@ -11718,6 +11721,8 @@
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
+      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.55) / 0.2, 0, 1);
+      if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = fade; } });
     }
 
     zoomThirdPersonCamera(deltaY) {
