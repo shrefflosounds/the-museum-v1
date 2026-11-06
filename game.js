@@ -8619,7 +8619,7 @@
         renderer.render(scene, virtualCamera);
         renderer.setRenderTarget(currentRenderTarget);
         glass.visible = true;
-        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.55) / 0.2, 0, 1);
+        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
       };
 
@@ -11721,14 +11721,14 @@
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.55) / 0.2, 0, 1);
+      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
       if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = fade; } });
     }
 
     zoomThirdPersonCamera(deltaY) {
       if (!Number.isFinite(deltaY) || deltaY === 0) return;
       const zoomStep = Math.sign(deltaY) * Math.min(0.65, Math.max(0.025, Math.abs(deltaY) * 0.012));
-      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 0.6, 2.6);
+      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 0.4, 2.6);
       localStorage.setItem('the_museum_camera_distance', String(this.thirdPersonCameraDistance));
     }
 
