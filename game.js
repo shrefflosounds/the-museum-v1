@@ -4123,15 +4123,6 @@
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
 
-      // Full-body Mirror Setup
-      this.mirrorRenderTarget = new THREE.WebGLRenderTarget(512, 1024, {
-        minFilter: THREE.LinearFilter,
-        magFilter: THREE.LinearFilter,
-        format: THREE.RGBAFormat
-      });
-      this.mirrorCamera = new THREE.PerspectiveCamera(74, 512/1024, 0.1, 150);
-      this.scene.add(this.mirrorCamera);
-
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
       this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
       this.scene.add(this.ambientLight);
@@ -4262,15 +4253,7 @@
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
 
       if (fl === 0) {
-        const mirrorGeom = new THREE.PlaneGeometry(2.0, 3.0);
-        const mirrorMat = new THREE.MeshBasicMaterial({ map: this.mirrorRenderTarget.texture });
-        this.hallwayMirror = new THREE.Mesh(mirrorGeom, mirrorMat);
-        // Wall is at x=4, facing East => x=4.01, z=1.0
-        this.hallwayMirror.position.set(4.01, y0 + 1.5, 1.0);
-        this.hallwayMirror.rotation.y = Math.PI / 2; // Facing positive X
-        this.hallwayMirror.scale.x = -1; // Flip X-axis to act as a mirror
-        this.hallwayMirror.visible = false; // Initially hidden
-        this.scene.add(this.hallwayMirror);
+        this.createHallwayMirror(y0);
       }
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
@@ -8498,6 +8481,155 @@
     // =========================================================================
     // BEAUTY PASS & COMPREHENSIVE PROCEDURAL EXHIBIT BUILDERS
     // =========================================================================
+
+    // Free-standing full-length mirror (1st floor, east hall, left of the pink runner rug).
+    // True planar reflector (port of three.js r128 Reflector): renders the scene from the
+    // reflected camera each frame, so first-person arms (children of the camera) and the
+    // third-person player model both show up naturally.
+    createHallwayMirror(y0) {
+      const MX = 9.0, MZ = 3.0;          // world position of the mirror
+      const W = 1.3, H = 2.1;            // reflective surface size
+      const bottom = 0.18;               // gap between floor and glass
+
+      const group = new THREE.Group();
+      group.position.set(MX, y0, MZ);
+      group.rotation.y = 0;              // glass faces +Z (toward the south / hall entrance)
+      this.scene.add(group);
+
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0x3b2a1a, roughness: 0.55, metalness: 0.15 });
+      const brassMat = new THREE.MeshStandardMaterial({ color: 0xb08d57, roughness: 0.35, metalness: 0.8 });
+      const fw = 0.08, fd = 0.08;
+      const addBox = (w, h, d, x, y, z, m) => {
+        const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m);
+        b.position.set(x, y, z); group.add(b); return b;
+      };
+      const cy = bottom + H / 2;
+      addBox(W + fw * 2, fw, fd, 0, bottom + H + fw / 2, -0.02, frameMat);   // top
+      addBox(W + fw * 2, fw, fd, 0, bottom - fw / 2, -0.02, frameMat);       // bottom
+      addBox(fw, H, fd, -(W / 2 + fw / 2), cy, -0.02, frameMat);             // left
+      addBox(fw, H, fd, (W / 2 + fw / 2), cy, -0.02, frameMat);              // right
+      addBox(W, H, 0.02, 0, cy, -0.05, frameMat);                            // back panel
+      // Stand feet
+      addBox(0.08, 0.06, 0.7, -(W / 2 + fw / 2), 0.03, -0.1, frameMat);
+      addBox(0.08, 0.06, 0.7, (W / 2 + fw / 2), 0.03, -0.1, frameMat);
+      addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
+
+      // ---- Reflector ----
+      const rtSize = 1024;
+      const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
+        minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
+      });
+      const textureMatrix = new THREE.Matrix4();
+      const material = new THREE.ShaderMaterial({
+        uniforms: {
+          tDiffuse: { value: renderTarget.texture },
+          textureMatrix: { value: textureMatrix },
+          tint: { value: new THREE.Color(0xe8eef2) }
+        },
+        vertexShader: `
+          uniform mat4 textureMatrix;
+          varying vec4 vUv;
+          void main() {
+            vUv = textureMatrix * vec4(position, 1.0);
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }`,
+        fragmentShader: `
+          uniform sampler2D tDiffuse;
+          uniform vec3 tint;
+          varying vec4 vUv;
+          void main() {
+            vec4 base = texture2DProj(tDiffuse, vUv);
+            gl_FragColor = vec4(base.rgb * tint, 1.0);
+          }`
+      });
+      const glass = new THREE.Mesh(new THREE.PlaneGeometry(W, H), material);
+      glass.position.set(0, cy, 0.021);
+      group.add(glass);
+      this.hallwayMirror = glass;
+
+      const reflectorPlane = new THREE.Plane();
+      const normal = new THREE.Vector3();
+      const reflectorWorldPosition = new THREE.Vector3();
+      const cameraWorldPosition = new THREE.Vector3();
+      const rotationMatrix = new THREE.Matrix4();
+      const lookAtPosition = new THREE.Vector3(0, 0, -1);
+      const clipPlane = new THREE.Vector4();
+      const view = new THREE.Vector3();
+      const target = new THREE.Vector3();
+      const q = new THREE.Vector4();
+      const virtualCamera = new THREE.PerspectiveCamera();
+      const clipBias = 0.003;
+
+      glass.onBeforeRender = (renderer, scene, camera) => {
+        reflectorWorldPosition.setFromMatrixPosition(glass.matrixWorld);
+        cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
+
+        // Only update when the viewer is nearby and on the same floor (perf)
+        if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 4.0 ||
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 30.0) return;
+
+        rotationMatrix.extractRotation(glass.matrixWorld);
+        normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
+        view.subVectors(reflectorWorldPosition, cameraWorldPosition);
+        if (view.dot(normal) > 0) return;  // camera is behind the mirror
+
+        view.reflect(normal).negate();
+        view.add(reflectorWorldPosition);
+
+        rotationMatrix.extractRotation(camera.matrixWorld);
+        lookAtPosition.set(0, 0, -1).applyMatrix4(rotationMatrix);
+        lookAtPosition.add(cameraWorldPosition);
+        target.subVectors(reflectorWorldPosition, lookAtPosition);
+        target.reflect(normal).negate();
+        target.add(reflectorWorldPosition);
+
+        virtualCamera.position.copy(view);
+        virtualCamera.up.set(0, 1, 0).applyMatrix4(rotationMatrix).reflect(normal);
+        virtualCamera.lookAt(target);
+        virtualCamera.far = camera.far;
+        virtualCamera.updateMatrixWorld();
+        virtualCamera.projectionMatrix.copy(camera.projectionMatrix);
+
+        textureMatrix.set(0.5, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0);
+        textureMatrix.multiply(virtualCamera.projectionMatrix);
+        textureMatrix.multiply(virtualCamera.matrixWorldInverse);
+        textureMatrix.multiply(glass.matrixWorld);
+
+        // Oblique near-plane clipping so nothing behind the glass leaks into the reflection
+        reflectorPlane.setFromNormalAndCoplanarPoint(normal, reflectorWorldPosition);
+        reflectorPlane.applyMatrix4(virtualCamera.matrixWorldInverse);
+        clipPlane.set(reflectorPlane.normal.x, reflectorPlane.normal.y, reflectorPlane.normal.z, reflectorPlane.constant);
+        const projectionMatrix = virtualCamera.projectionMatrix;
+        q.x = (Math.sign(clipPlane.x) + projectionMatrix.elements[8]) / projectionMatrix.elements[0];
+        q.y = (Math.sign(clipPlane.y) + projectionMatrix.elements[9]) / projectionMatrix.elements[5];
+        q.z = -1.0;
+        q.w = (1.0 + projectionMatrix.elements[10]) / projectionMatrix.elements[14];
+        clipPlane.multiplyScalar(2.0 / clipPlane.dot(q));
+        projectionMatrix.elements[2] = clipPlane.x;
+        projectionMatrix.elements[6] = clipPlane.y;
+        projectionMatrix.elements[10] = clipPlane.z + 1.0 - clipBias;
+        projectionMatrix.elements[14] = clipPlane.w;
+
+        glass.visible = false;
+        const currentRenderTarget = renderer.getRenderTarget();
+        renderer.setRenderTarget(renderTarget);
+        renderer.state.buffers.depth.setMask(true);
+        if (renderer.autoClear === false) renderer.clear();
+        renderer.render(scene, virtualCamera);
+        renderer.setRenderTarget(currentRenderTarget);
+        glass.visible = true;
+      };
+
+      // Collision so the player/NPCs can't walk through the mirror stand
+      if (this.colliders) {
+        this.colliders.push({
+          type: 'box', floor: 0,
+          minX: MX - W / 2 - 0.15, maxX: MX + W / 2 + 0.15,
+          minZ: MZ - 0.45, maxZ: MZ + 0.12,
+          minY: y0, maxY: y0 + bottom + H + 0.2
+        });
+      }
+    }
 
     createGalleryRunnerRug(x, y0, z, w, d, mainColorHex = 0xb47488, borderGoldHex = 0xc6bc99) {
       const rugGroup = new THREE.Group();
@@ -13338,7 +13470,7 @@
       if (!wantsSprint) this.sprintExhausted = false;
       if (wantsSprint && !this.sprintExhausted && this.stamina > 5) {
         this.isSprinting = true;
-        this.stamina = Math.max(0, this.stamina - delta * 22);
+        this.stamina = Math.max(0, this.stamina - delta * 11); // halved drain = 2x sprint duration
         if (this.stamina <= 5) this.sprintExhausted = true;
       } else {
         this.isSprinting = false;
@@ -15461,41 +15593,7 @@
         }
       }
 
-      // Third-person Hallway Mirror logic
-      if (this.hallwayMirror) {
-        if (this.isThirdPersonView() && this.playerFloor === 0) {
-          this.hallwayMirror.visible = true;
-
-          // Position the mirror camera opposite the player camera relative to the mirror plane (x=4.01)
-          const camPos = this.camera.position.clone();
-          // Reflect X coordinate across the mirror plane (mirror is at x=4.01, pointing +X)
-          const mirrorX = 4.01;
-          const distToMirror = camPos.x - mirrorX;
-          this.mirrorCamera.position.set(mirrorX - distToMirror, camPos.y, camPos.z);
-          // Prevent the wall from occluding the mirror camera
-          this.mirrorCamera.near = Math.max(0.1, distToMirror);
-          this.mirrorCamera.updateProjectionMatrix();
-
-          // The view direction needs to be reflected
-          const camDir = new THREE.Vector3();
-          this.camera.getWorldDirection(camDir);
-          camDir.x = -camDir.x; // Reflect X direction
-
-          const lookTarget = this.mirrorCamera.position.clone().add(camDir);
-          this.mirrorCamera.lookAt(lookTarget);
-
-          // Render scene to mirror
-          this.hallwayMirror.visible = false; // Hide mirror mesh itself so it doesn't render inside the mirror
-          this.renderer.setRenderTarget(this.mirrorRenderTarget);
-          this.renderer.render(this.scene, this.mirrorCamera);
-
-          // Restore main renderer
-          this.renderer.setRenderTarget(null);
-          this.hallwayMirror.visible = true;
-        } else {
-          this.hallwayMirror.visible = false;
-        }
-      }
+      // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
 
       this.renderer.render(this.scene, this.camera);
     }
