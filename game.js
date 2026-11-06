@@ -11718,7 +11718,6 @@
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      if (this.playerModelRoot) this.playerModelRoot.visible = this.thirdPersonCameraDistance > 0.75;
     }
 
     zoomThirdPersonCamera(deltaY) {
