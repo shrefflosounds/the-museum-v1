@@ -4253,8 +4253,6 @@
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
 
       this.createHallwayMirror(9, 3, y0);
-      this.createHallwayMirror(0, 0, y0);
-      this.createHallwayMirror(-9, 0, y0);
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
