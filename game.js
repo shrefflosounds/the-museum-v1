@@ -4252,9 +4252,8 @@
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
 
-      if (fl === 0) {
-        this.createHallwayMirror(y0);
-      }
+      this.createHallwayMirror(9, 3, y0);
+      this.createHallwayMirror(0, 0, y0);
       this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
@@ -8486,8 +8485,8 @@
     // True planar reflector (port of three.js r128 Reflector): renders the scene from the
     // reflected camera each frame, so first-person arms (children of the camera) and the
     // third-person player model both show up naturally.
-    createHallwayMirror(y0) {
-      const MX = 9.0, MZ = 3.0;          // world position of the mirror
+    createHallwayMirror(mx, mz, y0) {
+      const MX = mx, MZ = mz;          // world position of the mirror
       const W = 2.015, H = 2.1;            // reflective surface size
       const bottom = 0.18;               // gap between floor and glass
 
