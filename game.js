@@ -12952,6 +12952,18 @@
       window.addEventListener('contextmenu', (e) => e.preventDefault());
 
       window.addEventListener('keydown', (e) => {
+        // If user is focused inside an input element (such as the Join Room Code box), do not capture or preventDefault
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
+          if (e.code === 'Enter' && e.target === this.dom.joinRoomInput) {
+            e.preventDefault();
+            if (this.dom.joinSubmitBtn) this.dom.joinSubmitBtn.click();
+          } else if (e.code === 'Escape' && this.dom.joinCodeCloseBtn) {
+            e.preventDefault();
+            this.dom.joinCodeCloseBtn.click();
+          }
+          return;
+        }
+
         const isCmdOrCtrl = e.metaKey || e.ctrlKey;
         const isKeyB = (e.code === 'KeyB' || (e.key && e.key.toLowerCase() === 'b'));
         const isKeyV = (e.code === 'KeyV' || (e.key && e.key.toLowerCase() === 'v'));
@@ -13075,6 +13087,7 @@
       });
 
       window.addEventListener('keypress', (e) => {
+        if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
         if (!e.metaKey && ['Space'].includes(e.code)) e.preventDefault();
       });
 
