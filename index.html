@@ -197,16 +197,11 @@
           <button id="view-first-person-btn" class="smitty-mode-btn active mode-on" type="button" aria-pressed="true">FIRST PERSON</button>
           <button id="view-third-person-btn" class="smitty-mode-btn mode-off" type="button" aria-pressed="false">THIRD PERSON</button>
         </div>
-        <label class="player-character-label" for="player-character-select">CHARACTER</label>
-        <select id="player-character-select" class="player-character-select">
-          <option value="0">The Animal</option>
-          <option value="1">The Earth</option>
-          <option value="2">Sand</option>
-          <option value="3">Cook</option>
-          <option value="4">The Arse</option>
-          <option value="5">The Clown</option>
-          <option value="6">The Student</option>
-        </select>
+        <label class="player-character-label" for="player-character-select-btn">CHARACTER</label>
+        <button id="player-character-select-btn" class="smitty-mode-btn char-choose-trigger-btn" type="button">
+          <span id="options-char-current-name">THE CLOWN</span>
+          <span class="char-choose-subtext">(CLICK TO CHANGE)</span>
+        </button>
         <p id="player-character-status" class="player-character-status" aria-live="polite">Choose a view and character.</p>
         <p class="player-camera-help">In third person, move the mouse to look around and scroll to zoom.</p>
       </div>

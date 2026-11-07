@@ -954,10 +954,11 @@ body.game-playing #game-container {
 
 .options-box {
   position: relative;
-  max-width: 440px;
+  max-width: 530px;
+  width: 92%;
   max-height: calc(100vh - 40px);
   overflow-y: auto;
-  padding: 28px 32px;
+  padding: 58px 64px 52px 64px;
   text-align: center;
 }
 
@@ -1500,4 +1501,34 @@ body.game-playing #game-container {
 .char-select-code-display span {
   font-weight: bold;
   letter-spacing: 4px;
+}
+
+/* Options Character Select Trigger Button */
+.char-choose-trigger-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat !important;
+  color: #ffffff !important;
+  border: none;
+  font-family: 'Caryn', 'Papyrus', cursive, serif !important;
+  font-size: 20px !important;
+  letter-spacing: 2px;
+  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.5));
+  cursor: pointer;
+  box-sizing: border-box;
+  transition: transform 0.15s ease, filter 0.15s ease;
+}
+
+.char-choose-trigger-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  filter: drop-shadow(0 6px 16px rgba(255, 255, 255, 0.3));
+}
+
+.char-choose-subtext {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.75);
+  letter-spacing: 1px;
 }

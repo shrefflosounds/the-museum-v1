@@ -4037,7 +4037,8 @@
         settingsBackBtn: document.getElementById('settings-back-btn'),
         firstPersonViewBtn: document.getElementById('view-first-person-btn'),
         thirdPersonViewBtn: document.getElementById('view-third-person-btn'),
-        playerCharacterSelect: document.getElementById('player-character-select'),
+        playerCharacterSelectBtn: document.getElementById('player-character-select-btn'),
+        optionsCharCurrentName: document.getElementById('options-char-current-name'),
         hostGameBtn: document.getElementById('host-game-btn'),
         joinGameBtn: document.getElementById('join-game-btn'),
         joinCodeModal: document.getElementById('join-code-modal'),
@@ -11540,6 +11541,10 @@
       if (this.dom.playerCharacterSelect) {
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
+      if (this.dom.optionsCharCurrentName) {
+        const charNames = ['The Animal', 'The Earth', 'Sand', 'Cook', 'The Arse', 'The Clown', 'The Student'];
+        this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
+      }
       this.updatePlayerViewVisibility();
     }
 
@@ -12727,6 +12732,19 @@
       }
       if (this.dom.thirdPersonViewBtn) {
         this.dom.thirdPersonViewBtn.addEventListener('click', () => this.setPlayerViewMode('third-person'));
+      }
+      if (this.dom.playerCharacterSelectBtn) {
+        this.dom.playerCharacterSelectBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          // Hide Options Modal temporarily and open the Character Select showcase screen
+          if (this.dom.optionsModal) this.dom.optionsModal.classList.add('hidden');
+          if (this.charSelectUI) {
+            this.charSelectUI.show('PLAYER VIEW', (chosenIndex) => {
+              this.setPlayerCharacter(chosenIndex);
+              if (this.dom.optionsModal) this.dom.optionsModal.classList.remove('hidden');
+            });
+          }
+        });
       }
       if (this.dom.playerCharacterSelect) {
         this.dom.playerCharacterSelect.addEventListener('change', (e) => this.setPlayerCharacter(e.target.value));
