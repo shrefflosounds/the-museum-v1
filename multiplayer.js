@@ -1,14 +1,13 @@
-// The Museum - Robust WebRTC Multiplayer Engine
+// The Museum - Robust High-Performance Multiplayer Engine (WebSocket Relay)
 (function() {
   class MuseumMultiplayer {
     constructor(game) {
       this.game = game;
-      this.peer = null;
+      this.client = null;
       this.isHost = false;
       this.roomCode = null;
-      this.connections = new Map(); // peerId -> DataConnection
-      this.remotePlayers = new Map(); // peerId -> remote player object
-      this.peerId = null;
+      this.clientId = 'user_' + Math.random().toString(36).substr(2, 9);
+      this.remotePlayers = new Map(); // clientId -> remote player object
       this.tickInterval = null;
       this.broadcastRate = 30; // 30Hz
       this.onPlayerJoined = null;
@@ -22,14 +21,11 @@
         { name: 'The Student', file: 'the-student.glb' }
       ];
 
-      // Robust STUN servers for WebRTC cross-network NAT punchthrough
-      this.iceServers = [
-        { urls: 'stun:stun.l.google.com:19302' },
-        { urls: 'stun:stun1.l.google.com:19302' },
-        { urls: 'stun:stun2.l.google.com:19302' },
-        { urls: 'stun:stun3.l.google.com:19302' },
-        { urls: 'stun:stun4.l.google.com:19302' },
-        { urls: 'stun:stun.cloudflare.com:3478' }
+      // Free, high-speed, enterprise-grade public WebSocket brokers
+      this.brokerUrls = [
+        'wss://broker.hivemq.com:8884/mqtt',
+        'wss://broker.emqx.io:8084/mqtt',
+        'wss://test.mosquitto.org:8081'
       ];
     }
 
@@ -42,9 +38,8 @@
       return code;
     }
 
-    formatPeerId(code) {
-      // Use clean standard alphanumeric identifier prefix
-      return 'themuseum-' + code.toUpperCase().trim();
+    getTopic() {
+      return 'museum/exhibition/' + this.roomCode;
     }
 
     initHost(onReady, onError) {
@@ -52,229 +47,150 @@
       this.isHost = true;
       const code = this.generateCode(4);
       this.roomCode = code;
-      const peerId = this.formatPeerId(code);
-
-      console.log('[Multiplayer Host] Initializing room:', code, 'with Peer ID:', peerId);
-
-      try {
-        this.peer = new Peer(peerId, {
-          debug: 1,
-          config: { iceServers: this.iceServers }
+      this.connectToBroker(code, () => {
+        // Send host beacon
+        this.publish({
+          type: 'host_ready',
+          sender: this.clientId
         });
-
-        this.peer.on('open', (id) => {
-          console.log('[Multiplayer Host] Peer server registered ID:', id);
-          this.peerId = id;
-          if (onReady) onReady(code);
-        });
-
-        this.peer.on('connection', (conn) => {
-          console.log('[Multiplayer Host] Incoming connection from client:', conn.peer);
-          this.setupConnection(conn);
-          if (this.onPlayerJoined) {
-            this.onPlayerJoined(conn.peer);
-          }
-        });
-
-        this.peer.on('error', (err) => {
-          console.warn('[Multiplayer Host Error]', err);
-          if (err.type === 'unavailable-id') {
-            console.log('[Multiplayer Host] ID unavailable, trying fresh code...');
-            this.initHost(onReady, onError);
-          } else if (onError) {
-            onError(err);
-          }
-        });
-      } catch (err) {
-        console.error('[Multiplayer Host Exception]', err);
-        if (onError) onError(err);
-      }
+        if (onReady) onReady(code);
+      }, onError);
     }
 
     initClient(code, onReady, onError) {
       this.cleanup();
       this.isHost = false;
       this.roomCode = code.toUpperCase().trim();
-      const hostPeerId = this.formatPeerId(this.roomCode);
 
-      console.log('[Multiplayer Client] Connecting to host:', hostPeerId);
+      let connected = false;
+      let hostVerified = false;
+
+      let timeoutTimer = setTimeout(() => {
+        if (!hostVerified) {
+          this.cleanup();
+          if (onError) onError({ message: 'Room code not found. Make sure host is waiting.' });
+        }
+      }, 10000);
+
+      this.connectToBroker(this.roomCode, () => {
+        connected = true;
+        // Ping for host
+        this.publish({
+          type: 'client_ping',
+          sender: this.clientId
+        });
+      }, (err) => {
+        clearTimeout(timeoutTimer);
+        if (onError) onError(err);
+      });
+
+      // Hook incoming message to verify host responds
+      this.onHostBeacon = () => {
+        if (!hostVerified) {
+          hostVerified = true;
+          clearTimeout(timeoutTimer);
+          if (onReady) onReady(this.roomCode);
+        }
+      };
+    }
+
+    connectToBroker(code, onSuccess, onError, brokerIndex = 0) {
+      if (brokerIndex >= this.brokerUrls.length) {
+        if (onError) onError({ message: 'Could not connect to online network.' });
+        return;
+      }
+
+      const brokerUrl = this.brokerUrls[brokerIndex];
+      console.log('[Multiplayer] Connecting to broker:', brokerUrl, 'for room:', code);
 
       try {
-        this.peer = new Peer({
-          debug: 1,
-          config: { iceServers: this.iceServers }
+        if (typeof mqtt === 'undefined') {
+          console.error('[Multiplayer] MQTT library not loaded');
+          if (onError) onError({ message: 'Multiplayer library missing.' });
+          return;
+        }
+
+        const client = mqtt.connect(brokerUrl, {
+          clientId: this.clientId + '_' + Math.random().toString(16).substr(2, 6),
+          clean: true,
+          connectTimeout: 5000,
+          reconnectPeriod: 3000
         });
 
-        let finished = false;
-        let connectionTimeout = setTimeout(() => {
-          if (!finished) {
-            finished = true;
-            console.warn('[Multiplayer Client] Connection timed out after 14s.');
-            if (onError) onError({ message: 'Host connection timed out. Make sure host is in lobby or in game.' });
-          }
-        }, 14000);
+        this.client = client;
 
-        this.peer.on('open', (id) => {
-          console.log('[Multiplayer Client] Registered client ID:', id);
-          this.peerId = id;
-
-          const conn = this.peer.connect(hostPeerId, {
-            reliable: false
-          });
-
-          conn.on('open', () => {
-            if (finished) return;
-            finished = true;
-            clearTimeout(connectionTimeout);
-            console.log('[Multiplayer Client] Connected successfully to host:', hostPeerId);
-            this.setupConnection(conn);
-            if (onReady) onReady(this.roomCode);
-          });
-
-          conn.on('error', (err) => {
-            if (finished) return;
-            finished = true;
-            clearTimeout(connectionTimeout);
-            console.warn('[Multiplayer Client Conn Error]', err);
-            if (onError) onError(err);
-          });
-
-          conn.on('close', () => {
-            console.log('[Multiplayer Client Conn Closed]');
+        client.on('connect', () => {
+          console.log('[Multiplayer] Connected to WebSocket broker successfully!');
+          const topic = this.getTopic();
+          client.subscribe(topic, { qos: 0 }, (err) => {
+            if (err) {
+              console.warn('[Multiplayer] Subscribe error:', err);
+              if (onError) onError(err);
+              return;
+            }
+            if (onSuccess) onSuccess();
           });
         });
 
-        this.peer.on('error', (err) => {
-          if (finished) return;
-          finished = true;
-          clearTimeout(connectionTimeout);
-          console.warn('[Multiplayer Client Peer Error]', err);
-          if (onError) onError(err);
+        client.on('message', (topic, payload) => {
+          try {
+            const data = JSON.parse(payload.toString());
+            if (data.sender === this.clientId) return; // Ignore own echoes
+            this.handleMessage(data);
+          } catch(e) {}
+        });
+
+        client.on('error', (err) => {
+          console.warn('[Multiplayer] Broker error, trying fallback...', err);
+          client.end(true);
+          this.connectToBroker(code, onSuccess, onError, brokerIndex + 1);
         });
       } catch (err) {
-        console.error('[Multiplayer Client Exception]', err);
-        if (onError) onError(err);
+        this.connectToBroker(code, onSuccess, onError, brokerIndex + 1);
       }
     }
 
-    setupConnection(conn) {
-      this.connections.set(conn.peer, conn);
-
-      conn.on('data', (data) => {
-        this.handleMessage(conn.peer, data);
-      });
-
-      conn.on('close', () => {
-        console.log('[Conn Closed for peer]', conn.peer);
-        this.removeRemotePlayer(conn.peer);
-        this.connections.delete(conn.peer);
-      });
-
-      conn.on('error', (e) => {
-        console.warn('[Conn Error for peer]', conn.peer, e);
-        this.removeRemotePlayer(conn.peer);
-        this.connections.delete(conn.peer);
-      });
-
-      // Send initial greeting
-      this.sendHello(conn);
-
-      // If host, send current world state to new player
-      if (this.isHost) {
-        this.syncFullGameState(conn);
-      }
+    publish(data) {
+      if (!this.client || !this.client.connected) return;
+      data.sender = this.clientId;
+      try {
+        const payload = JSON.stringify(data);
+        this.client.publish(this.getTopic(), payload, { qos: 0 });
+      } catch (e) {}
     }
 
-    sendHello(targetConn = null) {
-      const charIdx = this.game.selectedPlayerCharacter || 0;
-      const packet = {
-        type: 'hello',
-        characterIndex: charIdx,
-        pos: {
-          x: this.game.camera ? this.game.camera.position.x : 0,
-          y: this.game.camera ? this.game.camera.position.y : 0,
-          z: this.game.camera ? this.game.camera.position.z : 0
-        },
-        rot: {
-          yaw: this.game.camera ? this.game.camera.rotation.y : 0,
-          pitch: this.game.camera ? this.game.camera.rotation.x : 0
-        }
-      };
-
-      if (targetConn && targetConn.open) {
-        try { targetConn.send(packet); } catch(e) {}
-      } else {
-        this.broadcast(packet);
-      }
-    }
-
-    syncFullGameState(targetConn) {
-      if (!this.game) return;
-      const relicStates = [];
-      if (this.game.relics) {
-        this.game.relics.forEach((r) => {
-          relicStates.push({ id: r.id, collected: !!r.collected });
-        });
-      }
-      const packet = {
-        type: 'game_state_sync',
-        relicStates: relicStates,
-        relicsCollected: this.game.relicsCollected || 0
-      };
-      if (targetConn && targetConn.open) {
-        try { targetConn.send(packet); } catch(e) {}
-      } else {
-        this.broadcast(packet);
-      }
-    }
-
-    broadcast(data, excludePeerId = null) {
-      this.connections.forEach((conn, peerId) => {
-        if (peerId !== excludePeerId && conn.open) {
-          try {
-            conn.send(data);
-          } catch(e) {}
-        }
-      });
-    }
-
-    handleMessage(senderId, data) {
+    handleMessage(data) {
       if (!data || !data.type) return;
 
       switch(data.type) {
-        case 'hello':
-          this.spawnRemotePlayer(senderId, data.characterIndex || 0, data.pos, data.rot);
+        case 'host_ready':
+          if (!this.isHost && this.onHostBeacon) {
+            this.onHostBeacon();
+          }
+          break;
+
+        case 'client_ping':
           if (this.isHost) {
-            // Forward existing players to the new player
-            this.remotePlayers.forEach((p, otherId) => {
-              if (otherId !== senderId && this.connections.has(senderId)) {
-                const targetConn = this.connections.get(senderId);
-                if (targetConn && targetConn.open) {
-                  try {
-                    targetConn.send({
-                      type: 'hello',
-                      fromPeer: otherId,
-                      characterIndex: p.characterIndex,
-                      pos: p.targetPos,
-                      rot: { yaw: p.targetYaw, pitch: p.targetPitch }
-                    });
-                  } catch(e) {}
-                }
-              }
-            });
-            // Also notify other clients of new arrival
-            this.broadcast({
-              type: 'hello',
-              fromPeer: senderId,
-              characterIndex: data.characterIndex || 0,
-              pos: data.pos,
-              rot: data.rot
-            }, senderId);
+            // Reply with host announcement and trigger UI callback
+            this.publish({ type: 'host_ready' });
+            if (this.onPlayerJoined) {
+              this.onPlayerJoined(data.sender);
+            }
+          }
+          break;
+
+        case 'hello':
+          this.spawnRemotePlayer(data.sender, data.characterIndex || 0, data.pos, data.rot);
+          if (this.isHost) {
+            // Reply to new player with host position
+            this.sendHello();
+            // Sync relics
+            this.syncFullGameState();
           }
           break;
 
         case 'transform': {
-          const p = this.remotePlayers.get(senderId);
+          let p = this.remotePlayers.get(data.sender);
           if (p) {
             p.targetPos.set(data.x, data.y, data.z);
             p.targetYaw = data.yaw;
@@ -284,12 +200,7 @@
               p.flashlight.visible = !!data.fl;
             }
           } else {
-            this.spawnRemotePlayer(senderId, data.charIdx || 0, { x: data.x, y: data.y, z: data.z });
-          }
-
-          if (this.isHost) {
-            data.fromPeer = senderId;
-            this.broadcast(data, senderId);
+            this.spawnRemotePlayer(data.sender, data.charIdx || 0, { x: data.x, y: data.y, z: data.z });
           }
           break;
         }
@@ -297,9 +208,6 @@
         case 'relic_pickup':
           if (this.game && typeof this.game.onRemoteRelicCollected === 'function') {
             this.game.onRemoteRelicCollected(data.relicIndex);
-          }
-          if (this.isHost) {
-            this.broadcast(data, senderId);
           }
           break;
 
@@ -315,6 +223,38 @@
           }
           break;
       }
+    }
+
+    sendHello() {
+      const charIdx = this.game.selectedPlayerCharacter || 0;
+      this.publish({
+        type: 'hello',
+        characterIndex: charIdx,
+        pos: {
+          x: this.game.camera ? this.game.camera.position.x : 0,
+          y: this.game.camera ? this.game.camera.position.y : 0,
+          z: this.game.camera ? this.game.camera.position.z : 0
+        },
+        rot: {
+          yaw: this.game.camera ? this.game.camera.rotation.y : 0,
+          pitch: this.game.camera ? this.game.camera.rotation.x : 0
+        }
+      });
+    }
+
+    syncFullGameState() {
+      if (!this.game) return;
+      const relicStates = [];
+      if (this.game.relics) {
+        this.game.relics.forEach((r) => {
+          relicStates.push({ id: r.id, collected: !!r.collected });
+        });
+      }
+      this.publish({
+        type: 'game_state_sync',
+        relicStates: relicStates,
+        relicsCollected: this.game.relicsCollected || 0
+      });
     }
 
     startNetworkLoop() {
@@ -334,7 +274,7 @@
     }
 
     sendLocalTransform() {
-      if (!this.game || !this.game.camera || this.connections.size === 0) return;
+      if (!this.game || !this.game.camera || !this.client || !this.client.connected) return;
 
       let anim = 'Idle';
       if (this.game.isSprinting && (this.game.keys && (this.game.keys['KeyW'] || this.game.keys['KeyS'] || this.game.keys['KeyA'] || this.game.keys['KeyD']))) {
@@ -343,7 +283,7 @@
         anim = 'Walk';
       }
 
-      const packet = {
+      this.publish({
         type: 'transform',
         charIdx: this.game.selectedPlayerCharacter,
         x: Number(this.game.camera.position.x.toFixed(3)),
@@ -353,15 +293,13 @@
         pitch: Number(this.game.camera.rotation.x.toFixed(3)),
         anim: anim,
         fl: this.game.flashlight ? this.game.flashlight.intensity > 0 : true
-      };
-
-      this.broadcast(packet);
+      });
     }
 
     sendCuratorState() {
       if (!this.isHost || !this.game || !this.game.smitty) return;
       const s = this.game.smitty;
-      const packet = {
+      this.publish({
         type: 'curator_sync',
         x: Number(s.position.x.toFixed(3)),
         y: Number(s.position.y.toFixed(3)),
@@ -369,27 +307,25 @@
         yaw: Number(s.rotation.y.toFixed(3)),
         state: this.game.smittyState || 'patrol',
         visible: s.visible
-      };
-      this.broadcast(packet);
+      });
     }
 
     notifyRelicCollected(relicIndex) {
-      const packet = {
+      this.publish({
         type: 'relic_pickup',
         relicIndex: relicIndex
-      };
-      this.broadcast(packet);
+      });
     }
 
-    spawnRemotePlayer(peerId, characterIndex, initialPos, initialRot) {
-      if (this.remotePlayers.has(peerId)) return;
+    spawnRemotePlayer(id, characterIndex, initialPos, initialRot) {
+      if (this.remotePlayers.has(id)) return;
 
       const group = new THREE.Group();
-      group.name = 'remote-player-' + peerId;
+      group.name = 'remote-player-' + id;
 
       const char = this.characterData[characterIndex] || this.characterData[0];
       const remoteData = {
-        peerId,
+        id,
         characterIndex,
         group,
         model: null,
@@ -407,7 +343,7 @@
       if (this.game.scene) {
         this.game.scene.add(group);
       }
-      this.remotePlayers.set(peerId, remoteData);
+      this.remotePlayers.set(id, remoteData);
 
       // Flashlight
       const spot = new THREE.SpotLight(0xfff1cf, 2.5, 30, Math.PI / 5, 0.45, 1.2);
@@ -419,7 +355,7 @@
       spot.target = spotTarget;
       remoteData.flashlight = spot;
 
-      // Load model
+      // Load 3D model
       const loader = new THREE.GLTFLoader();
       const cacheKey = window._ASSET_VERSION || '1.0';
       loader.load(`assets/playermodels/${char.file}?v=${cacheKey}`, (gltf) => {
@@ -462,28 +398,24 @@
       });
     }
 
-    removeRemotePlayer(peerId) {
-      const p = this.remotePlayers.get(peerId);
+    removeRemotePlayer(id) {
+      const p = this.remotePlayers.get(id);
       if (p) {
         if (p.group && this.game.scene) {
           this.game.scene.remove(p.group);
         }
-        this.remotePlayers.delete(peerId);
+        this.remotePlayers.delete(id);
       }
     }
 
     cleanup() {
       this.stopNetworkLoop();
-      this.remotePlayers.forEach((p, peerId) => {
-        this.removeRemotePlayer(peerId);
+      this.remotePlayers.forEach((p, id) => {
+        this.removeRemotePlayer(id);
       });
-      this.connections.forEach((conn) => {
-        try { conn.close(); } catch(e) {}
-      });
-      this.connections.clear();
-      if (this.peer) {
-        try { this.peer.destroy(); } catch(e) {}
-        this.peer = null;
+      if (this.client) {
+        try { this.client.end(true); } catch(e) {}
+        this.client = null;
       }
     }
 
