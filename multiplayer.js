@@ -217,6 +217,12 @@
           }
           break;
 
+        case 'statues_sync':
+          if (!this.isHost && this.game && typeof this.game.onStatuesSync === 'function') {
+            this.game.onStatuesSync(data.statues);
+          }
+          break;
+
         case 'game_state_sync':
           if (!this.isHost && this.game && typeof this.game.onFullGameStateSync === 'function') {
             this.game.onFullGameStateSync(data);
@@ -264,6 +270,7 @@
         this.sendLocalTransform();
         if (this.isHost) {
           this.sendCuratorState();
+          this.sendStatuesState();
         }
       }, 1000 / this.broadcastRate);
     }
@@ -314,6 +321,27 @@
       this.publish({
         type: 'relic_pickup',
         relicIndex: relicIndex
+      });
+    }
+
+    sendStatuesState() {
+      if (!this.isHost || !this.game || !this.game.statues || this.game.statues.length === 0) return;
+      const statueData = [];
+      this.game.statues.forEach((s, idx) => {
+        statueData.push({
+          i: idx,
+          x: Number(s.x.toFixed(3)),
+          y: Number(s.y.toFixed(3)),
+          z: Number(s.z.toFixed(3)),
+          yaw: Number(s.yaw.toFixed(3)),
+          state: s.aiState || 'IDLE',
+          anim: s.currentAnim || 'idle',
+          playing: !!s.isPlayingAudio
+        });
+      });
+      this.publish({
+        type: 'statues_sync',
+        statues: statueData
       });
     }
 

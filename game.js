@@ -15667,8 +15667,12 @@
             this.buildObstacleGrid();
           }
           this.updateSmitty(delta);
-          if (this.updateStatues) this.updateStatues(delta);
-          if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
+          // In multiplayer, Host simulates wandering statue AI and syncs to clients; in solo, simulate locally
+          const isClientInCoop = (this.mp && !this.mp.isHost && this.mp.client && this.mp.client.connected);
+          if (!isClientInCoop) {
+            if (this.updateStatues) this.updateStatues(delta);
+            if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
+          }
           this.updateLiquidBlood(delta);
           this.updateAmmoPickups(delta);
           if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
@@ -16426,6 +16430,25 @@
       this.smitty.rotation.y = data.yaw;
       this.smittyState = data.state;
       this.smitty.visible = data.visible;
+    }
+
+    onStatuesSync(statueList) {
+      if (!this.statues || !Array.isArray(statueList)) return;
+      statueList.forEach(item => {
+        const s = this.statues[item.i];
+        if (!s) return;
+        s.x = item.x;
+        s.y = item.y;
+        s.z = item.z;
+        s.yaw = item.yaw;
+        if (s.group) {
+          s.group.position.set(s.x, s.y, s.z);
+          s.group.rotation.y = s.yaw;
+        }
+        if (s.setAnim && item.anim && s.currentAnim !== item.anim) {
+          s.setAnim(item.anim);
+        }
+      });
     }
 
     onFullGameStateSync(data) {
