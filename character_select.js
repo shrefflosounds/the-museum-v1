@@ -5,7 +5,7 @@
       this.game = game;
       this.characters = [
         { id: 0, name: 'The Animal', file: 'the-animal.glb', portrait: 'assets/ui/portraits/char_0.png' },
-        { id: 1, name: 'The Man', file: 'the-man.glb', portrait: 'assets/ui/portraits/char_1.png' },
+        { id: 1, name: 'The Earth', file: 'the-man.glb', portrait: 'assets/ui/portraits/char_1.png' },
         { id: 2, name: 'Sand', file: 'sand.glb', portrait: 'assets/ui/portraits/char_2.png' },
         { id: 3, name: 'Cook', file: 'cook.glb', portrait: 'assets/ui/portraits/char_3.png' },
         { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png' },

@@ -13,7 +13,7 @@
       this.broadcastRate = 30; // 30Hz
       this.characterData = [
         { name: 'The Animal', file: 'the-animal.glb' },
-        { name: 'The Man', file: 'the-man.glb' },
+        { name: 'The Earth', file: 'the-man.glb' },
         { name: 'Sand', file: 'sand.glb' },
         { name: 'Cook', file: 'cook.glb' },
         { name: 'The Arse', file: 'the-tundra.glb' },
