@@ -11,6 +11,7 @@
       this.peerId = null;
       this.tickInterval = null;
       this.broadcastRate = 30; // 30Hz
+      this.onPlayerJoined = null;
       this.characterData = [
         { name: 'The Animal', file: 'the-animal.glb' },
         { name: 'The Earth', file: 'the-man.glb' },
@@ -21,11 +22,13 @@
         { name: 'The Student', file: 'the-student.glb' }
       ];
 
-      // Public STUN servers for reliable NAT & cross-network connection
+      // Robust STUN servers for WebRTC cross-network NAT punchthrough
       this.iceServers = [
         { urls: 'stun:stun.l.google.com:19302' },
         { urls: 'stun:stun1.l.google.com:19302' },
         { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun3.l.google.com:19302' },
+        { urls: 'stun:stun4.l.google.com:19302' },
         { urls: 'stun:stun.cloudflare.com:3478' }
       ];
     }
@@ -40,7 +43,8 @@
     }
 
     formatPeerId(code) {
-      return 'museum-exhibit-' + code.toUpperCase().trim();
+      // Use clean standard alphanumeric identifier prefix
+      return 'themuseum-' + code.toUpperCase().trim();
     }
 
     initHost(onReady, onError) {
@@ -50,6 +54,8 @@
       this.roomCode = code;
       const peerId = this.formatPeerId(code);
 
+      console.log('[Multiplayer Host] Initializing room:', code, 'with Peer ID:', peerId);
+
       try {
         this.peer = new Peer(peerId, {
           debug: 1,
@@ -57,23 +63,30 @@
         });
 
         this.peer.on('open', (id) => {
+          console.log('[Multiplayer Host] Peer server registered ID:', id);
           this.peerId = id;
           if (onReady) onReady(code);
         });
 
         this.peer.on('connection', (conn) => {
+          console.log('[Multiplayer Host] Incoming connection from client:', conn.peer);
           this.setupConnection(conn);
+          if (this.onPlayerJoined) {
+            this.onPlayerJoined(conn.peer);
+          }
         });
 
         this.peer.on('error', (err) => {
           console.warn('[Multiplayer Host Error]', err);
           if (err.type === 'unavailable-id') {
+            console.log('[Multiplayer Host] ID unavailable, trying fresh code...');
             this.initHost(onReady, onError);
           } else if (onError) {
             onError(err);
           }
         });
       } catch (err) {
+        console.error('[Multiplayer Host Exception]', err);
         if (onError) onError(err);
       }
     }
@@ -84,45 +97,62 @@
       this.roomCode = code.toUpperCase().trim();
       const hostPeerId = this.formatPeerId(this.roomCode);
 
+      console.log('[Multiplayer Client] Connecting to host:', hostPeerId);
+
       try {
         this.peer = new Peer({
           debug: 1,
           config: { iceServers: this.iceServers }
         });
 
+        let finished = false;
         let connectionTimeout = setTimeout(() => {
-          if (onError) onError({ message: 'Host connection timed out. Verify the code.' });
-        }, 12000);
+          if (!finished) {
+            finished = true;
+            console.warn('[Multiplayer Client] Connection timed out after 14s.');
+            if (onError) onError({ message: 'Host connection timed out. Make sure host is in lobby or in game.' });
+          }
+        }, 14000);
 
         this.peer.on('open', (id) => {
+          console.log('[Multiplayer Client] Registered client ID:', id);
           this.peerId = id;
+
           const conn = this.peer.connect(hostPeerId, {
-            reliable: true
+            reliable: false
           });
 
           conn.on('open', () => {
+            if (finished) return;
+            finished = true;
             clearTimeout(connectionTimeout);
+            console.log('[Multiplayer Client] Connected successfully to host:', hostPeerId);
             this.setupConnection(conn);
             if (onReady) onReady(this.roomCode);
           });
 
           conn.on('error', (err) => {
+            if (finished) return;
+            finished = true;
             clearTimeout(connectionTimeout);
-            console.warn('[Multiplayer Connect Error]', err);
+            console.warn('[Multiplayer Client Conn Error]', err);
             if (onError) onError(err);
           });
 
           conn.on('close', () => {
-            clearTimeout(connectionTimeout);
+            console.log('[Multiplayer Client Conn Closed]');
           });
         });
 
         this.peer.on('error', (err) => {
+          if (finished) return;
+          finished = true;
           clearTimeout(connectionTimeout);
-          console.warn('[Multiplayer Peer Error]', err);
+          console.warn('[Multiplayer Client Peer Error]', err);
           if (onError) onError(err);
         });
       } catch (err) {
+        console.error('[Multiplayer Client Exception]', err);
         if (onError) onError(err);
       }
     }
@@ -130,29 +160,26 @@
     setupConnection(conn) {
       this.connections.set(conn.peer, conn);
 
-      if (this.onPlayerJoined) {
-        this.onPlayerJoined(conn.peer);
-      }
-
       conn.on('data', (data) => {
         this.handleMessage(conn.peer, data);
       });
 
       conn.on('close', () => {
+        console.log('[Conn Closed for peer]', conn.peer);
         this.removeRemotePlayer(conn.peer);
         this.connections.delete(conn.peer);
       });
 
       conn.on('error', (e) => {
-        console.warn('[Conn Error]', e);
+        console.warn('[Conn Error for peer]', conn.peer, e);
         this.removeRemotePlayer(conn.peer);
         this.connections.delete(conn.peer);
       });
 
-      // Send greeting with character and spawn position
+      // Send initial greeting
       this.sendHello(conn);
 
-      // If host, send current relic state & curator state
+      // If host, send current world state to new player
       if (this.isHost) {
         this.syncFullGameState(conn);
       }
@@ -235,7 +262,7 @@
                 }
               }
             });
-            // Also notify others of this new player
+            // Also notify other clients of new arrival
             this.broadcast({
               type: 'hello',
               fromPeer: senderId,
@@ -261,7 +288,6 @@
           }
 
           if (this.isHost) {
-            // Host forwards transform to other clients
             data.fromPeer = senderId;
             this.broadcast(data, senderId);
           }
