@@ -12524,8 +12524,15 @@
           this.mp.initHost((code) => {
             if (this.dom.hostRoomCodeDisplay) this.dom.hostRoomCodeDisplay.textContent = code;
             if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Room active! Waiting for players...';
+            if (this.mp) {
+              this.mp.onPlayerJoined = (peerId) => {
+                if (this.dom.hostPlayersList) {
+                  this.dom.hostPlayersList.textContent = 'Player connected! Click PROCEED to enter.';
+                }
+              };
+            }
           }, (err) => {
-            if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Connection error: ' + (err.type || 'Failed');
+            if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Connection error: ' + (err.message || err.type || 'Failed');
           });
         });
       }

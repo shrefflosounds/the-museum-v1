@@ -1,4 +1,4 @@
-// The Museum - Peer-to-Peer WebRTC Multiplayer Engine
+// The Museum - Robust WebRTC Multiplayer Engine
 (function() {
   class MuseumMultiplayer {
     constructor(game) {
@@ -7,7 +7,7 @@
       this.isHost = false;
       this.roomCode = null;
       this.connections = new Map(); // peerId -> DataConnection
-      this.remotePlayers = new Map(); // peerId -> { modelRoot, model, mixer, actions, currentAction, flashlight, targetPos, targetRot, ... }
+      this.remotePlayers = new Map(); // peerId -> remote player object
       this.peerId = null;
       this.tickInterval = null;
       this.broadcastRate = 30; // 30Hz
@@ -20,10 +20,18 @@
         { name: 'The Clown', file: 'the-clown.glb' },
         { name: 'The Student', file: 'the-student.glb' }
       ];
+
+      // Public STUN servers for reliable NAT & cross-network connection
+      this.iceServers = [
+        { urls: 'stun:stun.l.google.com:19302' },
+        { urls: 'stun:stun1.l.google.com:19302' },
+        { urls: 'stun:stun2.l.google.com:19302' },
+        { urls: 'stun:stun.cloudflare.com:3478' }
+      ];
     }
 
     generateCode(len = 4) {
-      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
       let code = '';
       for (let i = 0; i < len; i++) {
         code += chars.charAt(Math.floor(Math.random() * chars.length));
@@ -31,21 +39,21 @@
       return code;
     }
 
+    formatPeerId(code) {
+      return 'museum-exhibit-' + code.toUpperCase().trim();
+    }
+
     initHost(onReady, onError) {
+      this.cleanup();
       this.isHost = true;
       const code = this.generateCode(4);
-      const peerId = 'museum-' + code;
       this.roomCode = code;
+      const peerId = this.formatPeerId(code);
 
       try {
         this.peer = new Peer(peerId, {
           debug: 1,
-          config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:global.stun.twilio.com:3478' }
-            ]
-          }
+          config: { iceServers: this.iceServers }
         });
 
         this.peer.on('open', (id) => {
@@ -60,7 +68,6 @@
         this.peer.on('error', (err) => {
           console.warn('[Multiplayer Host Error]', err);
           if (err.type === 'unavailable-id') {
-            // Retry with new code
             this.initHost(onReady, onError);
           } else if (onError) {
             onError(err);
@@ -72,35 +79,46 @@
     }
 
     initClient(code, onReady, onError) {
+      this.cleanup();
       this.isHost = false;
       this.roomCode = code.toUpperCase().trim();
-      const hostPeerId = 'museum-' + this.roomCode;
+      const hostPeerId = this.formatPeerId(this.roomCode);
 
       try {
         this.peer = new Peer({
           debug: 1,
-          config: {
-            iceServers: [
-              { urls: 'stun:stun.l.google.com:19302' },
-              { urls: 'stun:global.stun.twilio.com:3478' }
-            ]
-          }
+          config: { iceServers: this.iceServers }
         });
+
+        let connectionTimeout = setTimeout(() => {
+          if (onError) onError({ message: 'Host connection timed out. Verify the code.' });
+        }, 12000);
 
         this.peer.on('open', (id) => {
           this.peerId = id;
-          const conn = this.peer.connect(hostPeerId, { reliable: false });
+          const conn = this.peer.connect(hostPeerId, {
+            reliable: true
+          });
+
           conn.on('open', () => {
+            clearTimeout(connectionTimeout);
             this.setupConnection(conn);
             if (onReady) onReady(this.roomCode);
           });
+
           conn.on('error', (err) => {
-            console.warn('[Multiplayer Join Error]', err);
+            clearTimeout(connectionTimeout);
+            console.warn('[Multiplayer Connect Error]', err);
             if (onError) onError(err);
+          });
+
+          conn.on('close', () => {
+            clearTimeout(connectionTimeout);
           });
         });
 
         this.peer.on('error', (err) => {
+          clearTimeout(connectionTimeout);
           console.warn('[Multiplayer Peer Error]', err);
           if (onError) onError(err);
         });
@@ -111,6 +129,10 @@
 
     setupConnection(conn) {
       this.connections.set(conn.peer, conn);
+
+      if (this.onPlayerJoined) {
+        this.onPlayerJoined(conn.peer);
+      }
 
       conn.on('data', (data) => {
         this.handleMessage(conn.peer, data);
@@ -127,10 +149,20 @@
         this.connections.delete(conn.peer);
       });
 
-      // Send initial hello with chosen character
-      conn.send({
+      // Send greeting with character and spawn position
+      this.sendHello(conn);
+
+      // If host, send current relic state & curator state
+      if (this.isHost) {
+        this.syncFullGameState(conn);
+      }
+    }
+
+    sendHello(targetConn = null) {
+      const charIdx = this.game.selectedPlayerCharacter || 0;
+      const packet = {
         type: 'hello',
-        characterIndex: this.game.selectedPlayerCharacter,
+        characterIndex: charIdx,
         pos: {
           x: this.game.camera ? this.game.camera.position.x : 0,
           y: this.game.camera ? this.game.camera.position.y : 0,
@@ -140,30 +172,30 @@
           yaw: this.game.camera ? this.game.camera.rotation.y : 0,
           pitch: this.game.camera ? this.game.camera.rotation.x : 0
         }
-      });
+      };
 
-      // If host, send current relic state & curator state
-      if (this.isHost) {
-        this.syncFullGameState(conn);
+      if (targetConn && targetConn.open) {
+        try { targetConn.send(packet); } catch(e) {}
+      } else {
+        this.broadcast(packet);
       }
     }
 
     syncFullGameState(targetConn) {
       if (!this.game) return;
       const relicStates = [];
-      if (this.game.pedestals) {
-        this.game.pedestals.forEach((p, index) => {
-          relicStates.push({ index, hasRelic: !!p.hasRelic });
+      if (this.game.relics) {
+        this.game.relics.forEach((r) => {
+          relicStates.push({ id: r.id, collected: !!r.collected });
         });
       }
       const packet = {
         type: 'game_state_sync',
         relicStates: relicStates,
-        keysCollected: this.game.keysCollected || 0,
-        doorsUnlocked: this.game.doorsUnlocked || false
+        relicsCollected: this.game.relicsCollected || 0
       };
-      if (targetConn) {
-        targetConn.send(packet);
+      if (targetConn && targetConn.open) {
+        try { targetConn.send(packet); } catch(e) {}
       } else {
         this.broadcast(packet);
       }
@@ -189,13 +221,18 @@
             // Forward existing players to the new player
             this.remotePlayers.forEach((p, otherId) => {
               if (otherId !== senderId && this.connections.has(senderId)) {
-                this.connections.get(senderId).send({
-                  type: 'hello',
-                  fromPeer: otherId,
-                  characterIndex: p.characterIndex,
-                  pos: p.targetPos,
-                  rot: p.targetRot
-                });
+                const targetConn = this.connections.get(senderId);
+                if (targetConn && targetConn.open) {
+                  try {
+                    targetConn.send({
+                      type: 'hello',
+                      fromPeer: otherId,
+                      characterIndex: p.characterIndex,
+                      pos: p.targetPos,
+                      rot: { yaw: p.targetYaw, pitch: p.targetPitch }
+                    });
+                  } catch(e) {}
+                }
               }
             });
             // Also notify others of this new player
@@ -256,6 +293,7 @@
 
     startNetworkLoop() {
       if (this.tickInterval) clearInterval(this.tickInterval);
+      this.sendHello();
       this.tickInterval = setInterval(() => {
         this.sendLocalTransform();
         if (this.isHost) {
@@ -271,7 +309,7 @@
 
     sendLocalTransform() {
       if (!this.game || !this.game.camera || this.connections.size === 0) return;
-      
+
       let anim = 'Idle';
       if (this.game.isSprinting && (this.game.keys && (this.game.keys['KeyW'] || this.game.keys['KeyS'] || this.game.keys['KeyA'] || this.game.keys['KeyD']))) {
         anim = 'Run';
@@ -322,7 +360,7 @@
 
       const group = new THREE.Group();
       group.name = 'remote-player-' + peerId;
-      
+
       const char = this.characterData[characterIndex] || this.characterData[0];
       const remoteData = {
         peerId,
@@ -340,10 +378,12 @@
       };
 
       group.position.copy(remoteData.targetPos);
-      this.game.scene.add(group);
+      if (this.game.scene) {
+        this.game.scene.add(group);
+      }
       this.remotePlayers.set(peerId, remoteData);
 
-      // Add remote player flashlight spotlight
+      // Flashlight
       const spot = new THREE.SpotLight(0xfff1cf, 2.5, 30, Math.PI / 5, 0.45, 1.2);
       spot.position.set(0, 1.4, 0);
       const spotTarget = new THREE.Object3D();
@@ -391,7 +431,7 @@
             remoteData.currentAction = remoteData.actions.Idle;
           }
         } catch (e) {
-          console.warn('[Remote Player Model Load Error]', e);
+          console.warn('[Remote Player Load Error]', e);
         }
       });
     }
@@ -406,20 +446,35 @@
       }
     }
 
+    cleanup() {
+      this.stopNetworkLoop();
+      this.remotePlayers.forEach((p, peerId) => {
+        this.removeRemotePlayer(peerId);
+      });
+      this.connections.forEach((conn) => {
+        try { conn.close(); } catch(e) {}
+      });
+      this.connections.clear();
+      if (this.peer) {
+        try { this.peer.destroy(); } catch(e) {}
+        this.peer = null;
+      }
+    }
+
     update(delta) {
       this.remotePlayers.forEach((p) => {
         if (!p.group) return;
 
-        // Smooth position interpolation (lerp)
+        // Smooth position lerp
         p.group.position.lerp(p.targetPos, Math.min(1, delta * 14));
 
-        // Smooth yaw rotation interpolation
+        // Smooth yaw rotation lerp
         let diffYaw = p.targetYaw - p.group.rotation.y;
         while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
         while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
         p.group.rotation.y += diffYaw * Math.min(1, delta * 12);
 
-        // Update animation
+        // Update animation mixer
         if (p.mixer) {
           p.mixer.update(delta);
           const wantedAction = p.actions[p.anim] || p.actions.Idle;
