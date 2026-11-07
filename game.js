@@ -11542,7 +11542,7 @@
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'Sand', 'Cook', 'The Arse', 'The Clown', 'The Student'];
+        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -11600,7 +11600,7 @@
         { name: 'The Animal', file: 'the-animal.glb' },
         { name: 'The Earth', file: 'the-man.glb' },
         { name: 'Sand', file: 'sand.glb' },
-        { name: 'Cook', file: 'cook.glb' },
+        { name: 'The Cook', file: 'cook.glb' },
         { name: 'The Arse', file: 'the-tundra.glb' },
         { name: 'The Clown', file: 'the-clown.glb' },
         { name: 'The Student', file: 'the-student.glb' }

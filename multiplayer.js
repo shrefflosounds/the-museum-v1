@@ -15,7 +15,7 @@
         { name: 'The Animal', file: 'the-animal.glb' },
         { name: 'The Earth', file: 'the-man.glb' },
         { name: 'Sand', file: 'sand.glb' },
-        { name: 'Cook', file: 'cook.glb' },
+        { name: 'The Cook', file: 'cook.glb' },
         { name: 'The Arse', file: 'the-tundra.glb' },
         { name: 'The Clown', file: 'the-clown.glb' },
         { name: 'The Student', file: 'the-student.glb' }
