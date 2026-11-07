@@ -12195,6 +12195,12 @@
         pickup.glowLight.intensity = 0;
         pickup.glowLight.visible = false;
       }
+      if (this.mp) {
+        const pIndex = this.ammoPickups.indexOf(pickup);
+        if (pIndex !== -1) {
+          this.mp.notifyAmmoPickup(pIndex);
+        }
+      }
       pickup.respawnTimer = CONFIG.AMMO_PICKUP.RESPAWN_TIME; // 180 seconds = 3 minutes
 
       this.reserveAmmo += CONFIG.AMMO_PICKUP.AMMO_AMOUNT;
@@ -15748,7 +15754,15 @@
               }
             }
           }
-          const shouldOpen = (distPlayer < 3.4 || distSmitty < 3.4 || statueNear);
+          let remotePlayerNear = false;
+          if (this.mp && this.mp.remotePlayers) {
+            this.mp.remotePlayers.forEach(rp => {
+              if (rp.group && Math.hypot(rp.group.position.x - d.x, rp.group.position.z - d.doorZ) < 3.4) {
+                remotePlayerNear = true;
+              }
+            });
+          }
+          const shouldOpen = (distPlayer < 3.4 || distSmitty < 3.4 || statueNear || remotePlayerNear);
 
           // Audio whisper when door begins to slide open
           if (shouldOpen && !d.isOpen && d.openProgress < 0.05) {
@@ -16449,6 +16463,41 @@
           s.setAnim(item.anim);
         }
       });
+    }
+
+    onCratesSync(crateList) {
+      if (!this.physicsCrates || !Array.isArray(crateList)) return;
+      crateList.forEach(item => {
+        const c = this.physicsCrates[item.i];
+        if (!c) return;
+        c.x = item.x;
+        c.y = item.y;
+        c.z = item.z;
+        c.rotY = item.rotY;
+        c.rotX = item.rotX || 0;
+        c.rotZ = item.rotZ || 0;
+        c.isHeld = !!item.held;
+        if (c.mesh) {
+          c.mesh.position.set(c.x, c.y + c.h / 2, c.z);
+          c.mesh.rotation.set(c.rotX, c.rotY, c.rotZ);
+        }
+        if (c.collider) {
+          c.collider.x = c.x;
+          c.collider.z = c.z;
+        }
+      });
+    }
+
+    onRemoteAmmoPickup(index) {
+      const p = this.ammoPickups[index];
+      if (p && p.active) {
+        p.active = false;
+        if (p.mesh) p.mesh.visible = false;
+        if (p.glowLight) {
+          p.glowLight.intensity = 0;
+          p.glowLight.visible = false;
+        }
+      }
     }
 
     onFullGameStateSync(data) {

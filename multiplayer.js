@@ -223,6 +223,18 @@
           }
           break;
 
+        case 'crates_sync':
+          if (!this.isHost && this.game && typeof this.game.onCratesSync === 'function') {
+            this.game.onCratesSync(data.crates);
+          }
+          break;
+
+        case 'ammo_pickup':
+          if (this.game && typeof this.game.onRemoteAmmoPickup === 'function') {
+            this.game.onRemoteAmmoPickup(data.index);
+          }
+          break;
+
         case 'game_state_sync':
           if (!this.isHost && this.game && typeof this.game.onFullGameStateSync === 'function') {
             this.game.onFullGameStateSync(data);
@@ -271,6 +283,7 @@
         if (this.isHost) {
           this.sendCuratorState();
           this.sendStatuesState();
+          this.sendCratesState();
         }
       }, 1000 / this.broadcastRate);
     }
@@ -342,6 +355,39 @@
       this.publish({
         type: 'statues_sync',
         statues: statueData
+      });
+    }
+
+    sendCratesState() {
+      if (!this.isHost || !this.game || !this.game.physicsCrates || this.game.physicsCrates.length === 0) return;
+      const crateData = [];
+      this.game.physicsCrates.forEach((c, idx) => {
+        // Only send if moving, held, or collapsed to save bandwidth
+        if (c.isHeld || c.isCollapsed || Math.abs(c.vx) > 0.02 || Math.abs(c.vz) > 0.02) {
+          crateData.push({
+            i: idx,
+            x: Number(c.x.toFixed(3)),
+            y: Number(c.y.toFixed(3)),
+            z: Number(c.z.toFixed(3)),
+            rotY: Number(c.rotY.toFixed(3)),
+            rotX: Number(c.rotX.toFixed(3)),
+            rotZ: Number(c.rotZ.toFixed(3)),
+            held: !!c.isHeld
+          });
+        }
+      });
+      if (crateData.length > 0) {
+        this.publish({
+          type: 'crates_sync',
+          crates: crateData
+        });
+      }
+    }
+
+    notifyAmmoPickup(pickupIndex) {
+      this.publish({
+        type: 'ammo_pickup',
+        index: pickupIndex
       });
     }
 
