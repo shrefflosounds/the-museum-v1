@@ -1162,3 +1162,271 @@ body.game-playing #game-container {
 .checklist-box {
   position: relative;
 }
+
+/* ============================================================
+   MULTIPLAYER & CHARACTER SELECTION SYSTEM
+   ============================================================ */
+.mp-btn-row {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.mp-action-btn {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #ddd;
+  font-size: 13px;
+  letter-spacing: 1.5px;
+  padding: 12px 14px;
+}
+
+.mp-action-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: #fff;
+  color: #fff;
+}
+
+.mp-code-box {
+  max-width: 420px;
+  text-align: center;
+}
+
+.mp-modal-subtitle {
+  color: #aaa;
+  font-size: 14px;
+  margin-top: -6px;
+  margin-bottom: 20px;
+}
+
+.mp-room-badge {
+  font-family: monospace, 'Courier New', Courier;
+  font-size: 38px;
+  letter-spacing: 8px;
+  font-weight: 700;
+  color: #ffd700;
+  background: rgba(0, 0, 0, 0.6);
+  border: 2px dashed rgba(255, 215, 0, 0.5);
+  border-radius: 8px;
+  padding: 14px 20px;
+  display: inline-block;
+  margin-bottom: 16px;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+}
+
+.mp-input {
+  width: 80%;
+  padding: 14px 18px;
+  font-size: 26px;
+  text-align: center;
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  font-family: monospace, 'Courier New', Courier;
+  background: rgba(0, 0, 0, 0.7);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 6px;
+  color: #fff;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.mp-input:focus {
+  border-color: #ffd700;
+  box-shadow: 0 0 14px rgba(255, 215, 0, 0.3);
+}
+
+.mp-error {
+  color: #ff5555;
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.mp-players-status {
+  font-size: 14px;
+  color: #999;
+  margin-top: 10px;
+  min-height: 24px;
+}
+
+/* Character Selection Fullscreen Screen */
+.char-select-container {
+  width: 92vw;
+  max-width: 1200px;
+  height: 84vh;
+  background: radial-gradient(circle at 60% 40%, rgba(20, 24, 40, 0.94) 0%, rgba(8, 9, 14, 0.98) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 100px rgba(10, 20, 40, 0.6);
+  border-radius: 12px;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 32px;
+  box-sizing: border-box;
+  animation: fadeInModal 0.25s ease-out;
+}
+
+.char-select-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 12px;
+}
+
+.char-select-title {
+  font-family: 'Cinzel', serif, Georgia;
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: #fff;
+  margin: 0;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+}
+
+.char-select-badge {
+  font-size: 12px;
+  letter-spacing: 2px;
+  padding: 4px 10px;
+  border-radius: 4px;
+  background: rgba(255, 215, 0, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.5);
+  color: #ffd700;
+  font-weight: 600;
+}
+
+.char-select-body {
+  flex: 1;
+  display: flex;
+  gap: 30px;
+  margin-top: 20px;
+  overflow: hidden;
+}
+
+/* Roster Pane */
+.char-roster-pane {
+  flex: 1;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.char-roster-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 8px 4px;
+  overflow-y: auto;
+}
+
+.char-card {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background: #141720;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  user-select: none;
+}
+
+.char-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: rgba(255, 215, 0, 0.7);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.6);
+}
+
+.char-card.selected {
+  border-color: #ffd700;
+  box-shadow: 0 0 16px rgba(255, 215, 0, 0.6), inset 0 0 8px rgba(255, 215, 0, 0.4);
+  transform: translateY(-4px) scale(1.05);
+}
+
+.char-card.selected::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 2px solid #fff;
+  border-radius: 6px;
+  pointer-events: none;
+}
+
+.char-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.char-card-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+  color: #fff;
+  font-size: 11px;
+  letter-spacing: 1px;
+  padding: 10px 4px 4px 4px;
+  text-align: center;
+  font-weight: 500;
+}
+
+.char-roster-footer {
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.char-name-callout {
+  font-family: 'Cinzel', serif, Georgia;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: #ffd700;
+  margin: 0;
+  text-transform: uppercase;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+/* 3D Showcase Stage */
+.char-preview-pane {
+  flex: 1.2;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(circle at 50% 70%, rgba(30, 45, 80, 0.5) 0%, rgba(10, 15, 25, 0) 70%);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+#char-preview-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.char-preview-footer {
+  position: absolute;
+  bottom: 20px;
+  right: 20px;
+  z-index: 10;
+}
+
+.char-confirm-btn {
+  padding: 14px 34px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  background: #ffd700;
+  color: #0b0d12;
+  border: none;
+  font-weight: 700;
+  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+}
+
+.char-confirm-btn:hover {
+  background: #fff;
+  color: #000;
+  box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
+  transform: translateY(-2px);
+}

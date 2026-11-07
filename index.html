@@ -96,7 +96,69 @@
       </div>
 
       <button id="start-btn" class="museum-btn" title="Enter the museum and begin the exhibition" data-text="start.button">ENTER THE MUSEUM</button>
+      
+      <!-- Multiplayer Actions -->
+      <div class="mp-btn-row">
+        <button id="host-game-btn" class="museum-btn mp-action-btn" type="button" title="Host a cooperative game">HOST CO-OP</button>
+        <button id="join-game-btn" class="museum-btn mp-action-btn" type="button" title="Join a cooperative game">JOIN CO-OP</button>
+      </div>
+
       <button id="start-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
+    </div>
+  </div>
+
+  <!-- Join Code Modal -->
+  <div id="join-code-modal" class="modal-overlay hidden">
+    <div class="modal-box mp-code-box">
+      <button id="join-code-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
+      <h2 class="horror-title">JOIN CO-OP</h2>
+      <p class="mp-modal-subtitle">Enter the 4-character Room Code</p>
+      <input type="text" id="join-room-input" class="mp-input" maxlength="6" placeholder="CODE" autocomplete="off" spellcheck="false">
+      <div id="join-error-msg" class="mp-error hidden">Invalid code or host not found.</div>
+      <button id="join-submit-btn" class="museum-btn" type="button" style="margin-top: 18px;">NEXT</button>
+    </div>
+  </div>
+
+  <!-- Host Code Lobby Modal -->
+  <div id="host-lobby-modal" class="modal-overlay hidden">
+    <div class="modal-box mp-code-box">
+      <button id="host-lobby-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
+      <h2 class="horror-title">HOSTING CO-OP</h2>
+      <p class="mp-modal-subtitle">Share this room code with other players:</p>
+      <div id="host-room-code-display" class="mp-room-badge">----</div>
+      <div id="host-players-list" class="mp-players-status">Waiting for players to connect...</div>
+      <button id="host-proceed-btn" class="museum-btn" type="button" style="margin-top: 18px;">PROCEED</button>
+    </div>
+  </div>
+
+  <!-- Character Select Modal (Fighter Roster Grid + 3D Preview) -->
+  <div id="char-select-modal" class="modal-overlay hidden">
+    <div class="char-select-container">
+      <div class="char-select-header">
+        <h2 class="char-select-title">SELECT CHARACTER</h2>
+        <div id="char-select-mode-tag" class="char-select-badge">COOPERATIVE</div>
+      </div>
+
+      <div class="char-select-body">
+        <!-- Left Roster Grid -->
+        <div class="char-roster-pane">
+          <div class="char-roster-grid" id="char-roster-grid">
+            <!-- Dynamically populated cards with portraits -->
+          </div>
+          <div class="char-roster-footer">
+            <h3 id="char-selected-name" class="char-name-callout">THE ANIMAL</h3>
+          </div>
+        </div>
+
+        <!-- Right 3D Full Character Showcase Stage -->
+        <div class="char-preview-pane">
+          <canvas id="char-preview-canvas"></canvas>
+          <div class="char-preview-halo"></div>
+          <div class="char-preview-footer">
+            <button id="char-confirm-btn" class="museum-btn char-confirm-btn" type="button">CONFIRM CHARACTER</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -308,8 +370,11 @@
   <!-- Three.js and Loaders -->
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
+  <script src="libs/peerjs.min.js"></script>
+  <script src="multiplayer.js"></script>
+  <script src="character_select.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1793780000"></script>
-  <script src="game.js?v=2.2.13"></script>
+  <script src="game.js?v=2.2.14"></script>
 </body>
 </html>

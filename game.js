@@ -4038,6 +4038,18 @@
         firstPersonViewBtn: document.getElementById('view-first-person-btn'),
         thirdPersonViewBtn: document.getElementById('view-third-person-btn'),
         playerCharacterSelect: document.getElementById('player-character-select'),
+        hostGameBtn: document.getElementById('host-game-btn'),
+        joinGameBtn: document.getElementById('join-game-btn'),
+        joinCodeModal: document.getElementById('join-code-modal'),
+        joinCodeCloseBtn: document.getElementById('join-code-close-btn'),
+        joinRoomInput: document.getElementById('join-room-input'),
+        joinSubmitBtn: document.getElementById('join-submit-btn'),
+        joinErrorMsg: document.getElementById('join-error-msg'),
+        hostLobbyModal: document.getElementById('host-lobby-modal'),
+        hostLobbyCloseBtn: document.getElementById('host-lobby-close-btn'),
+        hostRoomCodeDisplay: document.getElementById('host-room-code-display'),
+        hostPlayersList: document.getElementById('host-players-list'),
+        hostProceedBtn: document.getElementById('host-proceed-btn'),
         playerCharacterStatus: document.getElementById('player-character-status'),
         aboutModal: document.getElementById('about-modal'),
         aboutBubbleBtn: document.getElementById('about-bubble-btn'),
@@ -4086,6 +4098,13 @@
       this.spawnAmmoPickups();
       this.updateRelicFloorVisibility();
       this.loadSmittyModel();
+
+      if (window.CharacterSelectUI) {
+        this.charSelectUI = new window.CharacterSelectUI(this);
+      }
+      if (window.MuseumMultiplayer) {
+        this.mp = new window.MuseumMultiplayer(this);
+      }
       if (this.renderer && this.scene && this.camera) {
         this.renderer.compile(this.scene, this.camera);
       }
@@ -12488,6 +12507,114 @@
         this.requestNativeOrBrowserLock();
       });
 
+      // Multiplayer Host Flow
+      if (this.dom.hostGameBtn) {
+        this.dom.hostGameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (!this.mp) return;
+          this.dom.startScreen.classList.add('hidden');
+          if (this.dom.hostLobbyModal) {
+            this.dom.hostLobbyModal.classList.remove('hidden');
+            if (this.dom.hostRoomCodeDisplay) this.dom.hostRoomCodeDisplay.textContent = '...';
+            if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Generating room code...';
+          }
+
+          this.mp.initHost((code) => {
+            if (this.dom.hostRoomCodeDisplay) this.dom.hostRoomCodeDisplay.textContent = code;
+            if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Room active! Waiting for players...';
+          }, (err) => {
+            if (this.dom.hostPlayersList) this.dom.hostPlayersList.textContent = 'Connection error: ' + (err.type || 'Failed');
+          });
+        });
+      }
+
+      if (this.dom.hostProceedBtn) {
+        this.dom.hostProceedBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.dom.hostLobbyModal) this.dom.hostLobbyModal.classList.add('hidden');
+          // Open FighterZ-style Character Selection
+          if (this.charSelectUI) {
+            this.charSelectUI.show('HOST CO-OP', (selectedIdx) => {
+              this.selectedPlayerCharacter = selectedIdx;
+              this.loadPlayerCharacter();
+              this.startMultiplayerGame();
+            });
+          } else {
+            this.startMultiplayerGame();
+          }
+        });
+      }
+
+      if (this.dom.hostLobbyCloseBtn) {
+        this.dom.hostLobbyCloseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.dom.hostLobbyModal) this.dom.hostLobbyModal.classList.add('hidden');
+          if (this.dom.startScreen) this.dom.startScreen.classList.remove('hidden');
+        });
+      }
+
+      // Multiplayer Join Flow
+      if (this.dom.joinGameBtn) {
+        this.dom.joinGameBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.dom.startScreen.classList.add('hidden');
+          if (this.dom.joinCodeModal) {
+            this.dom.joinCodeModal.classList.remove('hidden');
+            if (this.dom.joinRoomInput) {
+              this.dom.joinRoomInput.value = '';
+              this.dom.joinRoomInput.focus();
+            }
+            if (this.dom.joinErrorMsg) this.dom.joinErrorMsg.classList.add('hidden');
+          }
+        });
+      }
+
+      if (this.dom.joinCodeCloseBtn) {
+        this.dom.joinCodeCloseBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (this.dom.joinCodeModal) this.dom.joinCodeModal.classList.add('hidden');
+          if (this.dom.startScreen) this.dom.startScreen.classList.remove('hidden');
+        });
+      }
+
+      if (this.dom.joinSubmitBtn) {
+        this.dom.joinSubmitBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const code = this.dom.joinRoomInput ? this.dom.joinRoomInput.value.trim().toUpperCase() : '';
+          if (!code || code.length < 3) {
+            if (this.dom.joinErrorMsg) {
+              this.dom.joinErrorMsg.textContent = 'Please enter a valid room code.';
+              this.dom.joinErrorMsg.classList.remove('hidden');
+            }
+            return;
+          }
+
+          if (this.dom.joinErrorMsg) {
+            this.dom.joinErrorMsg.textContent = 'Connecting to host...';
+            this.dom.joinErrorMsg.classList.remove('hidden');
+          }
+
+          this.mp.initClient(code, (connectedCode) => {
+            if (this.dom.joinCodeModal) this.dom.joinCodeModal.classList.add('hidden');
+            // Open Character Selection
+            if (this.charSelectUI) {
+              this.charSelectUI.show('JOIN CO-OP', (selectedIdx) => {
+                this.selectedPlayerCharacter = selectedIdx;
+                this.loadPlayerCharacter();
+                this.startMultiplayerGame();
+              });
+            } else {
+              this.startMultiplayerGame();
+            }
+          }, (err) => {
+            if (this.dom.joinErrorMsg) {
+              this.dom.joinErrorMsg.textContent = 'Could not connect. Check the code.';
+              this.dom.joinErrorMsg.classList.remove('hidden');
+            }
+          });
+        });
+      }
+
       this.dom.resumeBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         this.resumeGame();
@@ -13332,6 +13459,9 @@
             relic.glowLight.intensity = 0;
           }
           this.relicsCollected++;
+          if (this.mp) {
+            this.mp.notifyRelicCollected(relic.id);
+          }
           this.triggerLeftHandGrab();
           this.audio.playRelicChime();
           this.showRelicNotification();
@@ -15617,6 +15747,11 @@
         }
       }
 
+      // Update WebRTC Multiplayer remote players and networking
+      if (this.mp) {
+        this.mp.update(delta);
+      }
+
       // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
 
       try {
@@ -16208,6 +16343,74 @@
       } catch (err) {
         console.error('Failed to export level JSON:', err);
       }
+    }
+
+    startMultiplayerGame() {
+      this.gameStarted = true;
+      this.startTime = Date.now();
+      this.keys = {};
+      this.isSprinting = false;
+      this.sprintExhausted = false;
+      this.stamina = CONFIG.PLAYER.MAX_STAMINA;
+      this.audio.init();
+      this.audio.startGameplayAudio();
+      this.audio.fadeOutMenuMusic(0.45);
+      this.setSmittyMode(this.smittyEnabled);
+      this.showFloorNotification(this.playerFloor);
+      this.updateHud();
+      this.requestNativeOrBrowserLock();
+      if (this.mp) {
+        this.mp.startNetworkLoop();
+      }
+    }
+
+    onRemoteRelicCollected(relicId) {
+      const relic = this.relics.find(r => r.id === relicId);
+      if (relic && !relic.collected) {
+        relic.collected = true;
+        if (relic.mesh) relic.mesh.visible = false;
+        if (relic.glowLight) relic.glowLight.intensity = 0;
+        this.relicsCollected++;
+        this.audio.playRelicChime();
+        this.showRelicNotification();
+        const itemEl = document.getElementById(`relic-item-${relic.id}`);
+        if (itemEl) {
+          itemEl.classList.add('completed');
+          itemEl.innerHTML = `<span class="relic-num">${relic.id}.</span> <span class="relic-name">${relic.name}</span>`;
+        }
+        if (this.relicsCollected >= CONFIG.TOTAL_RELICS) {
+          this.unsealExitDoors();
+        }
+        this.updateHud();
+      }
+    }
+
+    onCuratorSync(data) {
+      if (!this.smitty) return;
+      this.smitty.position.set(data.x, data.y, data.z);
+      this.smitty.rotation.y = data.yaw;
+      this.smittyState = data.state;
+      this.smitty.visible = data.visible;
+    }
+
+    onFullGameStateSync(data) {
+      if (data.keysCollected !== undefined) {
+        this.relicsCollected = data.keysCollected;
+      }
+      if (data.doorsUnlocked) {
+        this.unsealExitDoors();
+      }
+      if (data.relicStates && Array.isArray(data.relicStates)) {
+        data.relicStates.forEach(rs => {
+          const relic = this.relics.find(r => r.id === rs.index);
+          if (relic && !rs.hasRelic) {
+            relic.collected = true;
+            if (relic.mesh) relic.mesh.visible = false;
+            if (relic.glowLight) relic.glowLight.intensity = 0;
+          }
+        });
+      }
+      this.updateHud();
     }
   }
 
