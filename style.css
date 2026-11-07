@@ -1465,3 +1465,39 @@ body.game-playing #game-container {
     transform: translate(-50%, -50%) scale(1.03);
   }
 }
+
+/* Yellow Room Code Badges for Pause Menu & Character Select */
+.pause-coop-code-bar {
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 24px;
+  letter-spacing: 3px;
+  color: #ffd700;
+  text-shadow: 0 0 14px rgba(255, 215, 0, 0.7);
+  margin-top: 4px;
+  margin-bottom: 8px;
+}
+
+.pause-coop-code-bar span {
+  font-weight: bold;
+  letter-spacing: 5px;
+}
+
+.char-select-header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.char-select-code-display {
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 20px;
+  letter-spacing: 2px;
+  color: #ffd700;
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.6);
+  padding: 4px 12px;
+}
+
+.char-select-code-display span {
+  font-weight: bold;
+  letter-spacing: 4px;
+}

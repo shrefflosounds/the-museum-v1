@@ -4050,6 +4050,8 @@
         hostRoomCodeDisplay: document.getElementById('host-room-code-display'),
         hostPlayersList: document.getElementById('host-players-list'),
         hostProceedBtn: document.getElementById('host-proceed-btn'),
+        pauseCoopCodeBar: document.getElementById('pause-coop-code-bar'),
+        pauseCoopCodeVal: document.getElementById('pause-coop-code-val'),
         playerCharacterStatus: document.getElementById('player-character-status'),
         aboutModal: document.getElementById('about-modal'),
         aboutBubbleBtn: document.getElementById('about-bubble-btn'),
@@ -12533,12 +12535,13 @@
           e.stopPropagation();
           if (this.dom.hostLobbyModal) this.dom.hostLobbyModal.classList.add('hidden');
           // Open FighterZ-style Character Selection
+          const roomCode = (this.mp && this.mp.roomCode) ? this.mp.roomCode : null;
           if (this.charSelectUI) {
             this.charSelectUI.show('HOST CO-OP', (selectedIdx) => {
               this.selectedPlayerCharacter = selectedIdx;
               this.loadPlayerCharacter();
               this.startMultiplayerGame();
-            });
+            }, roomCode);
           } else {
             this.startMultiplayerGame();
           }
@@ -12597,12 +12600,13 @@
           this.mp.initClient(code, (connectedCode) => {
             if (this.dom.joinCodeModal) this.dom.joinCodeModal.classList.add('hidden');
             // Open Character Selection
+            const roomCode = (this.mp && this.mp.roomCode) ? this.mp.roomCode : connectedCode;
             if (this.charSelectUI) {
               this.charSelectUI.show('JOIN CO-OP', (selectedIdx) => {
                 this.selectedPlayerCharacter = selectedIdx;
                 this.loadPlayerCharacter();
                 this.startMultiplayerGame();
-              });
+              }, roomCode);
             } else {
               this.startMultiplayerGame();
             }
@@ -13174,6 +13178,17 @@
       document.documentElement.classList.remove('game-playing');
       document.body.classList.remove('game-playing');
       this.releaseNativeOrBrowserLock();
+      
+      // Show Co-Op Join Code in yellow if active
+      if (this.dom.pauseCoopCodeBar && this.dom.pauseCoopCodeVal) {
+        if (this.mp && this.mp.roomCode) {
+          this.dom.pauseCoopCodeVal.textContent = this.mp.roomCode;
+          this.dom.pauseCoopCodeBar.classList.remove('hidden');
+        } else {
+          this.dom.pauseCoopCodeBar.classList.add('hidden');
+        }
+      }
+
       this.dom.pauseModal.classList.remove('hidden');
       if (this.audio) {
         this.audio.pauseGameplayAudio();

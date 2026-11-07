@@ -136,7 +136,10 @@
     <div class="char-select-container">
       <div class="char-select-header">
         <h2 class="char-select-title">SELECT CHARACTER</h2>
-        <div id="char-select-mode-tag" class="char-select-badge">COOPERATIVE</div>
+        <div class="char-select-header-right">
+          <div id="char-select-code-badge" class="char-select-code-display hidden">ROOM: <span id="char-select-code-val"></span></div>
+          <div id="char-select-mode-tag" class="char-select-badge">COOPERATIVE</div>
+        </div>
       </div>
 
       <div class="char-select-body">
@@ -327,6 +330,7 @@
   <div id="pause-modal" class="modal-overlay hidden">
     <div class="modal-box pause-box">
       <h2 class="horror-title" data-text="pause.title">EXHIBITION PAUSED</h2>
+      <div id="pause-coop-code-bar" class="pause-coop-code-bar hidden">JOIN CODE: <span id="pause-coop-code-val"></span></div>
       <p class="pause-sub" data-text="pause.text">Click Resume to continue.</p>
       <div class="pause-actions-list">
         <button id="resume-btn" class="museum-btn" title="Return to exploring the museum" data-text="pause.button">RESUME EXPLORATION</button>

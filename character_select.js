@@ -39,6 +39,8 @@
       this.nameCallout = document.getElementById('char-selected-name');
       this.confirmBtn = document.getElementById('char-confirm-btn');
       this.badge = document.getElementById('char-select-mode-tag');
+      this.codeBadge = document.getElementById('char-select-code-badge');
+      this.codeVal = document.getElementById('char-select-code-val');
       this.loadingEl = document.getElementById('char-preview-loading');
 
       // Build roster grid cards
@@ -143,9 +145,17 @@
       });
     }
 
-    show(modeLabel, onConfirm) {
+    show(modeLabel, onConfirm, roomCode = null) {
       this.onConfirmCallback = onConfirm;
       if (this.badge) this.badge.textContent = modeLabel || 'COOPERATIVE';
+      if (this.codeBadge && this.codeVal) {
+        if (roomCode) {
+          this.codeVal.textContent = roomCode;
+          this.codeBadge.classList.remove('hidden');
+        } else {
+          this.codeBadge.classList.add('hidden');
+        }
+      }
       this.modal.classList.remove('hidden');
       this.resizeCanvas();
       this.selectCharacter(this.selectedIndex, true);
