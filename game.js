@@ -4123,6 +4123,16 @@
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
 
+      // WebGL context loss recovery (Option 3): prevents graphics stalls or canvas freezes
+      this.canvas.addEventListener('webglcontextlost', (e) => {
+        e.preventDefault();
+        console.warn('WebGL context lost. Handling recovery...');
+      }, false);
+      this.canvas.addEventListener('webglcontextrestored', () => {
+        console.warn('WebGL context restored. Re-syncing renderer...');
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+      }, false);
+
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
       this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
       this.scene.add(this.ambientLight);
@@ -8514,7 +8524,7 @@
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 1024;
+      const rtSize = 512;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -8559,13 +8569,18 @@
       const virtualCamera = new THREE.PerspectiveCamera();
       const clipBias = 0.003;
 
+      let isRenderingReflection = false;
+
       glass.onBeforeRender = (renderer, scene, camera) => {
+        // Recursion guard: never render mirrors inside other mirrors
+        if (isRenderingReflection) return;
+
         reflectorWorldPosition.setFromMatrixPosition(glass.matrixWorld);
         cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
 
-        // Only update when the viewer is nearby and on the same floor (perf)
-        if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 4.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 30.0) return;
+        // Only update when viewer is on the same floor and within visible corridor range
+        if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 18.0) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
@@ -8611,12 +8626,14 @@
 
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
         glass.visible = false;
+        isRenderingReflection = true;
         const currentRenderTarget = renderer.getRenderTarget();
         renderer.setRenderTarget(renderTarget);
         renderer.state.buffers.depth.setMask(true);
         if (renderer.autoClear === false) renderer.clear();
         renderer.render(scene, virtualCamera);
         renderer.setRenderTarget(currentRenderTarget);
+        isRenderingReflection = false;
         glass.visible = true;
         const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
@@ -15473,12 +15490,9 @@
         this.updatePlayer(delta);
         this.updatePhysicsCrates(delta);
         this.updateAquariumFish(delta);
-        if (this.navGrid) {
-          this.navGridRefreshTimer = (this.navGridRefreshTimer ?? 5.0) - delta;
-          if (this.navGridRefreshTimer <= 0) {
-            this.buildObstacleGrid();
-            this.navGridRefreshTimer = 5.0;
-          }
+        // Build obstacle navigation grid once on startup (Option 2) rather than every 5s during gameplay
+        if (!this.navGrid && this.navNodes && this.navNodes.length > 0) {
+          this.buildObstacleGrid();
         }
         this.updateSmitty(delta);
         if (this.updateStatues) this.updateStatues(delta);
