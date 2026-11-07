@@ -13721,20 +13721,26 @@
           this.playerVelocity.set(0, 0, 0);
         }
 
-        const bobRate = isCrouching ? 6.5 : (this.isSprinting ? 14 : 9.5);
+        const bobRate = isCrouching ? 4.5 : (this.isSprinting ? 9.2 : 5.8);
         this.headBobTimer += delta * bobRate;
-        this.footstepTimer += delta * bobRate;
 
-        if (this.footstepTimer > Math.PI) {
+        // Only play footstep sounds when feet are touching the ground
+        if (this.isGrounded && !this.isFalling) {
+          this.footstepTimer += delta * bobRate;
+          if (this.footstepTimer > Math.PI) {
+            this.footstepTimer = 0;
+            this.audio.playMarbleFootstep();
+
+            // Sneaking in crouch produces only 1.1m noise vs 4.4m walk vs 14.6m sprint
+            const noiseRange = isCrouching ? 1.1 : (this.isSprinting ? 14.6 : 4.4);
+            this.alertSmittySound(this.playerPos, this.playerFloor, noiseRange);
+          }
+        } else {
           this.footstepTimer = 0;
-          this.audio.playMarbleFootstep();
-
-          // Sneaking in crouch produces only 1.1m noise vs 4.4m walk vs 14.6m sprint
-          const noiseRange = isCrouching ? 1.1 : (this.isSprinting ? 14.6 : 4.4);
-          this.alertSmittySound(this.playerPos, this.playerFloor, noiseRange);
         }
       } else {
         this.playerVelocity.set(0, 0, 0);
+        this.footstepTimer = 0;
       }
 
       // Jump mechanics (Space)
@@ -13742,7 +13748,7 @@
       if (wantsJump && this.isGrounded && !isCrouching) {
         this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE;
         this.isGrounded = false;
-        this.audio.playMarbleFootstep();
+        this.footstepTimer = 0;
       }
 
       const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
