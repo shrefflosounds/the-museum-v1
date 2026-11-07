@@ -365,6 +365,7 @@
           const model = gltf.scene;
           model.scale.setScalar(1.75 / size.y);
           model.position.y = -box.min.y * model.scale.y;
+          model.rotation.y = Math.PI; // Correct GLTF model forward orientation (+Z to -Z)
 
           model.traverse((child) => {
             if (child.isMesh) {
