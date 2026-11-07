@@ -39,6 +39,7 @@
       this.nameCallout = document.getElementById('char-selected-name');
       this.confirmBtn = document.getElementById('char-confirm-btn');
       this.badge = document.getElementById('char-select-mode-tag');
+      this.loadingEl = document.getElementById('char-preview-loading');
 
       // Build roster grid cards
       this.grid.innerHTML = '';
@@ -196,8 +197,17 @@
       const loader = new THREE.GLTFLoader();
       const cacheKey = window._ASSET_VERSION || '1.0';
 
+      if (this.loadingEl) {
+        this.loadingEl.textContent = `LOADING ${char.name.toUpperCase()}...`;
+        this.loadingEl.classList.remove('hidden');
+      }
+
       loader.load(`assets/playermodels/${char.file}?v=${cacheKey}`, (gltf) => {
         if (token !== this.loadToken) return;
+
+        if (this.loadingEl) {
+          this.loadingEl.classList.add('hidden');
+        }
 
         if (this.previewModel && this.previewScene) {
           this.previewScene.remove(this.previewModel);

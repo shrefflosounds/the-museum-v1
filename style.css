@@ -1436,3 +1436,32 @@ body.game-playing #game-container {
   transform: translateY(-2px) scale(1.03);
   filter: drop-shadow(0 6px 20px rgba(255, 255, 255, 0.4));
 }
+
+/* Loading Indicator for Character Selection */
+.char-preview-loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 28px;
+  letter-spacing: 3px;
+  color: #ffffff;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  padding: 14px 42px;
+  filter: drop-shadow(0 6px 20px rgba(0, 0, 0, 0.8));
+  pointer-events: none;
+  z-index: 5;
+  animation: pulseLoading 1.4s ease-in-out infinite alternate;
+}
+
+@keyframes pulseLoading {
+  0% {
+    opacity: 0.65;
+    transform: translate(-50%, -50%) scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.03);
+  }
+}
