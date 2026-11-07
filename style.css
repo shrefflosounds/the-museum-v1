@@ -1255,50 +1255,52 @@ body.game-playing #game-container {
   width: 92vw;
   max-width: 1200px;
   height: 84vh;
-  background: radial-gradient(circle at 60% 40%, rgba(20, 24, 40, 0.94) 0%, rgba(8, 9, 14, 0.98) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.8), inset 0 0 100px rgba(10, 20, 40, 0.6);
-  border-radius: 12px;
+  background: url('assets/ui/blob_blue.png') center center / 100% 100% no-repeat;
+  filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.95));
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
   display: flex;
   flex-direction: column;
-  padding: 24px 32px;
+  padding: 44px 58px 48px 58px;
   box-sizing: border-box;
   animation: fadeInModal 0.25s ease-out;
+  position: relative;
 }
 
 .char-select-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  padding-bottom: 10px;
 }
 
 .char-select-title {
-  font-family: 'Cinzel', serif, Georgia;
-  font-size: 26px;
-  letter-spacing: 4px;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 32px;
+  letter-spacing: 3px;
   color: #fff;
   margin: 0;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.3);
+  text-shadow: 0 0 14px rgba(255, 255, 255, 0.35);
 }
 
 .char-select-badge {
-  font-size: 12px;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 16px;
   letter-spacing: 2px;
-  padding: 4px 10px;
-  border-radius: 4px;
-  background: rgba(255, 215, 0, 0.15);
-  border: 1px solid rgba(255, 215, 0, 0.5);
-  color: #ffd700;
-  font-weight: 600;
+  padding: 6px 18px;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  color: #ffffff;
+  border: none;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
 .char-select-body {
   flex: 1;
   display: flex;
   gap: 30px;
-  margin-top: 20px;
+  margin-top: 16px;
   overflow: hidden;
 }
 
@@ -1322,8 +1324,8 @@ body.game-playing #game-container {
 .char-card {
   position: relative;
   aspect-ratio: 3 / 4;
-  background: #141720;
-  border: 2px solid rgba(255, 255, 255, 0.2);
+  background: rgba(0, 0, 0, 0.5);
+  border: 2px solid rgba(255, 255, 255, 0.25);
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
@@ -1364,28 +1366,29 @@ body.game-playing #game-container {
   bottom: 0;
   left: 0;
   right: 0;
-  background: linear-gradient(to top, rgba(0,0,0,0.9) 0%, rgba(0,0,0,0) 100%);
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0) 100%);
   color: #fff;
-  font-size: 11px;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 15px;
   letter-spacing: 1px;
-  padding: 10px 4px 4px 4px;
+  padding: 12px 4px 4px 4px;
   text-align: center;
-  font-weight: 500;
+  font-weight: normal;
 }
 
 .char-roster-footer {
-  padding-top: 14px;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .char-name-callout {
-  font-family: 'Cinzel', serif, Georgia;
-  font-size: 28px;
-  letter-spacing: 3px;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 30px;
+  letter-spacing: 2px;
   color: #ffd700;
   margin: 0;
   text-transform: uppercase;
-  text-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+  text-shadow: 0 0 12px rgba(255, 215, 0, 0.5);
 }
 
 /* 3D Showcase Stage */
@@ -1394,10 +1397,15 @@ body.game-playing #game-container {
   position: relative;
   display: flex;
   flex-direction: column;
-  background: radial-gradient(circle at 50% 70%, rgba(30, 45, 80, 0.5) 0%, rgba(10, 15, 25, 0) 70%);
-  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  cursor: grab;
+}
+
+.char-preview-pane:active {
+  cursor: grabbing;
 }
 
 #char-preview-canvas {
@@ -1408,25 +1416,23 @@ body.game-playing #game-container {
 
 .char-preview-footer {
   position: absolute;
-  bottom: 20px;
-  right: 20px;
+  bottom: 24px;
+  right: 24px;
   z-index: 10;
 }
 
 .char-confirm-btn {
-  padding: 14px 34px;
-  font-size: 15px;
-  letter-spacing: 2px;
-  background: #ffd700;
-  color: #0b0d12;
+  padding: 12px 34px;
+  font-family: 'Caryn', 'Papyrus', cursive, serif;
+  font-size: 22px;
+  letter-spacing: 1.5px;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  color: #ffffff;
   border: none;
-  font-weight: 700;
-  box-shadow: 0 0 20px rgba(255, 215, 0, 0.4);
+  filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6));
 }
 
 .char-confirm-btn:hover {
-  background: #fff;
-  color: #000;
-  box-shadow: 0 0 30px rgba(255, 255, 255, 0.7);
-  transform: translateY(-2px);
+  transform: translateY(-2px) scale(1.03);
+  filter: drop-shadow(0 6px 20px rgba(255, 255, 255, 0.4));
 }

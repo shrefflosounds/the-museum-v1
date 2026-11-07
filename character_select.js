@@ -4,13 +4,13 @@
     constructor(game) {
       this.game = game;
       this.characters = [
-        { id: 0, name: 'The Animal', file: 'the-animal.glb', portrait: 'assets/ui/portraits/char_0.png', headOffset: 1.35, camDist: 2.2 },
-        { id: 1, name: 'The Man', file: 'the-man.glb', portrait: 'assets/ui/portraits/char_1.png', headOffset: 1.45, camDist: 2.2 },
-        { id: 2, name: 'Sand', file: 'sand.glb', portrait: 'assets/ui/portraits/char_2.png', headOffset: 1.35, camDist: 2.2 },
-        { id: 3, name: 'Cook', file: 'cook.glb', portrait: 'assets/ui/portraits/char_3.png', headOffset: 1.4, camDist: 2.2 },
-        { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png', headOffset: 1.35, camDist: 2.2 },
-        { id: 5, name: 'The Clown', file: 'the-clown.glb', portrait: 'assets/ui/portraits/char_5.png', headOffset: 2.2, camDist: 2.2 },
-        { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png', headOffset: 1.35, camDist: 2.0 }
+        { id: 0, name: 'The Animal', file: 'the-animal.glb', portrait: 'assets/ui/portraits/char_0.png' },
+        { id: 1, name: 'The Man', file: 'the-man.glb', portrait: 'assets/ui/portraits/char_1.png' },
+        { id: 2, name: 'Sand', file: 'sand.glb', portrait: 'assets/ui/portraits/char_2.png' },
+        { id: 3, name: 'Cook', file: 'cook.glb', portrait: 'assets/ui/portraits/char_3.png' },
+        { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png' },
+        { id: 5, name: 'The Clown', file: 'the-clown.glb', portrait: 'assets/ui/portraits/char_5.png' },
+        { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png' }
       ];
 
       this.selectedIndex = this.game.selectedPlayerCharacter || 0;
@@ -21,11 +21,16 @@
       this.previewModel = null;
       this.previewMixer = null;
       this.animReqId = null;
-      this.turntableAngle = 0;
+      this.rotationY = 0;
       this.loadToken = 0;
+
+      // Mouse drag rotation controls
+      this.isDragging = false;
+      this.lastMouseX = 0;
 
       this.initDOM();
       this.init3DStage();
+      this.setupMouseControls();
     }
 
     initDOM() {
@@ -75,23 +80,66 @@
       this.previewRenderer.outputEncoding = THREE.sRGBEncoding;
 
       this.previewScene = new THREE.Scene();
-      this.previewCamera = new THREE.PerspectiveCamera(40, canvas.clientWidth / canvas.clientHeight, 0.1, 50);
+      // Framing: Camera positioned further back to avoid cutting off top/bottom
+      this.previewCamera = new THREE.PerspectiveCamera(36, canvas.clientWidth / canvas.clientHeight, 0.1, 50);
 
-      // Lighting matching cinematic showcase
-      const keyLight = new THREE.DirectionalLight(0xfff3d0, 2.2);
-      keyLight.position.set(2, 3, 2);
+      // Studio Lighting
+      const keyLight = new THREE.DirectionalLight(0xfff3d0, 2.0);
+      keyLight.position.set(2, 3, 2.5);
       this.previewScene.add(keyLight);
 
-      const fillLight = new THREE.DirectionalLight(0x4070ff, 1.4);
-      fillLight.position.set(-2, 1, 1);
+      const fillLight = new THREE.DirectionalLight(0x4070ff, 1.2);
+      fillLight.position.set(-2, 1, 1.5);
       this.previewScene.add(fillLight);
 
-      const rimLight = new THREE.DirectionalLight(0x00ffff, 1.8);
+      const rimLight = new THREE.DirectionalLight(0x00ffff, 1.6);
       rimLight.position.set(0, 2, -3);
       this.previewScene.add(rimLight);
 
-      const ambient = new THREE.AmbientLight(0x1a2035, 1.5);
+      const ambient = new THREE.AmbientLight(0xffffff, 1.3);
       this.previewScene.add(ambient);
+    }
+
+    setupMouseControls() {
+      const canvas = document.getElementById('char-preview-canvas');
+      if (!canvas) return;
+
+      canvas.addEventListener('mousedown', (e) => {
+        this.isDragging = true;
+        this.lastMouseX = e.clientX;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!this.isDragging || !this.previewModel) return;
+        const deltaX = e.clientX - this.lastMouseX;
+        this.lastMouseX = e.clientX;
+        this.rotationY += deltaX * 0.012;
+        this.previewModel.rotation.y = this.rotationY;
+      });
+
+      window.addEventListener('mouseup', () => {
+        this.isDragging = false;
+      });
+
+      // Touch support
+      canvas.addEventListener('touchstart', (e) => {
+        if (e.touches.length > 0) {
+          this.isDragging = true;
+          this.lastMouseX = e.touches[0].clientX;
+        }
+      });
+
+      window.addEventListener('touchmove', (e) => {
+        if (!this.isDragging || !this.previewModel || e.touches.length === 0) return;
+        const deltaX = e.touches[0].clientX - this.lastMouseX;
+        this.lastMouseX = e.touches[0].clientX;
+        this.rotationY += deltaX * 0.015;
+        this.previewModel.rotation.y = this.rotationY;
+      });
+
+      window.addEventListener('touchend', () => {
+        this.isDragging = false;
+      });
     }
 
     show(modeLabel, onConfirm) {
@@ -158,8 +206,14 @@
         const box = new THREE.Box3().setFromObject(gltf.scene);
         const size = box.getSize(new THREE.Vector3());
         const model = gltf.scene;
+
+        // Scale normalized to 1.75m height
         model.scale.setScalar(1.75 / size.y);
         model.position.y = -box.min.y * model.scale.y;
+
+        // Initial orientation facing the viewer
+        this.rotationY = 0;
+        model.rotation.y = this.rotationY;
 
         model.traverse((child) => {
           if (child.isMesh) {
@@ -173,7 +227,6 @@
 
         this.previewMixer = new THREE.AnimationMixer(model);
         if (gltf.animations && gltf.animations.length > 0) {
-          // Find idle or first anim
           let idleClip = gltf.animations.find(c => c.name.toLowerCase().includes('idle')) || gltf.animations[0];
           if (idleClip) {
             const action = this.previewMixer.clipAction(idleClip);
@@ -181,9 +234,9 @@
           }
         }
 
-        // Camera framed on character
-        this.previewCamera.position.set(0, 0.9, 2.3);
-        this.previewCamera.lookAt(0, 0.9, 0);
+        // Camera perfectly framed with safe padding top and bottom (zoomed out)
+        this.previewCamera.position.set(0, 0.88, 3.1);
+        this.previewCamera.lookAt(0, 0.88, 0);
       });
     }
 
@@ -209,10 +262,7 @@
           this.previewMixer.update(delta);
         }
 
-        if (this.previewModel) {
-          this.turntableAngle += delta * 0.35;
-          this.previewModel.rotation.y = this.turntableAngle;
-        }
+        // Model does NOT auto rotate, stays as rotated by user drag
 
         if (this.previewRenderer && this.previewScene && this.previewCamera) {
           this.previewRenderer.render(this.previewScene, this.previewCamera);
