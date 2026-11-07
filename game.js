@@ -8524,7 +8524,7 @@
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 512;
+      const rtSize = 1024;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -11263,7 +11263,8 @@
       push(startIdx, hfn(s.i, s.j));
       const DIRS = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
       let found = false, expansions = 0;
-      while (heapIdx.length > 0 && expansions < N) {
+      const maxExpansions = Math.min(N, 1800); // Prevent catastrophic main thread freeze on unreachable goals
+      while (heapIdx.length > 0 && expansions < maxExpansions) {
         const cur = pop();
         if (B.closed[cur] === gen) continue;
         B.closed[cur] = gen;
@@ -11287,7 +11288,9 @@
       }
       if (!found) return null;
       const cells = [];
-      for (let c = goalIdx; c !== -1; c = B.came[c]) {
+      let backtrackSteps = 0;
+      for (let c = goalIdx; c !== -1 && backtrackSteps < N; c = B.came[c]) {
+        backtrackSteps++;
         const ci = c % w, cj = (c - ci) / w;
         cells.push({ x: G.minX + ci * G.CELL, z: G.minZ + cj * G.CELL });
         if (c === startIdx) break;
@@ -11304,7 +11307,7 @@
         }
         out.push(cells[far]);
         anchor = cells[far];
-        k = far + 1;
+        k = Math.max(k + 1, far + 1);
       }
       return out;
     }
@@ -15487,50 +15490,57 @@
       const delta = Math.min(this.clock.getDelta(), 0.05);
 
       if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
-        this.updatePlayer(delta);
-        this.updatePhysicsCrates(delta);
-        this.updateAquariumFish(delta);
-        // Build obstacle navigation grid once on startup (Option 2) rather than every 5s during gameplay
-        if (!this.navGrid && this.navNodes && this.navNodes.length > 0) {
-          this.buildObstacleGrid();
+        try {
+          this.updatePlayer(delta);
+        } catch (e) {
+          console.error("Player update error:", e);
         }
-        this.updateSmitty(delta);
-        if (this.updateStatues) this.updateStatues(delta);
-        if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
-        this.updateLiquidBlood(delta);
-        this.updateAmmoPickups(delta);
-        if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
-        this.updateSmittyHeadBone(delta);
+        try {
+          this.updatePhysicsCrates(delta);
+          this.updateAquariumFish(delta);
+          if (!this.navGrid && this.navNodes && this.navNodes.length > 0) {
+            this.buildObstacleGrid();
+          }
+          this.updateSmitty(delta);
+          if (this.updateStatues) this.updateStatues(delta);
+          if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
+          this.updateLiquidBlood(delta);
+          this.updateAmmoPickups(delta);
+          if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
+          this.updateSmittyHeadBone(delta);
 
-        const time = performance.now() * 0.002;
+          const time = performance.now() * 0.002;
 
-        // Dynamic distance culling for paintings: only render artworks within 36m fog envelope on current floor
-        if (this.paintings) {
-          const px = this.playerPos.x;
-          const pz = this.playerPos.z;
-          for (let p of this.paintings) {
-            if (p.floor !== this.playerFloor) {
-              if (p.mesh.visible) p.mesh.visible = false;
-            } else {
-              const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
-              p.mesh.visible = (dSq < 1296); // 36m * 36m
+          // Dynamic distance culling for paintings: only render artworks within 36m fog envelope on current floor
+          if (this.paintings) {
+            const px = this.playerPos.x;
+            const pz = this.playerPos.z;
+            for (let p of this.paintings) {
+              if (p.floor !== this.playerFloor) {
+                if (p.mesh.visible) p.mesh.visible = false;
+              } else {
+                const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
+                p.mesh.visible = (dSq < 1296); // 36m * 36m
+              }
             }
           }
-        }
 
-        this.relics.forEach((r) => {
-          if (!r.collected && r.floor === this.playerFloor && r.mesh) {
-            // Distance culling: only render & animate relics within 22m (room/hall envelope).
-            // Eliminates rendering 500k-1.5M polygon relics across opposite wings through multiple walls.
-            const dSq = (r.x - this.playerPos.x) ** 2 + (r.z - this.playerPos.z) ** 2;
-            const inRange = dSq < 484; // 22m * 22m
-            r.mesh.visible = inRange;
-            if (inRange) {
-              r.mesh.rotation.y = time * 0.8;
-              r.mesh.position.y = r.y + Math.sin(time * 2.2) * 0.035;
+          this.relics.forEach((r) => {
+            if (!r.collected && r.floor === this.playerFloor && r.mesh) {
+              // Distance culling: only render & animate relics within 22m (room/hall envelope).
+              // Eliminates rendering 500k-1.5M polygon relics across opposite wings through multiple walls.
+              const dSq = (r.x - this.playerPos.x) ** 2 + (r.z - this.playerPos.z) ** 2;
+              const inRange = dSq < 484; // 22m * 22m
+              r.mesh.visible = inRange;
+              if (inRange) {
+                r.mesh.rotation.y = time * 0.8;
+                r.mesh.position.y = r.y + Math.sin(time * 2.2) * 0.035;
+              }
             }
-          }
-        });
+          });
+        } catch (e) {
+          console.error("Game loop non-fatal error:", e);
+        }
       }
 
       if (this.exitDoorsOpening && this.leftDoorPivot && this.rightDoorPivot) {
@@ -15609,7 +15619,11 @@
 
       // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
 
-      this.renderer.render(this.scene, this.camera);
+      try {
+        this.renderer.render(this.scene, this.camera);
+      } catch (e) {
+        console.error("Renderer error:", e);
+      }
     }
 
 
