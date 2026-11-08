@@ -4599,8 +4599,8 @@
           }
         }
       }
-      // Under-stair barrier on Floor 0 East Flight - flush with door jamb at z = -16.80, embedded into sidewall so zero gap exists
-      this.createWall(2.0, ceilH / 2, -17.0, 4.40, ceilH, 0.40, mats.wallConcrete, true, 0);
+      // Under-stair barrier on Floor 0 East Flight - overlaps landing edge by 5cm (z: -17.35..-16.75) to seal any slit, embeds into central divider and outer wall without touching the outer face
+      this.createWall(1.925, ceilH / 2, -17.05, 4.25, ceilH, 0.60, mats.wallConcrete, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
@@ -4687,8 +4687,8 @@
           }
         }
       }
-      // Under-stair barrier on Floor 0 East Flight - flush with door jamb at z = 20.80, embedded into sidewalls so zero gap exists
-      this.createWall(-18.0, ceilH / 2, 21.0, 4.40, ceilH, 0.40, mats.wallConcrete, true, 0);
+      // Under-stair barrier on Floor 0 East Flight - overlaps landing edge by 5cm (z: 20.75..21.35) to seal any slit, embeds into central divider and outer wall without touching the gallery outer face (stopping at x = -16.05)
+      this.createWall(-18.125, ceilH / 2, 21.05, 4.15, ceilH, 0.60, mats.wallConcrete, true, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
