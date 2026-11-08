@@ -4225,13 +4225,6 @@
       mats.ceiling.shininess = 16;
       mats.ceiling.specular = new THREE.Color(0x222222);
 
-      mats.mahogany.polygonOffset = true;
-      mats.mahogany.polygonOffsetFactor = -1;
-      mats.mahogany.polygonOffsetUnits = -1;
-      mats.wallBrick.polygonOffset = true;
-      mats.wallBrick.polygonOffsetFactor = -1;
-      mats.wallBrick.polygonOffsetUnits = -1;
-
       // Build all 4 floors of the Museum
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         this.buildSingleFloor(fl, mats);
@@ -4621,8 +4614,8 @@
 
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
-      // Leave the same turning clearance at each end of the second stairwell divider.
-      this.createWall(-20, midY, 23.2, 0.34, totalH, 3.96, mats.wallConcrete, true, 'all');
+      // Leave turning clearance at south mid-landing (z: 25.6..28.0), but extend to z = 20.80 to seamlessly abut the north landing box with zero shaft gap!
+      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.80, mats.wallConcrete, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
 
       // Solid pit floor under Stairwell A on Floor 0 so looking down between flights never exposes the void
@@ -4686,8 +4679,8 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight of Stairwell SW (stops safely at y = 2.42m, never intersecting upper landing or stair flights)
-      this.createWall(-18.05, 1.22, 20.85, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
+      // Guardrail on Floor 0 East Flight of Stairwell SW (stops safely at y = 2.40m, spanning x: -20.0 to -16.0 at z = 20.80 under the upper flight so no gap exists)
+      this.createWall(-18.00, 1.20, 20.80, 4.00, 2.40, 0.34, mats.mahogany, true, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
