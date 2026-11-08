@@ -10157,15 +10157,28 @@
       ];
       this.videoPlaylists = PLAYLISTS_BY_FLOOR;
 
+      // Direct playlist video IDs pre-fetched to guarantee instant, reliable playback even when YouTube restricts playlist embeds
+      this.playlistVideoLists = {
+        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld': ['GqlqqltHMWA', 'DUR8mqLN4xo', 'Y87IJ4-Rw-c', 'WjPahNtjWow', 'WR1mQH6xRYM', '8pLBon9Jj6Y', '5e6Y1-aXEdk', 'gG8DHNAtMjM', 'cCzdboextGQ', 'JOhycC18sSg', 'vLOpwkQ7u4E', 'nwPuzZr5s94', 'pNmC2Gdd1Uo', 'AboYWYwDqDw', 'IR0OFd3mhmQ', 'bSm4g_pAOm0', '0ZwbwweF_WQ', 'S4Sl0Jo1A7Q', 'waT26XY_rpI', 'zADnswZzgfA', 'NoQDtZU3Uto', 'MBOl_d_sSys', 'ySrP-FcZFhg', 'wD0Co-ASgOg', 'EPmNiXGVNNc', 'z63485VqPrc', 'SlfJ1vaFFoQ', '_a7fLcAYJL8', '3Sbt1CTTPhw', '5YiYQBrEsbQ', 'wnc59px0HJU', 'eSdbzElYB_8', '_ypeIdkXzdI', 'Gtj0yaq9b_M', 'CuG9rQmUwBY', 'pEtRtRxhwHA', 'bCjPP7liZCA', 'Hx-Qsra5s90', 'Ap3okMygbqY', 'HOTViYcQiTU', 'LXDfgGI9P-g', 'zjlIpvewWuE', '0KTNriX6WhY', 'WCdDuPKg1u4', 'XsK1S5y0ZFU', '-sWBPg9Z068', 'CRSdpY_vI1s', 'c6nZ4GB9gu0', '2n8W6CBxc64', 'KcN-exDsEuI', 'Cy0JT455gEA'],
+        'PL6HPvbUV3y90GTk3elKRPsG8zTlm5t7kv': ['r9PeYPHdpNo', '8ncUVddkK3Q', '9FqwhW0B3tY', 'jLdO9MBI7eQ', 'L0mxKh6CEss', 'F08fZFRB8fk', 'k_GTIL7AECQ', 'q3ZUGrNsZLM', 'GUF-dSv701w', 'ZuVcOwXLnyQ', 'HL-DFiwaJjs', 'iM6LSUpanmg'],
+        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp': ['nxtyESAsoK8', 'jHYqMZGgjIg', 'tnXi1jKD7As', 'cN2PEsgwHKU', 'QNsWZsdADv8', 'DvLyHOknKAw', 'GFTTMmjSdXQ', '7XvUCC9-y50', 'P2EMQdhrhVk', 'NOudIoCjiC4', 'K09vhqIVZGw', 'r2xKnDIo2uo', 'AodBQ2ElXxs', 'gQu_LCo8J-E', 'od2WTLxpvXY', 'c9MvPEFHGTU', 'cOloBIIa8eA', 'Iw8TmXdZLf4', 'qvdV-ne3y8Y', '7B2Kq-R4giA', 'GM4XknKJS_s', 'SUYy27ltV1s', 'JHfO3iu0-bs', 'VccPksP_kHM', 'rS1pisGuVZI', 'bkPCW_sGynU', 'qmnjOm4PUiU', '1EM8nTWWzwM', 'WRMgvVgu79M', 'MF294hwWKsU', 'Dvo0tUERf8s', 'SEuiN9ja6PU', 'qLcmbqC5t_s', 'Y_Zpr2pm1xg', 'yaYD7_v7z5U', 'FPqbqr-CXKM', '-G9wra5H7Jk', 'DCt8Cqv7Lv8', 'PEebrN5rO9c', 'HBksPFaKy3U', 'guW4DpcNFu4', 'nxp2ryEgLpU', 'I3gJAO5KlMs', 'GsUjlC1cgMA', 'm26mwh_GFvg', 'rwwN6KRD8OI', 'uZtjBnCmB6w', 'rzLIUgnKY40', 'KkEIdDhSh4k', 'U4RI6UrHj_o', 'omhi786xEgA', 'mQaDHXSLff8', '95JIdlCyWaQ', 'rGCROSqWZ7I', 'E7tbk4Mmblg', 'M5rPSdG2sSU', 'vnzrYNVbuyU', 'BecjBIdsaxA', 'l8Yvm-FygrM', 'RxmB3DKA4g8', 'DdLnKKnf87w', 'j8AgQN_bZ-U', 'o5pY3AJabxs', '1QoWjpt0pE4', 'GE1HFYv6a0I', '0XKNEEqDHPk', 'nQEjEp4irxI', 'aLo-fibyMW0', 'TjP-ReTD5I0', 'F6bioQy_nBY', 'Yg17_y4vO-A', '-iF03XMJgiw', 'xtrxortfV0E', 'N_lyUJHqXm8', 'tT55pvSe9R4', 'iPU4xVPqbCk', 'cAgs1lU3-cA', 'x3NhDbzD_zw', 'xVgofqWKUwc', 'lmNfYXheO54', 'uuImrvSVOpc', '34XtASwCfkw', '5UwweFXRRdE', 'zkxA_GoLOz8', '1q6OpWW_dw0', 'AT0bAsQ05uk', 'Ysse8t_y_ik', 'S9bGVMBMXY0', 'R0btD4cpEVU', '51w6TCKb48I', 'DMaeJzCaiIs', 'wnDgTd5mYpM', 'PTdxPliBdZs', 'l_eE56rPuVE', 'M-MX6nCGmGw', 'j-GNkcQkv2k', '4tXLLAMletc', 'iR1JZwNhJIw', 'wSbsloQpuDo', 'YzP4IYHoK9c'],
+        'PLqPry1bfNMgnYIhDUxlMWalX7IW-1JA_I': ['ZN5PoW7_kdA', 'l7F5nIA8xmw', 'xjdBCeUdAmI', 'fOxg8hT30r0', 'Q9jE33s51yY', 'ltlsfOOkBqg', 'cL_qGMfbtAk', 'WCNRGrHMY8c', 'H6IeASZZf1c', 'InhbSdcNBZw', 'E4GhMYxE2Lc', 'VEH3u2Qz4fc', '1JO0-WCEOw4', 'U_ety9JGwRI', 'vMxwPgzF4ME', 'qOTNdxOKZiQ', 'IcRguMhpQPQ', '3Z66-cl3ghw', '1J5hZWQs-vI', 'u9D8Z4SfrXM', 'dkHJKakHMpo', '8UaZ9gHr0UQ', '4VInSCDVnP0', 'wkfDAnW8ZbA', 'BE-KFNO6pE0', 'HFZtOk42ets', '0rQ6d6xnJow', 'dr9QmTl5v48', 'DYnz_06hcUI', '0EiM8Pa91SQ', 'bp_qq22rpng', '3xon1c9a1Ms', 'D7IXiXxENEA', 'l3WPKznFvfk', 'C41IBSKGF4w', 'QTiFml51wWI', 'jvnKybI7fzU', 'sGJK5xFqm7Q', 'yfoaszc0H_0', 'pRvTCu9Ej-8', '6Cad53S2LkQ', 'g_h9isVGcE8', 'ont3Mq0DARE', 'nk-A7xPciyQ', 'qVdh0wel-Yo', 'ud4YnLT1vWk', 'fJAbH4UdciM', 'sL80m2yvwrY', 'gFn1cLZ3m7E', 'hiOfQ8dRKbE', 'pezdRcVe04c', 'OKI-5MHUkKY', '9ITTyIjYJvs', 'k8ZRrhXoXtQ', 'pEAoPswuorU', 'WLStid2uW0Q', '87UVT_jhUPE', 'LAmKx7e_dzI', 'AyXX1ltl94E', 'enl-UGhXJ0w', 'hKg7Ronhq00', 'fq4Eebc7aMQ', '56SA_C9o9VU', 'zBFVPI76Z9Y', 'gRJnltYbiyY', 'h0GqRx3BhIE', '4UG1g13wvLY', 'cOx49nX9dnw', 'n7sJyL4WMXY', 'eETWLVAlqT4', 'u4usQWXc1yQ', 'ULWRoU9DUSo', 'kwT1rCm5Wuo', 'XrN1MLdyMM0', 'ZpKzTdMSaJs', 'yYsOnfN5tIU', '0XrRwruU8DE', 'Q3M8whx1gj4', 'meQ8oIOuUqg', 'JHa6RHelvns', 'QsQo2Gvzt8I', 'MkCyVId3KY8', 'JIxhbXSeGjw', 'Fbf-_ZDb8YI', 'lnn2k8BkhLs', 'sqx5bpsjKGM', 'rg8jISMx4dk', 'r5HWzwa3KOo', 'TLLRo5895ZY', 'xJzBpA-gXtI', 'JLAG77f_Xzo', 'uWx6pJ6HzHU', 'by0tQMgrjJc', 'YgXvdBvINlw', 'QDAfX0IBH8k', 'IHr3o3nfUdk', 'G9F0yXS9oDw', '3vAnIJp2dII', 'o-Fw9KOOspo', 'AfWsM4PKPio']
+      };
+
       const mountPlayer = () => {
         if (!window.YT || !window.YT.Player) {
           setTimeout(mountPlayer, 200);
           return;
         }
         try {
+          const originUrl = (window.location && window.location.origin && window.location.origin !== 'null')
+            ? window.location.origin
+            : 'http://localhost:8098';
+
           this.ytPlayer = new window.YT.Player('yt-player', {
             height: '100%',
             width: '100%',
+            host: 'https://www.youtube-nocookie.com',
             playerVars: {
               autoplay: 1,
               controls: 0,
@@ -10175,7 +10188,7 @@
               iv_load_policy: 3,
               modestbranding: 1,
               rel: 0,
-              origin: window.location.origin
+              origin: originUrl
             },
             events: {
               onReady: (event) => {
@@ -10308,49 +10321,100 @@
 
       // Helper to generate dynamic button textures styled after tactile colorful remote controls (Image 2)
       // Transformed so text and symbols are oriented upright and read left-to-right (un-mirrored) from the player's perspective
-      const makeButtonTexture = (label, symbol, colorCfg) => {
+      const makeButtonTexture = (label, symbol, colorCfg, customIcon = null) => {
         const can = document.createElement('canvas');
         can.width = 256;
         can.height = 256;
         const ctx = can.getContext('2d');
 
-        // Button face background color
-        ctx.fillStyle = colorCfg.bg;
-        ctx.fillRect(0, 0, 256, 256);
+        const drawContent = () => {
+          // Button face background color
+          ctx.fillStyle = colorCfg.bg;
+          ctx.fillRect(0, 0, 256, 256);
 
-        // Tactile outer bevel ring
-        ctx.beginPath();
-        ctx.arc(128, 128, 110, 0, Math.PI * 2);
-        ctx.lineWidth = 14;
-        ctx.strokeStyle = colorCfg.border;
-        ctx.stroke();
+          // Tactile outer bevel ring
+          ctx.beginPath();
+          ctx.arc(128, 128, 110, 0, Math.PI * 2);
+          ctx.lineWidth = 14;
+          ctx.strokeStyle = colorCfg.border;
+          ctx.stroke();
 
-        // Inner bevel highlight
-        ctx.beginPath();
-        ctx.arc(128, 128, 100, 0, Math.PI * 2);
-        ctx.lineWidth = 4;
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-        ctx.stroke();
+          // Inner bevel highlight
+          ctx.beginPath();
+          ctx.arc(128, 128, 100, 0, Math.PI * 2);
+          ctx.lineWidth = 4;
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+          ctx.stroke();
 
-        // Transform coordinate system to cancel CylinderGeometry top-cap reflection
-        // and orient text/symbols cleanly upright and reading left-to-right from the player perspective
-        ctx.save();
-        ctx.translate(128, 128);
-        ctx.transform(0, 1, -1, 0, 0, 0); // Flips horizontally and aligns upright
+          // Transform coordinate system to cancel CylinderGeometry top-cap reflection
+          // and orient text/symbols cleanly upright and reading left-to-right from the player perspective
+          ctx.save();
+          ctx.translate(128, 128);
+          ctx.transform(0, 1, -1, 0, 0, 0); // Flips horizontally and aligns upright
 
-        ctx.fillStyle = '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.font = 'bold 96px sans-serif';
-        ctx.fillText(symbol, 0, -12);
+          if (customIcon) {
+            // Draw clean white speaker icon without emojis
+            const img = customIcon;
+            if (img.complete && img.naturalWidth > 0) {
+              const sz = 92;
+              ctx.drawImage(img, -sz / 2, -sz / 2 - 10, sz, sz);
+            } else {
+              // Draw geometric volume speaker icon vector fallback
+              ctx.fillStyle = '#ffffff';
+              ctx.beginPath();
+              // Speaker cone body
+              ctx.moveTo(-34, -14);
+              ctx.lineTo(-18, -14);
+              ctx.lineTo(8, -34);
+              ctx.lineTo(8, 34);
+              ctx.lineTo(-18, 14);
+              ctx.lineTo(-34, 14);
+              ctx.closePath();
+              ctx.fill();
 
-        ctx.font = 'bold 26px sans-serif';
-        ctx.fillStyle = colorCfg.textColor || '#ffffff';
-        ctx.fillText(label, 0, 64);
-        ctx.restore();
+              // Sound waves
+              ctx.lineWidth = 6;
+              ctx.lineCap = 'round';
+              ctx.strokeStyle = '#ffffff';
+
+              // Inner arc
+              ctx.beginPath();
+              ctx.arc(2, 0, 18, -Math.PI * 0.3, Math.PI * 0.3);
+              ctx.stroke();
+
+              // Outer arc
+              ctx.beginPath();
+              ctx.arc(2, 0, 32, -Math.PI * 0.33, Math.PI * 0.33);
+              ctx.stroke();
+            }
+          } else {
+            ctx.fillStyle = '#ffffff';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.font = 'bold 96px sans-serif';
+            ctx.fillText(symbol, 0, -12);
+          }
+
+          ctx.font = 'bold 26px sans-serif';
+          ctx.fillStyle = colorCfg.textColor || '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, 0, 64);
+          ctx.restore();
+        };
+
+        drawContent();
 
         const tex = new THREE.CanvasTexture(can);
         tex.anisotropy = 4;
+
+        if (customIcon && (!customIcon.complete || customIcon.naturalWidth === 0)) {
+          customIcon.onload = () => {
+            drawContent();
+            tex.needsUpdate = true;
+          };
+        }
+
         return tex;
       };
 
@@ -10359,6 +10423,9 @@
       // PLAY / PAUSE: Vibrant Emerald Green (like action buttons)
       // MUTE: Warm Sun Yellow (like mute button)
       // Ordered Left-to-Right from player's view: PREV (left) -> PLAY -> NEXT -> MUTE (right)
+      const volumeIconImg = new Image();
+      volumeIconImg.src = 'assets/ui/volume_icon.png';
+
       const btnDefs = [
         {
           id: 'prev',
@@ -10387,7 +10454,8 @@
         {
           id: 'mute',
           label: 'MUTE',
-          symbol: '🔊',
+          symbol: null,
+          customIcon: volumeIconImg,
           relX: -0.54, // Rightmost from player's viewpoint
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
@@ -10398,7 +10466,7 @@
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
-        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg);
+        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg, b.customIcon || null);
         const capMat = new THREE.MeshStandardMaterial({
           map: tex,
           roughness: 0.35,
@@ -10485,16 +10553,22 @@
       this.ytCurrentPlaylist = playlistId;
       this.sendYouTubeCommand(player => {
         if (typeof player.loadPlaylist === 'function') {
-          try {
-            player.loadPlaylist(playlistId, initialIndex || 0, initialTime || 0);
-          } catch (e) {
-            player.loadPlaylist({
-              list: playlistId,
-              listType: 'playlist',
-              index: initialIndex || 0,
-              startSeconds: initialTime || 0,
-              suggestedQuality: 'hd720'
-            });
+          const directVideoList = this.playlistVideoLists ? this.playlistVideoLists[playlistId] : null;
+          if (directVideoList && directVideoList.length > 0) {
+            // Load by direct video IDs array: 100% reliable in embeds, never gets blocked by YouTube's playlist embed restriction!
+            player.loadPlaylist(directVideoList, initialIndex || 0, initialTime || 0);
+          } else {
+            try {
+              player.loadPlaylist(playlistId, initialIndex || 0, initialTime || 0);
+            } catch (e) {
+              player.loadPlaylist({
+                list: playlistId,
+                listType: 'playlist',
+                index: initialIndex || 0,
+                startSeconds: initialTime || 0,
+                suggestedQuality: 'hd720'
+              });
+            }
           }
           if (this.ytIsMuted && typeof player.mute === 'function') {
             player.mute();
@@ -10533,13 +10607,18 @@
         if (data.playlistId && this.ytCurrentPlaylist !== data.playlistId) {
           this.ytCurrentPlaylist = data.playlistId;
           if (typeof player.loadPlaylist === 'function') {
-            player.loadPlaylist({
-              list: data.playlistId,
-              listType: 'playlist',
-              index: data.index || 0,
-              startSeconds: data.time || 0,
-              suggestedQuality: 'hd720'
-            });
+            const directVideoList = this.playlistVideoLists ? this.playlistVideoLists[data.playlistId] : null;
+            if (directVideoList && directVideoList.length > 0) {
+              player.loadPlaylist(directVideoList, data.index || 0, data.time || 0);
+            } else {
+              player.loadPlaylist({
+                list: data.playlistId,
+                listType: 'playlist',
+                index: data.index || 0,
+                startSeconds: data.time || 0,
+                suggestedQuality: 'hd720'
+              });
+            }
           }
         } else {
           if (typeof player.getPlaylistIndex === 'function' && typeof player.playVideoAt === 'function') {
