@@ -4254,15 +4254,20 @@
       const accentWallMat = fl === 3 ? mats.wallBrick : mats.mahogany;
 
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
-      // 1. West Wing Slabs:
-      // 1a. West Wing North portion (x: -36..-16, z: -6.0..18.00 ending cleanly at the center of the z = 18.0 south wall)
-      this.createSlab(-26, y0, 6.00, 20.0, 24.00, floorMat, mats.ceiling, ceilH);
-      // 2. West Office Slab (x: -34..-24, z: 18..28)
-      this.createSlab(-29, y0, 23, 10.0, 10.0, mats.floorDarkWood, mats.ceiling, ceilH);
+      // 1. West Wing Slab (x: -36..-16, z: -6.0..17.80 stopping flush at the north face of the z = 18.0 south wall)
+      this.createSlab(-26, y0, 5.90, 20.0, 23.80, floorMat, mats.ceiling, ceilH);
+      // 1b. West Wing to West Office doorway floor strip (x: -31.5..-28.5, z: 17.80..18.00)
+      this.createFloor(-30.0, y0, 17.90, 3.0, 0.20, floorMat);
+      this.createCeiling(-30.0, y0 + ceilH, 17.90, 3.0, 0.20, mats.ceiling);
+      // 2. West Office Slab (x: -34.0..-24.20, z: 18.20..27.80 strictly inside the mahogany walls)
+      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, mats.floorDarkWood, mats.ceiling, ceilH);
+      // 2b. West Office North doorway floor strip (x: -31.5..-28.5, z: 18.00..18.20)
+      this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, mats.floorDarkWood);
+      this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, mats.ceiling);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
       this.createSlab(-10, y0, 5, 12.0, 46.0, floorMat, mats.ceiling, ceilH);
-      // 4. Central Core South of Stairwell N (x: -4..4, z: -14..28)
-      this.createSlab(0, y0, 7, 8.0, 42.0, floorMat, mats.ceiling, ceilH);
+      // 4. Central Core South of Stairwell N (x: -4..4, z: -13.80..28.00 stopping flush at the south face of the z = -14.0 wall)
+      this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, mats.ceiling, ceilH);
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
 
@@ -4544,14 +4549,26 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0 inside shaft, meeting doorway at z = -14.0 cleanly)
-        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.80), mats.stairStone);
-        landBox.position.set(0, y0 - 0.16, -15.4);
+        // Solid South Landing box at Floor fl (x: -3.80..3.80, z: -16.80..-14.20 strictly inside stairwell shaft)
+        const landBox = new THREE.Mesh(new THREE.BoxGeometry(7.60, 0.32, 2.60), mats.stairStone);
+        landBox.position.set(0, y0 - 0.16, -15.50);
         this.scene.add(landBox);
 
-        this.createCeiling(0, y0 + ceilH, -15.4, 8.0, 2.80, mats.ceiling);
+        // Doorway floor fill strips for Stairwell B doors (no overlap with any wall):
+        // West doorway into Main Gallery (x: -4.00..-3.80, z: -16.80..-14.00)
+        const doorWestN = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.80), mats.stairStone);
+        doorWestN.position.set(-3.90, y0 - 0.16, -15.40);
+        this.scene.add(doorWestN);
+        // East doorway into East Main Hall (x: 3.80..4.00, z: -16.80..-14.00)
+        const doorEastN = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.80), mats.stairStone);
+        doorEastN.position.set(3.90, y0 - 0.16, -15.40);
+        this.scene.add(doorEastN);
+
+        this.createCeiling(0, y0 + ceilH, -15.50, 7.60, 2.60, mats.ceiling);
+        this.createCeiling(-3.90, y0 + ceilH, -15.40, 0.20, 2.80, mats.ceiling);
+        this.createCeiling(3.90, y0 + ceilH, -15.40, 0.20, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(0, y0 - 0.06, -15.4, 8.0, 2.80, mats.ceiling);
+          this.createCeiling(0, y0 - 0.06, -15.50, 7.60, 2.60, mats.ceiling);
         }
 
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4621,16 +4638,33 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid continuous North Landing box at Floor fl (x: -24.0..-16.0, z: 18.00..20.80)
-        // Spans seamless from West Wing doorway threshold at z = 18.00 all the way to stair flights at z = 20.80
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.80), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.40);
+        // Solid continuous North Landing box at Floor fl (x: -23.80..-16.20, z: 18.20..20.80 strictly inside stairwell shaft)
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(7.60, 0.32, 2.60), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.50);
         this.scene.add(landBoxSW);
 
-        // Ceiling closure for this floor's landing and doorway portal
-        this.createCeiling(-20, y0 + ceilH, 19.40, 8.0, 2.80, mats.ceiling);
+        // Doorway floor fill strips for the 3 stairwell doors (no overlap with any wall):
+        // North doorway into West Wing (x: -21.5..-18.5, z: 17.80..18.20)
+        const doorNorthSW = new THREE.Mesh(new THREE.BoxGeometry(3.00, 0.32, 0.40), mats.stairStone);
+        doorNorthSW.position.set(-20.0, y0 - 0.16, 18.00);
+        this.scene.add(doorNorthSW);
+        // West doorway into West Office (x: -24.20..-23.80, z: 18.60..20.80)
+        const doorWestSW = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.32, 2.20), mats.stairStone);
+        doorWestSW.position.set(-24.00, y0 - 0.16, 19.70);
+        this.scene.add(doorWestSW);
+        // East doorway into Main Gallery (x: -16.20..-16.00, z: 18.60..20.80)
+        const doorEastSW = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.20), mats.stairStone);
+        doorEastSW.position.set(-16.10, y0 - 0.16, 19.70);
+        this.scene.add(doorEastSW);
+
+        // Ceiling closure for this floor's landing and doorway portals
+        this.createCeiling(-20, y0 + ceilH, 19.50, 7.60, 2.60, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 18.00, 3.00, 0.40, mats.ceiling);
+        this.createCeiling(-24.00, y0 + ceilH, 19.70, 0.40, 2.20, mats.ceiling);
+        this.createCeiling(-16.10, y0 + ceilH, 19.70, 0.20, 2.20, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.40, 8.0, 2.80, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.50, 7.60, 2.60, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 18.00, 3.00, 0.40, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4932,7 +4966,8 @@
 
     createWall(x, y, z, w, h, d, mat, collide = true, floor = 'all') {
       if (mat) mat.side = THREE.DoubleSide;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat);
+      const mats6 = [mat, mat, this.hiddenCapMat, this.hiddenCapMat, mat, mat];
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats6);
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
 
