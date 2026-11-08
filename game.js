@@ -10150,10 +10150,10 @@
 
     initYouTubeAPI() {
       const PLAYLISTS_BY_FLOOR = [
-        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld', // Floor 1 (User's Curated Playlist)
-        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp', // Floor 2 (User's Floor 2 Curated Playlist)
-        'PL8HAkqKX065CROqCONrVtjJBl-p9sNsxj', // Floor 3 (Women and Art Exhibition)
-        'PL8HAkqKX065DVI9NdnlT8HztJiftU9QSZ'  // Floor 4 (Met Modern Perspectives)
+        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld', // Floor 1 (fl = 0): User's Curated Playlist
+        'PL6HPvbUV3y90GTk3elKRPsG8zTlm5t7kv', // Floor 2 (fl = 1): User's Curated Floor 2 Playlist
+        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp', // Floor 3 (fl = 2): Moved down from Floor 2 per user instruction
+        'PL8HAkqKX065DVI9NdnlT8HztJiftU9QSZ'  // Floor 4 (fl = 3): Met Modern Perspectives
       ];
       this.videoPlaylists = PLAYLISTS_BY_FLOOR;
 
