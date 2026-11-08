@@ -10302,36 +10302,64 @@
       });
 
       // Heavy museum plinth base
-      const plinthBase = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.16, 1.1), consoleMetalMat);
+      const plinthBase = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.16, 1.05), consoleMetalMat);
       plinthBase.position.set(0, 0.08, 0);
       deckGroup.add(plinthBase);
 
-      // Sculpted mahogany pedestal body
-      const pedestalBody = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.80, 0.85), deckBaseMat);
-      pedestalBody.position.set(0, 0.54, 0);
+      // Angled mahogany pedestal console body:
+      // Using an extrusion shape so the top is cleanly beveled at exactly angle -0.38 rad
+      // with zero wood sticking through the angled faceplate!
+      const bodyW = 1.90;
+      const bH_front = 0.72; // South front height
+      const bH_back = 1.04;  // North back height
+      const bD = 0.84;       // Front-to-back depth
+
+      const consoleShape = new THREE.Shape();
+      consoleShape.moveTo(-bD / 2, 0);
+      consoleShape.lineTo(bD / 2, 0);
+      consoleShape.lineTo(bD / 2, bH_front);
+      consoleShape.lineTo(-bD / 2, bH_back);
+      consoleShape.closePath();
+
+      const extrudeSettings = {
+        depth: bodyW,
+        bevelEnabled: true,
+        bevelSegments: 2,
+        steps: 1,
+        bevelSize: 0.015,
+        bevelThickness: 0.015
+      };
+      const pedestalGeo = new THREE.ExtrudeGeometry(consoleShape, extrudeSettings);
+      pedestalGeo.center(); // Center around origin
+      const pedestalBody = new THREE.Mesh(pedestalGeo, deckBaseMat);
+      // Align extrude: rotate so extrusion is along X axis
+      pedestalBody.rotation.y = Math.PI / 2;
+      pedestalBody.position.set(0, 0.16 + (bH_front + bH_back) / 4, 0);
       deckGroup.add(pedestalBody);
 
-      // Angled console top wedge tilted towards north doorway so controls face the entering player
+      // Angled console top head tilted towards north doorway so controls face the entering player
       const consoleHead = new THREE.Group();
-      consoleHead.position.set(0, 0.94, -0.06);
-      consoleHead.rotation.x = -0.38; // Tilted back towards player entering from north
+      const tiltAngle = Math.atan2(bH_back - bH_front, bD); // Exact angle matching body slope (~0.364 rad)
+      const headY = 0.16 + (bH_front + bH_back) / 2 + 0.02;
+      consoleHead.position.set(0, headY, 0);
+      consoleHead.rotation.x = -tiltAngle;
 
-      // Sleek enlarged black console faceplate housing all 4 buttons with comfortable margins
-      const plateW = 1.94;
-      const plateH = 0.06;
-      const plateD = 0.88;
+      // Sleek black console faceplate housing all 4 buttons seamlessly flush
+      const plateW = 1.86;
+      const plateH = 0.04;
+      const plateD = Math.sqrt(bD * bD + (bH_back - bH_front) * (bH_back - bH_front)) + 0.04; // Covers full sloped surface
       const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, plateD), topPlateMat);
-      consolePlate.position.set(0, 0, 0);
+      consolePlate.position.set(0, 0.02, 0);
       consoleHead.add(consolePlate);
 
-      // Beveled metallic border trim around faceplate
+      // Sleek metallic border trim framing the faceplate
       const trimMat = new THREE.MeshStandardMaterial({
         color: 0x334155,
         roughness: 0.3,
         metalness: 0.8
       });
-      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.04, 0.04, plateD + 0.04), trimMat);
-      trimBorder.position.set(0, -0.02, 0);
+      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.03, 0.025, plateD + 0.03), trimMat);
+      trimBorder.position.set(0, 0.005, 0);
       consoleHead.add(trimBorder);
 
       // Helper to generate dynamic button textures styled after tactile colorful remote controls
