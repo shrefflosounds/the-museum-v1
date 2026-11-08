@@ -4621,24 +4621,16 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl inside shaft (x: -24.0..-16.0, z: 18.20..20.80)
-        // Does not penetrate or intersect the north walls at z = 18.0!
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.50);
+        // Solid continuous North Landing box at Floor fl (x: -24.0..-16.0, z: 18.00..20.80)
+        // Spans seamless from West Wing doorway threshold at z = 18.00 all the way to stair flights at z = 20.80
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.80), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.40);
         this.scene.add(landBoxSW);
 
-        // Doorway connector apron inside the open door opening (x: -21.50..-18.50, z: 18.00..18.20)
-        // Tucks cleanly from z = 18.00 to z = 18.20 where it meets the landing box, with zero exposed front face at z = 18.00!
-        const doorApronSW = new THREE.Mesh(new THREE.BoxGeometry(3.00, 0.32, 0.20), mats.stairStone);
-        doorApronSW.position.set(-20.0, y0 - 0.16, 18.10);
-        this.scene.add(doorApronSW);
-
         // Ceiling closure for this floor's landing and doorway portal
-        this.createCeiling(-20, y0 + ceilH, 19.50, 8.0, 2.60, mats.ceiling);
-        this.createCeiling(-20, y0 + ceilH, 18.10, 3.00, 0.20, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 19.40, 8.0, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.50, 8.0, 2.60, mats.ceiling);
-          this.createCeiling(-20, y0 - 0.06, 18.10, 3.00, 0.20, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.40, 8.0, 2.80, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4914,8 +4906,9 @@
     }
 
     createCeiling(x, y, z, w, d, mat) {
-      if (mat) mat.side = THREE.DoubleSide;
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+      const ceilMat = mat ? mat.clone() : undefined;
+      if (ceilMat) ceilMat.side = THREE.FrontSide;
+      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilMat || mat);
       mesh.rotation.x = Math.PI / 2;
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
