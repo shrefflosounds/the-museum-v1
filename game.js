@@ -4553,11 +4553,6 @@
         landBox.position.set(0, y0 - 0.16, -15.5);
         this.scene.add(landBox);
 
-        // Raised doorway threshold transition strip (x: -4.2..-3.8, z: -16.8..-14.0) to eliminate coplanar Z-fighting
-        const sillB = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.015, 2.80), mats.stairStone);
-        sillB.position.set(-4.0, y0 + 0.0075, -15.4);
-        this.scene.add(sillB);
-
         this.createCeiling(0, y0 + ceilH, -15.5, 8.0, 2.6, mats.ceiling);
         if (fl > 0) {
           this.createCeiling(0, y0 - 0.06, -15.5, 8.0, 2.6, mats.ceiling);
@@ -4599,8 +4594,8 @@
           }
         }
       }
-      // Under-stair barrier on Floor 0 East Flight - overlaps landing edge by 5cm (z: -17.35..-16.75) to seal any slit, embeds into central divider and outer wall without touching the outer face
-      this.createWall(1.925, ceilH / 2, -17.05, 4.25, ceilH, 0.60, mats.wallConcrete, true, 0);
+      // Under-stair barrier on Floor 0 East Flight - sits strictly at z >= -16.80 under the Floor 1 landing slab (y: 0..3.68m) so it NEVER cuts through the descending stair steps or Floor 1 landing
+      this.createWall(2.0, 1.84, -16.65, 4.20, 3.68, 0.30, mats.wallConcrete, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
@@ -4634,16 +4629,6 @@
         const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
         landBoxSW.position.set(-20, y0 - 0.16, 19.5);
         this.scene.add(landBoxSW);
-
-        // Raised doorway threshold transition strip (x: -21.5..-18.5, z: 17.8..18.2) to eliminate coplanar Z-fighting between room parquet and stair stone
-        const sillSW = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.015, 0.40), mats.stairStone);
-        sillSW.position.set(-20.0, y0 + 0.0075, 18.0);
-        this.scene.add(sillSW);
-
-        // Raised doorway threshold transition strip into West Office (x: -24.2..-23.8, z: 18.6..20.8)
-        const sillOffice = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.015, 2.20), mats.stairStone);
-        sillOffice.position.set(-24.0, y0 + 0.0075, 19.7);
-        this.scene.add(sillOffice);
 
         // Ceiling closure for this floor's landing
         this.createCeiling(-20, y0 + ceilH, 19.5, 8.0, 2.6, mats.ceiling);
@@ -4687,8 +4672,10 @@
           }
         }
       }
-      // Under-stair barrier on Floor 0 East Flight - overlaps landing edge by 5cm (z: 20.75..21.35) to seal any slit, embeds into central divider and outer wall without touching the gallery outer face (stopping at x = -16.05)
-      this.createWall(-18.125, ceilH / 2, 21.05, 4.15, ceilH, 0.60, mats.wallConcrete, true, 0);
+      // Under-stair barrier on Floor 0 East Flight - sits strictly at z <= 20.80 under the Floor 1 landing slab (y: 0..3.68m) so it NEVER cuts through the descending stair steps or Floor 1 landing
+      this.createWall(-18.10, 1.84, 20.65, 4.00, 3.68, 0.30, mats.wallConcrete, true, 0);
+      // Floor 0 divider extension connecting to central divider (y: 0..3.68m)
+      this.createWall(-20.0, 1.84, 21.025, 0.34, 3.68, 0.45, mats.wallConcrete, true, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
