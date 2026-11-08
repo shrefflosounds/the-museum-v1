@@ -4538,19 +4538,24 @@
 
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
       // Stop the divider short of both landings so the player can turn between flights.
-      this.createWall(0, midY, -20.0, 0.34, totalH, 5.56, mats.wallConcrete, true, 'all');
+      this.createWall(0, midY, -19.9, 0.34, totalH, 6.20, mats.wallConcrete, true, 'all');
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
       // Solid pit floor under Stairwell B on Floor 0 so looking down between flights never exposes the void
-      const pitFloorN = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.40, 6.4), mats.stairStone);
+      const pitFloorN = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.40, 6.6), mats.stairStone);
       pitFloorN.position.set(0, -0.20, -20.0);
       this.scene.add(pitFloorN);
 
+      // Full-height structural jamb columns sealing doorway corners into Stairwell B (spans all 4 floors)
+      this.createWall(-4.0, midY, -16.8, 0.70, totalH, 0.70, mats.wallConcrete, true, 'all');
+      this.createWall( 4.0, midY, -16.8, 0.70, totalH, 0.70, mats.wallConcrete, true, 'all');
+      this.createWall( 0.0, midY, -16.8, 0.50, totalH, 0.60, mats.wallConcrete, true, 'all');
+
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.2 inside shaft, avoiding doorway overlap)
-        const landBox = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.32, 2.60), mats.stairStone);
-        landBox.position.set(0, y0 - 0.16, -15.5);
+        // Solid South Landing box at Floor fl (x: -4.1..4.1, z: -16.9..-13.9 inside shaft, sealing all edges)
+        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.20, 0.32, 2.80), mats.stairStone);
+        landBox.position.set(0, y0 - 0.16, -15.4);
         this.scene.add(landBox);
 
         // Raised doorway threshold transition strip (x: -4.2..-3.8, z: -16.8..-14.0) to eliminate coplanar Z-fighting
@@ -4558,26 +4563,26 @@
         sillB.position.set(-4.0, y0 + 0.0075, -15.4);
         this.scene.add(sillB);
 
-        this.createCeiling(0, y0 + ceilH, -15.5, 7.6, 2.6, mats.ceiling);
+        this.createCeiling(0, y0 + ceilH, -15.4, 8.20, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(0, y0 - 0.06, -15.5, 7.6, 2.6, mats.ceiling);
+          this.createCeiling(0, y0 - 0.06, -15.4, 8.20, 2.80, mats.ceiling);
         }
 
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
 
         if (fl < CONFIG.NUM_FLOORS - 1) {
           const halfH = CONFIG.FLOOR_HEIGHT / 2;
-          // Solid North Mid-Landing box at y0 + halfH (x: -4.0..4.0, z: -26.0..-23.2)
-          const nLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
+          // Solid North Mid-Landing box at y0 + halfH (x: -4.1..4.1, z: -26.0..-23.2)
+          const nLand = new THREE.Mesh(new THREE.BoxGeometry(8.20, 0.32, 2.84), mats.stairStone);
           nLand.position.set(0, y0 + halfH - 0.16, -24.6);
           this.scene.add(nLand);
 
           // Under-landing ceiling closure so looking up from lower flight never sees unrendered void
-          this.createCeiling(0, y0 + halfH - 0.33, -24.6, 8.0, 2.84, mats.ceiling);
+          this.createCeiling(0, y0 + halfH - 0.33, -24.6, 8.20, 2.84, mats.ceiling);
 
           // Sloped structural stringer carriages flush from divider (x=0) to outer shaft walls (x=±4)
-          addFlightCarriage(-2.09, y0, -16.8, y0 + halfH, -23.2, 3.82);
-          addFlightCarriage( 2.09, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 3.82);
+          addFlightCarriage(-2.0, y0, -16.8, y0 + halfH, -23.2, 4.04);
+          addFlightCarriage( 2.0, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 4.04);
 
           const numSteps = 22;
           const stepLen = 6.4 / numSteps;
@@ -4587,31 +4592,31 @@
             const sz = -16.8 - (s + 0.5) * stepLen;
             // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
             const wTopY = y0 + (s + 0.5) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
-            wStep.position.set(-2.09, wTopY - boxH / 2, sz);
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(4.02, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-2.0, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
             // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
             const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
-            eStep.position.set(2.09, eTopY - boxH / 2, sz);
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(4.02, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(2.0, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
       }
       // Guardrail on Floor 0 East Flight - spanning full height and extending into the wall jamb
-      this.createWall(2.0, ceilH / 2, -16.95, 4.0, ceilH, 0.40, mats.mahogany, true, 0);
+      this.createWall(2.0, ceilH / 2, -16.8, 4.40, ceilH, 0.60, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
-      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
-      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
+      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(4.02, ceilH, 0.30), mats.mahogany);
+      blockNW.position.set(-2.0, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.8);
       this.scene.add(blockNW);
       this.colliders.push({
         type: 'box',
         floor: 3,
-        minX: -4.0,
-        maxX: -0.18,
+        minX: -4.1,
+        maxX: -0.10,
         minZ: -17.15,
-        maxZ: -16.75,
+        maxZ: -16.60,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
         maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
         isWall: true
@@ -4619,20 +4624,28 @@
 
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
-      // Leave the same turning clearance at each end of the second stairwell divider.
-      this.createWall(-20, midY, 23.2, 0.34, totalH, 3.96, mats.wallConcrete, true, 'all');
+      // Leave turning clearance at south mid-landing, flush to north landing edge (z=20.8)
+      this.createWall(-20, midY, 23.1, 0.34, totalH, 4.60, mats.wallConcrete, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
 
       // Solid pit floor under Stairwell A on Floor 0 so looking down between flights never exposes the void
-      const pitFloorSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.40, 4.8), mats.stairStone);
+      const pitFloorSW = new THREE.Mesh(new THREE.BoxGeometry(8.2, 0.40, 5.0), mats.stairStone);
       pitFloorSW.position.set(-20, -0.20, 23.2);
       this.scene.add(pitFloorSW);
 
+      // Full-height structural jamb columns sealing doorway corners into Stairwell SW (spans all 4 floors)
+      // East Door Jamb Column at x = -16.0, z = 20.8 (joins shaft wall x=-16, North landing, and East flight wall)
+      this.createWall(-16.0, midY, 20.8, 0.70, totalH, 0.70, mats.wallConcrete, true, 'all');
+      // West Door Jamb Column at x = -24.0, z = 20.8 (joins West Office door, shaft wall, and North landing)
+      this.createWall(-24.0, midY, 20.8, 0.70, totalH, 0.70, mats.wallConcrete, true, 'all');
+      // Central Divider Pier at x = -20.0, z = 20.8 (joins central divider to landing edge)
+      this.createWall(-20.0, midY, 20.8, 0.50, totalH, 0.60, mats.wallConcrete, true, 'all');
+
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl (x: -23.8..-16.2 inside shaft, z: 18.20..20.80 strictly inside the stairwell)
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.32, 2.60), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.5);
+        // Solid North Landing box at Floor fl (x: -24.1..-15.9 inside shaft, z: 18.20..20.80 strictly inside the stairwell)
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.20, 0.32, 2.80), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.4);
         this.scene.add(landBoxSW);
 
         // Raised doorway threshold transition strip (x: -21.5..-18.5, z: 17.8..18.2) to eliminate coplanar Z-fighting between room parquet and stair stone
@@ -4646,26 +4659,26 @@
         this.scene.add(sillOffice);
 
         // Ceiling closure for this floor's landing
-        this.createCeiling(-20, y0 + ceilH, 19.5, 7.6, 2.6, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 19.4, 8.20, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.5, 7.6, 2.6, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.4, 8.20, 2.80, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
 
         if (fl < CONFIG.NUM_FLOORS - 1) {
           const halfH = CONFIG.FLOOR_HEIGHT / 2;
-          // Solid South Mid-Landing box at y0 + halfH (x: -24.0..-16.0, z: 25.6..28.0)
-          const sLand = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.44), mats.stairStone);
+          // Solid South Mid-Landing box at y0 + halfH (x: -24.1..-15.9, z: 25.6..28.0)
+          const sLand = new THREE.Mesh(new THREE.BoxGeometry(8.20, 0.32, 2.44), mats.stairStone);
           sLand.position.set(-20, y0 + halfH - 0.16, 26.8);
           this.scene.add(sLand);
 
           // Under-landing ceiling closure so looking up from lower flight never sees unrendered void
-          this.createCeiling(-20, y0 + halfH - 0.33, 26.8, 8.0, 2.44, mats.ceiling);
+          this.createCeiling(-20, y0 + halfH - 0.33, 26.8, 8.20, 2.44, mats.ceiling);
 
           // Sloped structural stringer carriages flush from divider (x=-20) to outer shaft walls (x=-24 and x=-16)
-          addFlightCarriage(-21.91, y0, 20.8, y0 + halfH, 25.6, 3.82);
-          addFlightCarriage(-18.09, y0 + halfH, 25.6, y0 + CONFIG.FLOOR_HEIGHT, 20.8, 3.82);
+          addFlightCarriage(-22.0, y0, 20.8, y0 + halfH, 25.6, 4.04);
+          addFlightCarriage(-18.0, y0 + halfH, 25.6, y0 + CONFIG.FLOOR_HEIGHT, 20.8, 4.04);
 
           const numSteps = 20;
           const stepLen = 4.8 / numSteps;
@@ -4675,31 +4688,32 @@
             const sz = 20.8 + (s + 0.5) * stepLen;
             // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
             const wTopY = y0 + (s + 0.5) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
-            wStep.position.set(-21.91, wTopY - boxH / 2, sz);
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(4.02, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-22.0, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
             // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
             const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
-            eStep.position.set(-18.09, eTopY - boxH / 2, sz);
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(4.02, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(-18.0, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
       }
       // Guardrail on Floor 0 East Flight of Stairwell SW - spanning full height and extending into the wall jamb so no void slit exists
-      this.createWall(-18.0, ceilH / 2, 20.95, 4.0, ceilH, 0.40, mats.mahogany, true, 0);
+      this.createWall(-18.0, ceilH / 2, 20.8, 4.40, ceilH, 0.60, mats.mahogany, true, 0);
+      this.createWall(-18.0, ceilH / 2, 20.8, 4.40, ceilH, 0.62, mats.wallConcrete, false, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
-      const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
-      blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
+      const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(4.02, ceilH, 0.30), mats.mahogany);
+      blockSWW.position.set(-22.0, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.8);
       this.scene.add(blockSWW);
       this.colliders.push({
         type: 'box',
         floor: 3,
-        minX: -24.0,
-        maxX: -19.82,
-        minZ: 20.75,
-        maxZ: 21.15,
+        minX: -24.1,
+        maxX: -19.9,
+        minZ: 20.60,
+        maxZ: 21.05,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
         maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
         isWall: true
