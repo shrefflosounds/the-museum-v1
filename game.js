@@ -10313,108 +10313,141 @@
 
       // Angled console top wedge tilted towards north doorway so controls face the entering player
       const consoleHead = new THREE.Group();
-      consoleHead.position.set(0, 0.94, 0);
+      consoleHead.position.set(0, 0.94, -0.06);
       consoleHead.rotation.x = -0.38; // Tilted back towards player entering from north
 
-      const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.08, 0.72), topPlateMat);
+      // Sleek enlarged black console faceplate housing all 4 buttons with comfortable margins
+      const plateW = 1.94;
+      const plateH = 0.06;
+      const plateD = 0.88;
+      const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, plateD), topPlateMat);
+      consolePlate.position.set(0, 0, 0);
       consoleHead.add(consolePlate);
 
-      // Helper to generate dynamic button textures styled after tactile colorful remote controls (Image 2)
-      // Transformed so text and symbols are oriented upright and read left-to-right (un-mirrored) from the player's perspective
-      const makeButtonTexture = (label, symbol, colorCfg, customIcon = null) => {
+      // Beveled metallic border trim around faceplate
+      const trimMat = new THREE.MeshStandardMaterial({
+        color: 0x334155,
+        roughness: 0.3,
+        metalness: 0.8
+      });
+      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.04, 0.04, plateD + 0.04), trimMat);
+      trimBorder.position.set(0, -0.02, 0);
+      consoleHead.add(trimBorder);
+
+      // Helper to generate dynamic button textures styled after tactile colorful remote controls
+      // Vector rendered on high-res canvas with crisp white symbols and responsive mute state with red slash
+      const makeButtonTexture = (label, symbol, colorCfg, isMuted = false) => {
         const can = document.createElement('canvas');
         can.width = 256;
         can.height = 256;
         const ctx = can.getContext('2d');
 
-        const drawContent = () => {
-          // Button face background color
-          ctx.fillStyle = colorCfg.bg;
-          ctx.fillRect(0, 0, 256, 256);
+        // Button face background color
+        ctx.fillStyle = colorCfg.bg;
+        ctx.fillRect(0, 0, 256, 256);
 
-          // Tactile outer bevel ring
+        // Tactile outer bevel ring
+        ctx.beginPath();
+        ctx.arc(128, 128, 110, 0, Math.PI * 2);
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = colorCfg.border;
+        ctx.stroke();
+
+        // Inner bevel highlight
+        ctx.beginPath();
+        ctx.arc(128, 128, 100, 0, Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.stroke();
+
+        // Transform coordinate system to cancel CylinderGeometry top-cap reflection
+        // and orient text/symbols cleanly upright and reading left-to-right from the player perspective
+        ctx.save();
+        ctx.translate(128, 128);
+        ctx.transform(0, 1, -1, 0, 0, 0); // Flips horizontally and aligns upright
+
+        if (symbol === 'speaker') {
+          // Native vector rendering of crisp white volume speaker matching other button icons
+          // Centered horizontally around x = -10 so waves balance out
+          const ox = -8;
+          ctx.fillStyle = '#ffffff';
           ctx.beginPath();
-          ctx.arc(128, 128, 110, 0, Math.PI * 2);
-          ctx.lineWidth = 14;
-          ctx.strokeStyle = colorCfg.border;
-          ctx.stroke();
+          // Compact speaker driver / back box
+          ctx.roundRect ? ctx.roundRect(ox - 32, -18, 16, 36, 4) : ctx.rect(ox - 32, -18, 16, 36);
+          ctx.fill();
 
-          // Inner bevel highlight
+          // Expanding conical horn
           ctx.beginPath();
-          ctx.arc(128, 128, 100, 0, Math.PI * 2);
-          ctx.lineWidth = 4;
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
-          ctx.stroke();
+          ctx.moveTo(ox - 18, -18);
+          ctx.lineTo(ox + 8, -34);
+          ctx.lineTo(ox + 8, 34);
+          ctx.lineTo(ox - 18, 18);
+          ctx.closePath();
+          ctx.fill();
 
-          // Transform coordinate system to cancel CylinderGeometry top-cap reflection
-          // and orient text/symbols cleanly upright and reading left-to-right from the player perspective
-          ctx.save();
-          ctx.translate(128, 128);
-          ctx.transform(0, 1, -1, 0, 0, 0); // Flips horizontally and aligns upright
+          if (!isMuted) {
+            // Crisp radiating sound waves matching white iconography
+            ctx.lineWidth = 6;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#ffffff';
 
-          if (customIcon) {
-            // Draw clean white speaker icon without emojis
-            const img = customIcon;
-            if (img.complete && img.naturalWidth > 0) {
-              const sz = 92;
-              ctx.drawImage(img, -sz / 2, -sz / 2 - 10, sz, sz);
-            } else {
-              // Draw geometric volume speaker icon vector fallback
-              ctx.fillStyle = '#ffffff';
-              ctx.beginPath();
-              // Speaker cone body
-              ctx.moveTo(-34, -14);
-              ctx.lineTo(-18, -14);
-              ctx.lineTo(8, -34);
-              ctx.lineTo(8, 34);
-              ctx.lineTo(-18, 14);
-              ctx.lineTo(-34, 14);
-              ctx.closePath();
-              ctx.fill();
+            // Wave 1 (inner)
+            ctx.beginPath();
+            ctx.arc(ox + 6, 0, 18, -Math.PI * 0.28, Math.PI * 0.28);
+            ctx.stroke();
 
-              // Sound waves
-              ctx.lineWidth = 6;
-              ctx.lineCap = 'round';
-              ctx.strokeStyle = '#ffffff';
+            // Wave 2 (middle)
+            ctx.beginPath();
+            ctx.arc(ox + 6, 0, 31, -Math.PI * 0.30, Math.PI * 0.30);
+            ctx.stroke();
 
-              // Inner arc
-              ctx.beginPath();
-              ctx.arc(2, 0, 18, -Math.PI * 0.3, Math.PI * 0.3);
-              ctx.stroke();
-
-              // Outer arc
-              ctx.beginPath();
-              ctx.arc(2, 0, 32, -Math.PI * 0.33, Math.PI * 0.33);
-              ctx.stroke();
-            }
+            // Wave 3 (outer)
+            ctx.beginPath();
+            ctx.arc(ox + 6, 0, 44, -Math.PI * 0.32, Math.PI * 0.32);
+            ctx.stroke();
           } else {
-            ctx.fillStyle = '#ffffff';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.font = 'bold 96px sans-serif';
-            ctx.fillText(symbol, 0, -12);
-          }
+            // Sound wave outlines dimmed
+            ctx.lineWidth = 4;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.beginPath();
+            ctx.arc(ox + 6, 0, 24, -Math.PI * 0.28, Math.PI * 0.28);
+            ctx.stroke();
 
-          ctx.font = 'bold 26px sans-serif';
-          ctx.fillStyle = colorCfg.textColor || '#ffffff';
+            // Bold clean diagonal red mute slash across the speaker
+            ctx.lineWidth = 8;
+            ctx.lineCap = 'round';
+            ctx.strokeStyle = '#ef4444';
+            ctx.beginPath();
+            ctx.moveTo(ox - 38, 34);
+            ctx.lineTo(ox + 42, -34);
+            ctx.stroke();
+
+            // Subtle white outline on red slash for crisp high contrast against button face
+            ctx.lineWidth = 2.5;
+            ctx.strokeStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.moveTo(ox - 36, 32);
+            ctx.lineTo(ox + 40, -32);
+            ctx.stroke();
+          }
+        } else {
+          ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.fillText(label, 0, 64);
-          ctx.restore();
-        };
+          ctx.font = 'bold 92px sans-serif';
+          ctx.fillText(symbol, 0, -12);
+        }
 
-        drawContent();
+        ctx.font = 'bold 24px sans-serif';
+        ctx.fillStyle = colorCfg.textColor || '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(label, 0, 64);
+        ctx.restore();
 
         const tex = new THREE.CanvasTexture(can);
         tex.anisotropy = 4;
-
-        if (customIcon && (!customIcon.complete || customIcon.naturalWidth === 0)) {
-          customIcon.onload = () => {
-            drawContent();
-            tex.needsUpdate = true;
-          };
-        }
-
         return tex;
       };
 
@@ -10423,9 +10456,6 @@
       // PLAY / PAUSE: Vibrant Emerald Green (like action buttons)
       // MUTE: Warm Sun Yellow (like mute button)
       // Ordered Left-to-Right from player's view: PREV (left) -> PLAY -> NEXT -> MUTE (right)
-      const volumeIconImg = new Image();
-      volumeIconImg.src = 'assets/ui/volume_icon.png';
-
       const btnDefs = [
         {
           id: 'prev',
@@ -10454,8 +10484,7 @@
         {
           id: 'mute',
           label: 'MUTE',
-          symbol: null,
-          customIcon: volumeIconImg,
+          symbol: 'speaker',
           relX: -0.54, // Rightmost from player's viewpoint
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
@@ -10466,7 +10495,7 @@
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
-        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg, b.customIcon || null);
+        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg, this.ytIsMuted);
         const capMat = new THREE.MeshStandardMaterial({
           map: tex,
           roughness: 0.35,
@@ -10481,15 +10510,19 @@
         });
         const btnMesh = new THREE.Mesh(btnGeo, [sideMat, capMat, sideMat]);
         btnMesh.rotation.x = 0;
-        btnMesh.position.set(b.relX, 0.05, 0.0);
+        // Positioned dead-center on the faceplate surface (Y=0.035 flush above faceplate, Z=0.0 centered)
+        btnMesh.position.set(b.relX, 0.035, 0.0);
         consoleHead.add(btnMesh);
 
         interactiveButtons.push({
           id: b.id,
           prompt: b.prompt,
           mesh: btnMesh,
-          origY: 0.05,
+          origY: 0.035,
           material: capMat,
+          colorCfg: b.colorCfg,
+          label: b.label,
+          symbol: b.symbol,
           floor: fl,
           worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 0.99, 23.98)
         });
@@ -10498,14 +10531,14 @@
       deckGroup.add(consoleHead);
       this.scene.add(deckGroup);
 
-      // Solid physical collider matching new console
+      // Solid physical collider matching console
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: -29.0 - 1.1,
-        maxX: -29.0 + 1.1,
-        minZ: 24.0 - 0.55,
-        maxZ: 24.0 + 0.55,
+        minX: -29.0 - 1.15,
+        maxX: -29.0 + 1.15,
+        minZ: 24.0 - 0.58,
+        maxZ: 24.0 + 0.58,
         minY: y0,
         maxY: y0 + 1.25
       });
@@ -10717,6 +10750,18 @@
               if (typeof p.unMute === 'function') p.unMute();
             }
           });
+          // Dynamically update mute button texture across all rooms so red slash toggles in real time
+          if (this.videoInstallationRooms) {
+            this.videoInstallationRooms.forEach(r => {
+              if (!r.buttons) return;
+              const muteBtn = r.buttons.find(b => b.id === 'mute');
+              if (muteBtn && muteBtn.material && muteBtn.colorCfg && makeButtonTexture) {
+                const newTex = makeButtonTexture(muteBtn.label, muteBtn.symbol, muteBtn.colorCfg, this.ytIsMuted);
+                muteBtn.material.map = newTex;
+                muteBtn.material.needsUpdate = true;
+              }
+            });
+          }
           break;
       }
 
