@@ -3807,6 +3807,7 @@
       this.ytCurrentPlaylist = null;
       this.ytIsMuted = false;
       this.ytIsPaused = false;
+      this.ytSubtitlesEnabled = false;
       this.initYouTubeAPI();
       this.texLoader = new THREE.TextureLoader();
 
@@ -10363,8 +10364,9 @@
       consoleHead.add(trimBorder);
 
       // Helper to generate dynamic button textures styled after tactile colorful remote controls
-      // Vector rendered on high-res canvas with crisp white symbols and responsive mute state with red slash
-      const makeButtonTexture = (label, symbol, colorCfg, isMuted = false) => {
+      // Vector rendered on high-res canvas with crisp white symbols, responsive mute state with red slash,
+      // and responsive CC subtitle toggle state
+      const makeButtonTexture = (label, symbol, colorCfg, isMuted = false, isSubs = false) => {
         const can = document.createElement('canvas');
         can.width = 256;
         can.height = 256;
@@ -10459,6 +10461,32 @@
             ctx.lineTo(ox + 40, -32);
             ctx.stroke();
           }
+        } else if (symbol === 'cc') {
+          // Clean white CC (Closed Captions / Subtitles) icon
+          ctx.lineWidth = 6;
+          ctx.strokeStyle = '#ffffff';
+          ctx.lineJoin = 'round';
+          // Outer rounded badge box
+          const bW = 86;
+          const bH = 56;
+          ctx.beginPath();
+          ctx.roundRect ? ctx.roundRect(-bW / 2, -bH / 2 - 12, bW, bH, 8) : ctx.rect(-bW / 2, -bH / 2 - 12, bW, bH);
+          ctx.stroke();
+
+          // CC text inside badge
+          ctx.font = '900 36px sans-serif';
+          ctx.fillStyle = '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('CC', 0, -12);
+
+          if (isSubs) {
+            // Little bright green active status indicator pip under CC badge
+            ctx.fillStyle = '#22c55e';
+            ctx.beginPath();
+            ctx.arc(0, 20, 5, 0, Math.PI * 2);
+            ctx.fill();
+          }
         } else {
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
@@ -10479,17 +10507,18 @@
         return tex;
       };
 
-      // Button definitions with vibrant color palette inspired by the EZclicker remote:
+      // Button definitions with vibrant color palette inspired by tactile remote controls:
       // PREV & NEXT: Vibrant Sky Blue (like channel buttons)
       // PLAY / PAUSE: Vibrant Emerald Green (like action buttons)
       // MUTE: Warm Sun Yellow (like mute button)
-      // Ordered Left-to-Right from player's view: PREV (left) -> PLAY -> NEXT -> MUTE (right)
+      // CC (Subtitles): Bold Violet/Indigo (dedicated subtitle toggle)
+      // Ordered Left-to-Right from player's view: PREV -> PLAY -> NEXT -> MUTE -> CC
       const btnDefs = [
         {
           id: 'prev',
           label: 'PREV',
           symbol: '◀',
-          relX: 0.54, // Leftmost from player's viewpoint
+          relX: 0.68, // Leftmost from player's viewpoint
           prompt: '[E] PREVIOUS VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -10497,7 +10526,7 @@
           id: 'play',
           label: 'PLAY',
           symbol: '▶❚❚',
-          relX: 0.18, // Second from left
+          relX: 0.34, // Second from left
           prompt: '[E] PAUSE / PLAY',
           colorCfg: { bg: '#16a34a', border: '#4ade80', side: 0x15803d, emissive: 0x16a34a }
         },
@@ -10505,7 +10534,7 @@
           id: 'next',
           label: 'NEXT',
           symbol: '▶',
-          relX: -0.18, // Third from left
+          relX: 0.0, // Center
           prompt: '[E] NEXT VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -10513,9 +10542,17 @@
           id: 'mute',
           label: 'MUTE',
           symbol: 'speaker',
-          relX: -0.54, // Rightmost from player's viewpoint
+          relX: -0.34, // Fourth from left
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
+        },
+        {
+          id: 'subs',
+          label: 'SUBS',
+          symbol: 'cc',
+          relX: -0.68, // Rightmost from player's viewpoint
+          prompt: '[E] SUBTITLES ON / OFF',
+          colorCfg: { bg: '#7c3aed', border: '#a78bfa', side: 0x6d28d9, emissive: 0x7c3aed }
         }
       ];
 
@@ -10523,7 +10560,7 @@
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
-        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg, this.ytIsMuted);
+        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg, this.ytIsMuted, this.ytSubtitlesEnabled);
         const capMat = new THREE.MeshStandardMaterial({
           map: tex,
           roughness: 0.35,
@@ -10656,7 +10693,8 @@
         index: currentIndex,
         time: currentTime,
         paused: this.ytIsPaused,
-        muted: this.ytIsMuted
+        muted: this.ytIsMuted,
+        subs: this.ytSubtitlesEnabled
       };
     }
 
@@ -10664,6 +10702,7 @@
       if (!data) return;
       this.ytIsPaused = !!data.paused;
       this.ytIsMuted = !!data.muted;
+      if (data.subs !== undefined) this.ytSubtitlesEnabled = !!data.subs;
       this.sendYouTubeCommand(player => {
         if (data.playlistId && this.ytCurrentPlaylist !== data.playlistId) {
           this.ytCurrentPlaylist = data.playlistId;
@@ -10784,9 +10823,41 @@
               if (!r.buttons) return;
               const muteBtn = r.buttons.find(b => b.id === 'mute');
               if (muteBtn && muteBtn.material && muteBtn.colorCfg && makeButtonTexture) {
-                const newTex = makeButtonTexture(muteBtn.label, muteBtn.symbol, muteBtn.colorCfg, this.ytIsMuted);
+                const newTex = makeButtonTexture(muteBtn.label, muteBtn.symbol, muteBtn.colorCfg, this.ytIsMuted, this.ytSubtitlesEnabled);
                 muteBtn.material.map = newTex;
                 muteBtn.material.needsUpdate = true;
+              }
+            });
+          }
+          break;
+        case 'subs':
+          if (remoteData && remoteData.subs !== undefined) {
+            this.ytSubtitlesEnabled = !!remoteData.subs;
+          } else {
+            this.ytSubtitlesEnabled = !this.ytSubtitlesEnabled;
+          }
+          this.sendYouTubeCommand(p => {
+            try {
+              if (this.ytSubtitlesEnabled) {
+                if (typeof p.loadModule === 'function') p.loadModule('captions');
+                if (typeof p.setOption === 'function') p.setOption('captions', 'track', { languageCode: 'en' });
+              } else {
+                if (typeof p.unloadModule === 'function') p.unloadModule('captions');
+                if (typeof p.setOption === 'function') p.setOption('captions', 'track', {});
+              }
+            } catch (e) {
+              console.warn('Subtitles toggle error:', e);
+            }
+          });
+          // Update subs button texture across all rooms in real time
+          if (this.videoInstallationRooms) {
+            this.videoInstallationRooms.forEach(r => {
+              if (!r.buttons) return;
+              const subsBtn = r.buttons.find(b => b.id === 'subs');
+              if (subsBtn && subsBtn.material && subsBtn.colorCfg && makeButtonTexture) {
+                const newTex = makeButtonTexture(subsBtn.label, subsBtn.symbol, subsBtn.colorCfg, this.ytIsMuted, this.ytSubtitlesEnabled);
+                subsBtn.material.map = newTex;
+                subsBtn.material.needsUpdate = true;
               }
             });
           }
@@ -10806,6 +10877,7 @@
         this.mp.notifyVideoControl(targetFloor, controlId, {
           paused: this.ytIsPaused,
           muted: this.ytIsMuted,
+          subs: this.ytSubtitlesEnabled,
           time: currentTime,
           index: currentIndex
         });
