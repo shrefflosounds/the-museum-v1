@@ -4296,12 +4296,15 @@
       this.createLintel(-20.0, y0, 18, 3.0, t, ceilH, mainWallMat);
 
       // B. WEST OFFICE (x: -34..-24, z: 18..28)
-      this.createWall(-34, yc, 23.2, t, wallH, 10.0, accentWallMat, true, fl);    // 18.2..28.2
-      this.createWall(-29, yc, 28, 9.6, wallH, t, accentWallMat, true, fl);       // -33.8..-24.2
-      // East wall of West Office (x = -24, z: 18.2..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
-      this.createWall(-24, ycFull, 18.4, t, h, 0.4, accentWallMat, true, fl);     // North jamb (18.2..18.6)
+      this.createWall(-34, ycFull, 23.0, t, h, 10.4, accentWallMat, true, fl);    // 17.8..28.2 (Full height h=5.20m to eliminate plenum slit)
+      this.createWall(-29, ycFull, 28, 10.4, h, t, accentWallMat, true, fl);      // -34.2..-23.8 (Full height h=5.20m sealing South edge)
+      // East wall of West Office (x = -24, z: 18.0..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
+      this.createWall(-24, ycFull, 18.3, t, h, 0.6, accentWallMat, true, fl);     // North jamb (18.0..18.6)
       this.createWall(-24, ycFull, 24.5, t, h, 7.4, accentWallMat, true, fl);     // South segment (20.8..28.2)
-      this.createLintelZ(-24, y0, 19.7, t, 2.2, ceilH, accentWallMat);
+      this.createLintelZ(-24, y0, 19.7, t, 2.2, h, accentWallMat);                // Doorway lintel spans all the way to ceiling slab (height h)
+
+      // Dedicated ceiling panel covering the West Office (x: -34..-24, z: 18..28) at y0 + ceilH
+      this.createCeiling(-29, y0 + ceilH, 23, 10.2, 10.2, mats.ceiling);
 
       // C. MAIN GALLERY & NORTH MAGAZINE ALCOVE (x: -16..-4, z: -18..28)
       // Entire x = -16 wall from z = -18.2 to 28.2 (disjoint collinear segments):
@@ -4312,7 +4315,7 @@
       this.createWall(-16, yc, 10.0, t, wallH, 5.0, mainWallMat, true, fl);       // 7.5..12.5
       this.createLintelZ(-16, y0, 14.0, t, 3.0, ceilH, mainWallMat);              // 12.5..15.5
       this.createWall(-16, ycFull, 17.05, t, h, 3.1, mainWallMat, true, fl);      // 15.5..18.6
-      this.createLintelZ(-16, y0, 19.7, t, 2.2, ceilH, mainWallMat);              // 18.6..20.8
+      this.createLintelZ(-16, y0, 19.7, t, 2.2, h, mainWallMat);                  // 18.6..20.8 (Full height h=5.20m to eliminate plenum slit)
       this.createWall(-16, ycFull, 24.5, t, h, 7.4, mainWallMat, true, fl);       // 20.8..28.2
 
       this.createWall(-10, yc, -18, 11.6, wallH, t, mainWallMat, true, fl);       // -15.8..-4.2
@@ -4534,6 +4537,11 @@
       this.createWall(0, midY, -20.0, 0.34, totalH, 5.56, mats.wallConcrete, true, 'all');
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
+      // Solid pit floor under Stairwell B on Floor 0 so looking down between flights never exposes the void
+      const pitFloorN = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.40, 6.4), mats.stairStone);
+      pitFloorN.position.set(0, -0.20, -20.0);
+      this.scene.add(pitFloorN);
+
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
         // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0)
@@ -4554,9 +4562,12 @@
           nLand.position.set(0, y0 + halfH - 0.16, -24.6);
           this.scene.add(nLand);
 
-          // Sloped structural stringer carriages for 7.5m floor height
-          addFlightCarriage(-1.98, y0, -16.8, y0 + halfH, -23.2, 3.62);
-          addFlightCarriage( 1.98, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 3.62);
+          // Under-landing ceiling closure so looking up from lower flight never sees unrendered void
+          this.createCeiling(0, y0 + halfH - 0.33, -24.6, 8.0, 2.84, mats.ceiling);
+
+          // Sloped structural stringer carriages flush from divider (x=0) to outer shaft walls (x=±4)
+          addFlightCarriage(-2.09, y0, -16.8, y0 + halfH, -23.2, 3.82);
+          addFlightCarriage( 2.09, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 3.82);
 
           const numSteps = 22;
           const stepLen = 6.4 / numSteps;
@@ -4566,14 +4577,14 @@
             const sz = -16.8 - (s + 0.5) * stepLen;
             // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
             const wTopY = y0 + (s + 0.5) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
-            wStep.position.set(-1.98, wTopY - boxH / 2, sz);
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-2.09, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
             // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
             const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
-            eStep.position.set(1.98, eTopY - boxH / 2, sz);
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(2.09, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
@@ -4581,14 +4592,14 @@
       // Guardrail on Floor 0 East Flight
       this.createWall(1.98, 1.22, -16.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
-      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
-      blockNW.position.set(-1.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
+      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
+      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
       this.scene.add(blockNW);
       this.colliders.push({
         type: 'box',
         floor: 3,
-        minX: -3.85,
-        maxX: -0.15,
+        minX: -4.0,
+        maxX: -0.18,
         minZ: -17.15,
         maxZ: -16.75,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
@@ -4601,6 +4612,11 @@
       // Leave the same turning clearance at each end of the second stairwell divider.
       this.createWall(-20, midY, 23.2, 0.34, totalH, 3.96, mats.wallConcrete, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
+
+      // Solid pit floor under Stairwell A on Floor 0 so looking down between flights never exposes the void
+      const pitFloorSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.40, 4.8), mats.stairStone);
+      pitFloorSW.position.set(-20, -0.20, 23.2);
+      this.scene.add(pitFloorSW);
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
@@ -4622,9 +4638,12 @@
           sLand.position.set(-20, y0 + halfH - 0.16, 26.8);
           this.scene.add(sLand);
 
-          // Sloped structural stringer carriages for 7.5m floor height
-          addFlightCarriage(-21.98, y0, 20.8, y0 + halfH, 25.6, 3.62);
-          addFlightCarriage(-18.02, y0 + halfH, 25.6, y0 + CONFIG.FLOOR_HEIGHT, 20.8, 3.62);
+          // Under-landing ceiling closure so looking up from lower flight never sees unrendered void
+          this.createCeiling(-20, y0 + halfH - 0.33, 26.8, 8.0, 2.44, mats.ceiling);
+
+          // Sloped structural stringer carriages flush from divider (x=-20) to outer shaft walls (x=-24 and x=-16)
+          addFlightCarriage(-21.91, y0, 20.8, y0 + halfH, 25.6, 3.82);
+          addFlightCarriage(-18.09, y0 + halfH, 25.6, y0 + CONFIG.FLOOR_HEIGHT, 20.8, 3.82);
 
           const numSteps = 20;
           const stepLen = 4.8 / numSteps;
@@ -4634,14 +4653,14 @@
             const sz = 20.8 + (s + 0.5) * stepLen;
             // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
             const wTopY = y0 + (s + 0.5) * stepH;
-            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
-            wStep.position.set(-21.98, wTopY - boxH / 2, sz);
+            const wStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
+            wStep.position.set(-21.91, wTopY - boxH / 2, sz);
             this.scene.add(wStep);
 
             // East Flight: top surface flush with mathematical slope (y0 + H) - (s + 0.5) * stepH
             const eTopY = (y0 + CONFIG.FLOOR_HEIGHT) - (s + 0.5) * stepH;
-            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.64, boxH, stepLen + 0.04), mats.stairStone);
-            eStep.position.set(-18.02, eTopY - boxH / 2, sz);
+            const eStep = new THREE.Mesh(new THREE.BoxGeometry(3.84, boxH, stepLen + 0.04), mats.stairStone);
+            eStep.position.set(-18.09, eTopY - boxH / 2, sz);
             this.scene.add(eStep);
           }
         }
@@ -4649,14 +4668,14 @@
       // Guardrail on Floor 0 East Flight of Stairwell SW
       this.createWall(-18.02, 1.22, 20.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
-      const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.64, ceilH, 0.30), mats.mahogany);
-      blockSWW.position.set(-21.98, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
+      const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
+      blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
       this.scene.add(blockSWW);
       this.colliders.push({
         type: 'box',
         floor: 3,
-        minX: -23.85,
-        maxX: -20.15,
+        minX: -24.0,
+        maxX: -19.82,
         minZ: 20.75,
         maxZ: 21.15,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
@@ -10924,35 +10943,67 @@
 
       if (!overlayContainer || !this.camera) return;
 
-      // Check if screen is in front of camera
       const camPos = this.camera.position;
-      const toScreen = new THREE.Vector3().subVectors(currentRoom.screenCenter, camPos);
-      const camFwd = new THREE.Vector3();
-      this.camera.getWorldDirection(camFwd);
+      const screenCenter = currentRoom.screenCenter;
 
-      // Facing screen check
-      if (toScreen.dot(camFwd) < 0.2) {
+      // 1. Strict Screen Plane Side: Screen faces North (-Z), normal is (0, 0, -1).
+      // Player/camera MUST be strictly on the room side (camPos.z < screenCenter.z - 0.40).
+      // If camera walks behind or is directly touching the screen wall, hide immediately.
+      if (camPos.z >= screenCenter.z - 0.40) {
         overlayContainer.style.display = 'none';
         return;
       }
 
-      // Compute exact 3D camera and viewport transformation
-      const w2 = currentRoom.screenW / 2;
-      const h2 = currentRoom.screenH / 2;
-      const sy = currentRoom.screenCenter.y;
-      const sz = currentRoom.screenCenter.z;
-      const sx = currentRoom.screenCenter.x;
-
-      // Check if all screen corners are in front of near plane
-      const pTopLeft = new THREE.Vector3(sx + w2, sy + h2, sz).project(this.camera);
-      const pTopRight = new THREE.Vector3(sx - w2, sy + h2, sz).project(this.camera);
-      const pBotLeft = new THREE.Vector3(sx + w2, sy - h2, sz).project(this.camera);
-      const pBotRight = new THREE.Vector3(sx - w2, sy - h2, sz).project(this.camera);
-
-      if (pTopLeft.z > 1.0 || pTopRight.z > 1.0 || pBotLeft.z > 1.0 || pBotRight.z > 1.0 ||
-          pTopLeft.z < -1.0 || pTopRight.z < -1.0 || pBotLeft.z < -1.0 || pBotRight.z < -1.0) {
+      // 2. Camera View Direction Check:
+      // Player must be looking South (towards +Z), into the screen.
+      const camFwd = new THREE.Vector3();
+      this.camera.getWorldDirection(camFwd);
+      if (camFwd.z <= 0.15) {
         overlayContainer.style.display = 'none';
         return;
+      }
+
+      // 3. Distance Check:
+      const dist = camPos.distanceTo(screenCenter);
+      if (dist < 1.0 || dist > 11.5) {
+        overlayContainer.style.display = 'none';
+        return;
+      }
+
+      // 4. Frustum / Near-Plane Check in Camera Local Space:
+      // When a quad corner gets too close to the camera near plane or behind it,
+      // CSS 3D matrix3d projections mathematically explode and untether from the wall!
+      const w2 = currentRoom.screenW / 2;
+      const h2 = currentRoom.screenH / 2;
+      const sy = screenCenter.y;
+      const sz = screenCenter.z;
+      const sx = screenCenter.x;
+
+      const corners = [
+        new THREE.Vector3(sx + w2, sy + h2, sz), // Top-Left
+        new THREE.Vector3(sx - w2, sy + h2, sz), // Top-Right
+        new THREE.Vector3(sx + w2, sy - h2, sz), // Bot-Left
+        new THREE.Vector3(sx - w2, sy - h2, sz)  // Bot-Right
+      ];
+
+      const camInv = this.camera.matrixWorldInverse;
+      for (let i = 0; i < 4; i++) {
+        const cInCam = corners[i].clone().applyMatrix4(camInv);
+        // Camera looks along -Z in view space; points in front have cInCam.z < 0.
+        // Near clipping threshold: if any corner is closer than 0.35m in front of lens or behind it, hide.
+        if (cInCam.z >= -0.35) {
+          overlayContainer.style.display = 'none';
+          return;
+        }
+      }
+
+      // Also verify NDC projected depths are safely inside [-1.0, 1.0]
+      for (let i = 0; i < 4; i++) {
+        const pNDC = corners[i].clone().project(this.camera);
+        if (pNDC.z < -1.0 || pNDC.z > 1.0 || isNaN(pNDC.x) || isNaN(pNDC.y)) {
+          overlayContainer.style.display = 'none';
+          return;
+        }
       }
 
       const screenWidthPx = window.innerWidth;
@@ -10995,9 +11046,17 @@
 
       const m = M_total.elements;
       const wNorm = m[15];
-      if (Math.abs(wNorm) < 1e-6) {
+      if (Math.abs(wNorm) < 1e-4) {
         overlayContainer.style.display = 'none';
         return;
+      }
+
+      // Verify all matrix elements are finite numbers
+      for (let i = 0; i < 16; i++) {
+        if (!isFinite(m[i])) {
+          overlayContainer.style.display = 'none';
+          return;
+        }
       }
 
       const cssMatrix = 'matrix3d(' +
