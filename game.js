@@ -4254,9 +4254,9 @@
       const accentWallMat = fl === 3 ? mats.wallBrick : mats.mahogany;
 
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
-      // 1. West Wing Slabs (Partitioned around the SW Stairwell and West Office to eliminate threshold Z-fighting):
-      // 1a. West Wing North portion (x: -36..-16, z: -6.0..17.80 stopping cleanly at the north wall face of z = 18.0)
-      this.createSlab(-26, y0, 5.90, 20.0, 23.80, floorMat, mats.ceiling, ceilH);
+      // 1. West Wing Slabs:
+      // 1a. West Wing North portion (x: -36..-16, z: -6.0..18.00 ending cleanly at the center of the z = 18.0 south wall)
+      this.createSlab(-26, y0, 6.00, 20.0, 24.00, floorMat, mats.ceiling, ceilH);
       // 2. West Office Slab (x: -34..-24, z: 18..28)
       this.createSlab(-29, y0, 23, 10.0, 10.0, mats.floorDarkWood, mats.ceiling, ceilH);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
@@ -4298,7 +4298,8 @@
       this.createWall(-34, ycFull, 23.0, t, h, 10.4, accentWallMat, true, fl);    // 17.8..28.2 (Full height h=5.20m to eliminate plenum slit)
       this.createWall(-29, ycFull, 28, 10.4, h, t, accentWallMat, true, fl);      // -34.2..-23.8 (Full height h=5.20m sealing South edge)
       // East wall of West Office (x = -24, z: 18.0..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
-      this.createWall(-24, ycFull, 18.3, t, h, 0.6, accentWallMat, true, fl);     // North jamb (18.0..18.6)
+      // Start North jamb at z = 18.20 flush with the stairwell landing box (z: 18.20..20.80) to eliminate corner fight with z=18.0 south wall
+      this.createWall(-24, ycFull, 18.4, t, h, 0.4, accentWallMat, true, fl);     // North jamb (18.2..18.6)
       this.createWall(-24, ycFull, 24.5, t, h, 7.4, accentWallMat, true, fl);     // South segment (20.8..28.2)
       this.createLintelZ(-24, y0, 19.7, t, 2.2, h, accentWallMat);                // Doorway lintel spans all the way to ceiling slab (height h)
 
@@ -4626,18 +4627,18 @@
         landBoxSW.position.set(-20, y0 - 0.16, 19.50);
         this.scene.add(landBoxSW);
 
-        // Doorway connector apron inside the open door opening (x: -21.48..-18.52, z: 17.80..18.20)
-        // Cleanly connects the gallery floor (z <= 17.80) to the stair landing (z >= 18.20) without overlapping any wall or floor!
-        const doorApronSW = new THREE.Mesh(new THREE.BoxGeometry(2.96, 0.32, 0.40), mats.stairStone);
-        doorApronSW.position.set(-20.0, y0 - 0.16, 18.00);
+        // Doorway connector apron inside the open door opening (x: -21.50..-18.50, z: 18.00..18.20)
+        // Tucks cleanly from z = 18.00 to z = 18.20 where it meets the landing box, with zero exposed front face at z = 18.00!
+        const doorApronSW = new THREE.Mesh(new THREE.BoxGeometry(3.00, 0.32, 0.20), mats.stairStone);
+        doorApronSW.position.set(-20.0, y0 - 0.16, 18.10);
         this.scene.add(doorApronSW);
 
         // Ceiling closure for this floor's landing and doorway portal
         this.createCeiling(-20, y0 + ceilH, 19.50, 8.0, 2.60, mats.ceiling);
-        this.createCeiling(-20, y0 + ceilH, 18.00, 2.96, 0.40, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 18.10, 3.00, 0.20, mats.ceiling);
         if (fl > 0) {
           this.createCeiling(-20, y0 - 0.06, 19.50, 8.0, 2.60, mats.ceiling);
-          this.createCeiling(-20, y0 - 0.06, 18.00, 2.96, 0.40, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 18.10, 3.00, 0.20, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
