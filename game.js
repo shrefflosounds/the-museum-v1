@@ -4544,13 +4544,19 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0)
-        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
-        landBox.position.set(0, y0 - 0.16, -15.4);
+        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.2 inside shaft, avoiding doorway overlap)
+        const landBox = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.32, 2.60), mats.stairStone);
+        landBox.position.set(0, y0 - 0.16, -15.5);
         this.scene.add(landBox);
 
+        // Raised doorway threshold transition strip (x: -4.2..-3.8, z: -16.8..-14.0) to eliminate coplanar Z-fighting
+        const sillB = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.015, 2.80), mats.stairStone);
+        sillB.position.set(-4.0, y0 + 0.0075, -15.4);
+        this.scene.add(sillB);
+
+        this.createCeiling(0, y0 + ceilH, -15.5, 7.6, 2.6, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(0, y0 - 0.06, -15.4, 7.6, 2.8, mats.ceiling);
+          this.createCeiling(0, y0 - 0.06, -15.5, 7.6, 2.6, mats.ceiling);
         }
 
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4589,8 +4595,8 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight
-      this.createWall(1.98, 1.22, -16.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
+      // Guardrail on Floor 0 East Flight - spanning full height and extending into the wall jamb
+      this.createWall(2.0, ceilH / 2, -16.95, 4.0, ceilH, 0.40, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
@@ -4620,13 +4626,25 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl (x: -24.0..-16.0, z: 18.0..20.8)
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.84), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.4);
+        // Solid North Landing box at Floor fl (x: -23.8..-16.2 inside shaft, z: 18.20..20.80 strictly inside the stairwell)
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.32, 2.60), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.5);
         this.scene.add(landBoxSW);
 
+        // Raised doorway threshold transition strip (x: -21.5..-18.5, z: 17.8..18.2) to eliminate coplanar Z-fighting between room parquet and stair stone
+        const sillSW = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.015, 0.40), mats.stairStone);
+        sillSW.position.set(-20.0, y0 + 0.0075, 18.0);
+        this.scene.add(sillSW);
+
+        // Raised doorway threshold transition strip into West Office (x: -24.2..-23.8, z: 18.6..20.8)
+        const sillOffice = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.015, 2.20), mats.stairStone);
+        sillOffice.position.set(-24.0, y0 + 0.0075, 19.7);
+        this.scene.add(sillOffice);
+
+        // Ceiling closure for this floor's landing
+        this.createCeiling(-20, y0 + ceilH, 19.5, 7.6, 2.6, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.4, 7.6, 2.8, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.5, 7.6, 2.6, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4665,9 +4683,9 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight of Stairwell SW
-      this.createWall(-18.02, 1.22, 20.95, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
-      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
+      // Guardrail on Floor 0 East Flight of Stairwell SW - spanning full height and extending into the wall jamb so no void slit exists
+      this.createWall(-18.0, ceilH / 2, 20.95, 4.0, ceilH, 0.40, mats.mahogany, true, 0);
+      // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
       this.scene.add(blockSWW);
@@ -10955,10 +10973,11 @@
       }
 
       // 2. Camera View Direction Check:
-      // Player must be looking South (towards +Z), into the screen.
+      // Player must be looking South (towards +Z), and camera direction must align with direction to screen center
       const camFwd = new THREE.Vector3();
       this.camera.getWorldDirection(camFwd);
-      if (camFwd.z <= 0.15) {
+      const toScreen = new THREE.Vector3().subVectors(screenCenter, camPos).normalize();
+      if (camFwd.dot(toScreen) < 0.45) {
         overlayContainer.style.display = 'none';
         return;
       }
@@ -10970,7 +10989,7 @@
         return;
       }
 
-      // 4. Frustum / Near-Plane Check in Camera Local Space:
+      // 4. Frustum / Near-Plane & Screen-Space Bounds Check:
       // When a quad corner gets too close to the camera near plane or behind it,
       // CSS 3D matrix3d projections mathematically explode and untether from the wall!
       const w2 = currentRoom.screenW / 2;
@@ -10997,13 +11016,21 @@
         }
       }
 
-      // Also verify NDC projected depths are safely inside [-1.0, 1.0]
+      // Also verify NDC projected depths and screen coverage
+      let anyCornerInView = false;
       for (let i = 0; i < 4; i++) {
         const pNDC = corners[i].clone().project(this.camera);
         if (pNDC.z < -1.0 || pNDC.z > 1.0 || isNaN(pNDC.x) || isNaN(pNDC.y)) {
           overlayContainer.style.display = 'none';
           return;
         }
+        if (pNDC.x >= -1.2 && pNDC.x <= 1.2 && pNDC.y >= -1.2 && pNDC.y <= 1.2) {
+          anyCornerInView = true;
+        }
+      }
+      if (!anyCornerInView) {
+        overlayContainer.style.display = 'none';
+        return;
       }
 
       const screenWidthPx = window.innerWidth;
