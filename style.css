@@ -1551,7 +1551,6 @@ body.game-playing #game-container {
   pointer-events: none;
   overflow: hidden;
   z-index: 2; /* Sits immediately atop WebGL canvas */
-  perspective: 1000px;
 }
 
 #video-screen-container {

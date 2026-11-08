@@ -10150,7 +10150,7 @@
     initYouTubeAPI() {
       const PLAYLISTS_BY_FLOOR = [
         'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld', // Floor 1 (User's Curated Playlist)
-        'PL8HAkqKX065AF3K2LdzwhQhvwhAIvynUV', // Floor 2 (Highlights at The Met)
+        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp', // Floor 2 (User's Floor 2 Curated Playlist)
         'PL8HAkqKX065CROqCONrVtjJBl-p9sNsxj', // Floor 3 (Women and Art Exhibition)
         'PL8HAkqKX065DVI9NdnlT8HztJiftU9QSZ'  // Floor 4 (Met Modern Perspectives)
       ];
@@ -10284,10 +10284,10 @@
       pedestalBody.position.set(0, 0.54, 0);
       deckGroup.add(pedestalBody);
 
-      // Angled console top wedge tilted 22 degrees towards north doorway
+      // Angled console top wedge tilted towards north doorway so controls face the entering player
       const consoleHead = new THREE.Group();
       consoleHead.position.set(0, 0.94, 0);
-      consoleHead.rotation.x = 0.38; // Tilted towards player viewing from north
+      consoleHead.rotation.x = -0.38; // Tilted back towards player entering from north
 
       const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.08, 0.72), topPlateMat);
       consoleHead.add(consolePlate);
@@ -10359,7 +10359,7 @@
           origY: 0.05,
           material: capMat,
           floor: fl,
-          worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 1.05, 24.0)
+          worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 0.99, 23.98)
         });
       });
 
@@ -10552,47 +10552,78 @@
         return;
       }
 
-      // Compute precise 4-corner screen projection
+      // Compute exact 3D camera and viewport transformation
       const w2 = currentRoom.screenW / 2;
       const h2 = currentRoom.screenH / 2;
       const sy = currentRoom.screenCenter.y;
       const sz = currentRoom.screenCenter.z;
       const sx = currentRoom.screenCenter.x;
 
-      const topLeft = new THREE.Vector3(sx - w2, sy + h2, sz).project(this.camera);
-      const topRight = new THREE.Vector3(sx + w2, sy + h2, sz).project(this.camera);
-      const botLeft = new THREE.Vector3(sx - w2, sy - h2, sz).project(this.camera);
+      // Check if all screen corners are in front of near plane
+      const pTopLeft = new THREE.Vector3(sx + w2, sy + h2, sz).project(this.camera);
+      const pTopRight = new THREE.Vector3(sx - w2, sy + h2, sz).project(this.camera);
+      const pBotLeft = new THREE.Vector3(sx + w2, sy - h2, sz).project(this.camera);
+      const pBotRight = new THREE.Vector3(sx - w2, sy - h2, sz).project(this.camera);
 
-      // Check if behind camera frustum
-      if (topLeft.z > 1.0 || topRight.z > 1.0 || botLeft.z > 1.0) {
+      if (pTopLeft.z > 1.0 || pTopRight.z > 1.0 || pBotLeft.z > 1.0 || pBotRight.z > 1.0 ||
+          pTopLeft.z < -1.0 || pTopRight.z < -1.0 || pBotLeft.z < -1.0 || pBotRight.z < -1.0) {
         overlayContainer.style.display = 'none';
         return;
       }
 
       const screenWidthPx = window.innerWidth;
       const screenHeightPx = window.innerHeight;
-
-      const p0x = (topLeft.x * 0.5 + 0.5) * screenWidthPx;
-      const p0y = (-(topLeft.y * 0.5) + 0.5) * screenHeightPx;
-
-      const p1x = (topRight.x * 0.5 + 0.5) * screenWidthPx;
-      const p1y = (-(topRight.y * 0.5) + 0.5) * screenHeightPx;
-
-      const p2x = (botLeft.x * 0.5 + 0.5) * screenWidthPx;
-      const p2y = (-(botLeft.y * 0.5) + 0.5) * screenHeightPx;
-
       const basisW = 960;
       const basisH = 540;
 
-      const a = (p1x - p0x) / basisW;
-      const b = (p1y - p0y) / basisW;
-      const c = (p2x - p0x) / basisH;
-      const d = (p2y - p0y) / basisH;
-      const tx = p0x;
-      const ty = p0y;
+      // 3D coordinates for quad corners facing into room (North / -Z direction):
+      // When looking at south wall (+Z):
+      // Top-Left (u=0, v=0) is at sx + w2 (player left)
+      // Top-Right (u=1, v=0) is at sx - w2 (player right)
+      // Bot-Left (u=0, v=1) is at sx + w2, sy - h2
+      const P00 = new THREE.Vector3(sx + w2, sy + h2, sz);
+      const P10 = new THREE.Vector3(sx - w2, sy + h2, sz);
+      const P01 = new THREE.Vector3(sx + w2, sy - h2, sz);
+
+      const dX = new THREE.Vector3().subVectors(P10, P00).multiplyScalar(1 / basisW);
+      const dY = new THREE.Vector3().subVectors(P01, P00).multiplyScalar(1 / basisH);
+      const dZ = new THREE.Vector3().crossVectors(dX, dY).normalize();
+
+      const M_quad = new THREE.Matrix4().set(
+        dX.x, dY.x, dZ.x, P00.x,
+        dX.y, dY.y, dZ.y, P00.y,
+        dX.z, dY.z, dZ.z, P00.z,
+        0,    0,    0,    1
+      );
+
+      const viewProj = new THREE.Matrix4().multiplyMatrices(this.camera.projectionMatrix, this.camera.matrixWorldInverse);
+
+      const M_screen = new THREE.Matrix4().set(
+        screenWidthPx / 2, 0,                  0,   screenWidthPx / 2,
+        0,                 -screenHeightPx / 2, 0,   screenHeightPx / 2,
+        0,                 0,                  0.5, 0.5,
+        0,                 0,                  0,   1
+      );
+
+      const M_total = new THREE.Matrix4();
+      M_total.multiplyMatrices(M_screen, viewProj);
+      M_total.multiply(M_quad);
+
+      const m = M_total.elements;
+      const wNorm = m[15];
+      if (Math.abs(wNorm) < 1e-6) {
+        overlayContainer.style.display = 'none';
+        return;
+      }
+
+      const cssMatrix = 'matrix3d(' +
+        (m[0] / wNorm).toFixed(7) + ',' + (m[1] / wNorm).toFixed(7) + ',' + (m[2] / wNorm).toFixed(7) + ',' + (m[3] / wNorm).toFixed(7) + ',' +
+        (m[4] / wNorm).toFixed(7) + ',' + (m[5] / wNorm).toFixed(7) + ',' + (m[6] / wNorm).toFixed(7) + ',' + (m[7] / wNorm).toFixed(7) + ',' +
+        (m[8] / wNorm).toFixed(7) + ',' + (m[9] / wNorm).toFixed(7) + ',' + (m[10] / wNorm).toFixed(7) + ',' + (m[11] / wNorm).toFixed(7) + ',' +
+        (m[12] / wNorm).toFixed(7) + ',' + (m[13] / wNorm).toFixed(7) + ',' + (m[14] / wNorm).toFixed(7) + ',1)';
 
       overlayContainer.style.display = 'block';
-      overlayContainer.style.transform = "matrix(" + a.toFixed(5) + ", " + b.toFixed(5) + ", " + c.toFixed(5) + ", " + d.toFixed(5) + ", " + tx.toFixed(2) + ", " + ty.toFixed(2) + ")";
+      overlayContainer.style.transform = cssMatrix;
     }
 
     createExitDoors(x, y, z, mats) {
