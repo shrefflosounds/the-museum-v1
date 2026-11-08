@@ -265,408 +265,482 @@ floor.4 = 4TH FLOOR
 [ ARTWORK TITLES ]
 # Shown on the wall plaque, in the [E] prompt, and in the artwork popup.
 # The image file for each one is noted in the line above it.
-# image: 001_Smitty-silly.gif
-art.001 = Smitty Silly
+# image: 001_1-1-Painted-Colors-2023.jpg
+art.001 = Painted Colors (2023)
 
-# image: 002_Emoji-movie.jpg
-art.002 = Emoji Movie
+# image: 002_1-2-Painted-Face-2023.jpg
+art.002 = Painted Face (2023)
 
-# image: 003_pinkthing.jpg
-art.003 = Pinkthing
+# image: 003_1-3-Reddish-House-2023.jpg
+art.003 = Reddish House (2023)
 
-# image: 004_iwanttolivebythesea.jpg
-art.004 = Iwanttolivebythesea
+# image: 004_2-Mocha-Surprise-2022.jpg
+art.004 = Mocha Surprise (2022)
 
-# image: 005_frenchhouse.jpg
-art.005 = Frenchhouse
+# image: 005_3-Emoji-2024.jpg
+art.005 = Emoji (2024)
 
-# image: 006_Curator_s_Assets.jpg
-art.006 = Curator S Assets
+# image: 006_4-Chloe-Bailey-Portrait-2021.jpg
+art.006 = Chloe Bailey Portrait (2021)
 
-# image: 007_painting-grey-face.jpg
-art.007 = Painting Grey Face
+# image: 007_Accident-2022.jpg
+art.007 = Accident (2022)
 
-# image: 008_Smitty-wild-animal-framed.jpg
-art.008 = Smitty Wild Animal Framed
+# image: 008_Astonishment-2021.jpg
+art.008 = Astonishment (2021)
 
-# image: 009_leadership-lemon.jpg
-art.009 = Leadership Lemon
+# image: 009_Banner-2024.jpg
+art.009 = Banner (2024)
 
-# image: 010_star-ez-duz-it.jpg
-art.010 = Star Ez Duz It
+# image: 010_Beekeeper-2024.jpg
+art.010 = Beekeeper (2024)
 
-# image: 011_smitty-cola-melt-shirtless.jpg
-art.011 = Smitty Cola Melt Shirtless
+# image: 011_Behind-Glass-2021.jpg
+art.011 = Behind Glass (2021)
 
-# image: 012_shocksites.jpg
-art.012 = Shocksites
+# image: 012_Car-Fire-2024.jpg
+art.012 = Car Fire (2024)
 
-# image: 013_gemini.jpg
-art.013 = Gemini
+# image: 013_Ee9-2025.jpg
+art.013 = Ee9 (2025)
 
-# image: 015_E9e.jpg
-art.014 = E9e
+# image: 014_Elderly-Portrait-2021.jpg
+art.014 = Elderly Portrait (2021)
 
-# image: 016_bathbomb.jpg
-art.015 = Bathbomb
+# image: 015_Environment-2025.png
+art.015 = Environment (2025)
 
-# image: 017_crate-challenge.jpg
-art.016 = Crate Challenge
+# image: 016_Fast-2020.jpg
+art.016 = Fast (2020)
 
-# image: 018_elderly-portrait.jpg
-art.017 = Elderly Portrait
+# image: 017_Framed-Flame-2025.jpg
+art.017 = Framed Flame (2025)
 
-# image: 019_astonishment.jpg
-art.018 = Astonishment
+# image: 018_Green-Drawing-2025.jpg
+art.018 = Green Drawing (2025)
 
-# image: 020_sf-astonishment-ad.jpg
-art.019 = Sf Astonishment Ad
+# image: 019_Grey-Face-2021.jpg
+art.019 = Grey Face (2021)
 
-# image: 021_heknah-wallpaper-AS.jpg
-art.020 = Heknah Wallpaper As
+# image: 020_Growth-House-2020.jpg
+art.020 = Growth House (2020)
 
-# image: 022_spongeclownbob.jpg
-art.021 = Spongeclownbob
+# image: 021_I-Want-To-Live-By-The-Sea-2024.jpg
+art.021 = I Want To Live By The Sea (2024)
 
-# image: 023_smittys-room-toon.jpg
-art.022 = Smittys Room Toon
+# image: 022_Jewelry-2025.jpg
+art.022 = Jewelry (2025)
 
-# image: 024_smittys-room-live-action.jpg
-art.023 = Smittys Room Live Action
+# image: 023_Leadership-Lemon-2023.jpg
+art.023 = Leadership Lemon (2023)
 
-# image: 025_pinocchio.jpg
-art.024 = Pinocchio
+# image: 024_Melt-2025.jpg
+art.024 = Melt (2025)
 
-# image: 026_shawtys-mix.jpg
-art.025 = Shawtys Mix
+# image: 025_Memorial-2023.jpg
+art.025 = Memorial (2023)
 
-# image: 027_2008-red-fox.jpg
-art.026 = 2008 Red Fox
+# image: 026_Mount-Saint-2022.jpg
+art.026 = Mount Saint (2022)
 
-# image: 028_rip-odi.jpg
-art.027 = Rip Odi
+# image: 027_Odi-2021.jpg
+art.027 = Odi (2021)
 
-# image: 029_Shrefflo-SmittyFantastic.jpg
-art.028 = Shrefflo Smittyfantastic
+# image: 028_Omelette-and-Pen-on-Paper-2023.jpg
+art.028 = Omelette and Pen on Paper (2023)
 
-# image: 030_cherry-drink.jpg
-art.029 = Cherry Drink
+# image: 029_Pink-Creature-2025.jpg
+art.029 = Pink Creature (2025)
 
-# image: 031_trumpa.jpg
-art.030 = Trumpa
+# image: 030_Pink-Life-2022.jpg
+art.030 = Pink Life (2022)
 
-# image: 032_dynamic.jpg
-art.031 = Dynamic
+# image: 031_Purple-Face-2021.jpg
+art.031 = Purple Face (2021)
 
-# image: 033_work-breakroom.jpg
-art.032 = Work Breakroom
+# image: 032_Ratatoing-Reheated-Album-Cover-2026.png
+art.032 = Ratatoing Reheated Album Cover (2026)
 
-# image: 034_mocha-slip.jpg
-art.033 = Mocha Slip
+# image: 033_Ricky-Bascom-School-Is-Slavery-2-Unused-Cover.jpg
+art.033 = Ricky Bascom School Is Slavery 2 Unused Cover
 
-# image: 035_spotify-ad.jpg
-art.034 = Spotify Ad
+# image: 034_Screenshot-2022.jpg
+art.034 = Screenshot (2022)
 
-# image: 036_shake-it-for-me.jpg
-art.035 = Shake It For Me
+# image: 035_Sea-Serpent-2025.jpg
+art.035 = Sea Serpent (2025)
 
-# image: 037_misty-morning.jpg
-art.036 = Misty Morning
+# image: 036_Selfie-in-the-Woods-2023.jpg
+art.036 = Selfie in the Woods (2023)
 
-# image: 038_omelette-on_paper.jpg
-art.037 = Omelette On Paper
+# image: 037_SF2-Space-Ad-2026.png
+art.037 = SF2 Space Ad (2026)
 
-# image: 039_bird-mouth.jpg
-art.038 = Bird Mouth
+# image: 038_Shake-it-for-Me-2026.jpg
+art.038 = Shake it for Me (2026)
 
-# image: 040_4Who.jpg
-art.039 = 4who
+# image: 039_Wet-Paint-2023.jpg
+art.039 = Wet Paint (2023)
 
-# image: 041_Joyous_Protection.jpg
-art.040 = Joyous Protection
+# image: 040_Writing-2024.jpg
+art.040 = Writing (2024)
 
-# image: 042_made-u-a-bird.jpg
-art.041 = Made U A Bird
+# image: 041_001.jpg
+art.041 = Spotify Ad
 
-# image: 043_dog-drawing.jpg
-art.042 = Dog Drawing
+# image: 042_002-copy.jpg
+art.042 = Shake It For Me
 
-# image: 044_Smitty-pixels-mussel-heart.jpg
-art.043 = Smitty Pixels Mussel Heart
+# image: 043_003-copy.jpg
+art.043 = Shirt Ad Flight
 
-# image: 045_Hans.jpg
-art.044 = Hans
+# image: 044_006-copy.jpg
+art.044 = 4who
 
-# image: 046_blip-vision-pizza-reach.jpg
-art.045 = Blip Vision Pizza Reach
+# image: 045_007-copy.jpg
+art.045 = Joyous Protection
 
-# image: 047_lake-excursion-ad.jpg
-art.046 = Lake Excursion Ad
+# image: 046_012-copy.jpg
+art.046 = The Harbinger
 
-# image: 048_Sand.jpg
-art.047 = Sand
+# image: 047_013-copy-2.jpg
+art.047 = Gemini
 
-# image: 049_floating-boxer-ad.jpg
-art.048 = Floating Boxer Ad
+# image: 048_013-copy.jpg
+art.048 = Shrefflo Ocean Cap Ad
 
-# image: 050_peter-griffin-tribute.jpg
-art.049 = Peter Griffin Tribute
+# image: 049_013.jpg
+art.049 = Lake Excursion Ad
 
-# image: 051_imagen.jpg
-art.050 = Imagen
+# image: 050_014.jpg
+art.050 = Now Watch Me Whip
 
-# image: 052_spew.jpg
-art.051 = Spew
+# image: 051_015-copy.jpg
+art.051 = Luv Graffiti Shirt Ad
 
-# image: 053_purple-smile.jpg
-art.052 = Purple Smile
+# image: 052_016-copy.jpg
+art.052 = Sf Mini Drawing Red
 
-# image: 054_Smitty-ocean-storm.jpg
-art.053 = Smitty Ocean Storm
+# image: 053_018-copy.jpg
+art.053 = Person With Mask Behind
 
-# image: 055_liberal-lawn-sign.jpg
-art.054 = Liberal Lawn Sign
+# image: 054_019.jpg
+art.054 = Sf Astonishment Ad
 
-# image: 056_smitty-cow.jpg
-art.055 = Smitty Cow
+# image: 055_020.jpg
+art.055 = Heknah Wallpaper As
 
-# image: 057_ancient-predators.jpg
-art.056 = Ancient Predators
+# image: 056_022.jpg
+art.056 = Gaiter Mask Dr Coach Ad
 
-# image: 058_hey-guy-tv.jpg
-art.057 = Hey Guy Tv
+# image: 057_027.jpg
+art.057 = Winter 2022 Ad
 
-# image: 059_yellow-guy-cute.jpg
-art.058 = Yellow Guy Cute
+# image: 058_029-copy.jpg
+art.058 = Auto Shop Nightmare
 
-# image: 060_Smitty-BlackBox_Sigil_Tee.jpg
-art.059 = Smitty Blackbox Sigil Tee
+# image: 059_029.jpg
+art.059 = Ascetic Sebring Ad
 
-# image: 061_annoyeornej.jpg
-art.060 = Annoyeornej
+# image: 060_033.jpg
+art.060 = Green Beanie Ad
 
-# image: 062_dogandghostthings.jpg
-art.061 = Dogandghostthings
+# image: 061_034.jpg
+art.061 = Person On Fire
 
-# image: 063_thin-blue-line.jpg
-art.062 = Thin Blue Line
+# image: 062_035.jpg
+art.062 = Est FNI First Cover
 
-# image: 064_Space-planet.jpg
-art.063 = Space Planet
+# image: 063_037.jpg
+art.063 = Shrefflo Store 2025 Ad
 
-# image: 065_messages-from-God.jpg
-art.064 = Messages From God
+# image: 064_ad-bags-clear.png
+art.064 = Ad Bags Clear
 
-# image: 066_beach-video.jpg
-art.065 = Beach Video
+# image: 065_ad-shrefflo-script.png
+art.065 = Ad Shrefflo Script
 
-# image: 067_grafeetee.jpg
-art.066 = Grafeetee
+# image: 066_Bascom-notes.png
+art.066 = Bascom Notes
 
-# image: 068_SF-penguin-1.jpg
-art.067 = Sf Penguin 1
+# image: 067_candyassboy.jpeg
+art.067 = Candyassboy
 
-# image: 069_penguin-2.jpg
-art.068 = Penguin 2
+# image: 068_chase.png
+art.068 = Chase
 
-# image: 070_SF_beach_photo_drawn_eyebrows.jpg
-art.069 = Sf Beach Photo Drawn Eyebrows
+# image: 069_dog-gators.png
+art.069 = Dog Gators
 
-# image: 071_yellow-ball-face.jpg
-art.070 = Yellow Ball Face
+# image: 070_ggg.png
+art.070 = Ggg
 
-# image: 072_evil-purple-pixelated-face.jpg
-art.071 = Evil Purple Pixelated Face
+# image: 071_neeeww.png
+art.071 = Neeeww
 
-# image: 073_fancy.jpg
-art.072 = Fancy
+# image: 072_og1.jpg
+art.072 = Smittys First Appearance
 
-# image: 074_cow-flag.jpg
-art.073 = Cow Flag
+# image: 073_petalboy.png
+art.073 = Petalboy
 
-# image: 075_the-big-man.jpg
-art.074 = The Big Man
+# image: 074_physicals.png
+art.074 = Physicals
 
-# image: 076_consumer-sculpture.jpg
-art.075 = Consumer Sculpture
+# image: 075_Powerman.png
+art.075 = Powerman
 
-# image: 077_green-guy-with-wings.jpg
-art.076 = Green Guy With Wings
+# image: 076_SF2-bumper.png
+art.076 = SF2 Bumper
 
-# image: 078_pointy-world-car-fire.jpg
-art.077 = Pointy World Car Fire
+# image: 077_shrefflo-white-ad.png
+art.077 = Shrefflo White Ad
 
-# image: 079_paint-red-house.jpg
-art.078 = Paint Red House
+# image: 078_space.png
+art.078 = Space
 
-# image: 080_the-harbinger.jpg
-art.079 = The Harbinger
+# image: 079_Untitled-2.png
+art.079 = Untitled 2
 
-# image: 081_monkey-full-body.jpg
-art.080 = Monkey Full Body
+# image: 080_z-3-copy.png
+art.080 = Z 3
 
-# image: 082_now-watch-me-whip.jpg
-art.081 = Now Watch Me Whip
+# image: 081_1-Heknah-ShreffloPaint.png
+art.081 = Heknah - ShreffloPaint
 
-# image: 083_luv-graffiti-shirt-ad.jpg
-art.082 = Luv Graffiti Shirt Ad
+# image: 082_2-Heknah-Eye-with-Sigil-2026.png
+art.082 = Heknah - Eye with Sigil (2026)
 
-# image: 084_sf-mini-drawing-red.jpg
-art.083 = Sf Mini Drawing Red
+# image: 083_3-Heknah-Self-Portrait-1-2026.jpg
+art.083 = Heknah - Self Portrait 1 (2026)
 
-# image: 085_painting-with-a-bed.jpg
-art.084 = Painting With A Bed
+# image: 084_4-Heknah-Self-Portrait-2-2026.png
+art.084 = Heknah - Self Portrait 2 (2026)
 
-# image: 086_person-with-mask-behind.jpg
-art.085 = Person With Mask Behind
+# image: 085_5-Heknah-Self-Portrait-3-2026.png
+art.085 = Heknah - Self Portrait 3 (2026)
 
-# image: 087_photo-turned-drawing-creatureg.jpg
-art.086 = Photo Turned Drawing Creatureg
+# image: 086_6-Heknah-The-Shreffloker-2026.png
+art.086 = Heknah - The Shreffloker (2026)
 
-# image: 088_goblin-drawing.jpg
-art.087 = Goblin Drawing
+# image: 087_7-Sharksa-Shivers-Nun-2026.png
+art.087 = Sharksa Shivers - Nun (2026)
 
-# image: 089_snapchat-athlete-gun-woman-boo.jpg
-art.088 = Snapchat Athlete Gun Woman Boo
+# image: 088_8-R3E4-JJar-2026.jpg
+art.088 = R3E4 - JJar (2026)
 
-# image: 090_smitty-shirt-handmade.jpg
-art.089 = Smitty Shirt Handmade
+# image: 089_9-R3E4-Dumb-Ass-2026.png
+art.089 = R3E4 - Dumb & Ass (2026)
 
-# image: 091_painted-smitty-red.jpg
-art.090 = Painted Smitty Red
+# image: 090_10-R3E4-Statue-Concepts-2026.png
+art.090 = R3E4 - Statue Concepts (2026)
 
-# image: 092_three-creatures.jpg
-art.091 = Three Creatures
+# image: 091_11-R3E4-The-Purple-Dimension-2026.png
+art.091 = R3E4 - The Purple Dimension (2026)
 
-# image: 093_saxophone-fight.jpg
-art.092 = Saxophone Fight
+# image: 092_12-R3E4-Moments-Before-Disaster-2026.png
+art.092 = R3E4 - Moments Before Disaster (2026)
 
-# image: 094_escapism-by-medication.jpg
-art.093 = Escapism By Medication
+# image: 093_13-R3E4-Eye-had-a-dream-once-2026.png
+art.093 = R3E4 - Eye had a dream once (2026)
 
-# image: 095_Minnesota-fish-painting.jpg
-art.094 = Minnesota Fish Painting
+# image: 094_14-R3E4-Button-2026.png
+art.094 = R3E4 - Button (2026)
 
-# image: 096_dr-coach-incubation.jpg
-art.095 = Dr Coach Incubation
+# image: 095_15-R3E4-SF-Face-2026.png
+art.095 = R3E4 - SF Face (2026)
 
-# image: 097_Ascetic_Sebring_ad.jpg
-art.096 = Ascetic Sebring Ad
+# image: 096_16-R3E4-2-Much-Slimey-2026.png
+art.096 = R3E4 - 2 Much Slimey (2026)
 
-# image: 098_hairy-guy-drawing.jpg
-art.097 = Hairy Guy Drawing
+# image: 097_R3E4-AUX-Album-Cover-2024.png
+art.097 = R3E4 - AUX Album Cover (2024)
 
-# image: 099_lake-blue-violet.jpg
-art.098 = Lake Blue Violet
+# image: 098_R3E4-Curser-Album-Cover-2026.png
+art.098 = R3E4 - Curser Album Cover (2026)
 
-# image: 100_orange-stick-figure.jpg
-art.099 = Orange Stick Figure
+# image: 099_R3E4-DVI-Album-Cover-2024.png
+art.099 = R3E4 - DVI Album Cover (2024)
 
-# image: 101_green-beanie-ad.jpg
-art.100 = Green Beanie Ad
+# image: 100_R3E4-Floppy-Disc-Album-Cover-2024.png
+art.100 = R3E4 - Floppy Disc Album Cover (2024)
 
-# image: 102_person-on-fire.jpg
-art.101 = Person On Fire
+# image: 101_R3E4-HDMI-Album-Cover-2024.png
+art.101 = R3E4 - HDMI Album Cover (2024)
 
-# image: 103_painting-red-abstract.jpg
-art.102 = Painting Red Abstract
+# image: 102_R3E4-Memory-Card-Album-Cover-2025.png
+art.102 = R3E4 - Memory Card Album Cover (2025)
 
-# image: 104_clown-fast-food.jpg
-art.103 = Clown Fast Food
+# image: 103_R3E4-P-O-T-S-2024.png
+art.103 = R3E4 - P.O.T.S. (2024)
 
-# image: 105_shirt-ad-flight.jpg
-art.104 = Shirt Ad Flight
+# image: 104_R3E4-USB-Album-Cover-2024.png
+art.104 = R3E4 - USB Album Cover (2024)
 
-# image: 106_simple-drawing-flower.jpg
-art.105 = Simple Drawing Flower
+# image: 105_R3E4-Wi-Fi-Album-Cover-2025.png
+art.105 = R3E4 - Wi-Fi Album Cover (2025)
 
-# image: 107_framed-sf-animal-2.jpg
-art.106 = Framed Sf Animal 2
+# image: 106_Ro-Mack-Abstract-Digital-2025.png
+art.106 = Ro Mack - Abstract Digital (2025)
 
-# image: 108_darling-actor-drawing.jpg
-art.107 = Darling Actor Drawing
+# image: 107_Smitty-Fantastic-Anguished-Dog-2025.png
+art.107 = Smitty Fantastic - Anguished Dog (2025)
 
-# image: 109_beekeeper.jpg
-art.108 = Beekeeper
+# image: 108_Smitty-Fantastic-Conspiracy-2026.png
+art.108 = Smitty Fantastic - Conspiracy (2026)
 
-# image: 110_run-your-shit-1.jpg
-art.109 = Run Your Shit 1
+# image: 109_Smitty-Fantastic-Dr-Coach-unedited-cover-2021.jpg
+art.109 = Smitty Fantastic - Dr. Coach unedited cover (2021)
 
-# image: 111_run-your-shit-2.jpg
-art.110 = Run Your Shit 2
+# image: 110_Smitty-Fantastic-Flower-Phone-Doodle-2023.jpg
+art.110 = Smitty Fantastic - Flower Phone Doodle (2023)
 
-# image: 112_hundred-percent-can.jpg
-art.111 = Hundred Percent Can
+# image: 111_Smitty-Fantastic-Hand-Puppet-2024.png
+art.111 = Smitty Fantastic - Hand Puppet (2024)
 
-# image: 113_early-memorial-2.jpg
-art.112 = Early Memorial 2
+# image: 112_Smitty-Fantastic-Lined-Creature-2026.png
+art.112 = Smitty Fantastic - Lined Creature (2026)
 
-# image: 114_cheetah-in-space.jpg
-art.113 = Cheetah In Space
+# image: 113_Smitty-Fantastic-Oo-wow-2025.png
+art.113 = Smitty Fantastic - Oo wow (2025)
 
-# image: 115_Shrefflo-ocean-cap-ad.jpg
-art.114 = Shrefflo Ocean Cap Ad
+# image: 114_Smitty-Fantastic-Planet-Me-2025.jpg
+art.114 = Smitty Fantastic - Planet Me (2025)
 
-# image: 116_cartoon-ampersand-face.jpg
-art.115 = Cartoon Ampersand Face
+# image: 115_Smitty-Fantastic-Rat-At-Toing-2026.png
+art.115 = Smitty Fantastic - Rat At Toing (2026)
 
-# image: 117_painted-sheet-mouse-shapes.jpg
-art.116 = Painted Sheet Mouse Shapes
+# image: 116_Smitty-Fantastic-The-Grid-2026.png
+art.116 = Smitty Fantastic - The Grid (2026)
 
-# image: 118_orange-kitchen-visions.jpg
-art.117 = Orange Kitchen Visions
+# image: 117_Smitty-Fantastic-Three-Creatures-2024.jpg
+art.117 = Smitty Fantastic - Three Creatures (2024)
 
-# image: 119_intense-face-clown.jpg
-art.118 = Intense Face Clown
+# image: 118_Smitty-Fantastic-Three-Faces-2023.png
+art.118 = Smitty Fantastic - Three Faces (2023)
 
-# image: 120_yoda-smoking-weed.jpg
-art.119 = Yoda Smoking Weed
+# image: 119_Smitty-Fantastic-Water-Selfie-2025.jpg
+art.119 = Smitty Fantastic - Water Selfie (2025)
 
-# image: 121_Agressive-Defensive-Stance.jpg
-art.120 = Agressive Defensive Stance
+# image: 120_Smitty-Fantastic-Writing-2-2024.jpg
+art.120 = Smitty Fantastic - Writing 2 (2024)
 
-# image: 122_meg-chain-sf-crate-challenge.jpg
-art.121 = Meg Chain Sf Crate Challenge
+# image: 121_001-copy.jpg
+art.121 = Penguin 2
 
-# image: 123_Bird.jpg
-art.122 = Bird
+# image: 122_5am.png
+art.122 = 5am
 
-# image: 124_gaiter-mask-dr-coach-ad.jpg
-art.123 = Gaiter Mask Dr Coach Ad
+# image: 123_006.jpg
+art.123 = Darling Actor Drawing
 
-# image: 125_tissue.jpg
-art.124 = Tissue
+# image: 124_008-copy-3.jpg
+art.124 = Made U A Bird
 
-# image: 126_older-bald-drawing.jpg
-art.125 = Older Bald Drawing
+# image: 125_008.jpg
+art.125 = Consumer Sculpture
 
-# image: 127_selfie-in-the-woods.jpg
-art.126 = Selfie In The Woods
+# image: 126_012-copy.jpg
+art.126 = Shocksites
 
-# image: 128_curly-hair-low-res-guy.jpg
-art.127 = Curly Hair Low Res Guy
+# image: 127_012.jpg
+art.127 = Blip Vision Pizza Reach
 
-# image: 129_winter-2022-ad.jpg
-art.128 = Winter 2022 Ad
+# image: 128_013-copy-3.jpg
+art.128 = Monkey Full Body
 
-# image: 130_dr-coach-full-face.jpg
-art.129 = Dr Coach Full Face
+# image: 129_014.jpg
+art.129 = Sand
 
-# image: 131_Auto-shop-nightmare.jpg
-art.130 = Auto Shop Nightmare
+# image: 130_016-copy-2.jpg
+art.130 = Orange Kitchen Visions
 
-# image: 132_pink-slime-thing.jpg
-art.131 = Pink Slime Thing
+# image: 131_016-copy.jpg
+art.131 = Peter Griffin Tribute
 
-# image: 133_2-hands-drawing-at-once.jpg
-art.132 = 2 Hands Drawing At Once
+# image: 132_016.jpg
+art.132 = Crate Challenge
 
-# image: 134_no-weather-data.jpg
-art.133 = No Weather Data
+# image: 133_017-copy.jpg
+art.133 = Imagen
 
-# image: 135_Most-Famous-cover.jpg
-art.134 = Most Famous Cover
+# image: 134_018-copy.jpg
+art.134 = Yoda Smoking Weed
 
-# image: 136_big-party-weather.jpg
-art.135 = Big Party Weather
+# image: 135_018.jpg
+art.135 = Spew
 
+# image: 136_019-copy-2.jpg
+art.136 = Photo Turned Drawing Creatureg
+
+# image: 137_019.jpg
+art.137 = Purple Smile
+
+# image: 138_021.jpg
+art.138 = Snapchat Athlete Gun Woman Boo
+
+# image: 139_022-copy.jpg
+art.139 = Smitty Cow
+
+# image: 140_025-copy.jpg
+art.140 = Shawtys Mix
+
+# image: 141_027-copy.jpg
+art.141 = Minnesota Fish Painting
+
+# image: 142_027.jpg
+art.142 = Annoyeornej
+
+# image: 143_030-copy.jpg
+art.143 = Trumpa
+
+# image: 144_031-copy.jpg
+art.144 = Lake Blue Violet
+
+# image: 145_034-copy.jpg
+art.145 = Sf Penguin 1
+
+# image: 146_037-copy.jpg
+art.146 = Harbinger Smitty Live Action
+
+# image: 147_037.jpg
+art.147 = Coach Nun
+
+# image: 148_038-copy.jpg
+art.148 = Smitty Colorful Mask Edit
+
+# image: 149_038.jpg
+art.149 = Rat YMCA
+
+# image: 150_20261017201139.png
+art.150 = 20261017201139
+
+# image: 151_creature1.jpg
+art.151 = 2008 Red Fox
+
+# image: 152_dogman.png
+art.152 = Dogman
+
+# image: 153_dol1.jpg
+art.153 = Dol1
+
+# image: 154_house3.jpg
+art.154 = Painting With A Bed
+
+# image: 155_kanye-nightmare.png
+art.155 = Kanye Nightmare
+
+# image: 156_live-action-smitty.jpg
+art.156 = Live Action Smitty
+
+# image: 157_monta-monat.png
+art.157 = Monta Monat
+
+# image: 158_noweatherdata.jpg
+art.158 = No Weather Data
+
+# image: 159_tex.jpg
+art.159 = Liberal Lawn Sign
+
+# image: 160_vipes-hippo.png
+art.160 = Vipes Hippo

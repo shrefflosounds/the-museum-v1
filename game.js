@@ -1051,6 +1051,14 @@
     "floor": 0,
     "x": -35.65,
     "y": 2.75,
+    "z": 8.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 0,
+    "x": -35.65,
+    "y": 2.75,
     "z": 13.0,
     "rotY": 1.5708,
     "maxW": 2.8
@@ -1363,6 +1371,14 @@
     "floor": 1,
     "x": -35.65,
     "y": 7.95,
+    "z": 8.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 1,
+    "x": -35.65,
+    "y": 7.95,
     "z": 13.0,
     "rotY": 1.5708,
     "maxW": 2.8
@@ -1668,6 +1684,14 @@
     "x": -35.65,
     "y": 13.15,
     "z": 3.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 2,
+    "x": -35.65,
+    "y": 13.15,
+    "z": 8.0,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -1980,6 +2004,14 @@
     "x": -35.65,
     "y": 18.35,
     "z": 3.0,
+    "rotY": 1.5708,
+    "maxW": 2.8
+  },
+  {
+    "floor": 3,
+    "x": -35.65,
+    "y": 18.35,
+    "z": 8.0,
     "rotY": 1.5708,
     "maxW": 2.8
   },
@@ -2285,44 +2317,44 @@
   {
     "id": 1,
     "floor": 0,
-    "title": "Smitty Silly",
-    "file": "assets/gallery/001_Smitty-silly.gif",
+    "title": "Painted Colors (2023)",
+    "file": "assets/gallery/001_1-1-Painted-Colors-2023.jpg",
     "wing": "1ST FLOOR",
-    "w": 2.024,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.443
   },
   {
     "id": 2,
     "floor": 0,
-    "title": "Emoji Movie",
-    "file": "assets/gallery/002_Emoji-movie.jpg",
+    "title": "Painted Face (2023)",
+    "file": "assets/gallery/002_1-2-Painted-Face-2023.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 1.383
+  },
+  {
+    "id": 3,
+    "floor": 0,
+    "title": "Reddish House (2023)",
+    "file": "assets/gallery/003_1-3-Reddish-House-2023.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 1.402
+  },
+  {
+    "id": 4,
+    "floor": 0,
+    "title": "Mocha Surprise (2022)",
+    "file": "assets/gallery/004_2-Mocha-Surprise-2022.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 3,
-    "floor": 0,
-    "title": "Pinkthing",
-    "file": "assets/gallery/003_pinkthing.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.391
-  },
-  {
-    "id": 4,
-    "floor": 0,
-    "title": "Iwanttolivebythesea",
-    "file": "assets/gallery/004_iwanttolivebythesea.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.613
-  },
-  {
     "id": 5,
     "floor": 0,
-    "title": "Frenchhouse",
-    "file": "assets/gallery/005_frenchhouse.jpg",
+    "title": "Emoji (2024)",
+    "file": "assets/gallery/005_3-Emoji-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2330,44 +2362,44 @@
   {
     "id": 6,
     "floor": 0,
-    "title": "Curator S Assets",
-    "file": "assets/gallery/006_Curator_s_Assets.jpg",
+    "title": "Chloe Bailey Portrait (2021)",
+    "file": "assets/gallery/006_4-Chloe-Bailey-Portrait-2021.jpg",
     "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.391
+    "w": 2.01,
+    "h": 2.15
   },
   {
     "id": 7,
     "floor": 0,
-    "title": "Painting Grey Face",
-    "file": "assets/gallery/007_painting-grey-face.jpg",
+    "title": "Accident (2022)",
+    "file": "assets/gallery/007_Accident-2022.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.683,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 8,
     "floor": 0,
-    "title": "Smitty Wild Animal Framed",
-    "file": "assets/gallery/008_Smitty-wild-animal-framed.jpg",
+    "title": "Astonishment (2021)",
+    "file": "assets/gallery/008_Astonishment-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.609
+    "h": 1.252
   },
   {
     "id": 9,
     "floor": 0,
-    "title": "Leadership Lemon",
-    "file": "assets/gallery/009_leadership-lemon.jpg",
+    "title": "Banner (2024)",
+    "file": "assets/gallery/009_Banner-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.613
+    "h": 1.209
   },
   {
     "id": 10,
     "floor": 0,
-    "title": "Star Ez Duz It",
-    "file": "assets/gallery/010_star-ez-duz-it.jpg",
+    "title": "Beekeeper (2024)",
+    "file": "assets/gallery/010_Beekeeper-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2375,314 +2407,314 @@
   {
     "id": 11,
     "floor": 0,
-    "title": "Smitty Cola Melt Shirtless",
-    "file": "assets/gallery/011_smitty-cola-melt-shirtless.jpg",
+    "title": "Behind Glass (2021)",
+    "file": "assets/gallery/011_Behind-Glass-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.715
   },
   {
     "id": 12,
     "floor": 0,
-    "title": "Shocksites",
-    "file": "assets/gallery/012_shocksites.jpg",
+    "title": "Car Fire (2024)",
+    "file": "assets/gallery/012_Car-Fire-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.433
+    "h": 1.612
   },
   {
     "id": 13,
     "floor": 0,
-    "title": "Gemini",
-    "file": "assets/gallery/013_gemini.jpg",
+    "title": "Ee9 (2025)",
+    "file": "assets/gallery/013_Ee9-2025.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.661,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 14,
     "floor": 0,
-    "title": "E9e",
-    "file": "assets/gallery/015_E9e.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 15,
-    "floor": 0,
-    "title": "Bathbomb",
-    "file": "assets/gallery/016_bathbomb.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 16,
-    "floor": 0,
-    "title": "Crate Challenge",
-    "file": "assets/gallery/017_crate-challenge.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.391
-  },
-  {
-    "id": 17,
-    "floor": 0,
-    "title": "Elderly Portrait",
-    "file": "assets/gallery/018_elderly-portrait.jpg",
+    "title": "Elderly Portrait (2021)",
+    "file": "assets/gallery/014_Elderly-Portrait-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 1.437,
     "h": 2.15
   },
   {
-    "id": 18,
+    "id": 15,
     "floor": 0,
-    "title": "Astonishment",
-    "file": "assets/gallery/019_astonishment.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.252
-  },
-  {
-    "id": 19,
-    "floor": 0,
-    "title": "Sf Astonishment Ad",
-    "file": "assets/gallery/020_sf-astonishment-ad.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 2.141
-  },
-  {
-    "id": 20,
-    "floor": 0,
-    "title": "Heknah Wallpaper As",
-    "file": "assets/gallery/021_heknah-wallpaper-AS.jpg",
+    "title": "Environment (2025)",
+    "file": "assets/gallery/015_Environment-2025.png",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.209
   },
   {
-    "id": 21,
+    "id": 16,
     "floor": 0,
-    "title": "Spongeclownbob",
-    "file": "assets/gallery/022_spongeclownbob.jpg",
+    "title": "Fast (2020)",
+    "file": "assets/gallery/016_Fast-2020.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.641
   },
   {
+    "id": 17,
+    "floor": 0,
+    "title": "Framed Flame (2025)",
+    "file": "assets/gallery/017_Framed-Flame-2025.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 1.609
+  },
+  {
+    "id": 18,
+    "floor": 0,
+    "title": "Green Drawing (2025)",
+    "file": "assets/gallery/018_Green-Drawing-2025.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 1.535
+  },
+  {
+    "id": 19,
+    "floor": 0,
+    "title": "Grey Face (2021)",
+    "file": "assets/gallery/019_Grey-Face-2021.jpg",
+    "wing": "1ST FLOOR",
+    "w": 1.683,
+    "h": 2.15
+  },
+  {
+    "id": 20,
+    "floor": 0,
+    "title": "Growth House (2020)",
+    "file": "assets/gallery/020_Growth-House-2020.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 21,
+    "floor": 0,
+    "title": "I Want To Live By The Sea (2024)",
+    "file": "assets/gallery/021_I-Want-To-Live-By-The-Sea-2024.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
     "id": 22,
     "floor": 0,
-    "title": "Smittys Room Toon",
-    "file": "assets/gallery/023_smittys-room-toon.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.391
-  },
-  {
-    "id": 23,
-    "floor": 0,
-    "title": "Smittys Room Live Action",
-    "file": "assets/gallery/024_smittys-room-live-action.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.39
-  },
-  {
-    "id": 24,
-    "floor": 0,
-    "title": "Pinocchio",
-    "file": "assets/gallery/025_pinocchio.jpg",
+    "title": "Jewelry (2025)",
+    "file": "assets/gallery/022_Jewelry-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.053,
     "h": 2.15
   },
   {
-    "id": 25,
+    "id": 23,
     "floor": 0,
-    "title": "Shawtys Mix",
-    "file": "assets/gallery/026_shawtys-mix.jpg",
+    "title": "Leadership Lemon (2023)",
+    "file": "assets/gallery/023_Leadership-Lemon-2023.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.661,
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
+    "id": 24,
+    "floor": 0,
+    "title": "Melt (2025)",
+    "file": "assets/gallery/024_Melt-2025.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 26,
+    "id": 25,
     "floor": 0,
-    "title": "2008 Red Fox",
-    "file": "assets/gallery/027_2008-red-fox.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.47
-  },
-  {
-    "id": 27,
-    "floor": 0,
-    "title": "Rip Odi",
-    "file": "assets/gallery/028_rip-odi.jpg",
+    "title": "Memorial (2023)",
+    "file": "assets/gallery/025_Memorial-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.135
   },
   {
-    "id": 28,
+    "id": 26,
     "floor": 0,
-    "title": "Shrefflo Smittyfantastic",
-    "file": "assets/gallery/029_Shrefflo-SmittyFantastic.jpg",
+    "title": "Mount Saint (2022)",
+    "file": "assets/gallery/026_Mount-Saint-2022.jpg",
+    "wing": "1ST FLOOR",
+    "w": 1.53,
+    "h": 2.15
+  },
+  {
+    "id": 27,
+    "floor": 0,
+    "title": "Odi (2021)",
+    "file": "assets/gallery/027_Odi-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.727
+    "h": 2.15
+  },
+  {
+    "id": 28,
+    "floor": 0,
+    "title": "Omelette and Pen on Paper (2023)",
+    "file": "assets/gallery/028_Omelette-and-Pen-on-Paper-2023.jpg",
+    "wing": "1ST FLOOR",
+    "w": 1.661,
+    "h": 2.15
   },
   {
     "id": 29,
     "floor": 0,
-    "title": "Cherry Drink",
-    "file": "assets/gallery/030_cherry-drink.jpg",
+    "title": "Pink Creature (2025)",
+    "file": "assets/gallery/029_Pink-Creature-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.474
+    "h": 1.391
   },
   {
     "id": 30,
     "floor": 0,
-    "title": "Trumpa",
-    "file": "assets/gallery/031_trumpa.jpg",
+    "title": "Pink Life (2022)",
+    "file": "assets/gallery/030_Pink-Life-2022.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.969,
-    "h": 2.15
+    "w": 2.15,
+    "h": 2.137
   },
   {
     "id": 31,
     "floor": 0,
-    "title": "Dynamic",
-    "file": "assets/gallery/032_dynamic.jpg",
+    "title": "Purple Face (2021)",
+    "file": "assets/gallery/031_Purple-Face-2021.jpg",
     "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 1.209
+    "w": 1.93,
+    "h": 2.15
   },
   {
     "id": 32,
     "floor": 0,
-    "title": "Work Breakroom",
-    "file": "assets/gallery/033_work-breakroom.jpg",
+    "title": "Ratatoing Reheated Album Cover (2026)",
+    "file": "assets/gallery/032_Ratatoing-Reheated-Album-Cover-2026.png",
     "wing": "1ST FLOOR",
-    "w": 1.721,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 33,
     "floor": 0,
-    "title": "Mocha Slip",
-    "file": "assets/gallery/034_mocha-slip.jpg",
+    "title": "Ricky Bascom School Is Slavery 2 Unused Cover",
+    "file": "assets/gallery/033_Ricky-Bascom-School-Is-Slavery-2-Unused-Cover.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
     "id": 34,
-    "floor": 1,
-    "title": "Spotify Ad",
-    "file": "assets/gallery/035_spotify-ad.jpg",
-    "wing": "2ND FLOOR",
+    "floor": 0,
+    "title": "Screenshot (2022)",
+    "file": "assets/gallery/034_Screenshot-2022.jpg",
+    "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 2.021
+    "h": 2.15
   },
   {
     "id": 35,
-    "floor": 1,
-    "title": "Shake It For Me",
-    "file": "assets/gallery/036_shake-it-for-me.jpg",
-    "wing": "2ND FLOOR",
+    "floor": 0,
+    "title": "Sea Serpent (2025)",
+    "file": "assets/gallery/035_Sea-Serpent-2025.jpg",
+    "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.391
+    "h": 1.818
   },
   {
     "id": 36,
-    "floor": 1,
-    "title": "Misty Morning",
-    "file": "assets/gallery/037_misty-morning.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.209
+    "floor": 0,
+    "title": "Selfie in the Woods (2023)",
+    "file": "assets/gallery/036_Selfie-in-the-Woods-2023.jpg",
+    "wing": "1ST FLOOR",
+    "w": 1.741,
+    "h": 2.15
   },
   {
     "id": 37,
-    "floor": 1,
-    "title": "Omelette On Paper",
-    "file": "assets/gallery/038_omelette-on_paper.jpg",
-    "wing": "2ND FLOOR",
-    "w": 1.661,
+    "floor": 0,
+    "title": "SF2 Space Ad (2026)",
+    "file": "assets/gallery/037_SF2-Space-Ad-2026.png",
+    "wing": "1ST FLOOR",
+    "w": 1.659,
     "h": 2.15
   },
   {
     "id": 38,
-    "floor": 1,
-    "title": "Bird Mouth",
-    "file": "assets/gallery/039_bird-mouth.jpg",
-    "wing": "2ND FLOOR",
+    "floor": 0,
+    "title": "Shake it for Me (2026)",
+    "file": "assets/gallery/038_Shake-it-for-Me-2026.jpg",
+    "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.391
   },
   {
     "id": 39,
-    "floor": 1,
-    "title": "4who",
-    "file": "assets/gallery/040_4Who.jpg",
-    "wing": "2ND FLOOR",
+    "floor": 0,
+    "title": "Wet Paint (2023)",
+    "file": "assets/gallery/039_Wet-Paint-2023.jpg",
+    "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 2.132
   },
   {
     "id": 40,
-    "floor": 1,
-    "title": "Joyous Protection",
-    "file": "assets/gallery/041_Joyous_Protection.jpg",
-    "wing": "2ND FLOOR",
+    "floor": 0,
+    "title": "Writing (2024)",
+    "file": "assets/gallery/040_Writing-2024.jpg",
+    "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
     "id": 41,
     "floor": 1,
-    "title": "Made U A Bird",
-    "file": "assets/gallery/042_made-u-a-bird.jpg",
+    "title": "Spotify Ad",
+    "file": "assets/gallery/041_001.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.768,
-    "h": 2.15
+    "w": 2.15,
+    "h": 2.021
   },
   {
     "id": 42,
     "floor": 1,
-    "title": "Dog Drawing",
-    "file": "assets/gallery/043_dog-drawing.jpg",
+    "title": "Shake It For Me",
+    "file": "assets/gallery/042_002-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.391
   },
   {
     "id": 43,
     "floor": 1,
-    "title": "Smitty Pixels Mussel Heart",
-    "file": "assets/gallery/044_Smitty-pixels-mussel-heart.jpg",
+    "title": "Shirt Ad Flight",
+    "file": "assets/gallery/043_003-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.86
+    "h": 2.141
   },
   {
     "id": 44,
     "floor": 1,
-    "title": "Hans",
-    "file": "assets/gallery/045_Hans.jpg",
+    "title": "4who",
+    "file": "assets/gallery/044_006-copy.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.53,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 45,
     "floor": 1,
-    "title": "Blip Vision Pizza Reach",
-    "file": "assets/gallery/046_blip-vision-pizza-reach.jpg",
+    "title": "Joyous Protection",
+    "file": "assets/gallery/045_007-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2690,125 +2722,125 @@
   {
     "id": 46,
     "floor": 1,
-    "title": "Lake Excursion Ad",
-    "file": "assets/gallery/047_lake-excursion-ad.jpg",
+    "title": "The Harbinger",
+    "file": "assets/gallery/046_012-copy.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.209
+    "w": 1.794,
+    "h": 2.15
   },
   {
     "id": 47,
     "floor": 1,
-    "title": "Sand",
-    "file": "assets/gallery/048_Sand.jpg",
+    "title": "Gemini",
+    "file": "assets/gallery/047_013-copy-2.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.474
+    "w": 1.661,
+    "h": 2.15
   },
   {
     "id": 48,
     "floor": 1,
-    "title": "Floating Boxer Ad",
-    "file": "assets/gallery/049_floating-boxer-ad.jpg",
+    "title": "Shrefflo Ocean Cap Ad",
+    "file": "assets/gallery/048_013-copy.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.919,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 49,
     "floor": 1,
-    "title": "Peter Griffin Tribute",
-    "file": "assets/gallery/050_peter-griffin-tribute.jpg",
+    "title": "Lake Excursion Ad",
+    "file": "assets/gallery/049_013.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.474
+    "h": 1.209
   },
   {
     "id": 50,
     "floor": 1,
-    "title": "Imagen",
-    "file": "assets/gallery/051_imagen.jpg",
+    "title": "Now Watch Me Whip",
+    "file": "assets/gallery/050_014.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.991
+    "h": 2.15
   },
   {
     "id": 51,
     "floor": 1,
-    "title": "Spew",
-    "file": "assets/gallery/052_spew.jpg",
+    "title": "Luv Graffiti Shirt Ad",
+    "file": "assets/gallery/051_015-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.474
+    "h": 2.15
   },
   {
     "id": 52,
     "floor": 1,
-    "title": "Purple Smile",
-    "file": "assets/gallery/053_purple-smile.jpg",
+    "title": "Sf Mini Drawing Red",
+    "file": "assets/gallery/052_016-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.378
+    "h": 1.669
   },
   {
     "id": 53,
     "floor": 1,
-    "title": "Smitty Ocean Storm",
-    "file": "assets/gallery/054_Smitty-ocean-storm.jpg",
+    "title": "Person With Mask Behind",
+    "file": "assets/gallery/053_018-copy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.818
+    "h": 1.295
   },
   {
     "id": 54,
     "floor": 1,
-    "title": "Liberal Lawn Sign",
-    "file": "assets/gallery/055_liberal-lawn-sign.jpg",
+    "title": "Sf Astonishment Ad",
+    "file": "assets/gallery/054_019.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.546
+    "h": 2.141
   },
   {
     "id": 55,
     "floor": 1,
-    "title": "Smitty Cow",
-    "file": "assets/gallery/056_smitty-cow.jpg",
+    "title": "Heknah Wallpaper As",
+    "file": "assets/gallery/055_020.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.209
   },
   {
     "id": 56,
     "floor": 1,
-    "title": "Ancient Predators",
-    "file": "assets/gallery/057_ancient-predators.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.561
-  },
-  {
-    "id": 57,
-    "floor": 1,
-    "title": "Hey Guy Tv",
-    "file": "assets/gallery/058_hey-guy-tv.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.715
-  },
-  {
-    "id": 58,
-    "floor": 1,
-    "title": "Yellow Guy Cute",
-    "file": "assets/gallery/059_yellow-guy-cute.jpg",
+    "title": "Gaiter Mask Dr Coach Ad",
+    "file": "assets/gallery/056_022.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
+    "id": 57,
+    "floor": 1,
+    "title": "Winter 2022 Ad",
+    "file": "assets/gallery/057_027.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.357
+  },
+  {
+    "id": 58,
+    "floor": 1,
+    "title": "Auto Shop Nightmare",
+    "file": "assets/gallery/058_029-copy.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 2.134
+  },
+  {
     "id": 59,
     "floor": 1,
-    "title": "Smitty Blackbox Sigil Tee",
-    "file": "assets/gallery/060_Smitty-BlackBox_Sigil_Tee.jpg",
+    "title": "Ascetic Sebring Ad",
+    "file": "assets/gallery/059_029.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2816,53 +2848,53 @@
   {
     "id": 60,
     "floor": 1,
-    "title": "Annoyeornej",
-    "file": "assets/gallery/061_annoyeornej.jpg",
+    "title": "Green Beanie Ad",
+    "file": "assets/gallery/060_033.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.207
+    "h": 2.143
   },
   {
     "id": 61,
     "floor": 1,
-    "title": "Dogandghostthings",
-    "file": "assets/gallery/062_dogandghostthings.jpg",
+    "title": "Person On Fire",
+    "file": "assets/gallery/061_034.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.474
+    "h": 1.46
   },
   {
     "id": 62,
     "floor": 1,
-    "title": "Thin Blue Line",
-    "file": "assets/gallery/063_thin-blue-line.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 2.012
-  },
-  {
-    "id": 63,
-    "floor": 1,
-    "title": "Space Planet",
-    "file": "assets/gallery/064_Space-planet.jpg",
+    "title": "Est FNI First Cover",
+    "file": "assets/gallery/062_035.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
+    "id": 63,
+    "floor": 1,
+    "title": "Shrefflo Store 2025 Ad",
+    "file": "assets/gallery/063_037.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.619
+  },
+  {
     "id": 64,
     "floor": 1,
-    "title": "Messages From God",
-    "file": "assets/gallery/065_messages-from-God.jpg",
+    "title": "Ad Bags Clear",
+    "file": "assets/gallery/064_ad-bags-clear.png",
     "wing": "2ND FLOOR",
-    "w": 1.683,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 65,
     "floor": 1,
-    "title": "Beach Video",
-    "file": "assets/gallery/066_beach-video.jpg",
+    "title": "Ad Shrefflo Script",
+    "file": "assets/gallery/065_ad-shrefflo-script.png",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2870,161 +2902,161 @@
   {
     "id": 66,
     "floor": 1,
-    "title": "Grafeetee",
-    "file": "assets/gallery/067_grafeetee.jpg",
+    "title": "Bascom Notes",
+    "file": "assets/gallery/066_Bascom-notes.png",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.209
+    "h": 2.15
   },
   {
     "id": 67,
     "floor": 1,
-    "title": "Sf Penguin 1",
-    "file": "assets/gallery/068_SF-penguin-1.jpg",
+    "title": "Candyassboy",
+    "file": "assets/gallery/067_candyassboy.jpeg",
+    "wing": "2ND FLOOR",
+    "w": 1.753,
+    "h": 2.15
+  },
+  {
+    "id": 68,
+    "floor": 1,
+    "title": "Chase",
+    "file": "assets/gallery/068_chase.png",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.391
+  },
+  {
+    "id": 69,
+    "floor": 1,
+    "title": "Dog Gators",
+    "file": "assets/gallery/069_dog-gators.png",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.561
+  },
+  {
+    "id": 70,
+    "floor": 1,
+    "title": "Ggg",
+    "file": "assets/gallery/070_ggg.png",
+    "wing": "2ND FLOOR",
+    "w": 2.052,
+    "h": 2.15
+  },
+  {
+    "id": 71,
+    "floor": 1,
+    "title": "Neeeww",
+    "file": "assets/gallery/071_neeeww.png",
+    "wing": "2ND FLOOR",
+    "w": 1.659,
+    "h": 2.15
+  },
+  {
+    "id": 72,
+    "floor": 1,
+    "title": "Smittys First Appearance",
+    "file": "assets/gallery/072_og1.jpg",
+    "wing": "2ND FLOOR",
+    "w": 1.612,
+    "h": 2.15
+  },
+  {
+    "id": 73,
+    "floor": 1,
+    "title": "Petalboy",
+    "file": "assets/gallery/073_petalboy.png",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.373
+  },
+  {
+    "id": 74,
+    "floor": 1,
+    "title": "Physicals",
+    "file": "assets/gallery/074_physicals.png",
+    "wing": "2ND FLOOR",
+    "w": 1.536,
+    "h": 2.15
+  },
+  {
+    "id": 75,
+    "floor": 1,
+    "title": "Powerman",
+    "file": "assets/gallery/075_Powerman.png",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 68,
-    "floor": 2,
-    "title": "Penguin 2",
-    "file": "assets/gallery/069_penguin-2.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.209
-  },
-  {
-    "id": 69,
-    "floor": 2,
-    "title": "Sf Beach Photo Drawn Eyebrows",
-    "file": "assets/gallery/070_SF_beach_photo_drawn_eyebrows.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 70,
-    "floor": 2,
-    "title": "Yellow Ball Face",
-    "file": "assets/gallery/071_yellow-ball-face.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.474
-  },
-  {
-    "id": 71,
-    "floor": 2,
-    "title": "Evil Purple Pixelated Face",
-    "file": "assets/gallery/072_evil-purple-pixelated-face.jpg",
-    "wing": "3RD FLOOR",
-    "w": 1.93,
-    "h": 2.15
-  },
-  {
-    "id": 72,
-    "floor": 2,
-    "title": "Fancy",
-    "file": "assets/gallery/073_fancy.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 73,
-    "floor": 2,
-    "title": "Cow Flag",
-    "file": "assets/gallery/074_cow-flag.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.209
-  },
-  {
-    "id": 74,
-    "floor": 2,
-    "title": "The Big Man",
-    "file": "assets/gallery/075_the-big-man.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.7
-  },
-  {
-    "id": 75,
-    "floor": 2,
-    "title": "Consumer Sculpture",
-    "file": "assets/gallery/076_consumer-sculpture.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.463
-  },
-  {
     "id": 76,
-    "floor": 2,
-    "title": "Green Guy With Wings",
-    "file": "assets/gallery/077_green-guy-with-wings.jpg",
-    "wing": "3RD FLOOR",
+    "floor": 1,
+    "title": "SF2 Bumper",
+    "file": "assets/gallery/076_SF2-bumper.png",
+    "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.535
+    "h": 1.621
   },
   {
     "id": 77,
-    "floor": 2,
-    "title": "Pointy World Car Fire",
-    "file": "assets/gallery/078_pointy-world-car-fire.jpg",
-    "wing": "3RD FLOOR",
+    "floor": 1,
+    "title": "Shrefflo White Ad",
+    "file": "assets/gallery/077_shrefflo-white-ad.png",
+    "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.613
-  },
-  {
-    "id": 78,
-    "floor": 2,
-    "title": "Paint Red House",
-    "file": "assets/gallery/079_paint-red-house.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.15,
-    "h": 1.402
-  },
-  {
-    "id": 79,
-    "floor": 2,
-    "title": "The Harbinger",
-    "file": "assets/gallery/080_the-harbinger.jpg",
-    "wing": "3RD FLOOR",
-    "w": 1.794,
     "h": 2.15
   },
   {
+    "id": 78,
+    "floor": 1,
+    "title": "Space",
+    "file": "assets/gallery/078_space.png",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.391
+  },
+  {
+    "id": 79,
+    "floor": 1,
+    "title": "Untitled 2",
+    "file": "assets/gallery/079_Untitled-2.png",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
     "id": 80,
-    "floor": 2,
-    "title": "Monkey Full Body",
-    "file": "assets/gallery/081_monkey-full-body.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.033,
+    "floor": 1,
+    "title": "Z 3",
+    "file": "assets/gallery/080_z-3-copy.png",
+    "wing": "2ND FLOOR",
+    "w": 1.536,
     "h": 2.15
   },
   {
     "id": 81,
     "floor": 2,
-    "title": "Now Watch Me Whip",
-    "file": "assets/gallery/082_now-watch-me-whip.jpg",
+    "title": "Heknah - ShreffloPaint",
+    "file": "assets/gallery/081_1-Heknah-ShreffloPaint.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.669
   },
   {
     "id": 82,
     "floor": 2,
-    "title": "Luv Graffiti Shirt Ad",
-    "file": "assets/gallery/083_luv-graffiti-shirt-ad.jpg",
+    "title": "Heknah - Eye with Sigil (2026)",
+    "file": "assets/gallery/082_2-Heknah-Eye-with-Sigil-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.669
   },
   {
     "id": 83,
     "floor": 2,
-    "title": "Sf Mini Drawing Red",
-    "file": "assets/gallery/084_sf-mini-drawing-red.jpg",
+    "title": "Heknah - Self Portrait 1 (2026)",
+    "file": "assets/gallery/083_3-Heknah-Self-Portrait-1-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3032,44 +3064,44 @@
   {
     "id": 84,
     "floor": 2,
-    "title": "Painting With A Bed",
-    "file": "assets/gallery/085_painting-with-a-bed.jpg",
+    "title": "Heknah - Self Portrait 2 (2026)",
+    "file": "assets/gallery/084_4-Heknah-Self-Portrait-2-2026.png",
     "wing": "3RD FLOOR",
-    "w": 2.143,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.669
   },
   {
     "id": 85,
     "floor": 2,
-    "title": "Person With Mask Behind",
-    "file": "assets/gallery/086_person-with-mask-behind.jpg",
+    "title": "Heknah - Self Portrait 3 (2026)",
+    "file": "assets/gallery/085_5-Heknah-Self-Portrait-3-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.295
+    "h": 1.669
   },
   {
     "id": 86,
     "floor": 2,
-    "title": "Photo Turned Drawing Creatureg",
-    "file": "assets/gallery/087_photo-turned-drawing-creatureg.jpg",
+    "title": "Heknah - The Shreffloker (2026)",
+    "file": "assets/gallery/086_6-Heknah-The-Shreffloker-2026.png",
     "wing": "3RD FLOOR",
-    "w": 1.444,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.669
   },
   {
     "id": 87,
     "floor": 2,
-    "title": "Goblin Drawing",
-    "file": "assets/gallery/088_goblin-drawing.jpg",
+    "title": "Sharksa Shivers - Nun (2026)",
+    "file": "assets/gallery/087_7-Sharksa-Shivers-Nun-2026.png",
     "wing": "3RD FLOOR",
-    "w": 2.15,
+    "w": 2.021,
     "h": 2.15
   },
   {
     "id": 88,
     "floor": 2,
-    "title": "Snapchat Athlete Gun Woman Boo",
-    "file": "assets/gallery/089_snapchat-athlete-gun-woman-boo.jpg",
+    "title": "R3E4 - JJar (2026)",
+    "file": "assets/gallery/088_8-R3E4-JJar-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3077,80 +3109,80 @@
   {
     "id": 89,
     "floor": 2,
-    "title": "Smitty Shirt Handmade",
-    "file": "assets/gallery/090_smitty-shirt-handmade.jpg",
+    "title": "R3E4 - Dumb & Ass (2026)",
+    "file": "assets/gallery/089_9-R3E4-Dumb-Ass-2026.png",
     "wing": "3RD FLOOR",
-    "w": 1.949,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.669
   },
   {
     "id": 90,
     "floor": 2,
-    "title": "Painted Smitty Red",
-    "file": "assets/gallery/091_painted-smitty-red.jpg",
+    "title": "R3E4 - Statue Concepts (2026)",
+    "file": "assets/gallery/090_10-R3E4-Statue-Concepts-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.383
+    "h": 1.669
   },
   {
     "id": 91,
     "floor": 2,
-    "title": "Three Creatures",
-    "file": "assets/gallery/092_three-creatures.jpg",
+    "title": "R3E4 - The Purple Dimension (2026)",
+    "file": "assets/gallery/091_11-R3E4-The-Purple-Dimension-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.22
+    "h": 1.669
   },
   {
     "id": 92,
     "floor": 2,
-    "title": "Saxophone Fight",
-    "file": "assets/gallery/093_saxophone-fight.jpg",
+    "title": "R3E4 - Moments Before Disaster (2026)",
+    "file": "assets/gallery/092_12-R3E4-Moments-Before-Disaster-2026.png",
     "wing": "3RD FLOOR",
-    "w": 1.612,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.669
   },
   {
     "id": 93,
     "floor": 2,
-    "title": "Escapism By Medication",
-    "file": "assets/gallery/094_escapism-by-medication.jpg",
+    "title": "R3E4 - Eye had a dream once (2026)",
+    "file": "assets/gallery/093_13-R3E4-Eye-had-a-dream-once-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.666
+    "h": 1.184
   },
   {
     "id": 94,
     "floor": 2,
-    "title": "Minnesota Fish Painting",
-    "file": "assets/gallery/095_Minnesota-fish-painting.jpg",
+    "title": "R3E4 - Button (2026)",
+    "file": "assets/gallery/094_14-R3E4-Button-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.614
+    "h": 1.184
   },
   {
     "id": 95,
     "floor": 2,
-    "title": "Dr Coach Incubation",
-    "file": "assets/gallery/096_dr-coach-incubation.jpg",
+    "title": "R3E4 - SF Face (2026)",
+    "file": "assets/gallery/095_15-R3E4-SF-Face-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.669
   },
   {
     "id": 96,
     "floor": 2,
-    "title": "Ascetic Sebring Ad",
-    "file": "assets/gallery/097_Ascetic_Sebring_ad.jpg",
+    "title": "R3E4 - 2 Much Slimey (2026)",
+    "file": "assets/gallery/096_16-R3E4-2-Much-Slimey-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 2.135
   },
   {
     "id": 97,
     "floor": 2,
-    "title": "Hairy Guy Drawing",
-    "file": "assets/gallery/098_hairy-guy-drawing.jpg",
+    "title": "R3E4 - AUX Album Cover (2024)",
+    "file": "assets/gallery/097_R3E4-AUX-Album-Cover-2024.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3158,17 +3190,17 @@
   {
     "id": 98,
     "floor": 2,
-    "title": "Lake Blue Violet",
-    "file": "assets/gallery/099_lake-blue-violet.jpg",
+    "title": "R3E4 - Curser Album Cover (2026)",
+    "file": "assets/gallery/098_R3E4-Curser-Album-Cover-2026.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.613
+    "h": 2.15
   },
   {
     "id": 99,
     "floor": 2,
-    "title": "Orange Stick Figure",
-    "file": "assets/gallery/100_orange-stick-figure.jpg",
+    "title": "R3E4 - DVI Album Cover (2024)",
+    "file": "assets/gallery/099_R3E4-DVI-Album-Cover-2024.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3176,497 +3208,551 @@
   {
     "id": 100,
     "floor": 2,
-    "title": "Green Beanie Ad",
-    "file": "assets/gallery/101_green-beanie-ad.jpg",
+    "title": "R3E4 - Floppy Disc Album Cover (2024)",
+    "file": "assets/gallery/100_R3E4-Floppy-Disc-Album-Cover-2024.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.143
+    "h": 2.15
   },
   {
     "id": 101,
     "floor": 2,
-    "title": "Person On Fire",
-    "file": "assets/gallery/102_person-on-fire.jpg",
+    "title": "R3E4 - HDMI Album Cover (2024)",
+    "file": "assets/gallery/101_R3E4-HDMI-Album-Cover-2024.png",
     "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.46
+    "h": 2.15
   },
   {
     "id": 102,
-    "floor": 3,
-    "title": "Painting Red Abstract",
-    "file": "assets/gallery/103_painting-red-abstract.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "R3E4 - Memory Card Album Cover (2025)",
+    "file": "assets/gallery/102_R3E4-Memory-Card-Album-Cover-2025.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.443
+    "h": 2.15
   },
   {
     "id": 103,
-    "floor": 3,
-    "title": "Clown Fast Food",
-    "file": "assets/gallery/104_clown-fast-food.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "R3E4 - P.O.T.S. (2024)",
+    "file": "assets/gallery/103_R3E4-P-O-T-S-2024.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.474
+    "h": 2.15
   },
   {
     "id": 104,
-    "floor": 3,
-    "title": "Shirt Ad Flight",
-    "file": "assets/gallery/105_shirt-ad-flight.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "R3E4 - USB Album Cover (2024)",
+    "file": "assets/gallery/104_R3E4-USB-Album-Cover-2024.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.141
+    "h": 2.15
   },
   {
     "id": 105,
-    "floor": 3,
-    "title": "Simple Drawing Flower",
-    "file": "assets/gallery/106_simple-drawing-flower.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.746,
+    "floor": 2,
+    "title": "R3E4 - Wi-Fi Album Cover (2025)",
+    "file": "assets/gallery/105_R3E4-Wi-Fi-Album-Cover-2025.png",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 106,
-    "floor": 3,
-    "title": "Framed Sf Animal 2",
-    "file": "assets/gallery/107_framed-sf-animal-2.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Ro Mack - Abstract Digital (2025)",
+    "file": "assets/gallery/106_Ro-Mack-Abstract-Digital-2025.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.609
+    "h": 1.666
   },
   {
     "id": 107,
-    "floor": 3,
-    "title": "Darling Actor Drawing",
-    "file": "assets/gallery/108_darling-actor-drawing.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.781,
-    "h": 2.15
+    "floor": 2,
+    "title": "Smitty Fantastic - Anguished Dog (2025)",
+    "file": "assets/gallery/107_Smitty-Fantastic-Anguished-Dog-2025.png",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
+    "h": 2.026
   },
   {
     "id": 108,
-    "floor": 3,
-    "title": "Beekeeper",
-    "file": "assets/gallery/109_beekeeper.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Conspiracy (2026)",
+    "file": "assets/gallery/108_Smitty-Fantastic-Conspiracy-2026.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
     "id": 109,
-    "floor": 3,
-    "title": "Run Your Shit 1",
-    "file": "assets/gallery/110_run-your-shit-1.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Dr. Coach unedited cover (2021)",
+    "file": "assets/gallery/109_Smitty-Fantastic-Dr-Coach-unedited-cover-2021.jpg",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.132
+    "h": 2.15
   },
   {
     "id": 110,
-    "floor": 3,
-    "title": "Run Your Shit 2",
-    "file": "assets/gallery/111_run-your-shit-2.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.13,
+    "floor": 2,
+    "title": "Smitty Fantastic - Flower Phone Doodle (2023)",
+    "file": "assets/gallery/110_Smitty-Fantastic-Flower-Phone-Doodle-2023.jpg",
+    "wing": "3RD FLOOR",
+    "w": 1.746,
     "h": 2.15
   },
   {
     "id": 111,
-    "floor": 3,
-    "title": "Hundred Percent Can",
-    "file": "assets/gallery/112_hundred-percent-can.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.612,
+    "floor": 2,
+    "title": "Smitty Fantastic - Hand Puppet (2024)",
+    "file": "assets/gallery/111_Smitty-Fantastic-Hand-Puppet-2024.png",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 112,
-    "floor": 3,
-    "title": "Early Memorial 2",
-    "file": "assets/gallery/113_early-memorial-2.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Lined Creature (2026)",
+    "file": "assets/gallery/112_Smitty-Fantastic-Lined-Creature-2026.png",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
+    "h": 1.669
+  },
+  {
+    "id": 113,
+    "floor": 2,
+    "title": "Smitty Fantastic - Oo wow (2025)",
+    "file": "assets/gallery/113_Smitty-Fantastic-Oo-wow-2025.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 113,
-    "floor": 3,
-    "title": "Cheetah In Space",
-    "file": "assets/gallery/114_cheetah-in-space.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.842
-  },
-  {
     "id": 114,
-    "floor": 3,
-    "title": "Shrefflo Ocean Cap Ad",
-    "file": "assets/gallery/115_Shrefflo-ocean-cap-ad.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Planet Me (2025)",
+    "file": "assets/gallery/114_Smitty-Fantastic-Planet-Me-2025.jpg",
+    "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
     "id": 115,
-    "floor": 3,
-    "title": "Cartoon Ampersand Face",
-    "file": "assets/gallery/116_cartoon-ampersand-face.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Rat At Toing (2026)",
+    "file": "assets/gallery/115_Smitty-Fantastic-Rat-At-Toing-2026.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.669
   },
   {
     "id": 116,
-    "floor": 3,
-    "title": "Painted Sheet Mouse Shapes",
-    "file": "assets/gallery/117_painted-sheet-mouse-shapes.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - The Grid (2026)",
+    "file": "assets/gallery/116_Smitty-Fantastic-The-Grid-2026.png",
+    "wing": "3RD FLOOR",
     "w": 2.15,
-    "h": 1.487
+    "h": 1.669
   },
   {
     "id": 117,
-    "floor": 3,
-    "title": "Orange Kitchen Visions",
-    "file": "assets/gallery/118_orange-kitchen-visions.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.662,
-    "h": 2.15
+    "floor": 2,
+    "title": "Smitty Fantastic - Three Creatures (2024)",
+    "file": "assets/gallery/117_Smitty-Fantastic-Three-Creatures-2024.jpg",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
+    "h": 1.22
   },
   {
     "id": 118,
-    "floor": 3,
-    "title": "Intense Face Clown",
-    "file": "assets/gallery/119_intense-face-clown.jpg",
-    "wing": "4TH FLOOR",
+    "floor": 2,
+    "title": "Smitty Fantastic - Three Faces (2023)",
+    "file": "assets/gallery/118_Smitty-Fantastic-Three-Faces-2023.png",
+    "wing": "3RD FLOOR",
+    "w": 2.15,
+    "h": 1.474
+  },
+  {
+    "id": 119,
+    "floor": 2,
+    "title": "Smitty Fantastic - Water Selfie (2025)",
+    "file": "assets/gallery/119_Smitty-Fantastic-Water-Selfie-2025.jpg",
+    "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 119,
-    "floor": 3,
-    "title": "Yoda Smoking Weed",
-    "file": "assets/gallery/120_yoda-smoking-weed.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.892
-  },
-  {
     "id": 120,
-    "floor": 3,
-    "title": "Agressive Defensive Stance",
-    "file": "assets/gallery/121_Agressive-Defensive-Stance.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.639
+    "floor": 2,
+    "title": "Smitty Fantastic - Writing 2 (2024)",
+    "file": "assets/gallery/120_Smitty-Fantastic-Writing-2-2024.jpg",
+    "wing": "3RD FLOOR",
+    "w": 1.683,
+    "h": 2.15
   },
   {
     "id": 121,
     "floor": 3,
-    "title": "Meg Chain Sf Crate Challenge",
-    "file": "assets/gallery/122_meg-chain-sf-crate-challenge.jpg",
+    "title": "Penguin 2",
+    "file": "assets/gallery/121_001-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.209
+  },
+  {
+    "id": 122,
+    "floor": 3,
+    "title": "5am",
+    "file": "assets/gallery/122_5am.png",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 122,
-    "floor": 3,
-    "title": "Bird",
-    "file": "assets/gallery/123_Bird.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.476
-  },
-  {
     "id": 123,
     "floor": 3,
-    "title": "Gaiter Mask Dr Coach Ad",
-    "file": "assets/gallery/124_gaiter-mask-dr-coach-ad.jpg",
+    "title": "Darling Actor Drawing",
+    "file": "assets/gallery/123_006.jpg",
     "wing": "4TH FLOOR",
-    "w": 2.15,
+    "w": 1.781,
     "h": 2.15
   },
   {
     "id": 124,
     "floor": 3,
-    "title": "Tissue",
-    "file": "assets/gallery/125_tissue.jpg",
+    "title": "Made U A Bird",
+    "file": "assets/gallery/124_008-copy-3.jpg",
     "wing": "4TH FLOOR",
-    "w": 2.15,
+    "w": 1.768,
     "h": 2.15
   },
   {
     "id": 125,
     "floor": 3,
-    "title": "Older Bald Drawing",
-    "file": "assets/gallery/126_older-bald-drawing.jpg",
+    "title": "Consumer Sculpture",
+    "file": "assets/gallery/125_008.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 1.878
+    "h": 1.463
   },
   {
     "id": 126,
     "floor": 3,
-    "title": "Selfie In The Woods",
-    "file": "assets/gallery/127_selfie-in-the-woods.jpg",
+    "title": "Shocksites",
+    "file": "assets/gallery/126_012-copy.jpg",
     "wing": "4TH FLOOR",
-    "w": 1.741,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.433
   },
   {
     "id": 127,
     "floor": 3,
-    "title": "Curly Hair Low Res Guy",
-    "file": "assets/gallery/128_curly-hair-low-res-guy.jpg",
+    "title": "Blip Vision Pizza Reach",
+    "file": "assets/gallery/127_012.jpg",
     "wing": "4TH FLOOR",
-    "w": 2.044,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 128,
     "floor": 3,
-    "title": "Winter 2022 Ad",
-    "file": "assets/gallery/129_winter-2022-ad.jpg",
+    "title": "Monkey Full Body",
+    "file": "assets/gallery/128_013-copy-3.jpg",
     "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.357
+    "w": 2.033,
+    "h": 2.15
   },
   {
     "id": 129,
     "floor": 3,
-    "title": "Dr Coach Full Face",
-    "file": "assets/gallery/130_dr-coach-full-face.jpg",
+    "title": "Sand",
+    "file": "assets/gallery/129_014.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.474
   },
   {
     "id": 130,
     "floor": 3,
-    "title": "Auto Shop Nightmare",
-    "file": "assets/gallery/131_Auto-shop-nightmare.jpg",
+    "title": "Orange Kitchen Visions",
+    "file": "assets/gallery/130_016-copy-2.jpg",
     "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.134
+    "w": 1.662,
+    "h": 2.15
   },
   {
     "id": 131,
     "floor": 3,
-    "title": "Pink Slime Thing",
-    "file": "assets/gallery/132_pink-slime-thing.jpg",
+    "title": "Peter Griffin Tribute",
+    "file": "assets/gallery/131_016-copy.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 2.137
+    "h": 1.474
   },
   {
     "id": 132,
     "floor": 3,
-    "title": "2 Hands Drawing At Once",
-    "file": "assets/gallery/133_2-hands-drawing-at-once.jpg",
+    "title": "Crate Challenge",
+    "file": "assets/gallery/132_016.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.391
+  },
+  {
+    "id": 133,
+    "floor": 3,
+    "title": "Imagen",
+    "file": "assets/gallery/133_017-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.991
+  },
+  {
+    "id": 134,
+    "floor": 3,
+    "title": "Yoda Smoking Weed",
+    "file": "assets/gallery/134_018-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.892
+  },
+  {
+    "id": 135,
+    "floor": 3,
+    "title": "Spew",
+    "file": "assets/gallery/135_018.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.474
+  },
+  {
+    "id": 136,
+    "floor": 3,
+    "title": "Photo Turned Drawing Creatureg",
+    "file": "assets/gallery/136_019-copy-2.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.444,
+    "h": 2.15
+  },
+  {
+    "id": 137,
+    "floor": 3,
+    "title": "Purple Smile",
+    "file": "assets/gallery/137_019.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.378
+  },
+  {
+    "id": 138,
+    "floor": 3,
+    "title": "Snapchat Athlete Gun Woman Boo",
+    "file": "assets/gallery/138_021.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 133,
+    "id": 139,
+    "floor": 3,
+    "title": "Smitty Cow",
+    "file": "assets/gallery/139_022-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 140,
+    "floor": 3,
+    "title": "Shawtys Mix",
+    "file": "assets/gallery/140_025-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.661,
+    "h": 2.15
+  },
+  {
+    "id": 141,
+    "floor": 3,
+    "title": "Minnesota Fish Painting",
+    "file": "assets/gallery/141_027-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.614
+  },
+  {
+    "id": 142,
+    "floor": 3,
+    "title": "Annoyeornej",
+    "file": "assets/gallery/142_027.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.207
+  },
+  {
+    "id": 143,
+    "floor": 3,
+    "title": "Trumpa",
+    "file": "assets/gallery/143_030-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.969,
+    "h": 2.15
+  },
+  {
+    "id": 144,
+    "floor": 3,
+    "title": "Lake Blue Violet",
+    "file": "assets/gallery/144_031-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
+    "id": 145,
+    "floor": 3,
+    "title": "Sf Penguin 1",
+    "file": "assets/gallery/145_034-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 146,
+    "floor": 3,
+    "title": "Harbinger Smitty Live Action",
+    "file": "assets/gallery/146_037-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.612,
+    "h": 2.15
+  },
+  {
+    "id": 147,
+    "floor": 3,
+    "title": "Coach Nun",
+    "file": "assets/gallery/147_037.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.616,
+    "h": 2.15
+  },
+  {
+    "id": 148,
+    "floor": 3,
+    "title": "Smitty Colorful Mask Edit",
+    "file": "assets/gallery/148_038-copy.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
+    "id": 149,
+    "floor": 3,
+    "title": "Rat YMCA",
+    "file": "assets/gallery/149_038.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.669
+  },
+  {
+    "id": 150,
+    "floor": 3,
+    "title": "20261017201139",
+    "file": "assets/gallery/150_20261017201139.png",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.669
+  },
+  {
+    "id": 151,
+    "floor": 3,
+    "title": "2008 Red Fox",
+    "file": "assets/gallery/151_creature1.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.47
+  },
+  {
+    "id": 152,
+    "floor": 3,
+    "title": "Dogman",
+    "file": "assets/gallery/152_dogman.png",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 153,
+    "floor": 3,
+    "title": "Dol1",
+    "file": "assets/gallery/153_dol1.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.795
+  },
+  {
+    "id": 154,
+    "floor": 3,
+    "title": "Painting With A Bed",
+    "file": "assets/gallery/154_house3.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.143,
+    "h": 2.15
+  },
+  {
+    "id": 155,
+    "floor": 3,
+    "title": "Kanye Nightmare",
+    "file": "assets/gallery/155_kanye-nightmare.png",
+    "wing": "4TH FLOOR",
+    "w": 1.651,
+    "h": 2.15
+  },
+  {
+    "id": 156,
+    "floor": 3,
+    "title": "Live Action Smitty",
+    "file": "assets/gallery/156_live-action-smitty.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.012
+  },
+  {
+    "id": 157,
+    "floor": 3,
+    "title": "Monta Monat",
+    "file": "assets/gallery/157_monta-monat.png",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.612
+  },
+  {
+    "id": 158,
     "floor": 3,
     "title": "No Weather Data",
-    "file": "assets/gallery/134_no-weather-data.jpg",
+    "file": "assets/gallery/158_noweatherdata.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 1.655
   },
   {
-    "id": 134,
+    "id": 159,
     "floor": 3,
-    "title": "Most Famous Cover",
-    "file": "assets/gallery/135_Most-Famous-cover.jpg",
+    "title": "Liberal Lawn Sign",
+    "file": "assets/gallery/159_tex.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.546
   },
   {
-    "id": 135,
+    "id": 160,
     "floor": 3,
-    "title": "Big Party Weather",
-    "file": "assets/gallery/136_big-party-weather.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 136,
-    "floor": 0,
-    "title": "Piano Chase",
-    "file": "assets/gallery/137_piano-chase.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.2,
-    "h": 1.93
-  },
-  {
-    "id": 137,
-    "floor": 0,
-    "title": "Tiffin Spacelint",
-    "file": "assets/gallery/138_Tiffin_Spacelint_render1.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.1,
-    "h": 2.1
-  },
-  {
-    "id": 138,
-    "floor": 0,
-    "title": "Chloe Bailey Portrait",
-    "file": "assets/gallery/139_Chloe-Bailey-portrait.jpg",
-    "wing": "1ST FLOOR",
-    "w": 1.95,
-    "h": 2.1
-  },
-  {
-    "id": 139,
-    "floor": 0,
-    "title": "Pre Watered Drawing",
-    "file": "assets/gallery/140_pre-watered-drawing.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.1,
-    "h": 2.1
-  },
-  {
-    "id": 140,
-    "floor": 0,
-    "title": "Rat YMCA",
-    "file": "assets/gallery/141_rat-ymca.jpg",
-    "wing": "1ST FLOOR",
-    "w": 2.3,
-    "h": 1.78
-  },
-  {
-    "id": 141,
-    "floor": 1,
-    "title": "Est FNI First Cover",
-    "file": "assets/gallery/142_est-fni-first-cover.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.1,
-    "h": 2.1
-  },
-  {
-    "id": 142,
-    "floor": 1,
-    "title": "Scooby Fan",
-    "file": "assets/gallery/143_scooby-fan.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.05,
-    "h": 2.1
-  },
-  {
-    "id": 143,
-    "floor": 1,
-    "title": "Coach Nun",
-    "file": "assets/gallery/144_coach-nun.jpg",
-    "wing": "2ND FLOOR",
-    "w": 1.65,
-    "h": 2.2
-  },
-  {
-    "id": 144,
-    "floor": 1,
-    "title": "Smitty 0 Bigman Shirt",
-    "file": "assets/gallery/145_smitty-0-bigman-shirt.jpg",
-    "wing": "2ND FLOOR",
-    "w": 1.65,
-    "h": 2.2
-  },
-  {
-    "id": 145,
-    "floor": 1,
-    "title": "I Love Watching You",
-    "file": "assets/gallery/146_i-love-watching-you.jpg",
-    "wing": "2ND FLOOR",
-    "w": 2.0,
-    "h": 2.1
-  },
-  {
-    "id": 146,
-    "floor": 2,
-    "title": "Smitty QR Code",
-    "file": "assets/gallery/147_smitty-qr-code.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.1,
-    "h": 2.1
-  },
-  {
-    "id": 147,
-    "floor": 2,
-    "title": "Smittys First Appearance",
-    "file": "assets/gallery/148_smittys-first-appearance.jpg",
-    "wing": "3RD FLOOR",
-    "w": 1.65,
-    "h": 2.2
-  },
-  {
-    "id": 148,
-    "floor": 2,
-    "title": "Harbinger Smitty Live Action",
-    "file": "assets/gallery/149_Harbinger-Smitty-Live-Action.jpg",
-    "wing": "3RD FLOOR",
-    "w": 1.65,
-    "h": 2.2
-  },
-  {
-    "id": 149,
-    "floor": 2,
-    "title": "Smitty Colorful Mask Edit",
-    "file": "assets/gallery/150_129_smitty-colorful-mask-edit.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.4,
-    "h": 1.8
-  },
-  {
-    "id": 150,
-    "floor": 2,
-    "title": "Smitty Crouching Disco Colors",
-    "file": "assets/gallery/151_smitty-crouching-disco-colors.jpg",
-    "wing": "3RD FLOOR",
-    "w": 2.1,
-    "h": 2.1
-  },
-  {
-    "id": 151,
-    "floor": 3,
-    "title": "2019 Red Phone Face Drawing",
-    "file": "assets/gallery/152_2019-red-phone-face-drawing.jpg",
+    "title": "Vipes Hippo",
+    "file": "assets/gallery/160_vipes-hippo.png",
     "wing": "4TH FLOOR",
     "w": 1.5,
-    "h": 2.25
-  },
-  {
-    "id": 152,
-    "floor": 3,
-    "title": "Smitty Face Headshot New",
-    "file": "assets/gallery/153_smitty-face-headshot-new.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.05,
-    "h": 2.1
-  },
-  {
-    "id": 153,
-    "floor": 3,
-    "title": "Shrefflo Store 2025 Ad",
-    "file": "assets/gallery/154_Shrefflo-store-2025-ad.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.4,
-    "h": 1.8
-  },
-  {
-    "id": 154,
-    "floor": 3,
-    "title": "Shrefflo Symbol",
-    "file": "assets/gallery/155_shrefflo-symbol.gif",
-    "wing": "4TH FLOOR",
-    "w": 2.4,
-    "h": 1.18
+    "h": 2.15
   }
 ];
 
@@ -11438,7 +11524,7 @@
       // Randomize artworks per floor across available wall frame slots on every playthrough
       for (let f = 0; f < 4; f++) {
         const slots = WALL_FRAME_SLOTS.filter(s => s.floor === f);
-        const arts = CURATED_ARTWORKS.filter(a => a.floor === f).slice(0, 38);
+        const arts = CURATED_ARTWORKS.filter(a => a.floor === f).slice(0, 40);
 
         slots.forEach((slot, idx) => {
           const art = arts[idx % arts.length];
