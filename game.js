@@ -10476,20 +10476,26 @@
     }
 
     loadPlaylistForFloor(fl, initialIndex = 0, initialTime = 0) {
-      const room = this.videoInstallationRooms.find(r => r.floor === fl);
-      if (!room || !room.playlistId) return;
-      if (this.ytCurrentPlaylist === room.playlistId) return;
+      const targetFl = typeof fl === 'number' ? fl : this.playerFloor;
+      const room = this.videoInstallationRooms.find(r => r.floor === targetFl);
+      const playlistId = room ? room.playlistId : (this.videoPlaylists ? this.videoPlaylists[targetFl] : null);
+      if (!playlistId) return;
+      if (this.ytCurrentPlaylist === playlistId) return;
 
-      this.ytCurrentPlaylist = room.playlistId;
+      this.ytCurrentPlaylist = playlistId;
       this.sendYouTubeCommand(player => {
         if (typeof player.loadPlaylist === 'function') {
-          player.loadPlaylist({
-            list: room.playlistId,
-            listType: 'playlist',
-            index: initialIndex || 0,
-            startSeconds: initialTime || 0,
-            suggestedQuality: 'hd720'
-          });
+          try {
+            player.loadPlaylist(playlistId, initialIndex || 0, initialTime || 0);
+          } catch (e) {
+            player.loadPlaylist({
+              list: playlistId,
+              listType: 'playlist',
+              index: initialIndex || 0,
+              startSeconds: initialTime || 0,
+              suggestedQuality: 'hd720'
+            });
+          }
           if (this.ytIsMuted && typeof player.mute === 'function') {
             player.mute();
           } else if (typeof player.unMute === 'function') {
