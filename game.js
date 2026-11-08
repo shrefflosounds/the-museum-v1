@@ -10411,7 +10411,7 @@
       }
     }
 
-    loadPlaylistForFloor(fl) {
+    loadPlaylistForFloor(fl, initialIndex = 0, initialTime = 0) {
       const room = this.videoInstallationRooms.find(r => r.floor === fl);
       if (!room || !room.playlistId) return;
       if (this.ytCurrentPlaylist === room.playlistId) return;
@@ -10422,7 +10422,8 @@
           player.loadPlaylist({
             list: room.playlistId,
             listType: 'playlist',
-            index: 0,
+            index: initialIndex || 0,
+            startSeconds: initialTime || 0,
             suggestedQuality: 'hd720'
           });
           if (this.ytIsMuted && typeof player.mute === 'function') {
@@ -10434,7 +10435,72 @@
       });
     }
 
-    triggerVideoControl(controlId, fl = null, isRemote = false) {
+    getVideoSyncState() {
+      const player = this.ytPlayer;
+      let currentIndex = 0;
+      let currentTime = 0;
+      if (player && this.ytReady) {
+        try {
+          if (typeof player.getPlaylistIndex === 'function') currentIndex = player.getPlaylistIndex() || 0;
+          if (typeof player.getCurrentTime === 'function') currentTime = player.getCurrentTime() || 0;
+        } catch (e) {}
+      }
+      return {
+        currentFloor: this.activeVideoRoom ? this.activeVideoRoom.floor : this.playerFloor,
+        playlistId: this.ytCurrentPlaylist,
+        index: currentIndex,
+        time: currentTime,
+        paused: this.ytIsPaused,
+        muted: this.ytIsMuted
+      };
+    }
+
+    onRemoteVideoStateSync(data) {
+      if (!data) return;
+      this.ytIsPaused = !!data.paused;
+      this.ytIsMuted = !!data.muted;
+      this.sendYouTubeCommand(player => {
+        if (data.playlistId && this.ytCurrentPlaylist !== data.playlistId) {
+          this.ytCurrentPlaylist = data.playlistId;
+          if (typeof player.loadPlaylist === 'function') {
+            player.loadPlaylist({
+              list: data.playlistId,
+              listType: 'playlist',
+              index: data.index || 0,
+              startSeconds: data.time || 0,
+              suggestedQuality: 'hd720'
+            });
+          }
+        } else {
+          if (typeof player.getPlaylistIndex === 'function' && typeof player.playVideoAt === 'function') {
+            const curIdx = player.getPlaylistIndex();
+            if (data.index !== undefined && curIdx !== data.index) {
+              player.playVideoAt(data.index);
+            }
+          }
+          if (data.time !== undefined && typeof player.getCurrentTime === 'function' && typeof player.seekTo === 'function') {
+            const curTime = player.getCurrentTime() || 0;
+            if (Math.abs(curTime - data.time) > 2.5) {
+              player.seekTo(data.time, true);
+            }
+          }
+        }
+
+        if (this.ytIsPaused) {
+          if (typeof player.pauseVideo === 'function') player.pauseVideo();
+        } else {
+          if (typeof player.playVideo === 'function') player.playVideo();
+        }
+
+        if (this.ytIsMuted) {
+          if (typeof player.mute === 'function') player.mute();
+        } else {
+          if (typeof player.unMute === 'function') player.unMute();
+        }
+      });
+    }
+
+    triggerVideoControl(controlId, fl = null, isRemote = false, remoteData = null) {
       const targetFloor = fl !== null ? fl : this.playerFloor;
       if (!this.audio) return;
 
@@ -10473,8 +10539,15 @@
           });
           break;
         case 'play':
-          this.ytIsPaused = !this.ytIsPaused;
+          if (remoteData && remoteData.paused !== undefined) {
+            this.ytIsPaused = !!remoteData.paused;
+          } else {
+            this.ytIsPaused = !this.ytIsPaused;
+          }
           this.sendYouTubeCommand(p => {
+            if (remoteData && remoteData.time !== undefined && typeof p.seekTo === 'function') {
+              p.seekTo(remoteData.time, true);
+            }
             if (this.ytIsPaused) {
               if (typeof p.pauseVideo === 'function') p.pauseVideo();
             } else {
@@ -10483,7 +10556,11 @@
           });
           break;
         case 'mute':
-          this.ytIsMuted = !this.ytIsMuted;
+          if (remoteData && remoteData.muted !== undefined) {
+            this.ytIsMuted = !!remoteData.muted;
+          } else {
+            this.ytIsMuted = !this.ytIsMuted;
+          }
           this.sendYouTubeCommand(p => {
             if (this.ytIsMuted) {
               if (typeof p.mute === 'function') p.mute();
@@ -10496,12 +10573,25 @@
 
       // Sync across multiplayer
       if (!isRemote && this.mp && typeof this.mp.notifyVideoControl === 'function') {
-        this.mp.notifyVideoControl(targetFloor, controlId);
+        let currentTime = 0;
+        let currentIndex = 0;
+        if (this.ytPlayer && this.ytReady) {
+          try {
+            if (typeof this.ytPlayer.getCurrentTime === 'function') currentTime = this.ytPlayer.getCurrentTime() || 0;
+            if (typeof this.ytPlayer.getPlaylistIndex === 'function') currentIndex = this.ytPlayer.getPlaylistIndex() || 0;
+          } catch (e) {}
+        }
+        this.mp.notifyVideoControl(targetFloor, controlId, {
+          paused: this.ytIsPaused,
+          muted: this.ytIsMuted,
+          time: currentTime,
+          index: currentIndex
+        });
       }
     }
 
-    onRemoteVideoControl(floor, action) {
-      this.triggerVideoControl(action, floor, true);
+    onRemoteVideoControl(floor, action, extra = null) {
+      this.triggerVideoControl(action, floor, true, extra);
     }
 
     updateVideoInstallation(delta) {
@@ -17170,6 +17260,9 @@
             if (relic.glowLight) relic.glowLight.intensity = 0;
           }
         });
+      }
+      if (data.videoState) {
+        this.onRemoteVideoStateSync(data.videoState);
       }
       this.updateHud();
     }

@@ -207,7 +207,13 @@
 
         case 'video_control':
           if (this.game && typeof this.game.onRemoteVideoControl === 'function') {
-            this.game.onRemoteVideoControl(data.floor, data.action);
+            this.game.onRemoteVideoControl(data.floor, data.action, data);
+          }
+          break;
+
+        case 'video_state_sync':
+          if (this.game && typeof this.game.onRemoteVideoStateSync === 'function') {
+            this.game.onRemoteVideoStateSync(data);
           }
           break;
 
@@ -280,10 +286,12 @@
           relicStates.push({ id: r.id, collected: !!r.collected });
         });
       }
+      const videoState = typeof this.game.getVideoSyncState === 'function' ? this.game.getVideoSyncState() : null;
       this.publish({
         type: 'game_state_sync',
         relicStates: relicStates,
-        relicsCollected: this.game.relicsCollected || 0
+        relicsCollected: this.game.relicsCollected || 0,
+        videoState: videoState
       });
     }
 
@@ -348,11 +356,20 @@
       });
     }
 
-    notifyVideoControl(floor, action) {
+    notifyVideoControl(floor, action, extra = {}) {
       this.publish({
         type: 'video_control',
         floor: floor,
-        action: action
+        action: action,
+        ...extra
+      });
+    }
+
+    notifyVideoState(videoState) {
+      if (!videoState) return;
+      this.publish({
+        type: 'video_state_sync',
+        ...videoState
       });
     }
 
