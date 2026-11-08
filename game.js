@@ -4118,6 +4118,7 @@
       this.renderer = new THREE.WebGLRenderer({
         canvas: this.canvas,
         antialias: true,
+        alpha: true,
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -10241,14 +10242,27 @@
       rightRail.position.set(screenW / 2 + frameThickness / 2, 0, 0);
       screenGroup.add(rightRail);
 
-      // Screen mesh backdrop
-      const screenMat = new THREE.MeshBasicMaterial({
-        color: 0x05070a,
-        side: THREE.FrontSide
+      // Screen mesh backdrop: Punches an alpha=0 transparent hole in the WebGL canvas
+      // while writing depth (depthWrite: true). Because the video layer is directly behind
+      // the canvas (z-index: 1 vs 2), the video shines through this wall quad, while any
+      // foreground 3D geometry (player character, hands, weapons, console desk) passes depth testing
+      // and renders opaque pixels directly on top of the video, creating true 3D physical occlusion!
+      const screenHoleMat = new THREE.MeshBasicMaterial({
+        color: 0x000000,
+        transparent: true,
+        opacity: 0,
+        blending: THREE.CustomBlending,
+        blendSrc: THREE.ZeroFactor,
+        blendDst: THREE.ZeroFactor,
+        blendSrcAlpha: THREE.ZeroFactor,
+        blendDstAlpha: THREE.ZeroFactor,
+        depthWrite: true,
+        side: THREE.DoubleSide
       });
-      const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), screenMat);
+      const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), screenHoleMat);
       screenMesh.position.set(0, 0, frameDepth * 0.4);
       screenMesh.rotation.y = Math.PI; // Face north into room
+      screenMesh.renderOrder = -1; // Render before foreground objects
       screenGroup.add(screenMesh);
 
       // Subtle projector ambient glow directed back into room
@@ -10293,6 +10307,7 @@
       consoleHead.add(consolePlate);
 
       // Helper to generate dynamic button textures with crisp vector canvas icons
+      // Transformed so text and symbols are oriented upright and read left-to-right from the player's perspective
       const makeButtonTexture = (label, symbol) => {
         const can = document.createElement('canvas');
         can.width = 256;
@@ -10308,15 +10323,22 @@
         ctx.strokeStyle = '#38bdf8';
         ctx.stroke();
 
+        // Transform coordinate system to cancel CylinderGeometry top-cap diagonal reflection
+        // and align text/symbols directly facing the player standing north of the console
+        ctx.save();
+        ctx.translate(128, 128);
+        ctx.transform(0, -1, -1, 0, 0, 0);
+
         ctx.fillStyle = '#f8fafc';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = 'bold 96px sans-serif';
-        ctx.fillText(symbol, 128, 118);
+        ctx.fillText(symbol, 0, -10);
 
         ctx.font = 'bold 26px sans-serif';
         ctx.fillStyle = '#94a3b8';
-        ctx.fillText(label, 128, 192);
+        ctx.fillText(label, 0, 64);
+        ctx.restore();
 
         const tex = new THREE.CanvasTexture(can);
         tex.anisotropy = 4;

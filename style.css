@@ -44,6 +44,10 @@ html, body {
   width: 100%;
   height: 100%;
   display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2; /* Sits atop background video layer, rendering 3D scene & occluding characters/hands */
 }
 
 html.pointer-locked,
@@ -1550,7 +1554,7 @@ body.game-playing #game-container {
   height: 100%;
   pointer-events: none;
   overflow: hidden;
-  z-index: 2; /* Sits immediately atop WebGL canvas */
+  z-index: 1; /* Sits immediately behind WebGL canvas so 3D objects, player & hands occlude it */
 }
 
 #video-screen-container {

@@ -8,21 +8,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>The Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.3.1">
+  <link rel="stylesheet" href="style.css?v=2.3.3">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
 <body>
-  <!-- 3D Render Canvas -->
+  <!-- 3D Render Canvas & Video Installation Layer -->
   <div id="game-container">
-    <canvas id="game-canvas" tabindex="-1"></canvas>
     <div id="video-screen-layer">
       <div id="video-screen-container">
         <div id="yt-player"></div>
       </div>
     </div>
-
+    <canvas id="game-canvas" tabindex="-1"></canvas>
   </div>
   <!-- Atmospheric Overlays -->
   <div id="vignette-overlay"></div>
@@ -379,10 +378,10 @@
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
   <script src="libs/mqtt.min.js"></script>
-  <script src="multiplayer.js?v=2.3.2"></script>
+  <script src="multiplayer.js?v=2.3.3"></script>
   <script src="character_select.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1793780000"></script>
-  <script src="game.js?v=2.3.2"></script>
+  <script src="game.js?v=2.3.3"></script>
 </body>
 </html>
