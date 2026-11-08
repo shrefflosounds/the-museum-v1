@@ -4202,7 +4202,7 @@
       this.scene.background = new THREE.Color(0x05070c);
       this.scene.fog = new THREE.FogExp2(0x05070c, 0.032);
 
-      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.15, 150);
+      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.06, 150);
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
@@ -4210,7 +4210,6 @@
         canvas: this.canvas,
         antialias: true,
         alpha: true,
-        logarithmicDepthBuffer: true,
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
@@ -8728,11 +8727,9 @@
       const virtualCamera = new THREE.PerspectiveCamera();
       const clipBias = 0.003;
 
-      let isRenderingReflection = false;
-
       glass.onBeforeRender = (renderer, scene, camera) => {
         // Recursion guard: never render mirrors inside other mirrors
-        if (isRenderingReflection) return;
+        if (this._isRenderingMirrorReflection) return;
 
         reflectorWorldPosition.setFromMatrixPosition(glass.matrixWorld);
         cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
@@ -8785,15 +8782,18 @@
 
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
         glass.visible = false;
-        isRenderingReflection = true;
+        this._isRenderingMirrorReflection = true;
         const currentRenderTarget = renderer.getRenderTarget();
-        renderer.setRenderTarget(renderTarget);
-        renderer.state.buffers.depth.setMask(true);
-        if (renderer.autoClear === false) renderer.clear();
-        renderer.render(scene, virtualCamera);
-        renderer.setRenderTarget(currentRenderTarget);
-        isRenderingReflection = false;
-        glass.visible = true;
+        try {
+          renderer.setRenderTarget(renderTarget);
+          renderer.state.buffers.depth.setMask(true);
+          if (renderer.autoClear === false) renderer.clear();
+          renderer.render(scene, virtualCamera);
+        } finally {
+          renderer.setRenderTarget(currentRenderTarget);
+          this._isRenderingMirrorReflection = false;
+          glass.visible = true;
+        }
         const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
       };
