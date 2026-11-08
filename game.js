@@ -10209,7 +10209,7 @@
       const screenH = 3.6;
       const screenX = -29.0;
       const screenY = y0 + 2.70;
-      const screenZ = 27.88;
+      const screenZ = 27.70;
 
       const screenGroup = new THREE.Group();
       screenGroup.position.set(screenX, screenY, screenZ);
@@ -10391,8 +10391,8 @@
         buttons: interactiveButtons,
         minX: -34.5,
         maxX: -23.5,
-        minZ: 17.5,
-        maxZ: 28.5
+        minZ: 16.5,
+        maxZ: 28.8
       };
 
       this.videoInstallationRooms.push(roomMeta);
