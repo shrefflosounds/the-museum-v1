@@ -70,6 +70,7 @@ ctrl.jump = **Space**: Jump
 ctrl.shoot = **Left Click**: Fire
 ctrl.aim = **Right Click**: Aim
 ctrl.map = **Tab**: Inventory & Map
+ctrl.dance = **X**: Dance
 
 settings.spectator_heading = SPECTATOR MODE
 spec.toggle = **` or F2**: Toggle Spectator

@@ -3881,6 +3881,7 @@
       this.playerModelRoot = null;
       this.playerModel = null;
       this.playerMixer = null;
+      this.playerBones = {};
       this.playerActions = {};
       this.playerCurrentAction = null;
       this.playerModelLoadId = 0;
@@ -3896,6 +3897,8 @@
       this.leftHandHoverTimer = 0;
       this.leftHandGrabTimer = 0;
       this.leftHandGrabDuration = 0.55;
+      this.isPlayerDancing = false;
+      this.playerDanceTimer = 0;
       this.isCrouching = false;
       this.isGrounded = true;
       this.jumpOffset = 0;
@@ -11637,6 +11640,12 @@
             if (child.isSkinnedMesh) this.validatePlayerSkin(child, character.name);
           });
           this.playerModelRoot.add(this.playerModel);
+          this.playerBones = {};
+          this.playerModel.traverse((child) => {
+            if (child.isBone && child.name) {
+              this.playerBones[child.name] = child;
+            }
+          });
           this.playerMixer = new THREE.AnimationMixer(this.playerModel);
           this.playerActions = {};
           gltf.animations.forEach((clip) => {
@@ -11657,6 +11666,7 @@
           this.disposePlayerModel(gltf.scene);
           this.playerModel = null;
           this.playerMixer = null;
+          this.playerBones = {};
           this.playerModelRoot.clear();
           this.playerModelRoot.visible = false;
           console.error(`Could not prepare player model "${character.name}".`, error);
@@ -11723,6 +11733,9 @@
     }
 
     updatePlayerCharacter(delta, isMoving) {
+      if (this.isPlayerDancing) {
+        this.playerDanceTimer += delta;
+      }
       if (!this.playerModelRoot) return;
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       this.playerModelRoot.position.set(this.playerPos.x, footY, this.playerPos.z);
@@ -11735,6 +11748,63 @@
         : (isMoving ? (this.isSprinting ? 'Run' : 'Walk') : 'Idle');
       this.playPlayerAnimation(animation);
       if (this.playerMixer) this.playerMixer.update(delta);
+
+      // Procedural dance overlay on player humanoid skeleton
+      if (this.isPlayerDancing && this.playerBones) {
+        const t = this.playerDanceTimer;
+        const b = this.playerBones;
+
+        // Rhythmic hip sway & groove
+        if (b.hips) {
+          b.hips.position.y += Math.sin(t * 9.5) * 0.055;
+          b.hips.position.x += Math.cos(t * 4.75) * 0.045;
+          b.hips.rotation.z += Math.sin(t * 4.75) * 0.14;
+        }
+
+        // Torso & spine counter-sway
+        if (b.spine) {
+          b.spine.rotation.z += Math.sin(t * 4.75 + Math.PI) * 0.12;
+          b.spine.rotation.y += Math.sin(t * 4.75) * 0.10;
+        }
+        if (b.chest) {
+          b.chest.rotation.x += Math.sin(t * 9.5) * 0.08;
+          b.chest.rotation.z += Math.cos(t * 4.75) * 0.10;
+        }
+
+        // Head bob & nodding to the beat
+        if (b.neck) {
+          b.neck.rotation.x += Math.sin(t * 9.5) * 0.10;
+        }
+        if (b.head) {
+          b.head.rotation.x += Math.sin(t * 9.5) * 0.14;
+          b.head.rotation.y += Math.sin(t * 4.75) * 0.16;
+        }
+
+        // Left arm groove & wave
+        if (b['shoulder.L']) {
+          b['shoulder.L'].rotation.z += Math.sin(t * 4.75) * 0.12;
+        }
+        if (b['upperArm.L']) {
+          b['upperArm.L'].rotation.z += -0.55 + Math.sin(t * 4.75) * 0.28;
+          b['upperArm.L'].rotation.x += Math.cos(t * 4.75) * 0.35;
+        }
+        if (b['lowerArm.L']) {
+          b['lowerArm.L'].rotation.y += 0.45 + Math.sin(t * 9.5) * 0.32;
+        }
+
+        // Right arm raised celebratory disco wave / pump
+        if (b['shoulder.R']) {
+          b['shoulder.R'].rotation.z -= Math.sin(t * 4.75) * 0.12;
+        }
+        if (b['upperArm.R']) {
+          b['upperArm.R'].rotation.z += 0.85 + Math.sin(t * 4.75) * 0.24;
+          b['upperArm.R'].rotation.x += Math.sin(t * 9.5) * 0.35;
+        }
+        if (b['lowerArm.R']) {
+          b['lowerArm.R'].rotation.z += 0.70 + Math.sin(t * 9.5) * 0.45;
+          b['lowerArm.R'].rotation.x += Math.cos(t * 9.5) * 0.30;
+        }
+      }
     }
 
     updateThirdPersonCamera(delta) {
@@ -11781,6 +11851,13 @@
     triggerLeftHandGrab() {
       this.leftHandGrabTimer = 0.55;
       this.leftHandGrabDuration = 0.55;
+    }
+
+    togglePlayerDance() {
+      this.isPlayerDancing = !this.isPlayerDancing;
+      if (this.isPlayerDancing) {
+        this.playerDanceTimer = 0;
+      }
     }
 
     spawnRelics() {
@@ -13070,7 +13147,11 @@
           }
         }
 
-        if (e.code === 'KeyP') {
+        if (e.code === 'KeyX') {
+          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
+            this.togglePlayerDance();
+          }
+        } else if (e.code === 'KeyP') {
           if (this.gameStarted) this.togglePause();
         } else if (e.code === 'Tab') {
           if (this.gameStarted) {
@@ -13674,6 +13755,10 @@
       const isMoving = _tempMoveDir.lengthSq() > 0.001;
       const isCrouching = !!this.keys['KeyC'];
       this.isCrouching = isCrouching;
+
+      if (isMoving || isCrouching || !this.isGrounded) {
+        this.isPlayerDancing = false;
+      }
 
       const wantsSprint = isMoving && (this.keys['ShiftLeft'] || this.keys['ShiftRight']) && !isCrouching;
       if (!wantsSprint) this.sprintExhausted = false;
@@ -14313,6 +14398,10 @@
         const bobScale = this.isSprinting ? 0.02 : 0.01;
         targetX += Math.cos(this.headBobTimer * 0.5) * bobScale;
         targetY += Math.abs(Math.sin(this.headBobTimer)) * bobScale;
+      } else if (this.isPlayerDancing) {
+        const danceT = this.playerDanceTimer;
+        targetX += Math.cos(danceT * 8.0) * 0.025;
+        targetY += Math.abs(Math.sin(danceT * 9.5)) * 0.035;
       }
 
       this.camera.fov = THREE.MathUtils.lerp(this.camera.fov, targetFov, delta * 10);
@@ -14350,6 +14439,15 @@
       targetY += hoverY;
       targetRotX += hoverRotX;
       targetRotZ += hoverRotZ;
+
+      // First-person rhythmic arm groove when dancing
+      if (this.isPlayerDancing) {
+        const danceT = this.playerDanceTimer;
+        targetX += Math.sin(danceT * 8.0) * 0.05;
+        targetY += Math.abs(Math.sin(danceT * 9.5)) * 0.045;
+        targetRotZ += Math.sin(danceT * 8.0) * 0.22;
+        targetRotX += Math.cos(danceT * 8.0) * 0.14;
+      }
 
       // Walking & Running radius of movement and tilt (Pose 2 from user reference screenshot)
       if (isMoving) {
@@ -14432,6 +14530,7 @@
 
     shootPistol() {
       if (!this.gameStarted || this.isReloading || this.isGameOver || this.isPaused || this.isExaminingArt) return;
+      this.isPlayerDancing = false;
 
       const now = performance.now() / 1000;
       if (now - this.lastShotTime < CONFIG.WEAPON.FIRE_RATE) return;
@@ -14465,6 +14564,12 @@
         this.muzzleFlash.material.opacity = 0;
         this.muzzleLight.intensity = 0;
       }, 45);
+
+      if (this.mp && typeof this.mp.notifyWeaponFired === 'function') {
+        const camPos = this.camera ? this.camera.position : this.playerPos;
+        const camRot = this.camera ? this.camera.rotation : { y: this.playerYaw, x: this.playerPitch };
+        this.mp.notifyWeaponFired(camPos.x, camPos.y, camPos.z, camRot.y, camRot.x);
+      }
 
       this.alertSmittySound(this.playerPos, this.playerFloor, 47.5, true);
       this.raycastBullet();
@@ -14570,7 +14675,8 @@
       }
 
       const puddleGeom = new THREE.CircleGeometry(1, 24);
-      const mesh = new THREE.Mesh(puddleGeom, this.bloodPuddleMat);
+      const puddleMat = this.bloodPuddleMat.clone();
+      const mesh = new THREE.Mesh(puddleGeom, puddleMat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.rotation.z = Math.random() * Math.PI * 2;
       mesh.position.set(x, floorY + 0.008 + Math.random() * 0.004, z);
@@ -14583,7 +14689,9 @@
         z,
         floorY,
         currentRadius: 0.05,
-        targetRadius
+        targetRadius,
+        age: 0,
+        maxLife: 60.0
       });
     }
 
@@ -14665,11 +14773,27 @@
         }
       }
 
-      for (let i = 0; i < this.bloodPuddles.length; i++) {
+      for (let i = this.bloodPuddles.length - 1; i >= 0; i--) {
         const p = this.bloodPuddles[i];
+        p.age = (p.age || 0) + delta;
+
         if (Math.abs(p.currentRadius - p.targetRadius) > 0.002) {
           p.currentRadius = THREE.MathUtils.lerp(p.currentRadius, p.targetRadius, Math.min(1, delta * 5.5));
           p.mesh.scale.set(p.currentRadius, p.currentRadius * 0.88, 1);
+        }
+
+        // Fades away completely after 1 minute (60s total lifespan with smooth 10s fadeout from 50s to 60s)
+        const maxLife = p.maxLife || 60.0;
+        if (p.age >= maxLife) {
+          this.scene.remove(p.mesh);
+          if (p.mesh.geometry) p.mesh.geometry.dispose();
+          if (p.mesh.material) p.mesh.material.dispose();
+          this.bloodPuddles.splice(i, 1);
+        } else if (p.age > (maxLife - 10.0)) {
+          const fadeProgress = (maxLife - p.age) / 10.0; // 1.0 down to 0.0
+          if (p.mesh.material) {
+            p.mesh.material.opacity = Math.max(0, fadeProgress);
+          }
         }
       }
     }
@@ -15710,7 +15834,7 @@
 
           const time = performance.now() * 0.002;
 
-          // Dynamic distance culling for paintings: only render artworks within 36m fog envelope on current floor
+          // Dynamic distance culling for paintings: generous render distance on current floor
           if (this.paintings) {
             const px = this.playerPos.x;
             const pz = this.playerPos.z;
@@ -15719,7 +15843,7 @@
                 if (p.mesh.visible) p.mesh.visible = false;
               } else {
                 const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
-                p.mesh.visible = (dSq < 1296); // 36m * 36m
+                p.mesh.visible = (dSq < 9604); // 98m * 98m (broad museum-wide corridor visibility)
               }
             }
           }
@@ -16521,6 +16645,16 @@
           p.glowLight.intensity = 0;
           p.glowLight.visible = false;
         }
+      }
+    }
+
+    onRemoteWeaponFire(data) {
+      if (!data) return;
+      if (this.mp && typeof this.mp.triggerRemoteWeaponMuzzle === 'function') {
+        this.mp.triggerRemoteWeaponMuzzle(data.sender, data);
+      }
+      if (this.audio && typeof this.audio.playPistolShot === 'function') {
+        this.audio.playPistolShot();
       }
     }
 

@@ -235,6 +235,12 @@
           }
           break;
 
+        case 'weapon_fire':
+          if (this.game && typeof this.game.onRemoteWeaponFire === 'function') {
+            this.game.onRemoteWeaponFire(data);
+          }
+          break;
+
         case 'game_state_sync':
           if (!this.isHost && this.game && typeof this.game.onFullGameStateSync === 'function') {
             this.game.onFullGameStateSync(data);
@@ -297,22 +303,28 @@
       if (!this.game || !this.game.camera || !this.client || !this.client.connected) return;
 
       let anim = 'Idle';
-      if (this.game.isSprinting && (this.game.keys && (this.game.keys['KeyW'] || this.game.keys['KeyS'] || this.game.keys['KeyA'] || this.game.keys['KeyD']))) {
+      if (!this.game.isGrounded) {
+        anim = 'Jump';
+      } else if (this.game.isSprinting && (this.game.keys && (this.game.keys['KeyW'] || this.game.keys['KeyS'] || this.game.keys['KeyA'] || this.game.keys['KeyD']))) {
         anim = 'Run';
       } else if (this.game.keys && (this.game.keys['KeyW'] || this.game.keys['KeyS'] || this.game.keys['KeyA'] || this.game.keys['KeyD'])) {
         anim = 'Walk';
+      } else if (this.game.isPlayerDancing) {
+        anim = 'Dance';
       }
+
+      const footY = (this.game.playerPos ? this.game.playerPos.y : this.game.camera.position.y) - (this.game.currentCamHeight || 1.72) + (this.game.jumpOffset || 0);
 
       this.publish({
         type: 'transform',
         charIdx: this.game.selectedPlayerCharacter,
         x: Number(this.game.camera.position.x.toFixed(3)),
-        y: Number((this.game.camera.position.y - 1.6).toFixed(3)),
+        y: Number(footY.toFixed(3)),
         z: Number(this.game.camera.position.z.toFixed(3)),
         yaw: Number(this.game.camera.rotation.y.toFixed(3)),
         pitch: Number(this.game.camera.rotation.x.toFixed(3)),
         anim: anim,
-        fl: this.game.flashlight ? this.game.flashlight.intensity > 0 : true
+        fl: this.game.flashlight ? this.game.flashlight.intensity > 0 : !!this.game.flashlightOn
       });
     }
 
@@ -391,6 +403,17 @@
       });
     }
 
+    notifyWeaponFired(x, y, z, yaw, pitch) {
+      this.publish({
+        type: 'weapon_fire',
+        x: Number(x.toFixed(3)),
+        y: Number(y.toFixed(3)),
+        z: Number(z.toFixed(3)),
+        yaw: Number(yaw.toFixed(3)),
+        pitch: Number(pitch.toFixed(3))
+      });
+    }
+
     spawnRemotePlayer(id, characterIndex, initialPos, initialRot) {
       if (this.remotePlayers.has(id)) return;
 
@@ -410,6 +433,8 @@
         targetYaw: initialRot ? initialRot.yaw : 0,
         targetPitch: initialRot ? initialRot.pitch : 0,
         anim: 'Idle',
+        danceTimer: 0,
+        bones: {},
         flashlight: null
       };
 
@@ -419,15 +444,43 @@
       }
       this.remotePlayers.set(id, remoteData);
 
-      // Flashlight
-      const spot = new THREE.SpotLight(0xfff1cf, 2.5, 30, Math.PI / 5, 0.45, 1.2);
-      spot.position.set(0, 1.4, 0);
+      // Flashlight (Warm wide cone matching player's flashlight with target tracking)
+      const spot = new THREE.SpotLight(0xfff6e8, 2.2, 38, Math.PI / 4.4, 0.42, 1.05);
+      spot.position.set(0, 1.45, 0);
+      spot.castShadow = false;
       const spotTarget = new THREE.Object3D();
-      spotTarget.position.set(0, 1.4, -5);
+      spotTarget.position.set(0, 1.45, -10);
       group.add(spot);
       group.add(spotTarget);
       spot.target = spotTarget;
       remoteData.flashlight = spot;
+      remoteData.flashlightTarget = spotTarget;
+
+      // Remote Muzzle Flash light & spark sprite
+      const muzzleLight = new THREE.PointLight(0xffaa33, 0, 12);
+      muzzleLight.position.set(0.18, 1.35, -0.6);
+      group.add(muzzleLight);
+      remoteData.muzzleLight = muzzleLight;
+
+      // Canvas spark texture for weapon muzzle flash
+      const flashCanvas = document.createElement('canvas');
+      flashCanvas.width = 64;
+      flashCanvas.height = 64;
+      const fctx = flashCanvas.getContext('2d');
+      const grad = fctx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255, 240, 180, 1)');
+      grad.addColorStop(0.3, 'rgba(255, 140, 20, 0.85)');
+      grad.addColorStop(1, 'transparent');
+      fctx.fillStyle = grad;
+      fctx.fillRect(0, 0, 64, 64);
+      const flashTex = new THREE.CanvasTexture(flashCanvas);
+      const muzzleSprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+      );
+      muzzleSprite.scale.set(0.65, 0.65, 0.65);
+      muzzleSprite.position.set(0.18, 1.35, -0.6);
+      group.add(muzzleSprite);
+      remoteData.muzzleSprite = muzzleSprite;
 
       // Load 3D model
       const loader = new THREE.GLTFLoader();
@@ -450,6 +503,12 @@
 
           group.add(model);
           remoteData.model = model;
+          remoteData.bones = {};
+          model.traverse((child) => {
+            if (child.isBone && child.name) {
+              remoteData.bones[child.name] = child;
+            }
+          });
           remoteData.mixer = new THREE.AnimationMixer(model);
 
           gltf.animations.forEach((clip) => {
@@ -507,17 +566,96 @@
         while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
         p.group.rotation.y += diffYaw * Math.min(1, delta * 12);
 
+        // Update remote player flashlight target direction (pitch & yaw)
+        if (p.flashlightTarget) {
+          const pitch = p.targetPitch || 0;
+          p.flashlightTarget.position.set(
+            -Math.sin(0) * Math.cos(pitch) * 10,
+            1.45 + Math.sin(pitch) * 10,
+            -Math.cos(0) * Math.cos(pitch) * 10
+          );
+        }
+
         // Update animation mixer
         if (p.mixer) {
           p.mixer.update(delta);
           const wantedAction = p.actions[p.anim] || p.actions.Idle;
           if (wantedAction && wantedAction !== p.currentAction) {
-            if (p.currentAction) p.currentAction.fadeOut(0.2);
-            wantedAction.reset().fadeIn(0.2).play();
+            if (p.currentAction) p.currentAction.fadeOut(0.14);
+            wantedAction.reset().fadeIn(0.14).play();
             p.currentAction = wantedAction;
+          }
+
+          // Procedural dance overlay on remote player bones
+          if (p.anim === 'Dance') {
+            p.danceTimer = (p.danceTimer || 0) + delta;
+            const t = p.danceTimer;
+            const b = p.bones;
+            if (b) {
+              if (b.hips) {
+                b.hips.position.y += Math.sin(t * 9.5) * 0.055;
+                b.hips.position.x += Math.cos(t * 4.75) * 0.045;
+                b.hips.rotation.z += Math.sin(t * 4.75) * 0.14;
+              }
+              if (b.spine) {
+                b.spine.rotation.z += Math.sin(t * 4.75 + Math.PI) * 0.12;
+                b.spine.rotation.y += Math.sin(t * 4.75) * 0.10;
+              }
+              if (b.chest) {
+                b.chest.rotation.x += Math.sin(t * 9.5) * 0.08;
+                b.chest.rotation.z += Math.cos(t * 4.75) * 0.10;
+              }
+              if (b.neck) {
+                b.neck.rotation.x += Math.sin(t * 9.5) * 0.10;
+              }
+              if (b.head) {
+                b.head.rotation.x += Math.sin(t * 9.5) * 0.14;
+                b.head.rotation.y += Math.sin(t * 4.75) * 0.16;
+              }
+              if (b['shoulder.L']) {
+                b['shoulder.L'].rotation.z += Math.sin(t * 4.75) * 0.12;
+              }
+              if (b['upperArm.L']) {
+                b['upperArm.L'].rotation.z += -0.55 + Math.sin(t * 4.75) * 0.28;
+                b['upperArm.L'].rotation.x += Math.cos(t * 4.75) * 0.35;
+              }
+              if (b['lowerArm.L']) {
+                b['lowerArm.L'].rotation.y += 0.45 + Math.sin(t * 9.5) * 0.32;
+              }
+              if (b['shoulder.R']) {
+                b['shoulder.R'].rotation.z -= Math.sin(t * 4.75) * 0.12;
+              }
+              if (b['upperArm.R']) {
+                b['upperArm.R'].rotation.z += 0.85 + Math.sin(t * 4.75) * 0.24;
+                b['upperArm.R'].rotation.x += Math.sin(t * 9.5) * 0.35;
+              }
+              if (b['lowerArm.R']) {
+                b['lowerArm.R'].rotation.z += 0.70 + Math.sin(t * 9.5) * 0.45;
+                b['lowerArm.R'].rotation.x += Math.cos(t * 9.5) * 0.30;
+              }
+            }
           }
         }
       });
+    }
+
+    triggerRemoteWeaponMuzzle(senderId, shotData) {
+      const p = this.remotePlayers.get(senderId);
+      if (p) {
+        if (p.muzzleLight) {
+          p.muzzleLight.intensity = 4.0;
+          setTimeout(() => {
+            if (p.muzzleLight) p.muzzleLight.intensity = 0;
+          }, 60);
+        }
+        if (p.muzzleSprite) {
+          p.muzzleSprite.material.opacity = 0.95;
+          p.muzzleSprite.material.rotation = Math.random() * Math.PI * 2;
+          setTimeout(() => {
+            if (p.muzzleSprite) p.muzzleSprite.material.opacity = 0;
+          }, 50);
+        }
+      }
     }
   }
 
