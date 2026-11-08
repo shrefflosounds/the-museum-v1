@@ -4116,7 +4116,7 @@
       this.scene.background = new THREE.Color(0x05070c);
       this.scene.fog = new THREE.FogExp2(0x05070c, 0.032);
 
-      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.04, 150);
+      this.camera = new THREE.PerspectiveCamera(74, window.innerWidth / window.innerHeight, 0.15, 150);
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
@@ -4124,6 +4124,7 @@
         canvas: this.canvas,
         antialias: true,
         alpha: true,
+        logarithmicDepthBuffer: true,
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
