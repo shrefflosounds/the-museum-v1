@@ -10306,37 +10306,46 @@
       const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.08, 0.72), topPlateMat);
       consoleHead.add(consolePlate);
 
-      // Helper to generate dynamic button textures with crisp vector canvas icons
-      // Transformed so text and symbols are oriented upright and read left-to-right from the player's perspective
-      const makeButtonTexture = (label, symbol) => {
+      // Helper to generate dynamic button textures styled after tactile colorful remote controls (Image 2)
+      // Transformed so text and symbols are oriented upright and read left-to-right (un-mirrored) from the player's perspective
+      const makeButtonTexture = (label, symbol, colorCfg) => {
         const can = document.createElement('canvas');
         can.width = 256;
         can.height = 256;
         const ctx = can.getContext('2d');
-        ctx.fillStyle = '#0f172a';
+
+        // Button face background color
+        ctx.fillStyle = colorCfg.bg;
         ctx.fillRect(0, 0, 256, 256);
 
-        // Circular bevel border
+        // Tactile outer bevel ring
         ctx.beginPath();
         ctx.arc(128, 128, 110, 0, Math.PI * 2);
         ctx.lineWidth = 14;
-        ctx.strokeStyle = '#38bdf8';
+        ctx.strokeStyle = colorCfg.border;
         ctx.stroke();
 
-        // Transform coordinate system to cancel CylinderGeometry top-cap diagonal reflection
-        // and align text/symbols directly facing the player standing north of the console
+        // Inner bevel highlight
+        ctx.beginPath();
+        ctx.arc(128, 128, 100, 0, Math.PI * 2);
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.35)';
+        ctx.stroke();
+
+        // Transform coordinate system to cancel CylinderGeometry top-cap reflection
+        // and orient text/symbols cleanly upright and reading left-to-right from the player perspective
         ctx.save();
         ctx.translate(128, 128);
-        ctx.transform(0, -1, -1, 0, 0, 0);
+        ctx.transform(0, 1, -1, 0, 0, 0); // Flips horizontally and aligns upright
 
-        ctx.fillStyle = '#f8fafc';
+        ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         ctx.font = 'bold 96px sans-serif';
-        ctx.fillText(symbol, 0, -10);
+        ctx.fillText(symbol, 0, -12);
 
         ctx.font = 'bold 26px sans-serif';
-        ctx.fillStyle = '#94a3b8';
+        ctx.fillStyle = colorCfg.textColor || '#ffffff';
         ctx.fillText(label, 0, 64);
         ctx.restore();
 
@@ -10345,29 +10354,62 @@
         return tex;
       };
 
+      // Button definitions with vibrant color palette inspired by the EZclicker remote:
+      // PREV & NEXT: Vibrant Sky Blue (like channel buttons)
+      // PLAY / PAUSE: Vibrant Emerald Green (like action buttons)
+      // MUTE: Warm Sun Yellow (like mute button)
+      // Ordered Left-to-Right from player's view: PREV (left) -> PLAY -> NEXT -> MUTE (right)
       const btnDefs = [
-        { id: 'prev', label: 'PREV', symbol: '◀', relX: -0.54, prompt: '[E] PREVIOUS VIDEO' },
-        { id: 'play', label: 'PLAY', symbol: '▶❚❚', relX: -0.18, prompt: '[E] PAUSE / PLAY' },
-        { id: 'next', label: 'NEXT', symbol: '▶', relX: 0.18, prompt: '[E] NEXT VIDEO' },
-        { id: 'mute', label: 'MUTE', symbol: '🔊', relX: 0.54, prompt: '[E] MUTE / UNMUTE' }
+        {
+          id: 'prev',
+          label: 'PREV',
+          symbol: '◀',
+          relX: 0.54, // Leftmost from player's viewpoint
+          prompt: '[E] PREVIOUS VIDEO',
+          colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
+        },
+        {
+          id: 'play',
+          label: 'PLAY',
+          symbol: '▶❚❚',
+          relX: 0.18, // Second from left
+          prompt: '[E] PAUSE / PLAY',
+          colorCfg: { bg: '#16a34a', border: '#4ade80', side: 0x15803d, emissive: 0x16a34a }
+        },
+        {
+          id: 'next',
+          label: 'NEXT',
+          symbol: '▶',
+          relX: -0.18, // Third from left
+          prompt: '[E] NEXT VIDEO',
+          colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
+        },
+        {
+          id: 'mute',
+          label: 'MUTE',
+          symbol: '🔊',
+          relX: -0.54, // Rightmost from player's viewpoint
+          prompt: '[E] MUTE / UNMUTE',
+          colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
+        }
       ];
 
       const interactiveButtons = [];
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
-        const tex = makeButtonTexture(b.label, b.symbol);
+        const tex = makeButtonTexture(b.label, b.symbol, b.colorCfg);
         const capMat = new THREE.MeshStandardMaterial({
           map: tex,
-          roughness: 0.3,
-          metalness: 0.6,
-          emissive: 0x0284c7,
+          roughness: 0.35,
+          metalness: 0.25,
+          emissive: b.colorCfg.emissive,
           emissiveIntensity: 0.25
         });
         const sideMat = new THREE.MeshStandardMaterial({
-          color: 0x334155,
-          roughness: 0.35,
-          metalness: 0.8
+          color: b.colorCfg.side,
+          roughness: 0.45,
+          metalness: 0.3
         });
         const btnMesh = new THREE.Mesh(btnGeo, [sideMat, capMat, sideMat]);
         btnMesh.rotation.x = 0;
