@@ -3914,6 +3914,7 @@
       this.smittyFallAngle = 0;
       this.smittyDeadTimer = 0;
       this.smittyRespawnTimer = 0;
+      this.statuesEnabled = true;
 
       // Liquid Blood Physics State
       this.bloodDroplets = [];
@@ -4045,6 +4046,9 @@
         smittyOffBtn: document.getElementById('smitty-off-btn'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
         optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
+        optionsStatuesOnBtn: document.getElementById('options-statues-on-btn'),
+        optionsStatuesOffBtn: document.getElementById('options-statues-off-btn'),
+        optionsHostOnlyNote: document.getElementById('options-host-only-note'),
         optionsMusicOnBtn: document.getElementById('options-music-on-btn'),
         optionsMusicOffBtn: document.getElementById('options-music-off-btn'),
         vignetteOverlay: document.getElementById('vignette-overlay'),
@@ -11397,6 +11401,7 @@
       });
       const planeGeomCache = new Map();
       const frameGeomCache = new Map();
+      const artTextureCache = new Map();
       const plaqueGeom = new THREE.PlaneGeometry(0.85, 0.22);
       const border = 0.08;
       const depth = 0.04;
@@ -11466,19 +11471,25 @@
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
-          this.texLoader.load(
-            art.file,
-            (tex) => {
-              tex.colorSpace = THREE.SRGBColorSpace;
-              canvasMesh.material.map = tex;
-              canvasMesh.material.needsUpdate = true;
-              if (this.renderer) {
-                this.renderer.initTexture(tex);
-              }
-            },
-            undefined,
-            () => {}
-          );
+          if (artTextureCache.has(art.file)) {
+            canvasMesh.material.map = artTextureCache.get(art.file);
+            canvasMesh.material.needsUpdate = true;
+          } else {
+            this.texLoader.load(
+              art.file,
+              (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                artTextureCache.set(art.file, tex);
+                canvasMesh.material.map = tex;
+                canvasMesh.material.needsUpdate = true;
+                if (this.renderer) {
+                  this.renderer.initTexture(tex);
+                }
+              },
+              undefined,
+              () => {}
+            );
+          }
 
           const plaqueTex = TextureFactory.createPlaqueTexture(art.title);
           const plaqueMesh = new THREE.Mesh(
@@ -13789,6 +13800,20 @@
       if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
 
+      // Statues Mode Toggles
+      if (this.dom.optionsStatuesOnBtn) {
+        this.dom.optionsStatuesOnBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setStatuesMode(true);
+        });
+      }
+      if (this.dom.optionsStatuesOffBtn) {
+        this.dom.optionsStatuesOffBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setStatuesMode(false);
+        });
+      }
+
       // Music Mode Toggles
       if (this.dom.optionsMusicOnBtn) {
         this.dom.optionsMusicOnBtn.addEventListener('click', (e) => {
@@ -14296,6 +14321,8 @@
 
     openOptionsModal() {
       this.isOptionsModalOpen = true;
+      this.updateSmittyModeUI();
+      this.updateStatuesModeUI();
       this.dom.optionsModal.classList.remove('hidden');
     }
 
@@ -14340,8 +14367,18 @@
     }
 
     setSmittyMode(enabled) {
+      // In multiplayer, only host can toggle Curator
+      if (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost) {
+        this.showSystemNotification('ONLY THE HOST CAN TOGGLE THE CURATOR');
+        this.updateSmittyModeUI();
+        return;
+      }
       this.smittyEnabled = !!enabled;
       this.updateSmittyModeUI();
+
+      if (this.mp && this.mp.isHost && typeof this.mp.notifyModeSync === 'function') {
+        this.mp.notifyModeSync(this.smittyEnabled, this.statuesEnabled);
+      }
 
       if (this.ambientLight && this.hemiLight) {
         if (!this.smittyEnabled) {
@@ -14381,9 +14418,76 @@
       }
     }
 
+    setStatuesMode(enabled) {
+      // In multiplayer, only host can toggle Statues
+      if (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost) {
+        this.showSystemNotification('ONLY THE HOST CAN TOGGLE STATUES');
+        this.updateStatuesModeUI();
+        return;
+      }
+      this.statuesEnabled = !!enabled;
+      this.updateStatuesModeUI();
+
+      if (this.statues) {
+        this.statues.forEach(s => {
+          if (s.group) s.group.visible = this.statuesEnabled;
+          if (!this.statuesEnabled && s.isPlayingAudio) {
+            this.stopStatueAudio(s);
+          }
+        });
+      }
+
+      if (this.mp && this.mp.isHost && typeof this.mp.notifyModeSync === 'function') {
+        this.mp.notifyModeSync(this.smittyEnabled, this.statuesEnabled);
+      }
+    }
+
+    updateStatuesModeUI() {
+      const onBtn = this.dom.optionsStatuesOnBtn;
+      const offBtn = this.dom.optionsStatuesOffBtn;
+
+      if (onBtn) {
+        if (this.statuesEnabled) {
+          onBtn.classList.add('active');
+          onBtn.setAttribute('aria-pressed', 'true');
+        } else {
+          onBtn.classList.remove('active');
+          onBtn.setAttribute('aria-pressed', 'false');
+        }
+      }
+
+      if (offBtn) {
+        if (!this.statuesEnabled) {
+          offBtn.classList.add('active');
+          offBtn.setAttribute('aria-pressed', 'true');
+        } else {
+          offBtn.classList.remove('active');
+          offBtn.setAttribute('aria-pressed', 'false');
+        }
+      }
+
+      // Show/hide host only notice in options modal
+      const isCoopClient = (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost);
+      if (this.dom.optionsHostOnlyNote) {
+        this.dom.optionsHostOnlyNote.classList.toggle('hidden', !isCoopClient);
+      }
+      if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.style.opacity = isCoopClient ? '0.5' : '1';
+      if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.style.opacity = isCoopClient ? '0.5' : '1';
+      if (onBtn) onBtn.style.opacity = isCoopClient ? '0.5' : '1';
+      if (offBtn) offBtn.style.opacity = isCoopClient ? '0.5' : '1';
+    }
+
     updateSmittyModeUI() {
       const onBtns = [this.dom.smittyOnBtn, this.dom.optionsSmittyOnBtn];
       const offBtns = [this.dom.smittyOffBtn, this.dom.optionsSmittyOffBtn];
+
+      // Disallow Curator and Statues toggle for non-hosts in multiplayer
+      const isCoopClient = (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost);
+      if (this.dom.optionsHostOnlyNote) {
+        this.dom.optionsHostOnlyNote.classList.toggle('hidden', !isCoopClient);
+      }
+      if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.style.opacity = isCoopClient ? '0.5' : '1';
+      if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.style.opacity = isCoopClient ? '0.5' : '1';
 
       onBtns.forEach((btn) => {
         if (!btn) return;
@@ -14483,6 +14587,10 @@
       this.flashlight.intensity = this.flashlightOn ? 1.65 : 0;
       this.audio.playFlashlightClick();
       this.leftHandShakeTimer = 0.35; // Tactile hand tremor/shake when toggling flashlight
+      // Immediate transform broadcast so remote players hear click and see light change in real-time
+      if (this.mp && typeof this.mp.sendLocalTransform === 'function') {
+        this.mp.sendLocalTransform();
+      }
     }
 
     openArtModal(painting) {
@@ -15260,15 +15368,22 @@
         this.smittyMesh.visible = true;
       }
 
+      // Update remote player X-ray outlines immediately
+      if (this.mp && this.mp.remotePlayers) {
+        this.mp.remotePlayers.forEach(p => {
+          if (p.xrayGroup) p.xrayGroup.visible = this.isSmittyXray;
+        });
+      }
+
       this.updateSpectatorBadge();
 
       if (this.isSmittyXray) {
         this.showSystemNotification(
-          T('hud.xray_enabled', 'CURATOR RED OUTLINE ENABLED')
+          T('hud.xray_enabled', 'SPECTATOR OUTLINE (CURATOR & PLAYERS) ENABLED')
         );
       } else {
         this.showSystemNotification(
-          T('hud.xray_disabled', 'CURATOR RED OUTLINE DISABLED')
+          T('hud.xray_disabled', 'SPECTATOR OUTLINE DISABLED')
         );
       }
     }
@@ -15578,6 +15693,34 @@
               target: statue,
               hitPoint,
               hit: () => this.hitStatue(statue, hitPoint, raycaster.ray.direction)
+            });
+          }
+        });
+      }
+
+      // Multiplayer PvP player hitboxes
+      if (this.mp && this.mp.remotePlayers) {
+        this.mp.remotePlayers.forEach((p, remoteId) => {
+          if (!p.group) return;
+          const rPos = p.group.position;
+          // Player bounding box (approx 0.8m diameter, 1.8m tall)
+          const hitBox = new THREE.Box3(
+            new THREE.Vector3(rPos.x - 0.42, rPos.y, rPos.z - 0.42),
+            new THREE.Vector3(rPos.x + 0.42, rPos.y + 1.85, rPos.z + 0.42)
+          );
+          const hitPoint = new THREE.Vector3();
+          if (raycaster.ray.intersectBox(hitBox, hitPoint)) {
+            candidates.push({
+              target: rPos,
+              hitPoint,
+              hit: () => {
+                // Spawn blood locally immediately
+                this.spawnLiquidBlood(hitPoint, raycaster.ray.direction, 28, rPos.y);
+                // Notify the hit player and everyone in room
+                if (typeof this.mp.notifyPlayerHit === 'function') {
+                  this.mp.notifyPlayerHit(remoteId, hitPoint, raycaster.ray.direction, 25);
+                }
+              }
             });
           }
         });
@@ -16791,6 +16934,41 @@
           if (!isClientInCoop) {
             if (this.updateStatues) this.updateStatues(delta);
             if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
+          } else if (this.statues) {
+            // Client smoothly interpolates statue positions and plays synced animation
+            const now = performance.now() / 1000;
+            this.statues.forEach(s => {
+              if (s.targetX !== undefined) {
+                s.x = THREE.MathUtils.lerp(s.x, s.targetX, Math.min(1, delta * 12));
+                s.y = THREE.MathUtils.lerp(s.y, s.targetY, Math.min(1, delta * 12));
+                s.z = THREE.MathUtils.lerp(s.z, s.targetZ, Math.min(1, delta * 12));
+                let diffYaw = s.targetYaw - s.yaw;
+                while (diffYaw < -Math.PI) diffYaw += Math.PI * 2;
+                while (diffYaw > Math.PI) diffYaw -= Math.PI * 2;
+                s.yaw += diffYaw * Math.min(1, delta * 12);
+                if (s.group) {
+                  s.group.position.set(s.x, s.y, s.z);
+                  s.group.rotation.y = s.yaw;
+                }
+              }
+
+              // Client dancing squash/stretch animation
+              if (s.isDancing && !s.cfg.noAnimation && s.statueRoot) {
+                const elapsed = now - (s.danceStartTime || now);
+                const freq = 9.2;
+                const phase = elapsed * freq;
+                const osc = Math.sin(phase);
+                const squash = 1.0 + 0.30 * osc;
+                const stretch = 1.0 / Math.sqrt(Math.max(0.4, squash));
+                s.statueRoot.scale.set(stretch, squash, stretch);
+                s.statueRoot.position.y = (s.baseY || 0) + Math.max(0, osc) * 0.42;
+                s.statueRoot.rotation.z = Math.sin(phase * 0.5) * 0.14;
+              } else if (s.statueRoot && !s.isDancing) {
+                s.statueRoot.scale.set(1, 1, 1);
+                s.statueRoot.position.y = s.baseY || 0;
+                s.statueRoot.rotation.set(0, 0, 0);
+              }
+            });
           }
           this.updateLiquidBlood(delta);
           this.updateAmmoPickups(delta);
@@ -17431,6 +17609,10 @@
       s.statueRoot.rotation.set(0, 0, 0);
       s.aiState = "IDLE";
       s.aiTimer = 0.8 + Math.random() * 1.5;
+
+      if (this.mp && typeof this.mp.notifyStatueTrigger === 'function') {
+        this.mp.notifyStatueTrigger(s.cfg.id, 'stop', 0);
+      }
     }
 
     interactStatue(s) {
@@ -17491,6 +17673,13 @@
       const title = (chosenAudio && chosenAudio === s.audioElAlt) ? s.cfg.songTitleAlt : s.cfg.songTitle;
       if (title) this.showSystemNotification(title);
       if (this.triggerLeftHandGrab) this.triggerLeftHandGrab();
+
+      // Broadcast statue trigger to all other players in multiplayer
+      if (this.mp && typeof this.mp.notifyStatueTrigger === 'function') {
+        const poolIndex = s.lastPoolIdx !== undefined ? s.lastPoolIdx : 0;
+        const isAlt = (chosenAudio && chosenAudio === s.audioElAlt);
+        this.mp.notifyStatueTrigger(s.cfg.id, 'play', isAlt ? -2 : poolIndex);
+      }
     }
 
     exportLevelJSON() {
@@ -17553,26 +17742,72 @@
     }
 
     onCuratorSync(data) {
-      if (!this.smitty) return;
-      this.smitty.position.set(data.x, data.y, data.z);
-      this.smitty.rotation.y = data.yaw;
+      const s = this.smittyMesh || this.smitty;
+      if (!s) return;
+      s.position.set(data.x, data.y, data.z);
+      s.rotation.y = data.yaw;
       this.smittyState = data.state;
-      this.smitty.visible = data.visible;
+      if (this.smittyPos) this.smittyPos.set(data.x, data.y, data.z);
+      s.visible = !!data.visible;
+      if (this.smittyXrayGroup) {
+        this.smittyXrayGroup.visible = this.isSmittyXray;
+      }
     }
 
     onStatuesSync(statueList) {
       if (!this.statues || !Array.isArray(statueList)) return;
+      const now = performance.now() / 1000;
       statueList.forEach(item => {
         const s = this.statues[item.i];
         if (!s) return;
-        s.x = item.x;
-        s.y = item.y;
-        s.z = item.z;
-        s.yaw = item.yaw;
-        if (s.group) {
-          s.group.position.set(s.x, s.y, s.z);
-          s.group.rotation.y = s.yaw;
+        s.targetX = item.x;
+        s.targetY = item.y;
+        s.targetZ = item.z;
+        s.targetYaw = item.yaw;
+        s.isDancing = !!item.playing;
+
+        // If not initialized yet, snap immediately
+        if (s.x === undefined) {
+          s.x = item.x;
+          s.y = item.y;
+          s.z = item.z;
+          s.yaw = item.yaw;
         }
+
+        if (s.group) {
+          if (item.vis !== undefined) s.group.visible = item.vis;
+        }
+
+        // Sync audio & animation playing state from host
+        if (item.playing) {
+          if (!s.isPlayingAudio) {
+            let track = s.audioEl;
+            let duration = s.cfg.duration || 10.0;
+            if (item.isAlt && s.audioElAlt) {
+              track = s.audioElAlt;
+              duration = s.cfg.durationAlt || 21.29;
+            } else if (item.poolIdx >= 0 && s.audioPoolEls && s.audioPoolEls[item.poolIdx]) {
+              track = s.audioPoolEls[item.poolIdx].el;
+              duration = s.audioPoolEls[item.poolIdx].duration;
+            }
+            s.isPlayingAudio = true;
+            s.isDancing = !s.cfg.noAnimation;
+            s.danceStartTime = item.danceStart || now;
+            s.activeDuration = item.dur || duration;
+            s.activeAudioEl = track;
+            this.activeStatueAudio = track;
+            if (track) {
+              track.currentTime = Math.max(0, now - s.danceStartTime);
+              track.volume = 0.88;
+              track.play().catch(() => {});
+            }
+          }
+        } else {
+          if (s.isPlayingAudio) {
+            this.stopStatueAudio(s);
+          }
+        }
+
         if (s.setAnim && item.anim && s.currentAnim !== item.anim) {
           s.setAnim(item.anim);
         }
@@ -17624,6 +17859,85 @@
       }
     }
 
+    onRemotePlayerHit(data) {
+      if (!data) return;
+      const hitPt = new THREE.Vector3(data.x, data.y, data.z);
+      const shotDir = new THREE.Vector3(data.dirX, data.dirY, data.dirZ);
+      // Spawn liquid blood spray & floor puddle from the impact
+      this.spawnLiquidBlood(hitPt, shotDir, 28, data.y);
+
+      // If local player was the target hit by the bullet:
+      if (this.mp && data.targetId === this.mp.clientId) {
+        if (this.dom.damageOverlay) {
+          this.dom.damageOverlay.style.opacity = '1';
+          setTimeout(() => {
+            if (this.dom.damageOverlay) this.dom.damageOverlay.style.opacity = '0';
+          }, 350);
+        }
+        const dmg = data.damage || 25;
+        this.health -= dmg;
+        this.updateHud();
+        this.playerPitch += (Math.random() - 0.5) * 0.20;
+        this.playerYaw += (Math.random() - 0.5) * 0.20;
+        if (this.health <= 0) {
+          this.triggerGameOver();
+        }
+      }
+    }
+
+    onRemoteStatueTrigger(data) {
+      if (!data || !this.statues) return;
+      const s = this.statues.find(st => st.cfg.id === data.statueId);
+      if (!s) return;
+      if (data.action === 'stop') {
+        this.stopStatueAudio(s);
+      } else if (data.action === 'play') {
+        let chosenAudio = s.audioEl;
+        let chosenDuration = s.cfg.duration || 10.0;
+        if (data.trackIdx === -2 && s.audioElAlt) {
+          chosenAudio = s.audioElAlt;
+          chosenDuration = s.cfg.durationAlt || 21.29;
+        } else if (data.trackIdx >= 0 && s.audioPoolEls && s.audioPoolEls[data.trackIdx]) {
+          chosenAudio = s.audioPoolEls[data.trackIdx].el;
+          chosenDuration = s.audioPoolEls[data.trackIdx].duration;
+        }
+        s.isPlayingAudio = true;
+        s.isDancing = !s.cfg.noAnimation;
+        s.danceStartTime = performance.now() / 1000;
+        s.activeDuration = chosenDuration;
+        s.activeAudioEl = chosenAudio;
+        this.activeStatueAudio = chosenAudio;
+        if (chosenAudio) {
+          chosenAudio.currentTime = 0;
+          chosenAudio.volume = 0.88;
+          chosenAudio.play().catch(() => {});
+        }
+      }
+    }
+
+    onRemoteModeSync(data) {
+      if (!data) return;
+      if (data.curatorEnabled !== undefined) {
+        this.smittyEnabled = !!data.curatorEnabled;
+        this.updateSmittyModeUI();
+        if (this.smittyMesh) {
+          this.smittyMesh.visible = this.smittyEnabled;
+        }
+      }
+      if (data.statuesEnabled !== undefined) {
+        this.statuesEnabled = !!data.statuesEnabled;
+        this.updateStatuesModeUI();
+        if (this.statues) {
+          this.statues.forEach(s => {
+            if (s.group) s.group.visible = this.statuesEnabled;
+            if (!this.statuesEnabled && s.isPlayingAudio) {
+              this.stopStatueAudio(s);
+            }
+          });
+        }
+      }
+    }
+
     onFullGameStateSync(data) {
       if (data.keysCollected !== undefined) {
         this.relicsCollected = data.keysCollected;
@@ -17643,6 +17957,25 @@
       }
       if (data.videoState) {
         this.onRemoteVideoStateSync(data.videoState);
+      }
+      if (data.curatorEnabled !== undefined) {
+        this.smittyEnabled = !!data.curatorEnabled;
+        this.updateSmittyModeUI();
+        if (this.smittyMesh) {
+          this.smittyMesh.visible = this.smittyEnabled;
+        }
+      }
+      if (data.statuesEnabled !== undefined) {
+        this.statuesEnabled = !!data.statuesEnabled;
+        this.updateStatuesModeUI();
+        if (this.statues) {
+          this.statues.forEach(s => {
+            if (s.group) s.group.visible = this.statuesEnabled;
+            if (!this.statuesEnabled && s.isPlayingAudio) {
+              this.stopStatueAudio(s);
+            }
+          });
+        }
       }
       this.updateHud();
     }

@@ -178,12 +178,20 @@
       <h2 class="horror-title" data-text="options.title">OPTIONS</h2>
 
       <div class="options-section">
-        <div class="smitty-mode-bar">
+        <div class="smitty-mode-bar" id="curator-mode-bar">
           <button id="options-smitty-on-btn" class="smitty-mode-btn active mode-on" type="button">
             <span class="mode-title" data-text="options.curator_on">Curator: ON</span>
           </button>
           <button id="options-smitty-off-btn" class="smitty-mode-btn mode-off" type="button">
             <span class="mode-title" data-text="options.curator_off">Curator: OFF</span>
+          </button>
+        </div>
+        <div class="smitty-mode-bar" id="statues-mode-bar">
+          <button id="options-statues-on-btn" class="smitty-mode-btn active mode-on" type="button">
+            <span class="mode-title">Statues: ON</span>
+          </button>
+          <button id="options-statues-off-btn" class="smitty-mode-btn mode-off" type="button">
+            <span class="mode-title">Statues: OFF</span>
           </button>
         </div>
         <div class="smitty-mode-bar" style="margin-bottom: 0;">
@@ -194,6 +202,7 @@
             <span class="mode-title" data-text="options.music_off">Music: OFF</span>
           </button>
         </div>
+        <p id="options-host-only-note" class="player-character-status hidden" style="margin-top: 8px; font-size: 13px; color: #fbbf24;">Only the multiplayer host can toggle the Curator and Statues.</p>
       </div>
 
       <div class="settings-card player-view-settings">
@@ -378,10 +387,10 @@
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
   <script src="libs/mqtt.min.js"></script>
-  <script src="multiplayer.js?v=2.3.3"></script>
+  <script src="multiplayer.js?v=2.4.0"></script>
   <script src="character_select.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1793780000"></script>
-  <script src="game.js?v=2.4.3"></script>
+  <script src="game.js?v=2.5.0"></script>
 </body>
 </html>

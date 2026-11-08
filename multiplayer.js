@@ -197,7 +197,17 @@
             p.targetPitch = data.pitch;
             p.anim = data.anim || 'Idle';
             if (p.flashlight) {
-              p.flashlight.visible = !!data.fl;
+              const prevFl = p.flashlight.visible;
+              const nextFl = !!data.fl;
+              p.flashlight.visible = nextFl;
+              // Play spatialized 3D flashlight click when remote player toggles flashlight
+              if (prevFl !== nextFl && this.game && this.game.audio && typeof this.game.audio.playFlashlightClick === 'function') {
+                const myPos = this.game.camera ? this.game.camera.position : this.game.playerPos;
+                const d = myPos ? myPos.distanceTo(p.group.position) : 0;
+                if (d < 30) {
+                  this.game.audio.playFlashlightClick();
+                }
+              }
             }
           } else {
             this.spawnRemotePlayer(data.sender, data.charIdx || 0, { x: data.x, y: data.y, z: data.z });
@@ -253,6 +263,24 @@
           }
           break;
 
+        case 'player_hit':
+          if (this.game && typeof this.game.onRemotePlayerHit === 'function') {
+            this.game.onRemotePlayerHit(data);
+          }
+          break;
+
+        case 'statue_trigger':
+          if (this.game && typeof this.game.onRemoteStatueTrigger === 'function') {
+            this.game.onRemoteStatueTrigger(data);
+          }
+          break;
+
+        case 'mode_sync':
+          if (!this.isHost && this.game && typeof this.game.onRemoteModeSync === 'function') {
+            this.game.onRemoteModeSync(data);
+          }
+          break;
+
         case 'game_state_sync':
           if (!this.isHost && this.game && typeof this.game.onFullGameStateSync === 'function') {
             this.game.onFullGameStateSync(data);
@@ -291,19 +319,29 @@
         type: 'game_state_sync',
         relicStates: relicStates,
         relicsCollected: this.game.relicsCollected || 0,
-        videoState: videoState
+        videoState: videoState,
+        curatorEnabled: this.game.smittyEnabled !== undefined ? !!this.game.smittyEnabled : true,
+        statuesEnabled: this.game.statuesEnabled !== undefined ? !!this.game.statuesEnabled : true
       });
     }
 
     startNetworkLoop() {
       if (this.tickInterval) clearInterval(this.tickInterval);
       this.sendHello();
+      let tickCount = 0;
       this.tickInterval = setInterval(() => {
         this.sendLocalTransform();
         if (this.isHost) {
+          tickCount++;
+          // Send curator every tick (fast chase tracking)
           this.sendCuratorState();
-          this.sendStatuesState();
-          this.sendCratesState();
+          // Send statue AI state at 15Hz (every 2nd tick) - prevents network saturation and JSON parse thrashing
+          if (tickCount % 2 === 0) {
+            this.sendStatuesState();
+          }
+          if (tickCount % 3 === 0) {
+            this.sendCratesState();
+          }
         }
       }, 1000 / this.broadcastRate);
     }
@@ -343,16 +381,19 @@
     }
 
     sendCuratorState() {
-      if (!this.isHost || !this.game || !this.game.smitty) return;
-      const s = this.game.smitty;
+      if (!this.isHost || !this.game) return;
+      const s = this.game.smittyMesh || this.game.smitty;
+      if (!s) return;
+      const pos = this.game.smittyPos || s.position;
+      const rotY = s.rotation ? s.rotation.y : 0;
       this.publish({
         type: 'curator_sync',
-        x: Number(s.position.x.toFixed(3)),
-        y: Number(s.position.y.toFixed(3)),
-        z: Number(s.position.z.toFixed(3)),
-        yaw: Number(s.rotation.y.toFixed(3)),
+        x: Number(pos.x.toFixed(3)),
+        y: Number(pos.y.toFixed(3)),
+        z: Number(pos.z.toFixed(3)),
+        yaw: Number(rotY.toFixed(3)),
         state: this.game.smittyState || 'patrol',
-        visible: s.visible
+        visible: this.game.smittyEnabled ? !!s.visible : false
       });
     }
 
@@ -386,13 +427,19 @@
       this.game.statues.forEach((s, idx) => {
         statueData.push({
           i: idx,
+          id: s.cfg.id,
           x: Number(s.x.toFixed(3)),
           y: Number(s.y.toFixed(3)),
           z: Number(s.z.toFixed(3)),
           yaw: Number(s.yaw.toFixed(3)),
           state: s.aiState || 'IDLE',
           anim: s.currentAnim || 'idle',
-          playing: !!s.isPlayingAudio
+          playing: !!s.isPlayingAudio,
+          poolIdx: s.lastPoolIdx !== undefined ? s.lastPoolIdx : -1,
+          isAlt: !!(s.activeAudioEl && s.activeAudioEl === s.audioElAlt),
+          danceStart: s.danceStartTime ? Number(s.danceStartTime.toFixed(2)) : 0,
+          dur: s.activeDuration ? Number(s.activeDuration.toFixed(2)) : 0,
+          vis: !!(s.group && s.group.visible)
         });
       });
       this.publish({
@@ -442,6 +489,38 @@
         z: Number(z.toFixed(3)),
         yaw: Number(yaw.toFixed(3)),
         pitch: Number(pitch.toFixed(3))
+      });
+    }
+
+    notifyPlayerHit(targetId, hitPoint, shotDir, damage = 25) {
+      this.publish({
+        type: 'player_hit',
+        targetId: targetId,
+        x: Number(hitPoint.x.toFixed(3)),
+        y: Number(hitPoint.y.toFixed(3)),
+        z: Number(hitPoint.z.toFixed(3)),
+        dirX: Number(shotDir.x.toFixed(3)),
+        dirY: Number(shotDir.y.toFixed(3)),
+        dirZ: Number(shotDir.z.toFixed(3)),
+        damage: damage
+      });
+    }
+
+    notifyStatueTrigger(statueId, action, trackIdx = 0) {
+      this.publish({
+        type: 'statue_trigger',
+        statueId: statueId,
+        action: action, // 'play' or 'stop'
+        trackIdx: trackIdx
+      });
+    }
+
+    notifyModeSync(curatorEnabled, statuesEnabled) {
+      if (!this.isHost) return;
+      this.publish({
+        type: 'mode_sync',
+        curatorEnabled: !!curatorEnabled,
+        statuesEnabled: !!statuesEnabled
       });
     }
 
@@ -542,6 +621,41 @@
           });
           remoteData.mixer = new THREE.AnimationMixer(model);
 
+          // Add X-Ray Spectator outline meshes to remote player
+          if (this.game && this.game.smittyXrayFillMat && this.game.smittyXrayWireMat) {
+            const xrayGroup = new THREE.Group();
+            xrayGroup.visible = !!this.game.isSmittyXray;
+            model.traverse((child) => {
+              if (child.isMesh && child.geometry) {
+                if (child.isSkinnedMesh) {
+                  const fillMesh = new THREE.SkinnedMesh(child.geometry, this.game.smittyXrayFillMat);
+                  fillMesh.bind(child.skeleton, child.bindMatrix);
+                  fillMesh.renderOrder = 999;
+                  fillMesh.frustumCulled = false;
+                  xrayGroup.add(fillMesh);
+
+                  const wireMesh = new THREE.SkinnedMesh(child.geometry, this.game.smittyXrayWireMat);
+                  wireMesh.bind(child.skeleton, child.bindMatrix);
+                  wireMesh.renderOrder = 1000;
+                  wireMesh.frustumCulled = false;
+                  xrayGroup.add(wireMesh);
+                } else {
+                  const fillMesh = new THREE.Mesh(child.geometry, this.game.smittyXrayFillMat);
+                  fillMesh.renderOrder = 999;
+                  fillMesh.frustumCulled = false;
+                  xrayGroup.add(fillMesh);
+
+                  const wireMesh = new THREE.Mesh(child.geometry, this.game.smittyXrayWireMat);
+                  wireMesh.renderOrder = 1000;
+                  wireMesh.frustumCulled = false;
+                  xrayGroup.add(wireMesh);
+                }
+              }
+            });
+            model.add(xrayGroup);
+            remoteData.xrayGroup = xrayGroup;
+          }
+
           gltf.animations.forEach((clip) => {
             const action = remoteData.mixer.clipAction(clip);
             action.setEffectiveTimeScale(1);
@@ -605,6 +719,11 @@
             1.45 + Math.sin(pitch) * 10,
             -Math.cos(0) * Math.cos(pitch) * 10
           );
+        }
+
+        // Sync X-ray outline visibility with game spectator mode
+        if (p.xrayGroup && this.game) {
+          p.xrayGroup.visible = !!this.game.isSmittyXray;
         }
 
         // Update animation mixer
