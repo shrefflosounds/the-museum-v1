@@ -4548,14 +4548,14 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.2 inside shaft, avoiding doorway overlap)
-        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
-        landBox.position.set(0, y0 - 0.16, -15.5);
+        // Solid South Landing box at Floor fl (x: -4.0..4.0, z: -16.8..-14.0 inside shaft, meeting doorway at z = -14.0 cleanly)
+        const landBox = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.80), mats.stairStone);
+        landBox.position.set(0, y0 - 0.16, -15.4);
         this.scene.add(landBox);
 
-        this.createCeiling(0, y0 + ceilH, -15.5, 8.0, 2.6, mats.ceiling);
+        this.createCeiling(0, y0 + ceilH, -15.4, 8.0, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(0, y0 - 0.06, -15.5, 8.0, 2.6, mats.ceiling);
+          this.createCeiling(0, y0 - 0.06, -15.4, 8.0, 2.80, mats.ceiling);
         }
 
         this.createRoomSign(0, y0 + 2.4, -14.28, Math.PI, T('sign.stairwell_b', 'STAIRWELL B • FLOOR {number}', { number: fl + 1 }), fl === 0 ? T('sign.stairwell_b.subtitle_floor1', 'EXIT LEVEL') : T('sign.stairwell_b.subtitle_upper', 'USE WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4625,15 +4625,15 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl (x: -24.0..-16.0 inside shaft, z: 18.20..20.80 strictly inside the stairwell)
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.5);
+        // Solid North Landing box at Floor fl (x: -24.0..-16.0 inside shaft, z: 18.00..20.80 meeting West Wing doorway at z = 18.00 cleanly with zero gap)
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.80), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.4);
         this.scene.add(landBoxSW);
 
         // Ceiling closure for this floor's landing
-        this.createCeiling(-20, y0 + ceilH, 19.5, 8.0, 2.6, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 19.4, 8.0, 2.80, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.5, 8.0, 2.6, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.4, 8.0, 2.80, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
