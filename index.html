@@ -17,6 +17,12 @@
   <!-- 3D Render Canvas -->
   <div id="game-container">
     <canvas id="game-canvas" tabindex="-1"></canvas>
+    <div id="video-screen-layer">
+      <div id="video-screen-container">
+        <div id="yt-player"></div>
+      </div>
+    </div>
+
   </div>
   <!-- Atmospheric Overlays -->
   <div id="vignette-overlay"></div>
@@ -369,6 +375,7 @@
   </div>
 
   <!-- Three.js and Loaders -->
+  <script src="https://www.youtube.com/iframe_api"></script>
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
   <script src="libs/mqtt.min.js"></script>

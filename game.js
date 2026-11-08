@@ -1105,14 +1105,6 @@
   },
   {
     "floor": 0,
-    "x": -29.0,
-    "y": 2.75,
-    "z": 27.65,
-    "rotY": 3.1416,
-    "maxW": 2.8
-  },
-  {
-    "floor": 0,
     "x": -12.5,
     "y": 2.75,
     "z": -17.65,
@@ -1421,14 +1413,6 @@
     "y": 7.95,
     "z": 23.0,
     "rotY": 1.5708,
-    "maxW": 2.8
-  },
-  {
-    "floor": 1,
-    "x": -29.0,
-    "y": 7.95,
-    "z": 27.65,
-    "rotY": 3.1416,
     "maxW": 2.8
   },
   {
@@ -1745,14 +1729,6 @@
   },
   {
     "floor": 2,
-    "x": -29.0,
-    "y": 13.15,
-    "z": 27.65,
-    "rotY": 3.1416,
-    "maxW": 2.8
-  },
-  {
-    "floor": 2,
     "x": -12.5,
     "y": 13.15,
     "z": -17.65,
@@ -2061,14 +2037,6 @@
     "y": 18.35,
     "z": 23.0,
     "rotY": 1.5708,
-    "maxW": 2.8
-  },
-  {
-    "floor": 3,
-    "x": -29.0,
-    "y": 18.35,
-    "z": 27.65,
-    "rotY": 3.1416,
     "maxW": 2.8
   },
   {
@@ -3830,6 +3798,16 @@
       this.scene = null;
       this.camera = null;
       this.clock = new THREE.Clock();
+      this.videoInstallationRooms = [];
+      this.activeVideoRoom = null;
+      this.focusedVideoControl = null;
+      this.ytPlayer = null;
+      this.ytReady = false;
+      this.ytPendingCmds = [];
+      this.ytCurrentPlaylist = null;
+      this.ytIsMuted = false;
+      this.ytIsPaused = false;
+      this.initYouTubeAPI();
       this.texLoader = new THREE.TextureLoader();
 
       this.gameStarted = false;
@@ -4466,8 +4444,8 @@
       this.createExhibitionPlinth(-26, y0, 12, 2.4, 1.1, 2.4, fl < 3);
       this.createMuseumBench(-26, y0, 6);
 
-      // West Office / SW Office Desk (x: -29, z: 24)
-      this.createInfoDesk(-29, y0, 24, mats.mahogany);
+      // Video Installation Room & Interactive Playlist Deck (x: -29, z: 18..28)
+      this.createVideoInstallationRoom(fl, y0, mats);
 
       // Restroom Suites & Archival Laboratories (Central Service Core z: -14..-6)
       this.createRealisticRestrooms(fl, y0, mats);
@@ -10169,6 +10147,454 @@
       }
     }
 
+    initYouTubeAPI() {
+      const PLAYLISTS_BY_FLOOR = [
+        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld', // Floor 1 (User's Curated Playlist)
+        'PL8HAkqKX065AF3K2LdzwhQhvwhAIvynUV', // Floor 2 (Highlights at The Met)
+        'PL8HAkqKX065CROqCONrVtjJBl-p9sNsxj', // Floor 3 (Women and Art Exhibition)
+        'PL8HAkqKX065DVI9NdnlT8HztJiftU9QSZ'  // Floor 4 (Met Modern Perspectives)
+      ];
+      this.videoPlaylists = PLAYLISTS_BY_FLOOR;
+
+      const mountPlayer = () => {
+        if (!window.YT || !window.YT.Player) {
+          setTimeout(mountPlayer, 200);
+          return;
+        }
+        try {
+          this.ytPlayer = new window.YT.Player('yt-player', {
+            height: '100%',
+            width: '100%',
+            playerVars: {
+              autoplay: 1,
+              controls: 0,
+              disablekb: 1,
+              enablejsapi: 1,
+              fs: 0,
+              iv_load_policy: 3,
+              modestbranding: 1,
+              rel: 0,
+              origin: window.location.origin
+            },
+            events: {
+              onReady: (event) => {
+                this.ytReady = true;
+                if (this.ytPendingCmds && this.ytPendingCmds.length > 0) {
+                  this.ytPendingCmds.forEach(cmd => cmd());
+                  this.ytPendingCmds = [];
+                }
+              },
+              onError: (err) => {
+                console.warn('YouTube Player Event:', err);
+              }
+            }
+          });
+        } catch (e) {
+          console.warn('YouTube init exception:', e);
+        }
+      };
+
+      if (window.YT && window.YT.Player) {
+        mountPlayer();
+      } else {
+        window.onYouTubeIframeAPIReady = () => mountPlayer();
+        setTimeout(mountPlayer, 800);
+      }
+    }
+
+    createVideoInstallationRoom(fl, y0, mats) {
+      // 1. South Back Wall Video Projection Screen (Image 2 Red Rectangle)
+      // Room bounds: x: -34..-24, z: 18..28. Back south wall is at z = 28.
+      const screenW = 6.4;
+      const screenH = 3.6;
+      const screenX = -29.0;
+      const screenY = y0 + 2.70;
+      const screenZ = 27.88;
+
+      const screenGroup = new THREE.Group();
+      screenGroup.position.set(screenX, screenY, screenZ);
+
+      // Matte dark outer frame / bezel
+      const frameThickness = 0.08;
+      const frameDepth = 0.06;
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x11161d,
+        roughness: 0.45,
+        metalness: 0.85
+      });
+
+      // Top & Bottom border rails
+      const topRail = new THREE.Mesh(new THREE.BoxGeometry(screenW + frameThickness * 2, frameThickness, frameDepth), frameMat);
+      topRail.position.set(0, screenH / 2 + frameThickness / 2, 0);
+      screenGroup.add(topRail);
+
+      const botRail = new THREE.Mesh(new THREE.BoxGeometry(screenW + frameThickness * 2, frameThickness, frameDepth), frameMat);
+      botRail.position.set(0, -screenH / 2 - frameThickness / 2, 0);
+      screenGroup.add(botRail);
+
+      // Left & Right border rails
+      const leftRail = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, screenH, frameDepth), frameMat);
+      leftRail.position.set(-screenW / 2 - frameThickness / 2, 0, 0);
+      screenGroup.add(leftRail);
+
+      const rightRail = new THREE.Mesh(new THREE.BoxGeometry(frameThickness, screenH, frameDepth), frameMat);
+      rightRail.position.set(screenW / 2 + frameThickness / 2, 0, 0);
+      screenGroup.add(rightRail);
+
+      // Screen mesh backdrop
+      const screenMat = new THREE.MeshBasicMaterial({
+        color: 0x05070a,
+        side: THREE.FrontSide
+      });
+      const screenMesh = new THREE.Mesh(new THREE.PlaneGeometry(screenW, screenH), screenMat);
+      screenMesh.position.set(0, 0, frameDepth * 0.4);
+      screenMesh.rotation.y = Math.PI; // Face north into room
+      screenGroup.add(screenMesh);
+
+      // Subtle projector ambient glow directed back into room
+      const screenLight = new THREE.PointLight(0x7dd3fc, 0.45, 12.0, 1.6);
+      screenLight.position.set(0, 0, -1.2);
+      screenGroup.add(screenLight);
+
+      this.scene.add(screenGroup);
+
+      // 2. Control Console Deck (Replacing brown center box at x: -29, z: 24)
+      const deckGroup = new THREE.Group();
+      deckGroup.position.set(-29.0, y0, 24.0);
+
+      const deckBaseMat = mats.mahogany;
+      const consoleMetalMat = new THREE.MeshStandardMaterial({
+        color: 0x181e24,
+        roughness: 0.35,
+        metalness: 0.85
+      });
+      const topPlateMat = new THREE.MeshStandardMaterial({
+        color: 0x0f172a,
+        roughness: 0.25,
+        metalness: 0.90
+      });
+
+      // Heavy museum plinth base
+      const plinthBase = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.16, 1.1), consoleMetalMat);
+      plinthBase.position.set(0, 0.08, 0);
+      deckGroup.add(plinthBase);
+
+      // Sculpted mahogany pedestal body
+      const pedestalBody = new THREE.Mesh(new THREE.BoxGeometry(1.9, 0.80, 0.85), deckBaseMat);
+      pedestalBody.position.set(0, 0.54, 0);
+      deckGroup.add(pedestalBody);
+
+      // Angled console top wedge tilted 22 degrees towards north doorway
+      const consoleHead = new THREE.Group();
+      consoleHead.position.set(0, 0.94, 0);
+      consoleHead.rotation.x = 0.38; // Tilted towards player viewing from north
+
+      const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(1.82, 0.08, 0.72), topPlateMat);
+      consoleHead.add(consolePlate);
+
+      // Helper to generate dynamic button textures with crisp vector canvas icons
+      const makeButtonTexture = (label, symbol) => {
+        const can = document.createElement('canvas');
+        can.width = 256;
+        can.height = 256;
+        const ctx = can.getContext('2d');
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(0, 0, 256, 256);
+
+        // Circular bevel border
+        ctx.beginPath();
+        ctx.arc(128, 128, 110, 0, Math.PI * 2);
+        ctx.lineWidth = 14;
+        ctx.strokeStyle = '#38bdf8';
+        ctx.stroke();
+
+        ctx.fillStyle = '#f8fafc';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'bold 96px sans-serif';
+        ctx.fillText(symbol, 128, 118);
+
+        ctx.font = 'bold 26px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(label, 128, 192);
+
+        const tex = new THREE.CanvasTexture(can);
+        tex.anisotropy = 4;
+        return tex;
+      };
+
+      const btnDefs = [
+        { id: 'prev', label: 'PREV', symbol: '◀', relX: -0.54, prompt: '[E] PREVIOUS VIDEO' },
+        { id: 'play', label: 'PLAY', symbol: '▶❚❚', relX: -0.18, prompt: '[E] PAUSE / PLAY' },
+        { id: 'next', label: 'NEXT', symbol: '▶', relX: 0.18, prompt: '[E] NEXT VIDEO' },
+        { id: 'mute', label: 'MUTE', symbol: '🔊', relX: 0.54, prompt: '[E] MUTE / UNMUTE' }
+      ];
+
+      const interactiveButtons = [];
+
+      btnDefs.forEach(b => {
+        const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
+        const tex = makeButtonTexture(b.label, b.symbol);
+        const capMat = new THREE.MeshStandardMaterial({
+          map: tex,
+          roughness: 0.3,
+          metalness: 0.6,
+          emissive: 0x0284c7,
+          emissiveIntensity: 0.25
+        });
+        const sideMat = new THREE.MeshStandardMaterial({
+          color: 0x334155,
+          roughness: 0.35,
+          metalness: 0.8
+        });
+        const btnMesh = new THREE.Mesh(btnGeo, [sideMat, capMat, sideMat]);
+        btnMesh.rotation.x = 0;
+        btnMesh.position.set(b.relX, 0.05, 0.0);
+        consoleHead.add(btnMesh);
+
+        interactiveButtons.push({
+          id: b.id,
+          prompt: b.prompt,
+          mesh: btnMesh,
+          origY: 0.05,
+          material: capMat,
+          floor: fl,
+          worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 1.05, 24.0)
+        });
+      });
+
+      deckGroup.add(consoleHead);
+      this.scene.add(deckGroup);
+
+      // Solid physical collider matching new console
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: -29.0 - 1.1,
+        maxX: -29.0 + 1.1,
+        minZ: 24.0 - 0.55,
+        maxZ: 24.0 + 0.55,
+        minY: y0,
+        maxY: y0 + 1.25
+      });
+
+      // Register video installation room metadata
+      const roomMeta = {
+        floor: fl,
+        playlistId: this.videoPlaylists[fl],
+        screenCenter: new THREE.Vector3(screenX, screenY, screenZ),
+        screenNormal: new THREE.Vector3(0, 0, -1),
+        screenW: screenW,
+        screenH: screenH,
+        screenMesh: screenMesh,
+        screenLight: screenLight,
+        buttons: interactiveButtons,
+        minX: -34.5,
+        maxX: -23.5,
+        minZ: 17.5,
+        maxZ: 28.5
+      };
+
+      this.videoInstallationRooms.push(roomMeta);
+    }
+
+    sendYouTubeCommand(cmdFn) {
+      if (!this.ytPlayer || !this.ytReady) {
+        if (!this.ytPendingCmds) this.ytPendingCmds = [];
+        this.ytPendingCmds.push(cmdFn);
+        return;
+      }
+      try {
+        cmdFn(this.ytPlayer);
+      } catch (e) {
+        console.warn('YouTube command error:', e);
+      }
+    }
+
+    loadPlaylistForFloor(fl) {
+      const room = this.videoInstallationRooms.find(r => r.floor === fl);
+      if (!room || !room.playlistId) return;
+      if (this.ytCurrentPlaylist === room.playlistId) return;
+
+      this.ytCurrentPlaylist = room.playlistId;
+      this.sendYouTubeCommand(player => {
+        if (typeof player.loadPlaylist === 'function') {
+          player.loadPlaylist({
+            list: room.playlistId,
+            listType: 'playlist',
+            index: 0,
+            suggestedQuality: 'hd720'
+          });
+          if (this.ytIsMuted && typeof player.mute === 'function') {
+            player.mute();
+          } else if (typeof player.unMute === 'function') {
+            player.unMute();
+          }
+        }
+      });
+    }
+
+    triggerVideoControl(controlId, fl = null, isRemote = false) {
+      const targetFloor = fl !== null ? fl : this.playerFloor;
+      if (!this.audio) return;
+
+      if (this.audio.playEmptyClick) {
+        this.audio.playEmptyClick();
+      }
+
+      // Visual button press bounce
+      const room = this.videoInstallationRooms.find(r => r.floor === targetFloor);
+      if (room && room.buttons) {
+        const btnObj = room.buttons.find(b => b.id === controlId);
+        if (btnObj && btnObj.mesh) {
+          btnObj.mesh.position.y = btnObj.origY - 0.025;
+          if (btnObj.material && btnObj.material.emissive) {
+            btnObj.material.emissiveIntensity = 0.95;
+          }
+          setTimeout(() => {
+            if (btnObj.mesh) btnObj.mesh.position.y = btnObj.origY;
+            if (btnObj.material && btnObj.material.emissive) {
+              btnObj.material.emissiveIntensity = 0.25;
+            }
+          }, 140);
+        }
+      }
+
+      // Execute YouTube API action
+      switch (controlId) {
+        case 'prev':
+          this.sendYouTubeCommand(p => {
+            if (typeof p.previousVideo === 'function') p.previousVideo();
+          });
+          break;
+        case 'next':
+          this.sendYouTubeCommand(p => {
+            if (typeof p.nextVideo === 'function') p.nextVideo();
+          });
+          break;
+        case 'play':
+          this.ytIsPaused = !this.ytIsPaused;
+          this.sendYouTubeCommand(p => {
+            if (this.ytIsPaused) {
+              if (typeof p.pauseVideo === 'function') p.pauseVideo();
+            } else {
+              if (typeof p.playVideo === 'function') p.playVideo();
+            }
+          });
+          break;
+        case 'mute':
+          this.ytIsMuted = !this.ytIsMuted;
+          this.sendYouTubeCommand(p => {
+            if (this.ytIsMuted) {
+              if (typeof p.mute === 'function') p.mute();
+            } else {
+              if (typeof p.unMute === 'function') p.unMute();
+            }
+          });
+          break;
+      }
+
+      // Sync across multiplayer
+      if (!isRemote && this.mp && typeof this.mp.notifyVideoControl === 'function') {
+        this.mp.notifyVideoControl(targetFloor, controlId);
+      }
+    }
+
+    onRemoteVideoControl(floor, action) {
+      this.triggerVideoControl(action, floor, true);
+    }
+
+    updateVideoInstallation(delta) {
+      if (!this.videoInstallationRooms || this.videoInstallationRooms.length === 0) return;
+
+      const px = this.playerPos.x;
+      const pz = this.playerPos.z;
+      const pfl = this.playerFloor;
+
+      // Find if player is currently in or directly viewing any video installation room
+      const currentRoom = this.videoInstallationRooms.find(r =>
+        r.floor === pfl && px >= r.minX && px <= r.maxX && pz >= r.minZ && pz <= r.maxZ
+      );
+
+      const overlayContainer = document.getElementById('video-screen-container');
+
+      if (!currentRoom) {
+        if (this.activeVideoRoom) {
+          this.activeVideoRoom = null;
+          if (overlayContainer) overlayContainer.style.display = 'none';
+          this.sendYouTubeCommand(p => {
+            if (typeof p.pauseVideo === 'function') p.pauseVideo();
+          });
+        }
+        return;
+      }
+
+      // Player entered or is inside room
+      if (this.activeVideoRoom !== currentRoom) {
+        this.activeVideoRoom = currentRoom;
+        this.loadPlaylistForFloor(currentRoom.floor);
+        this.sendYouTubeCommand(p => {
+          if (!this.ytIsPaused && typeof p.playVideo === 'function') p.playVideo();
+        });
+      }
+
+      if (!overlayContainer || !this.camera) return;
+
+      // Check if screen is in front of camera
+      const camPos = this.camera.position;
+      const toScreen = new THREE.Vector3().subVectors(currentRoom.screenCenter, camPos);
+      const camFwd = new THREE.Vector3();
+      this.camera.getWorldDirection(camFwd);
+
+      // Facing screen check
+      if (toScreen.dot(camFwd) < 0.2) {
+        overlayContainer.style.display = 'none';
+        return;
+      }
+
+      // Compute precise 4-corner screen projection
+      const w2 = currentRoom.screenW / 2;
+      const h2 = currentRoom.screenH / 2;
+      const sy = currentRoom.screenCenter.y;
+      const sz = currentRoom.screenCenter.z;
+      const sx = currentRoom.screenCenter.x;
+
+      const topLeft = new THREE.Vector3(sx - w2, sy + h2, sz).project(this.camera);
+      const topRight = new THREE.Vector3(sx + w2, sy + h2, sz).project(this.camera);
+      const botLeft = new THREE.Vector3(sx - w2, sy - h2, sz).project(this.camera);
+
+      // Check if behind camera frustum
+      if (topLeft.z > 1.0 || topRight.z > 1.0 || botLeft.z > 1.0) {
+        overlayContainer.style.display = 'none';
+        return;
+      }
+
+      const screenWidthPx = window.innerWidth;
+      const screenHeightPx = window.innerHeight;
+
+      const p0x = (topLeft.x * 0.5 + 0.5) * screenWidthPx;
+      const p0y = (-(topLeft.y * 0.5) + 0.5) * screenHeightPx;
+
+      const p1x = (topRight.x * 0.5 + 0.5) * screenWidthPx;
+      const p1y = (-(topRight.y * 0.5) + 0.5) * screenHeightPx;
+
+      const p2x = (botLeft.x * 0.5 + 0.5) * screenWidthPx;
+      const p2y = (-(botLeft.y * 0.5) + 0.5) * screenHeightPx;
+
+      const basisW = 960;
+      const basisH = 540;
+
+      const a = (p1x - p0x) / basisW;
+      const b = (p1y - p0y) / basisW;
+      const c = (p2x - p0x) / basisH;
+      const d = (p2y - p0y) / basisH;
+      const tx = p0x;
+      const ty = p0y;
+
+      overlayContainer.style.display = 'block';
+      overlayContainer.style.transform = "matrix(" + a.toFixed(5) + ", " + b.toFixed(5) + ", " + c.toFixed(5) + ", " + d.toFixed(5) + ", " + tx.toFixed(2) + ", " + ty.toFixed(2) + ")";
+    }
+
     createExitDoors(x, y, z, mats) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
@@ -11888,28 +12314,24 @@
         // Floor 0
         { floor: 0, x: -26, z: 0, baseY: 0 * H + 1.38 },
         { floor: 0, x: -26, z: 12, baseY: 0 * H + 1.38 },
-        { floor: 0, x: -29, z: 24, baseY: 0 * H + 1.38 },
         { floor: 0, x: 19, z: 30.5, baseY: 0 * H + 1.38 },
         { floor: 0, x: 12, z: -39, baseY: 0 * H + 1.38 },
         { floor: 0, x: 26, z: 13, baseY: 0 * H + 1.38 },
         // Floor 1
         { floor: 1, x: -26, z: 0, baseY: 1 * H + 1.38 },
         { floor: 1, x: -26, z: 12, baseY: 1 * H + 1.38 },
-        { floor: 1, x: -29, z: 24, baseY: 1 * H + 1.38 },
         { floor: 1, x: 19, z: 30.5, baseY: 1 * H + 1.38 },
         { floor: 1, x: 12, z: -39, baseY: 1 * H + 1.38 },
         { floor: 1, x: 26, z: 13, baseY: 1 * H + 1.38 },
         // Floor 2
         { floor: 2, x: -26, z: 0, baseY: 2 * H + 1.38 },
         { floor: 2, x: -26, z: 12, baseY: 2 * H + 1.38 },
-        { floor: 2, x: -29, z: 24, baseY: 2 * H + 1.38 },
         { floor: 2, x: 19, z: 30.5, baseY: 2 * H + 1.38 },
         { floor: 2, x: 12, z: -39, baseY: 2 * H + 1.38 },
         { floor: 2, x: 26, z: 13, baseY: 2 * H + 1.38 },
         // Floor 3
         { floor: 3, x: -26, z: 0, baseY: 3 * H + 1.38 },
         { floor: 3, x: -26, z: 12, baseY: 3 * H + 1.38 },
-        { floor: 3, x: -29, z: 24, baseY: 3 * H + 1.38 },
         { floor: 3, x: 19, z: 30.5, baseY: 3 * H + 1.38 },
         { floor: 3, x: 12, z: -39, baseY: 3 * H + 1.38 },
         { floor: 3, x: 26, z: 13, baseY: 3 * H + 1.38 }
@@ -13586,6 +14008,12 @@
           return;
         }
       }
+      // Check Video Installation Console
+      if (this.focusedVideoControl) {
+        this.triggerVideoControl(this.focusedVideoControl.id);
+        return;
+      }
+
       // 1. Check Relics
       for (let relic of this.relics) {
         if (relic.collected || relic.floor !== this.playerFloor) continue;
@@ -14095,6 +14523,42 @@
           }
         }
       }
+
+      // Check Video Installation Control Console Deck
+      if (this.videoInstallationRooms && this.videoInstallationRooms.length > 0) {
+        const room = this.videoInstallationRooms.find(r => r.floor === this.playerFloor);
+        if (room && room.buttons) {
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const camFwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const camPos = this.camera ? this.camera.position : this.playerPos;
+
+          let bestBtn = null;
+          let bestDot = 0.88;
+
+          for (let b of room.buttons) {
+            const toB = new THREE.Vector3().subVectors(b.worldPos, camPos);
+            const dist = toB.length();
+            if (dist < 2.6) {
+              const dot = toB.normalize().dot(camFwd);
+              if (dot > bestDot) {
+                bestDot = dot;
+                bestBtn = b;
+              }
+            }
+          }
+
+          if (bestBtn) {
+            this.focusedVideoControl = bestBtn;
+            this.setInteractPrompt(bestBtn.prompt);
+            this.focusedPainting = null;
+            return;
+          }
+        }
+      }
+      this.focusedVideoControl = null;
 
       // 1. Relics
       for (let relic of this.relics) {
@@ -15829,6 +16293,7 @@
           }
           this.updateLiquidBlood(delta);
           this.updateAmmoPickups(delta);
+          this.updateVideoInstallation(delta);
           if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
           this.updateSmittyHeadBone(delta);
 

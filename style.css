@@ -1538,3 +1538,40 @@ body.game-playing #game-container {
   color: rgba(255, 255, 255, 0.75);
   letter-spacing: 1px;
 }
+
+/* ========================================================
+   VIDEO INSTALLATION SCREEN LAYER & 3D CSS PROJECTION
+   ======================================================== */
+#video-screen-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2; /* Sits immediately atop WebGL canvas */
+  perspective: 1000px;
+}
+
+#video-screen-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 960px;
+  height: 540px;
+  transform-origin: 0 0;
+  display: none;
+  background-color: #050505;
+  box-shadow: 0 0 24px rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+}
+
+#video-screen-container iframe,
+#video-screen-container #yt-player {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  pointer-events: none;
+}

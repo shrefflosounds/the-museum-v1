@@ -205,6 +205,12 @@
           break;
         }
 
+        case 'video_control':
+          if (this.game && typeof this.game.onRemoteVideoControl === 'function') {
+            this.game.onRemoteVideoControl(data.floor, data.action);
+          }
+          break;
+
         case 'relic_pickup':
           if (this.game && typeof this.game.onRemoteRelicCollected === 'function') {
             this.game.onRemoteRelicCollected(data.relicIndex);
@@ -339,6 +345,14 @@
         yaw: Number(s.rotation.y.toFixed(3)),
         state: this.game.smittyState || 'patrol',
         visible: s.visible
+      });
+    }
+
+    notifyVideoControl(floor, action) {
+      this.publish({
+        type: 'video_control',
+        floor: floor,
+        action: action
       });
     }
 
