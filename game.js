@@ -4261,8 +4261,9 @@
       const accentWallMat = fl === 3 ? mats.wallBrick : mats.mahogany;
 
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
-      // 1. West Wing Slab (x: -36..-16, z: -6.0..17.80 stopping flush at north face of wall z=18 to eliminate threshold Z-fighting)
-      this.createSlab(-26, y0, 5.9, 20.0, 23.8, floorMat, mats.ceiling, ceilH);
+      // 1. West Wing Slabs (Partitioned around the SW Stairwell and West Office to eliminate threshold Z-fighting):
+      // 1a. West Wing North portion (x: -36..-16, z: -6.0..18.0)
+      this.createSlab(-26, y0, 6.0, 20.0, 24.0, floorMat, mats.ceiling, ceilH);
       // 2. West Office Slab (x: -34..-24, z: 18..28)
       this.createSlab(-29, y0, 23, 10.0, 10.0, mats.floorDarkWood, mats.ceiling, ceilH);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
@@ -4626,15 +4627,21 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl (x: -24.0..-16.0 inside shaft, z: 17.80..20.80 spanning the West Wing doorway from z = 17.80 cleanly with zero gap and zero coplanar overlap)
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 3.00), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.3);
+        // Solid North Landing box at Floor fl (x: -24.0..-16.0 inside shaft, z: 18.20..20.80 strictly inside the stairwell)
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.5);
         this.scene.add(landBoxSW);
 
+        // Architectural threshold stone saddle across the West Wing doorway (x: -21.5..-18.5, z: 17.95..18.25)
+        // Raised 2mm above the floor plane (y = y0 + 0.002) so neither the parquet nor stair stone can coplanar fight
+        const thresholdSW = new THREE.Mesh(new THREE.BoxGeometry(3.02, 0.32, 0.32), mats.stairStone);
+        thresholdSW.position.set(-20.0, y0 - 0.158, 18.10);
+        this.scene.add(thresholdSW);
+
         // Ceiling closure for this floor's landing
-        this.createCeiling(-20, y0 + ceilH, 19.3, 8.0, 3.00, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 19.5, 8.0, 2.60, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.3, 8.0, 3.00, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.5, 8.0, 2.60, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
