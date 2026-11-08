@@ -4264,8 +4264,13 @@
       // 2b. West Office North doorway floor strip (x: -31.5..-28.5, z: 18.00..18.20)
       this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, mats.floorDarkWood);
       this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, mats.ceiling);
-      // 3. Main Gallery + North Magazine Alcove Slab (x: -16..-4, z: -18..28)
-      this.createSlab(-10, y0, 5, 12.0, 46.0, floorMat, mats.ceiling, ceilH);
+      // 3. Main Gallery + North Magazine Alcove Slab (x: -15.80..-4.00, z: -18..28 stopping flush at the east face of the x = -16.0 wall)
+      this.createSlab(-9.90, y0, 5, 11.80, 46.0, floorMat, mats.ceiling, ceilH);
+      // 3b. West Wing to Main Gallery doorway floor strips (x: -16.00..-15.80 at z = -2.0, 6.0, 14.0)
+      for (const dz of [-2.0, 6.0, 14.0]) {
+        this.createFloor(-15.90, y0, dz, 0.20, 3.0, floorMat);
+        this.createCeiling(-15.90, y0 + ceilH, dz, 0.20, 3.0, mats.ceiling);
+      }
       // 4. Central Core South of Stairwell N (x: -4..4, z: -13.80..28.00 stopping flush at the south face of the z = -14.0 wall)
       this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, mats.ceiling, ceilH);
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
@@ -4306,7 +4311,7 @@
       // Start North jamb at z = 18.20 flush with the stairwell landing box (z: 18.20..20.80) to eliminate corner fight with z=18.0 south wall
       this.createWall(-24, ycFull, 18.4, t, h, 0.4, accentWallMat, true, fl);     // North jamb (18.2..18.6)
       this.createWall(-24, ycFull, 24.5, t, h, 7.4, accentWallMat, true, fl);     // South segment (20.8..28.2)
-      this.createLintelZ(-24, y0, 19.7, t, 2.2, h, accentWallMat);                // Doorway lintel spans all the way to ceiling slab (height h)
+      this.createLintelZ(-24, y0, 19.7, t, 2.2, ceilH, accentWallMat);            // Doorway lintel stops at ceilH (never reaches upper floor y0)
 
       // Dedicated ceiling panel covering the West Office (x: -34..-24, z: 18..28) at y0 + ceilH
       this.createCeiling(-29, y0 + ceilH, 23, 10.2, 10.2, mats.ceiling);
@@ -4320,7 +4325,7 @@
       this.createWall(-16, yc, 10.0, t, wallH, 5.0, mainWallMat, true, fl);       // 7.5..12.5
       this.createLintelZ(-16, y0, 14.0, t, 3.0, ceilH, mainWallMat);              // 12.5..15.5
       this.createWall(-16, ycFull, 17.05, t, h, 3.1, mainWallMat, true, fl);      // 15.5..18.6
-      this.createLintelZ(-16, y0, 19.7, t, 2.2, h, mainWallMat);                  // 18.6..20.8 (Full height h=5.20m to eliminate plenum slit)
+      this.createLintelZ(-16, y0, 19.7, t, 2.2, ceilH, mainWallMat);              // 18.6..20.8 (Doorway lintel stops at ceilH, never reaches upper floor y0)
       this.createWall(-16, ycFull, 24.5, t, h, 7.4, mainWallMat, true, fl);       // 20.8..28.2
 
       this.createWall(-10, yc, -18, 11.6, wallH, t, mainWallMat, true, fl);       // -15.8..-4.2
@@ -4652,16 +4657,16 @@
         const doorWestSW = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.32, 2.20), mats.stairStone);
         doorWestSW.position.set(-24.00, y0 - 0.16, 19.70);
         this.scene.add(doorWestSW);
-        // East doorway into Main Gallery (x: -16.20..-16.00, z: 18.60..20.80)
-        const doorEastSW = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.20), mats.stairStone);
-        doorEastSW.position.set(-16.10, y0 - 0.16, 19.70);
+        // East doorway into Main Gallery (x: -16.20..-15.80, z: 18.60..20.80)
+        const doorEastSW = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.32, 2.20), mats.stairStone);
+        doorEastSW.position.set(-16.00, y0 - 0.16, 19.70);
         this.scene.add(doorEastSW);
 
         // Ceiling closure for this floor's landing and doorway portals
         this.createCeiling(-20, y0 + ceilH, 19.50, 7.60, 2.60, mats.ceiling);
         this.createCeiling(-20, y0 + ceilH, 18.00, 3.00, 0.40, mats.ceiling);
         this.createCeiling(-24.00, y0 + ceilH, 19.70, 0.40, 2.20, mats.ceiling);
-        this.createCeiling(-16.10, y0 + ceilH, 19.70, 0.20, 2.20, mats.ceiling);
+        this.createCeiling(-16.00, y0 + ceilH, 19.70, 0.40, 2.20, mats.ceiling);
         if (fl > 0) {
           this.createCeiling(-20, y0 - 0.06, 19.50, 7.60, 2.60, mats.ceiling);
           this.createCeiling(-20, y0 - 0.06, 18.00, 3.00, 0.40, mats.ceiling);
@@ -4949,17 +4954,21 @@
     }
 
     createLintel(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
-      const lintelH = ceilH - doorH;
+      const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
+      const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mat);
+      const mats6 = [mat, mat, this.hiddenCapMat, mat, mat, mat];
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
 
     createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
-      const lintelH = ceilH - doorH;
+      const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
+      const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mat);
+      const mats6 = [mat, mat, this.hiddenCapMat, mat, mat, mat];
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
