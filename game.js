@@ -4216,11 +4216,6 @@
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8)
       };
 
-      mats.doorSill = mats.stairStone.clone();
-      mats.doorSill.polygonOffset = true;
-      mats.doorSill.polygonOffsetFactor = -4;
-      mats.doorSill.polygonOffsetUnits = -4;
-
       mats.ceiling.emissive = new THREE.Color(0x322f28);
       mats.ceiling.shininess = 16;
       mats.ceiling.specular = new THREE.Color(0x222222);
@@ -4625,22 +4620,24 @@
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
-        // Solid North Landing box at Floor fl spanning all the way from z = 17.80 to 20.80 (depth 3.00, center 19.30)
-        // This completely bridges the shaft and doorway opening so NO void or ceiling gap can ever exist!
-        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 3.00), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.30);
+        // Solid North Landing box at Floor fl inside shaft (x: -24.0..-16.0, z: 18.20..20.80)
+        // Does not penetrate or intersect the north walls at z = 18.0!
+        const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(8.0, 0.32, 2.60), mats.stairStone);
+        landBoxSW.position.set(-20, y0 - 0.16, 19.50);
         this.scene.add(landBoxSW);
 
-        // Solid raised architectural threshold saddle spanning across the West Wing doorway (x: -21.53..-18.47, z: 17.78..18.22)
-        // Raised 1.5cm above floor level with polygonOffset to guarantee zero depth fighting
-        const thresholdSW = new THREE.Mesh(new THREE.BoxGeometry(3.06, 0.035, 0.44), mats.doorSill);
-        thresholdSW.position.set(-20.0, y0 + 0.012, 18.0);
-        this.scene.add(thresholdSW);
+        // Doorway connector apron inside the open door opening (x: -21.48..-18.52, z: 17.80..18.20)
+        // Cleanly connects the gallery floor (z <= 17.80) to the stair landing (z >= 18.20) without overlapping any wall or floor!
+        const doorApronSW = new THREE.Mesh(new THREE.BoxGeometry(2.96, 0.32, 0.40), mats.stairStone);
+        doorApronSW.position.set(-20.0, y0 - 0.16, 18.00);
+        this.scene.add(doorApronSW);
 
-        // Ceiling closure for this floor's landing matching the full 3.00m depth
-        this.createCeiling(-20, y0 + ceilH, 19.30, 8.0, 3.00, mats.ceiling);
+        // Ceiling closure for this floor's landing and doorway portal
+        this.createCeiling(-20, y0 + ceilH, 19.50, 8.0, 2.60, mats.ceiling);
+        this.createCeiling(-20, y0 + ceilH, 18.00, 2.96, 0.40, mats.ceiling);
         if (fl > 0) {
-          this.createCeiling(-20, y0 - 0.06, 19.30, 8.0, 3.00, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 19.50, 8.0, 2.60, mats.ceiling);
+          this.createCeiling(-20, y0 - 0.06, 18.00, 2.96, 0.40, mats.ceiling);
         }
 
         this.createRoomSign(-20, y0 + 2.4, 20.6, 0, T('sign.stairwell_a', 'STAIRWELL A • FLOOR {number}', { number: fl + 1 }), T('sign.stairwell_a.subtitle', 'WEST FLIGHT UP / EAST FLIGHT DOWN'));
@@ -4679,8 +4676,8 @@
           }
         }
       }
-      // Guardrail on Floor 0 East Flight of Stairwell SW (stops safely at y = 2.40m, spanning x: -20.0 to -16.0 at z = 20.80 under the upper flight so no gap exists)
-      this.createWall(-18.00, 1.20, 20.80, 4.00, 2.40, 0.34, mats.mahogany, true, 0);
+      // Guardrail on Floor 0 East Flight of Stairwell SW (stops safely at y = 2.40m, spanning x: -19.82 to -16.20 at z = 20.95 flush under upper flight)
+      this.createWall(-18.01, 1.20, 20.95, 3.62, 2.40, 0.28, mats.mahogany, true, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
       blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
