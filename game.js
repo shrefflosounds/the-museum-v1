@@ -14892,12 +14892,12 @@
       this.isPaused = false;
       this.isPlayingCutscene = false;
 
-      // Curator OFF, Statues OFF, Relics OFF
+      // Curator OFF, Statues OFF, Relics & Ammo Pickups OFF
       this.setSmittyMode(false);
       this.setStatuesMode(false);
       this.updateRelicFloorVisibility();
 
-      // Ensure Day lighting in museum
+      // Ensure warm daylight illumination in galleries
       if (this.ambientLight) {
         this.ambientLight.color.setHex(0x9a8f82);
         this.ambientLight.intensity = 0.65;
@@ -14909,7 +14909,7 @@
       }
       this.renderer.toneMappingExposure = 1.0;
 
-      // Hide gameplay HUD & weapons/arms
+      // Clean presentation UI: hide player hud, viewmodel weapons and arms
       if (this.dom.hud) this.dom.hud.classList.add('hud-hidden');
       if (this.weaponRig) this.weaponRig.visible = false;
       if (this.leftArmRig) this.leftArmRig.visible = false;
@@ -14917,199 +14917,200 @@
       if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
       if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.remove('hidden');
 
-      // Music playing gently in the background
+      // Play soft gallery ambient sound
       this.audio.init();
       this.audio.startGameplayAudio();
       if (this.musicEnabled) {
         this.audio.playMenuMusic();
       }
 
-      // Build ordered tour itinerary across all floors
+      // Build continuous smooth floor-by-floor walking itinerary
       this.buildMuseumTourItinerary();
 
-      // Spawn at first tour point
-      if (this.museumTourList && this.museumTourList.length > 0) {
-        this.museumTourIndex = 0;
-        const first = this.museumTourList[0];
-        this.playerFloor = first.floor;
-        this.playerPos.set(first.standX, first.floor * CONFIG.FLOOR_HEIGHT + 1.82, first.standZ);
-        this.playerYaw = first.lookYaw;
-        this.playerPitch = first.lookPitch;
-        this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-        this.camera.rotation.set(0, 0, 0);
-        this.camera.rotation.y = this.playerYaw;
-        this.camera.rotation.x = this.playerPitch;
-        this.museumTourPauseTimer = 3.0; // Pause briefly on first artwork
-        this.museumTourWaypoints = [];
-        this.museumTourWaypointIndex = 0;
-        this.updateMuseumModeBannerText(first);
-      }
+      // Begin at the very start of Floor 0 (Main Gallery Entrance, x: -10, z: 22, facing North down the grand hall)
+      this.museumTourLegIndex = 0;
+      this.museumTourPauseTimer = 0;
+      const startWp = this.museumTourWaypoints[0];
+      this.playerFloor = startWp.floor;
+      this.playerPos.set(startWp.x, startWp.floor * CONFIG.FLOOR_HEIGHT + 1.82, startWp.z);
+      this.playerYaw = startWp.yaw !== undefined ? startWp.yaw : 0;
+      this.playerPitch = 0.0;
+      this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+      this.camera.rotation.set(0, 0, 0);
+      this.camera.rotation.y = this.playerYaw;
+      this.camera.rotation.x = this.playerPitch;
+
+      this.updateMuseumModeBannerText(startWp);
       this.updateRelicFloorVisibility();
     }
 
     buildMuseumTourItinerary() {
-      // Sort paintings floor by floor, then sequentially around each floor
-      const tour = [];
+      // Constructs a scenic, curated walking path across all 4 floors.
+      // On each floor:
+      //  1. Walks the Grand Promenade / Main Gallery viewing hall
+      //  2. Explores the West Wing and walks into the Video Installation Theater (pausing ~10s to watch the screen)
+      //  3. Loops through the East Wing & North Galleries
+      //  4. Ascends to the next floor via the Stairwell
+      //  5. Concludes on Floor 3 after the final gallery walkthrough and returns to menu.
+      const waypoints = [];
+
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
-        const floorPaintings = (this.paintings || []).filter(p => p.floor === fl);
-        // Sort geographically by angle so movement flows naturally around the museum floor
-        floorPaintings.sort((a, b) => {
-          const angleA = Math.atan2(a.z, a.x);
-          const angleB = Math.atan2(b.z, b.x);
-          return angleA - angleB;
+        const floorName = (fl === 0 ? "1ST FLOOR" : fl === 1 ? "2ND FLOOR" : fl === 2 ? "3RD FLOOR" : "4TH FLOOR");
+
+        // Leg A: Main Gallery Entrance -> Promenade
+        waypoints.push({ x: -10.0, z: 22.0, floor: fl, label: `${floorName} • GRAND PROMENADE`, yaw: 0 });
+        waypoints.push({ x: -10.0, z: 10.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+        waypoints.push({ x: -10.0, z: 2.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+
+        // Leg B: Enter West Gallery Wing
+        waypoints.push({ x: -12.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING ARCHWAY`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -19.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING SALON`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -26.0, z: 6.0, floor: fl, label: `${floorName} • WEST EXHIBITION HALL`, yaw: Math.PI });
+        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST CONTEMPORARY GALLERY`, yaw: Math.PI });
+
+        // Leg C: Walk into Video Installation Room (Screen center at x: -29.0, z: 27.7 facing North)
+        waypoints.push({ x: -30.0, z: 18.0, floor: fl, label: `${floorName} • VIDEO INSTALLATION ENTRY`, yaw: Math.PI });
+        waypoints.push({
+          x: -29.0,
+          z: 22.2,
+          floor: fl,
+          label: `${floorName} • VIDEO INSTALLATION THEATER`,
+          yaw: Math.PI,
+          pitch: 0.05,
+          pauseDuration: 10.0 // Stop for 10 seconds to watch the video
         });
 
-        for (let p of floorPaintings) {
-          const rot = p.mesh ? p.mesh.rotation.y : 0;
-          const nx = Math.sin(rot);
-          const nz = Math.cos(rot);
-          // Optimal viewing distance
-          const dist = 2.45;
-          const standX = p.x + nx * dist;
-          const standZ = p.z + nz * dist;
-          const lookYaw = Math.atan2(-nx, -nz);
-          const lookPitch = 0.05;
+        // Leg D: Exit Video Room back towards Main Corridor
+        waypoints.push({ x: -26.0, z: 19.7, floor: fl, label: `${floorName} • CORRIDOR PASSAGE`, yaw: Math.PI / 2 });
+        waypoints.push({ x: -16.0, z: 19.7, floor: fl, label: `${floorName} • MAIN CROSSWAY`, yaw: Math.PI / 2 });
+        waypoints.push({ x: -10.0, z: 18.0, floor: fl, label: `${floorName} • MAIN GALLERY SOUTH`, yaw: -Math.PI });
 
-          tour.push({
-            id: p.id,
-            title: p.title,
-            artist: p.artist || 'Smitty Fantastic',
-            wing: p.wing,
-            floor: p.floor,
-            x: p.x,
-            y: p.y,
-            z: p.z,
-            standX,
-            standZ,
-            lookYaw,
-            lookPitch
-          });
+        // Leg E: Cross over into East Wing
+        waypoints.push({ x: -6.5, z: 5.0, floor: fl, label: `${floorName} • CENTRAL TRANSEPT`, yaw: Math.PI / 2 });
+        waypoints.push({ x: 0.0, z: 5.0, floor: fl, label: `${floorName} • CENTRAL ROTUNDA CROSS`, yaw: Math.PI / 2 });
+        waypoints.push({ x: 6.5, z: 5.0, floor: fl, label: `${floorName} • EAST WING PROMENADE`, yaw: Math.PI / 2 });
+        waypoints.push({ x: 14.0, z: 10.0, floor: fl, label: `${floorName} • EAST SCULPTURE CORRIDOR`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 28.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA PORTAL`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 32.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA DOME`, yaw: Math.PI, pauseDuration: 3.0 });
+        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA EXIT`, yaw: 0 });
+
+        // Leg F: Walk through North East Gallery
+        waypoints.push({ x: 6.5, z: 10.0, floor: fl, label: `${floorName} • EAST CLASSICAL GALLERY`, yaw: 0 });
+        waypoints.push({ x: 6.5, z: -7.5, floor: fl, label: `${floorName} • EAST LONG GALLERY`, yaw: 0 });
+        waypoints.push({ x: 6.5, z: -17.5, floor: fl, label: `${floorName} • EAST NORTH PASSAGE`, yaw: 0 });
+        waypoints.push({ x: 12.0, z: -30.0, floor: fl, label: `${floorName} • NORTH EXHIBITION HALL`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: 12.0, z: -35.0, floor: fl, label: `${floorName} • NORTH ATRIUM GALLERY`, yaw: 0, pauseDuration: 3.5 });
+        waypoints.push({ x: 2.0, z: -33.0, floor: fl, label: `${floorName} • NORTH PAVILION`, yaw: -Math.PI / 2 });
+
+        // Leg G: Move to North Stairwell to ascend to next floor
+        if (fl < CONFIG.NUM_FLOORS - 1) {
+          waypoints.push({ x: 0.0, z: -15.4, floor: fl, label: `${floorName} • NORTH STAIRWELL LANDING`, yaw: 0 });
+          // Stair ascending sequence
+          waypoints.push({ x: -2.0, z: -15.4, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
+          waypoints.push({ x: -2.0, z: -24.0, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
+          waypoints.push({ x: 2.0, z: -24.0, floor: fl + 1, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: Math.PI });
+          waypoints.push({ x: 2.0, z: -15.4, floor: fl + 1, label: `ENTERING ${fl + 2}ND FLOOR`, yaw: Math.PI });
+          waypoints.push({ x: 0.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • STAIRWELL FOYER`, yaw: -Math.PI / 2 });
+          waypoints.push({ x: -7.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND GALLERY NORTH`, yaw: -Math.PI / 2 });
+          waypoints.push({ x: -10.0, z: -10.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE`, yaw: Math.PI });
         }
       }
-      this.museumTourList = tour;
+
+      this.museumTourWaypoints = waypoints;
     }
 
-    updateMuseumModeBannerText(art) {
+    updateMuseumModeBannerText(wp) {
       if (!this.dom.museumModeArtInfo) return;
-      if (!art) {
-        this.dom.museumModeArtInfo.textContent = 'EXHIBITION COMPLETED';
+      if (!wp) {
+        this.dom.museumModeArtInfo.textContent = "EXHIBITION TOUR CONCLUDED";
         return;
       }
-      const floorNames = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
-      const flName = floorNames[art.floor] || 'GALLERY';
-      this.dom.museumModeArtInfo.innerHTML = `<strong>${art.title}</strong> &mdash; <span style="color:#94a3b8;font-size:15px;">${art.artist} (${flName} • ${art.wing || 'GALLERY'})</span>`;
+      this.dom.museumModeArtInfo.innerHTML = `<strong>${wp.label || "MUSEUM EXHIBITION"}</strong>`;
     }
 
     updateMuseumModeTour(delta) {
-      if (!this.museumTourList || this.museumTourList.length === 0) {
+      if (!this.museumTourWaypoints || this.museumTourWaypoints.length === 0) {
         this.exitMuseumModeToMenu();
         return;
       }
 
-      const currentArt = this.museumTourList[this.museumTourIndex];
-      if (!currentArt) {
+      if (this.museumTourLegIndex >= this.museumTourWaypoints.length) {
+        // Tour completed all floors! Return to main menu
         this.exitMuseumModeToMenu();
         return;
       }
 
-      // If pausing to view artwork
+      const targetWp = this.museumTourWaypoints[this.museumTourLegIndex];
+
+      // If pausing (e.g. video installation screen or featured wing showcase)
       if (this.museumTourPauseTimer > 0) {
         this.museumTourPauseTimer -= delta;
 
-        // Smoothly pan camera slightly while admiring the art
-        const subtlePan = Math.sin(performance.now() * 0.0006) * 0.04;
-        this.camera.rotation.y = currentArt.lookYaw + subtlePan;
-        this.camera.rotation.x = currentArt.lookPitch + Math.cos(performance.now() * 0.0005) * 0.015;
+        // Subtle admiring camera breathing pan
+        const subtlePan = Math.sin(performance.now() * 0.0008) * 0.035;
+        this.camera.rotation.y = (targetWp.yaw || this.playerYaw) + subtlePan;
+        this.camera.rotation.x = (targetWp.pitch || 0.0) + Math.cos(performance.now() * 0.0006) * 0.012;
 
         if (this.museumTourPauseTimer <= 0) {
-          // Advance to next artwork
-          this.museumTourIndex++;
-          if (this.museumTourIndex >= this.museumTourList.length) {
-            // Tour finished! Return to main menu
+          this.museumTourLegIndex++;
+          if (this.museumTourLegIndex >= this.museumTourWaypoints.length) {
             this.exitMuseumModeToMenu();
             return;
           }
-          const nextArt = this.museumTourList[this.museumTourIndex];
-          this.prepareMuseumTourPath(nextArt);
+          const nextWp = this.museumTourWaypoints[this.museumTourLegIndex];
+          this.updateMuseumModeBannerText(nextWp);
         }
         return;
       }
 
-      // Walking along waypoints to next artwork
-      if (!this.museumTourWaypoints || this.museumTourWaypointIndex >= this.museumTourWaypoints.length) {
-        // Arrived at destination stand position
-        this.arriveAtArtwork(currentArt);
-        return;
-      }
-
-      const targetWp = this.museumTourWaypoints[this.museumTourWaypointIndex];
+      // Smooth strolling speed: ~2.1 meters per second (relaxing, presentation-ready gallery walk)
+      const walkSpeed = 2.1;
       const dx = targetWp.x - this.playerPos.x;
       const dz = targetWp.z - this.playerPos.z;
-      const targetY = targetWp.floor * CONFIG.FLOOR_HEIGHT + 1.82;
       const dist2D = Math.hypot(dx, dz);
+      const targetY = targetWp.floor * CONFIG.FLOOR_HEIGHT + 1.82;
 
-      // Smooth walking speed (2.6 m/s)
-      const walkSpeed = 2.6;
-      const step = walkSpeed * delta;
-
-      if (dist2D < 0.28) {
-        this.museumTourWaypointIndex++;
-        if (this.museumTourWaypointIndex >= this.museumTourWaypoints.length) {
-          this.arriveAtArtwork(currentArt);
-          return;
-        }
-      } else {
-        const moveRatio = Math.min(1.0, step / dist2D);
-        this.playerPos.x += dx * moveRatio;
-        this.playerPos.z += dz * moveRatio;
-        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetY, Math.min(1.0, delta * 6.0));
-
-        // Smoothly orient camera towards walking direction
-        const walkYaw = Math.atan2(-dx, -dz);
-        this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 5.0));
-        this.playerPitch = THREE.MathUtils.lerp(this.playerPitch, 0.0, Math.min(1.0, delta * 4.0));
-      }
-
+      // Handle floor transitions
       if (this.playerFloor !== targetWp.floor) {
         this.playerFloor = targetWp.floor;
         this.updateRelicFloorVisibility();
       }
 
-      // Bobbing walking camera
-      const walkBob = Math.sin(performance.now() * 0.007) * 0.035;
+      if (dist2D < 0.35) {
+        // Arrived at waypoint
+        if (targetWp.pauseDuration && targetWp.pauseDuration > 0) {
+          this.museumTourPauseTimer = targetWp.pauseDuration;
+          if (targetWp.yaw !== undefined) this.playerYaw = targetWp.yaw;
+          if (targetWp.pitch !== undefined) this.playerPitch = targetWp.pitch;
+          return;
+        }
+
+        this.museumTourLegIndex++;
+        if (this.museumTourLegIndex >= this.museumTourWaypoints.length) {
+          this.exitMuseumModeToMenu();
+          return;
+        }
+        const nextWp = this.museumTourWaypoints[this.museumTourLegIndex];
+        this.updateMuseumModeBannerText(nextWp);
+      } else {
+        const step = Math.min(dist2D, walkSpeed * delta);
+        const moveRatio = step / dist2D;
+        this.playerPos.x += dx * moveRatio;
+        this.playerPos.z += dz * moveRatio;
+        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetY, Math.min(1.0, delta * 6.0));
+
+        // Smooth camera heading towards walking direction
+        const walkYaw = Math.atan2(-dx, -dz);
+        this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 4.5));
+        this.playerPitch = THREE.MathUtils.lerp(this.playerPitch, 0.0, Math.min(1.0, delta * 4.0));
+      }
+
+      // Gentle walking bob
+      const walkBob = Math.sin(performance.now() * 0.006) * 0.028;
       this.camera.position.set(this.playerPos.x, this.playerPos.y + walkBob, this.playerPos.z);
       this.camera.rotation.set(0, 0, 0);
       this.camera.rotation.y = this.playerYaw;
       this.camera.rotation.x = this.playerPitch;
-    }
-
-    prepareMuseumTourPath(targetArt) {
-      this.updateMuseumModeBannerText(targetArt);
-      const startId = this.findNearestNavNode({ x: this.playerPos.x, z: this.playerPos.z }, this.playerFloor);
-      const goalId = this.findNearestNavNode({ x: targetArt.standX, z: targetArt.standZ }, targetArt.floor);
-
-      let wps = [];
-      if (startId >= 0 && goalId >= 0 && startId !== goalId) {
-        const rawPath = this.findShortestPath(startId, goalId);
-        wps = rawPath.map(n => ({ x: n.x, z: n.z, floor: n.floor }));
-      }
-      // Add final exact viewing position
-      wps.push({ x: targetArt.standX, z: targetArt.standZ, floor: targetArt.floor });
-      this.museumTourWaypoints = wps;
-      this.museumTourWaypointIndex = 0;
-    }
-
-    arriveAtArtwork(art) {
-      this.playerFloor = art.floor;
-      this.playerPos.set(art.standX, art.floor * CONFIG.FLOOR_HEIGHT + 1.82, art.standZ);
-      this.playerYaw = art.lookYaw;
-      this.playerPitch = art.lookPitch;
-      this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-      this.camera.rotation.set(0, 0, 0);
-      this.camera.rotation.y = this.playerYaw;
-      this.camera.rotation.x = this.playerPitch;
-      this.museumTourPauseTimer = 4.5; // Gaze at painting for 4.5 seconds
-      this.updateRelicFloorVisibility();
     }
 
     lerpAngle(a, b, t) {
@@ -15129,7 +15130,7 @@
       // Hide tour banner
       if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.add('hidden');
 
-      // Release locks & reload cleanly back to main menu
+      // Clean reload back to main menu
       this.releaseNativeOrBrowserLock();
       window.location.reload();
     }
