@@ -1066,7 +1066,7 @@
   },
   {
     "floor": 0,
-    "x": -31.8,
+    "x": -32.0,
     "y": 2.75,
     "z": -5.65,
     "rotY": 0.0,
@@ -1082,7 +1082,7 @@
   },
   {
     "floor": 0,
-    "x": -20.2,
+    "x": -20.0,
     "y": 2.75,
     "z": -5.65,
     "rotY": 0.0,
@@ -1098,11 +1098,11 @@
   },
   {
     "floor": 0,
-    "x": -16.35,
-    "y": 2.75,
-    "z": -4.7,
-    "rotY": -1.5708,
-    "maxW": 2.1
+    "x": 4.35,
+    "y": 4.80,
+    "z": -10.0,
+    "rotY": 1.5708,
+    "maxW": 3.6
   },
   {
     "floor": 0,
@@ -1148,15 +1148,15 @@
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
-    "z": -13.5,
+    "z": -14.5,
     "rotY": 1.5708,
-    "maxW": 4.0
+    "maxW": 3.8
   },
   {
     "floor": 0,
     "x": -15.65,
     "y": 2.75,
-    "z": -8.2,
+    "z": -9.5,
     "rotY": 1.5708,
     "maxW": 3.8
   },
@@ -1294,7 +1294,7 @@
     "y": 2.75,
     "z": -5.25,
     "rotY": 1.5708,
-    "maxW": 2.9
+    "maxW": 2.65
   },
   {
     "floor": 0,
@@ -1386,7 +1386,7 @@
   },
   {
     "floor": 1,
-    "x": -31.8,
+    "x": -32.0,
     "y": 10.25,
     "z": -5.65,
     "rotY": 0.0,
@@ -1402,7 +1402,7 @@
   },
   {
     "floor": 1,
-    "x": -20.2,
+    "x": -20.0,
     "y": 10.25,
     "z": -5.65,
     "rotY": 0.0,
@@ -1418,11 +1418,11 @@
   },
   {
     "floor": 1,
-    "x": -16.35,
-    "y": 10.25,
-    "z": -4.7,
-    "rotY": -1.5708,
-    "maxW": 2.1
+    "x": 4.35,
+    "y": 12.30,
+    "z": -10.0,
+    "rotY": 1.5708,
+    "maxW": 3.6
   },
   {
     "floor": 1,
@@ -1468,15 +1468,15 @@
     "floor": 1,
     "x": -15.65,
     "y": 10.25,
-    "z": -13.5,
+    "z": -14.5,
     "rotY": 1.5708,
-    "maxW": 4.0
+    "maxW": 3.8
   },
   {
     "floor": 1,
     "x": -15.65,
     "y": 10.25,
-    "z": -8.2,
+    "z": -9.5,
     "rotY": 1.5708,
     "maxW": 3.8
   },
@@ -1614,7 +1614,7 @@
     "y": 10.25,
     "z": -5.25,
     "rotY": 1.5708,
-    "maxW": 2.9
+    "maxW": 2.65
   },
   {
     "floor": 1,
@@ -1706,7 +1706,7 @@
   },
   {
     "floor": 2,
-    "x": -31.8,
+    "x": -32.0,
     "y": 17.75,
     "z": -5.65,
     "rotY": 0.0,
@@ -1722,7 +1722,7 @@
   },
   {
     "floor": 2,
-    "x": -20.2,
+    "x": -20.0,
     "y": 17.75,
     "z": -5.65,
     "rotY": 0.0,
@@ -1738,11 +1738,11 @@
   },
   {
     "floor": 2,
-    "x": -16.35,
-    "y": 17.75,
-    "z": -4.7,
-    "rotY": -1.5708,
-    "maxW": 2.1
+    "x": 4.35,
+    "y": 19.80,
+    "z": -10.0,
+    "rotY": 1.5708,
+    "maxW": 3.6
   },
   {
     "floor": 2,
@@ -1788,15 +1788,15 @@
     "floor": 2,
     "x": -15.65,
     "y": 17.75,
-    "z": -13.5,
+    "z": -14.5,
     "rotY": 1.5708,
-    "maxW": 4.0
+    "maxW": 3.8
   },
   {
     "floor": 2,
     "x": -15.65,
     "y": 17.75,
-    "z": -8.2,
+    "z": -9.5,
     "rotY": 1.5708,
     "maxW": 3.8
   },
@@ -1934,7 +1934,7 @@
     "y": 17.75,
     "z": -5.25,
     "rotY": 1.5708,
-    "maxW": 2.9
+    "maxW": 2.65
   },
   {
     "floor": 2,
@@ -2026,7 +2026,7 @@
   },
   {
     "floor": 3,
-    "x": -31.8,
+    "x": -32.0,
     "y": 25.25,
     "z": -5.65,
     "rotY": 0.0,
@@ -2042,7 +2042,7 @@
   },
   {
     "floor": 3,
-    "x": -20.2,
+    "x": -20.0,
     "y": 25.25,
     "z": -5.65,
     "rotY": 0.0,
@@ -2058,11 +2058,11 @@
   },
   {
     "floor": 3,
-    "x": -16.35,
-    "y": 25.25,
-    "z": -4.7,
-    "rotY": -1.5708,
-    "maxW": 2.1
+    "x": 4.35,
+    "y": 27.3,
+    "z": -10.0,
+    "rotY": 1.5708,
+    "maxW": 3.6
   },
   {
     "floor": 3,
@@ -2108,15 +2108,15 @@
     "floor": 3,
     "x": -15.65,
     "y": 25.25,
-    "z": -13.5,
+    "z": -14.5,
     "rotY": 1.5708,
-    "maxW": 4.0
+    "maxW": 3.8
   },
   {
     "floor": 3,
     "x": -15.65,
     "y": 25.25,
-    "z": -8.2,
+    "z": -9.5,
     "rotY": 1.5708,
     "maxW": 3.8
   },
@@ -2254,7 +2254,7 @@
     "y": 25.25,
     "z": -5.25,
     "rotY": 1.5708,
-    "maxW": 2.9
+    "maxW": 2.65
   },
   {
     "floor": 3,
@@ -4543,7 +4543,7 @@
       // A. WEST WING: EXHIBITION GALLERY (x: -36..-16, z: -6..18)
       this.createWall(-36, yc, 6, t, wallH, 24.4, mainWallMat, true, fl);         // -6.2..18.2
       this.createWall(-26, yc, -6, 19.6, wallH, t, mainWallMat, true, fl);        // -35.8..-16.2
-      this.createWall(-26, yc, -5.0, 3.6, wallH, 1.4, accentWallMat, true, fl);   // -5.7..-4.3 (flush against z=-5.8)
+      this.createWall(-26, yc, -5.0, 4.2, wallH, 1.4, accentWallMat, true, fl);   // -5.7..-4.3 (flush against z=-5.8)
       // South wall of West Wing (z = 18, x: -35.8..-16.2) with 2 doorways:
       // Door 1 into West Office: x = -31.5..-28.5; Door 2 into SW Stairwell Landing: x = -21.5..-18.5
       this.createWall(-33.65, yc, 18, 4.3, wallH, t, mainWallMat, true, fl);      // -35.8..-31.5
@@ -5204,7 +5204,7 @@
       const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
       const mats6 = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, mat, mat, mat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.01, w - 0.002), lintelH, d), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
@@ -5214,7 +5214,7 @@
       const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
       const mats6 = [mat, mat, this.hiddenCapMat, mat, this.hiddenCapMat, this.hiddenCapMat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, Math.max(0.01, d - 0.002)), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
     }
@@ -5222,7 +5222,9 @@
     createWall(x, y, z, w, h, d, mat, collide = true, floor = 'all') {
       if (mat) mat.side = THREE.DoubleSide;
       const mats6 = [mat, mat, this.hiddenCapMat, this.hiddenCapMat, mat, mat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mats6);
+      const adjW = w > d ? Math.max(0.01, w - 0.002) : w;
+      const adjD = d > w ? Math.max(0.01, d - 0.002) : d;
+      const mesh = new THREE.Mesh(new THREE.BoxGeometry(adjW, h, adjD), mats6);
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
 
@@ -5334,7 +5336,7 @@
       }
 
       // Rotunda Central Exhibition Partition (mounts Artworks 33, 67, 101, 135 at z = 33.65)
-      this.createWall(19.0, yc, 33.9, 4.2, wallH, 0.35, accentMat, true, fl);
+      this.createWall(19.0, yc, 33.9, 4.8, wallH, 0.35, accentMat, true, fl);
 
       // Central Stepped Marble Dais / Medallion (x: 19.0, z: 30.5)
       const daisMat = fl === 3 ? mats.wallConcrete : mats.floorMarble;
@@ -5392,86 +5394,106 @@
       const mullionMat = new THREE.MeshLambertMaterial({ color: 0x1e242d });
 
       // 1. Helper: Room-Bounded Classical Entablature & Crown Molding Cornice
-      // Cleanly fitted along the top of each enclosed room perimeter - zero wall penetration, zero voids
+      // Cleanly fitted along the top of each enclosed room perimeter - zero wall penetration, zero voids, zero coplanar faces
       const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ, sides = { n: true, s: true, w: true, e: true }) => {
         const group = new THREE.Group();
         const rw = maxX - minX;
         const rd = maxZ - minZ;
         const cx = (minX + maxX) / 2;
         const cz = (minZ + maxZ) / 2;
+        const nMat = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, corniceMat, corniceMat, this.hiddenCapMat];
+        const sMat = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, corniceMat, this.hiddenCapMat, corniceMat];
+        const wMat = [corniceMat, this.hiddenCapMat, this.hiddenCapMat, corniceMat, this.hiddenCapMat, this.hiddenCapMat];
+        const eMat = [this.hiddenCapMat, corniceMat, this.hiddenCapMat, corniceMat, this.hiddenCapMat, this.hiddenCapMat];
+        const dnMat = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, dentilMat, dentilMat, this.hiddenCapMat];
+        const dsMat = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, dentilMat, this.hiddenCapMat, dentilMat];
+        const dwMat = [dentilMat, this.hiddenCapMat, this.hiddenCapMat, dentilMat, this.hiddenCapMat, this.hiddenCapMat];
+        const deMat = [this.hiddenCapMat, dentilMat, this.hiddenCapMat, dentilMat, this.hiddenCapMat, this.hiddenCapMat];
 
         // Band 1: Top Projection Fillet (flush with ceiling plane at y = y0 + ceilH)
         const fH = 0.05;
         const fD = 0.12;
-        const fy = y0 + ceilH - fH / 2;
+        const fy = y0 + ceilH - fH / 2 - 0.001;
+        const fTrimN = sides.n ? fD : 0;
+        const fTrimS = sides.s ? fD : 0;
+        const fLenZ = rd - fTrimN - fTrimS - 0.002;
+        const fCenterZ = (minZ + fTrimN + maxZ - fTrimS) / 2;
         if (sides.n) {
-          const fN = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
-          fN.position.set(cx, fy, minZ + fD / 2);
+          const fN = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, fH, fD), nMat);
+          fN.position.set(cx, fy, minZ + fD / 2 + 0.001);
           group.add(fN);
         }
         if (sides.s) {
-          const fS = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
-          fS.position.set(cx, fy, maxZ - fD / 2);
+          const fS = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, fH, fD), sMat);
+          fS.position.set(cx, fy, maxZ - fD / 2 - 0.001);
           group.add(fS);
         }
         if (sides.w) {
-          const fW = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
-          fW.position.set(minX + fD / 2, fy, cz);
+          const fW = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, fLenZ), wMat);
+          fW.position.set(minX + fD / 2 + 0.001, fy, fCenterZ);
           group.add(fW);
         }
         if (sides.e) {
-          const fE = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
-          fE.position.set(maxX - fD / 2, fy, cz);
+          const fE = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, fLenZ), eMat);
+          fE.position.set(maxX - fD / 2 - 0.001, fy, fCenterZ);
           group.add(fE);
         }
 
         // Band 2: Cyma-Reversa Crown Cove Bed Molding (beneath fillet)
         const cH = 0.08;
         const cD = 0.08;
-        const cy = y0 + ceilH - fH - cH / 2;
+        const cy = y0 + ceilH - fH - cH / 2 - 0.002;
+        const cTrimN = sides.n ? cD : 0;
+        const cTrimS = sides.s ? cD : 0;
+        const cLenZ = rd - cTrimN - cTrimS - 0.002;
+        const cCenterZ = (minZ + cTrimN + maxZ - cTrimS) / 2;
         if (sides.n) {
-          const cN = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
-          cN.position.set(cx, cy, minZ + cD / 2);
+          const cN = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, cH, cD), nMat);
+          cN.position.set(cx, cy, minZ + cD / 2 + 0.001);
           group.add(cN);
         }
         if (sides.s) {
-          const cS = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
-          cS.position.set(cx, cy, maxZ - cD / 2);
+          const cS = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, cH, cD), sMat);
+          cS.position.set(cx, cy, maxZ - cD / 2 - 0.001);
           group.add(cS);
         }
         if (sides.w) {
-          const cW = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
-          cW.position.set(minX + cD / 2, cy, cz);
+          const cW = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, cLenZ), wMat);
+          cW.position.set(minX + cD / 2 + 0.001, cy, cCenterZ);
           group.add(cW);
         }
         if (sides.e) {
-          const cE = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
-          cE.position.set(maxX - cD / 2, cy, cz);
+          const cE = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, cLenZ), eMat);
+          cE.position.set(maxX - cD / 2 - 0.001, cy, cCenterZ);
           group.add(cE);
         }
 
         // Band 3: Classical Dentil / Bed Fascia Trim (beneath cove)
         const dH = 0.06;
         const dD = 0.05;
-        const dy = y0 + ceilH - fH - cH - dH / 2;
+        const dy = y0 + ceilH - fH - cH - dH / 2 - 0.003;
+        const dTrimN = sides.n ? dD : 0;
+        const dTrimS = sides.s ? dD : 0;
+        const dLenZ = rd - dTrimN - dTrimS - 0.002;
+        const dCenterZ = (minZ + dTrimN + maxZ - dTrimS) / 2;
         if (sides.n) {
-          const dN = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
-          dN.position.set(cx, dy, minZ + dD / 2);
+          const dN = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, dH, dD), dnMat);
+          dN.position.set(cx, dy, minZ + dD / 2 + 0.001);
           group.add(dN);
         }
         if (sides.s) {
-          const dS = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
-          dS.position.set(cx, dy, maxZ - dD / 2);
+          const dS = new THREE.Mesh(new THREE.BoxGeometry(rw - 0.002, dH, dD), dsMat);
+          dS.position.set(cx, dy, maxZ - dD / 2 - 0.001);
           group.add(dS);
         }
         if (sides.w) {
-          const dW = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
-          dW.position.set(minX + dD / 2, dy, cz);
+          const dW = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, dLenZ), dwMat);
+          dW.position.set(minX + dD / 2 + 0.001, dy, dCenterZ);
           group.add(dW);
         }
         if (sides.e) {
-          const dE = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
-          dE.position.set(maxX - dD / 2, dy, cz);
+          const dE = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, dLenZ), deMat);
+          dE.position.set(maxX - dD / 2 - 0.001, dy, dCenterZ);
           group.add(dE);
         }
 
@@ -11701,8 +11723,9 @@
 
           // Monumental museum sizing: fills the 7.5m-tall gallery walls while clamping cleanly to narrower architectural piers
           const isBehindWestMirror = Math.abs(slot.x - (-26.0)) < 0.1 && Math.abs(slot.z - (-4.15)) < 0.1;
+          const isAboveRestroomDoors = Math.abs(slot.x - 4.35) < 0.1 && Math.abs(slot.z - (-10.0)) < 0.1;
           const maxW = slot.maxW || 4.00;
-          const maxH = isBehindWestMirror ? 3.00 : 3.80;
+          const maxH = isBehindWestMirror ? 3.00 : (isAboveRestroomDoors ? 2.90 : 3.80);
           let renderW = art.w * 1.78;
           let renderH = art.h * 1.78;
           const aspect = renderW / renderH;
@@ -11717,7 +11740,7 @@
           renderW = +renderW.toFixed(3);
           renderH = +renderH.toFixed(3);
 
-          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + (isBehindWestMirror ? 4.95 : 3.25);
+          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + (isBehindWestMirror ? 4.95 : (isAboveRestroomDoors ? 4.80 : 3.25));
           slot.y = slotY;
           art.x = slot.x;
           art.y = slotY;
