@@ -11736,29 +11736,10 @@
           frameMesh.position.set(0, 0, 0);
           group.add(frameMesh);
 
-          let artTex = artTextureCache.get(art.file);
-          if (!artTex) {
-            artTex = this.texLoader.load(
-              art.file,
-              (t) => {
-                t.colorSpace = THREE.SRGBColorSpace;
-                t.needsUpdate = true;
-              },
-              undefined,
-              () => {}
-            );
-            artTex.colorSpace = THREE.SRGBColorSpace;
-            artTex.generateMipmaps = false;
-            artTex.minFilter = THREE.LinearFilter;
-            artTex.magFilter = THREE.LinearFilter;
-            artTextureCache.set(art.file, artTex);
-          }
-
           // Standard artwork canvas (pure non-emissive natural lighting, no artificial illumination or frame lamps)
           const canvasMesh = new THREE.Mesh(
             planeGeomCache.get(key),
             new THREE.MeshLambertMaterial({
-              map: artTex,
               color: 0xffffff,
               polygonOffset: true,
               polygonOffsetFactor: -2,
@@ -11767,6 +11748,26 @@
           );
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
+
+          if (artTextureCache.has(art.file)) {
+            canvasMesh.material.map = artTextureCache.get(art.file);
+            canvasMesh.material.needsUpdate = true;
+          } else {
+            this.texLoader.load(
+              art.file,
+              (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                artTextureCache.set(art.file, tex);
+                canvasMesh.material.map = tex;
+                canvasMesh.material.needsUpdate = true;
+                if (this.renderer) {
+                  this.renderer.initTexture(tex);
+                }
+              },
+              undefined,
+              () => {}
+            );
+          }
 
           const plaqueTex = TextureFactory.createPlaqueTexture(art.title, art.artist || 'Smitty Fantastic');
           const plaqueMesh = new THREE.Mesh(
