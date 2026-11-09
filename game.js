@@ -4320,6 +4320,7 @@
         allRelicsCutscene: document.getElementById('all-relics-cutscene'),
         allRelicsVideo: document.getElementById('all-relics-video'),
         allRelicsSkipPrompt: document.getElementById('all-relics-skip-prompt'),
+        allRelicsUnmutePrompt: document.getElementById('all-relics-unmute-prompt'),
         systemNotification: document.getElementById('system-notification'),
         healthValue: document.getElementById('health-value'),
         healthFill: document.getElementById('health-fill'),
@@ -15333,6 +15334,7 @@ window.game = this;
       const cutsceneOverlay = this.dom.allRelicsCutscene;
       const videoEl = this.dom.allRelicsVideo;
       const skipPrompt = this.dom.allRelicsSkipPrompt;
+      const unmutePrompt = this.dom.allRelicsUnmutePrompt;
       const fadeOverlay = this.dom.cinemaFadeOverlay;
       if (!cutsceneOverlay || !videoEl) {
         console.error('[CUTSCENE] DOM elements missing!', { cutsceneOverlay, videoEl });
@@ -15344,6 +15346,7 @@ window.game = this;
       if (!videoEl.src || !videoEl.src.includes('AllRelicsFound.mp4')) {
         videoEl.src = 'assets/AllRelicsFound.mp4';
       }
+      videoEl.preload = 'auto';
       videoEl.load();
 
       // 5-second countdown after collecting the final relic before fading to black and starting cutscene
@@ -15387,6 +15390,9 @@ window.game = this;
           if (skipPrompt) {
             skipPrompt.classList.add('hidden');
           }
+          if (unmutePrompt) {
+            unmutePrompt.classList.add('hidden');
+          }
 
           videoEl.currentTime = 0;
           videoEl.muted = false;
@@ -15407,11 +15413,14 @@ window.game = this;
 
             // Step 2: Fade video out to black
             cutsceneOverlay.style.opacity = '0';
-            videoEl.pause();
+            try {
+              videoEl.pause();
+            } catch (e) {}
 
             setTimeout(() => {
               cutsceneOverlay.classList.add('hidden');
               if (skipPrompt) skipPrompt.classList.add('hidden');
+              if (unmutePrompt) unmutePrompt.classList.add('hidden');
 
               // Step 3: Fade from black back to gameplay
               if (fadeOverlay) {
@@ -15435,9 +15444,12 @@ window.game = this;
           };
           videoEl.addEventListener('timeupdate', onTimeUpdate);
 
-          // Allow skipping after a grace period of 1.5 seconds so accidental touches don't abort it
+          // Dedicated skip handling:
+          // Clicking when muted un-mutes the video; clicking or pressing keys after 1.5s ends cutscene
           const onKeyDown = (e) => {
             if (!this.isPlayingCutscene || isFinishing) return;
+            // Ignore modifier keys
+            if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
             e.preventDefault();
             e.stopPropagation();
             finishCutscene();
@@ -15450,6 +15462,7 @@ window.game = this;
             if (videoEl.muted) {
               videoEl.muted = false;
               videoEl.volume = 1.0;
+              if (unmutePrompt) unmutePrompt.classList.add('hidden');
               return;
             }
             e.preventDefault();
@@ -15457,7 +15470,7 @@ window.game = this;
             finishCutscene();
           };
 
-          // 1.5-second grace period before registering skip listener
+          // 1.5-second grace period before registering skip listener so accidental touches don't abort
           const skipAttachTimer = setTimeout(() => {
             window.addEventListener('keydown', onKeyDown, { capture: true });
             window.addEventListener('click', onClick, { capture: true });
@@ -15476,23 +15489,55 @@ window.game = this;
           };
 
           videoEl.onerror = (e) => {
-            console.warn('[CUTSCENE] Video playback error, finishing cutscene:', e);
-            finishCutscene();
+            console.error('[CUTSCENE] Video playback error event on element:', e, videoEl.error);
+            // DO NOT immediately abort or flash away; attempt fallback reload
+            if (!videoEl.src.includes('AllRelicsFound.mp4')) {
+              videoEl.src = 'assets/AllRelicsFound.mp4';
+              videoEl.load();
+              videoEl.play().catch(() => finishCutscene());
+            } else {
+              finishCutscene();
+            }
           };
 
-          const playPromise = videoEl.play();
-          if (playPromise !== undefined) {
-            playPromise.then(() => {
-              console.log('[CUTSCENE] Video playing successfully with audio.');
-            }).catch(err => {
-              console.warn('[CUTSCENE] Autoplay with sound prevented, playing muted with click-to-unmute:', err);
-              videoEl.muted = true;
-              videoEl.play().catch(e => {
-                console.error('[CUTSCENE] Failed to play video even muted:', e);
-                finishCutscene();
+          // Robust playback initialization:
+          // Try unmuted play first; if browser autoplay policy blocks unmuted audio,
+          // play muted and immediately display clear "CLICK ANYWHERE TO UNMUTE AUDIO" prompt.
+          const startPlayback = () => {
+            videoEl.muted = false;
+            const playPromise = videoEl.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                console.log('[CUTSCENE] Video playing successfully with unmuted audio.');
+                if (unmutePrompt) unmutePrompt.classList.add('hidden');
+              }).catch(err => {
+                console.warn('[CUTSCENE] Autoplay with sound prevented by browser policy. Playing muted and showing unmute prompt:', err);
+                videoEl.muted = true;
+                videoEl.play().then(() => {
+                  console.log('[CUTSCENE] Video playing in muted fallback mode.');
+                  if (unmutePrompt) unmutePrompt.classList.remove('hidden');
+                }).catch(mutedErr => {
+                  console.error('[CUTSCENE] Autoplay blocked completely even when muted:', mutedErr);
+                  // Display unmute / click-to-play prompt so player can start it with a tap
+                  if (unmutePrompt) unmutePrompt.classList.remove('hidden');
+                  const onUserTapToStart = () => {
+                    window.removeEventListener('click', onUserTapToStart, { capture: true });
+                    window.removeEventListener('keydown', onUserTapToStart, { capture: true });
+                    videoEl.muted = false;
+                    videoEl.play().then(() => {
+                      if (unmutePrompt) unmutePrompt.classList.add('hidden');
+                    }).catch(() => {
+                      finishCutscene();
+                    });
+                  };
+                  window.addEventListener('click', onUserTapToStart, { capture: true });
+                  window.addEventListener('keydown', onUserTapToStart, { capture: true });
+                });
               });
-            });
-          }
+            }
+          };
+
+          startPlayback();
         }, 1200); // 1.2s black fade transition before video display
       }, 5000); // 5-second delay after collecting the last relic
     }

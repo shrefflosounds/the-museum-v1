@@ -196,6 +196,43 @@ body.game-playing #game-container {
   display: none !important;
 }
 
+#all-relics-unmute-prompt {
+  position: absolute;
+  top: 40px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(15, 23, 42, 0.88);
+  border: 1px solid rgba(245, 158, 11, 0.7);
+  border-radius: 9999px;
+  padding: 12px 28px;
+  box-shadow: 0 4px 25px rgba(0, 0, 0, 0.85), 0 0 16px rgba(245, 158, 11, 0.4);
+  pointer-events: none;
+  z-index: 100000;
+  opacity: 1;
+  transition: opacity 0.4s ease;
+  animation: pulse-continue 2s infinite ease-in-out;
+}
+
+#all-relics-unmute-prompt.hidden {
+  display: none !important;
+}
+
+.cutscene-unmute-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: 'Courier New', Courier, monospace, sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #fbbf24;
+}
+
+.cutscene-unmute-icon {
+  font-size: 18px;
+}
+
+
 @keyframes pulse-continue {
   0%, 100% { opacity: 0.85; transform: translateX(-50%) scale(1); }
   50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
