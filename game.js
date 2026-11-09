@@ -15445,9 +15445,11 @@ window.game = this;
           videoEl.addEventListener('timeupdate', onTimeUpdate);
 
           // Dedicated skip handling:
-          // Clicking when muted un-mutes the video; clicking or pressing keys after 1.5s ends cutscene
+          // Video can only be skipped after it has been playing for at least 5.0 seconds.
           const onKeyDown = (e) => {
             if (!this.isPlayingCutscene || isFinishing) return;
+            // Can only skip once video has actively played for at least 5 seconds
+            if (videoEl.currentTime < 5.0) return;
             // Ignore modifier keys
             if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
             e.preventDefault();
@@ -15465,16 +15467,18 @@ window.game = this;
               if (unmutePrompt) unmutePrompt.classList.add('hidden');
               return;
             }
+            // Can only skip once video has actively played for at least 5 seconds
+            if (videoEl.currentTime < 5.0) return;
             e.preventDefault();
             e.stopPropagation();
             finishCutscene();
           };
 
-          // 1.5-second grace period before registering skip listener so accidental touches don't abort
+          // Wait 5 seconds into cutscene playback before attaching skip listeners
           const skipAttachTimer = setTimeout(() => {
             window.addEventListener('keydown', onKeyDown, { capture: true });
             window.addEventListener('click', onClick, { capture: true });
-          }, 1500);
+          }, 5000);
 
           cleanupListeners = () => {
             clearTimeout(skipAttachTimer);
