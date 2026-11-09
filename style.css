@@ -122,6 +122,25 @@ body.game-playing #game-container {
   animation: flash-shake 0.08s infinite;
 }
 
+/* Fullscreen Cinematic Fade Overlay */
+#cinema-fade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000;
+  z-index: 99998;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#cinema-fade-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* All Relics Found Cutscene Modal */
 #all-relics-cutscene {
   position: fixed;
