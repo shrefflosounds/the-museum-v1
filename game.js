@@ -15315,10 +15315,10 @@ window.game = this;
       }
 
       if (this.dom.roomIndicator) {
-        this.dom.roomIndicator.textContent = T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!');
+        this.dom.roomIndicator.textContent = 'LOCKDOWN DISENGAGED';
         this.dom.roomIndicator.style.color = '#34d399';
       }
-      this.showSystemNotification(T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!'), 5000);
+      this.showSystemNotification('LOCKDOWN DISENGAGED', 5000);
 
       this.playAllRelicsFoundCutscene(true);
     }
@@ -15439,20 +15439,20 @@ window.game = this;
             }, 600);
           };
 
-          // Show "PRESS ANY KEY TO CONTINUE" prompt at 37 seconds
+          // Show "PRESS ANY KEY TO CONTINUE" prompt at 39 seconds (37s + 2s)
           const onTimeUpdate = () => {
-            if (skipPrompt && videoEl.currentTime >= 37) {
+            if (skipPrompt && videoEl.currentTime >= 39.0) {
               skipPrompt.classList.remove('hidden');
             }
           };
           videoEl.addEventListener('timeupdate', onTimeUpdate);
 
           // Dedicated skip handling:
-          // Video can only be skipped after it has been playing for at least 5.0 seconds.
+          // Video can only be skipped once the notification appears (at 39.0 seconds).
           const onKeyDown = (e) => {
             if (!this.isPlayingCutscene || isFinishing) return;
-            // Can only skip once video has actively played for at least 5 seconds
-            if (videoEl.currentTime < 5.0) return;
+            // Can ONLY skip once the notification has appeared (at 39.0 seconds)
+            if (videoEl.currentTime < 39.0) return;
             // Ignore modifier keys
             if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
             e.preventDefault();
@@ -15470,21 +15470,19 @@ window.game = this;
               if (unmutePrompt) unmutePrompt.classList.add('hidden');
               return;
             }
-            // Can only skip once video has actively played for at least 5 seconds
-            if (videoEl.currentTime < 5.0) return;
+            // Can ONLY skip once the notification has appeared (at 39.0 seconds)
+            if (videoEl.currentTime < 39.0) return;
             e.preventDefault();
             e.stopPropagation();
             finishCutscene();
           };
 
-          // Wait 5 seconds into cutscene playback before attaching skip listeners
-          const skipAttachTimer = setTimeout(() => {
-            window.addEventListener('keydown', onKeyDown, { capture: true });
-            window.addEventListener('click', onClick, { capture: true });
-          }, 5000);
+          // Attach skip listeners so clicking to unmute works from the start;
+          // skips are strictly gated by (videoEl.currentTime >= 39.0) when notification shows
+          window.addEventListener('keydown', onKeyDown, { capture: true });
+          window.addEventListener('click', onClick, { capture: true });
 
           cleanupListeners = () => {
-            clearTimeout(skipAttachTimer);
             videoEl.removeEventListener('timeupdate', onTimeUpdate);
             window.removeEventListener('keydown', onKeyDown, { capture: true });
             window.removeEventListener('click', onClick, { capture: true });
