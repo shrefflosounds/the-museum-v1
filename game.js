@@ -15314,8 +15314,11 @@ window.game = this;
         this.exitDoorCollider.maxX = 0;
       }
 
-      this.dom.roomIndicator.textContent = T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!');
-      this.dom.roomIndicator.style.color = '#34d399';
+      if (this.dom.roomIndicator) {
+        this.dom.roomIndicator.textContent = T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!');
+        this.dom.roomIndicator.style.color = '#34d399';
+      }
+      this.showSystemNotification(T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!'), 5000);
 
       this.playAllRelicsFoundCutscene(true);
     }
