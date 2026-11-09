@@ -4376,7 +4376,7 @@
         powerPreference: 'high-performance'
       });
       this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(1.0, window.devicePixelRatio) * 0.85);
+      this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
       this.renderer.shadowMap.enabled = false;
       this.renderer.toneMapping = THREE.LinearToneMapping;
       this.renderer.toneMappingExposure = 1.0;
@@ -4562,9 +4562,6 @@
       this.createWall(-24, ycFull, 24.5, t, h, 7.4, accentWallMat, true, fl);     // South segment (20.8..28.2)
       this.createLintelZ(-24, y0, 19.7, t, 2.2, ceilH, accentWallMat);            // Doorway lintel stops at ceilH (never reaches upper floor y0)
 
-      // Dedicated ceiling panel covering the West Office (x: -34..-24, z: 18..28) at y0 + ceilH
-      this.createCeiling(-29, y0 + ceilH, 23, 10.2, 10.2, mats.ceiling);
-
       // C. MAIN GALLERY & NORTH MAGAZINE ALCOVE (x: -16..-4, z: -18..28)
       // Entire x = -16 wall from z = -18.2 to 28.2 (disjoint collinear segments):
       this.createWall(-16, yc, -10.85, t, wallH, 14.7, mainWallMat, true, fl);    // -18.2..-3.5
@@ -4627,8 +4624,8 @@
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
       this.createWall(0.0, yc, 18.0, 7.6, wallH, t, mainWallMat, true, fl);       // -3.8..3.8
 
-      // South wall of South Cross-Passage (z = 28, x: -3.8..11.8)
-      this.createWall(4.0, yc, 28, 15.6, wallH, t, mainWallMat, true, fl);        // -3.8..11.8
+      // South wall of South Cross-Passage (z = 28, x: -3.8..12.2)
+      this.createWall(4.2, yc, 28, 16.0, wallH, t, mainWallMat, true, fl);        // -3.8..12.2
 
       // E. NORTH GALLERY (x: -4..28, z: -40..-26 + North Bay x: 6..18, z: -42..-40)
       this.createWall(1.0, yc, -40, 9.6, wallH, t, mainWallMat, true, fl);        // -3.8..5.8
@@ -4652,8 +4649,8 @@
       this.createWall(30.5, yc, -22, 4.6, wallH, t, mainWallMat, true, fl);       // 28.2..32.8
       this.createWall(33, yc, -18, t, wallH, 8.4, mainWallMat, true, fl);         // -22.2..-13.8
       this.createWall(30.5, yc, -14, 4.6, wallH, t, mainWallMat, true, fl);       // 28.2..32.8
-      // Between Bay 1 and Bay 2 (z: -13.8..-7.8)
-      this.createWall(28, yc, -10.8, t, wallH, 6.0, mainWallMat, true, fl);       // -13.8..-7.8
+      // Between Bay 1 and Bay 2 (z: -14.2..-7.8)
+      this.createWall(28, yc, -11.0, t, wallH, 6.4, mainWallMat, true, fl);       // -14.2..-7.8
       // Bay 2 (z: -8..0, x: 28..33)
       this.createWall(30.5, yc, -8, 4.6, wallH, t, mainWallMat, true, fl);        // 28.2..32.8
       this.createWall(33, yc, -4, t, wallH, 8.4, mainWallMat, true, fl);          // -8.2..0.2
@@ -4675,7 +4672,7 @@
 
       // H. SOUTH-EAST MEDIA & FEATURE FILMS WING (x: -4..28, z: 18..28) + ACCURATE ROTUNDA COLONNADE APSE
       this.createWall(28, yc, 23.2, t, wallH, 10.0, mainWallMat, true, fl);       // 18.2..28.2
-      this.createWall(27.0, yc, 28, 1.6, wallH, t, mainWallMat, true, fl);        // 26.2..27.8
+      this.createWall(26.8, yc, 28, 2.0, wallH, t, mainWallMat, true, fl);        // 25.8..27.8
 
       // Accurate Semi-Circular Beaux-Arts Rotunda Apse & Colonnade (x: 12..26, z: 28..36)
       this.createAccurateRotunda(fl, y0, mats, ceilH, wallH);
@@ -5206,7 +5203,7 @@
       const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
       const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
-      const mats6 = [mat, mat, this.hiddenCapMat, mat, mat, mat];
+      const mats6 = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, mat, mat, mat];
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
@@ -5216,7 +5213,7 @@
       const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
       const lintelH = topH - doorH;
       if (mat) mat.side = THREE.DoubleSide;
-      const mats6 = [mat, mat, this.hiddenCapMat, mat, mat, mat];
+      const mats6 = [mat, mat, this.hiddenCapMat, mat, this.hiddenCapMat, this.hiddenCapMat];
       const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, d), mats6);
       mesh.position.set(x, y0 + doorH + lintelH / 2, z);
       this.scene.add(mesh);
@@ -5356,35 +5353,19 @@
         this.createExhibitionPlinth(cx, y0 + 0.28, 30.5, 1.2, 0.52, 1.2, fl < 2);
       }
 
-      // Overhead Rotunda Chandelier & Rosette
-      const chanGroup = new THREE.Group();
-      chanGroup.position.set(cx, y0 + ceilH - 0.04, 30.5);
-
-      const brassMat = new THREE.MeshLambertMaterial({ color: 0xd4af37 });
-      const rosette = new THREE.Mesh(new THREE.CylinderGeometry(1.4, 1.5, 0.08, 16), mats.ceiling);
-      chanGroup.add(rosette);
-
-      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, 1.1, 8), brassMat);
-      stem.position.y = -0.55;
-      chanGroup.add(stem);
-
-      const ring1 = new THREE.Mesh(new THREE.TorusGeometry(1.1, 0.05, 8, 20), brassMat);
-      ring1.position.y = -1.1;
-      ring1.rotation.x = Math.PI / 2;
-      chanGroup.add(ring1);
-
-      const ring2 = new THREE.Mesh(new THREE.TorusGeometry(0.65, 0.04, 8, 16), brassMat);
-      ring2.position.y = -0.85;
-      ring2.rotation.x = Math.PI / 2;
-      chanGroup.add(ring2);
-
-      this.scene.add(chanGroup);
-
+      // Overhead Rotunda Flush Ceiling Light (matching the rest of the museum's gallery lights)
       const chanColor = 0xfffae6;
       const chanInt = fl === 3 ? 0.45 : 0.60;
+      const rotundaFix = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.35, 0.35, 0.08, 12),
+        new THREE.MeshBasicMaterial({ color: chanColor })
+      );
+      rotundaFix.position.set(cx, y0 + ceilH - 0.04, 30.5);
+      this.scene.add(rotundaFix);
+
       const chanLight = new THREE.PointLight(chanColor, fl === this.playerFloor ? chanInt : 0, 14.0);
       chanLight._origIntensity = chanInt;
-      chanLight.position.set(cx, y0 + ceilH - 1.3, 30.5);
+      chanLight.position.set(cx, y0 + ceilH - 0.45, 30.5);
       this.scene.add(chanLight);
       if (this.floorLights[fl]) this.floorLights[fl].push(chanLight);
     }
@@ -5412,7 +5393,7 @@
 
       // 1. Helper: Room-Bounded Classical Entablature & Crown Molding Cornice
       // Cleanly fitted along the top of each enclosed room perimeter - zero wall penetration, zero voids
-      const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ) => {
+      const addRoomPerimeterCornice = (minX, maxX, minZ, maxZ, sides = { n: true, s: true, w: true, e: true }) => {
         const group = new THREE.Group();
         const rw = maxX - minX;
         const rd = maxZ - minZ;
@@ -5423,54 +5404,76 @@
         const fH = 0.05;
         const fD = 0.12;
         const fy = y0 + ceilH - fH / 2;
-        const fN = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
-        fN.position.set(cx, fy, minZ + fD / 2);
-        group.add(fN);
-        const fS = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
-        fS.position.set(cx, fy, maxZ - fD / 2);
-        group.add(fS);
-        const fW = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
-        fW.position.set(minX + fD / 2, fy, cz);
-        group.add(fW);
-        const fE = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
-        fE.position.set(maxX - fD / 2, fy, cz);
-        group.add(fE);
+        if (sides.n) {
+          const fN = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
+          fN.position.set(cx, fy, minZ + fD / 2);
+          group.add(fN);
+        }
+        if (sides.s) {
+          const fS = new THREE.Mesh(new THREE.BoxGeometry(rw, fH, fD), corniceMat);
+          fS.position.set(cx, fy, maxZ - fD / 2);
+          group.add(fS);
+        }
+        if (sides.w) {
+          const fW = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
+          fW.position.set(minX + fD / 2, fy, cz);
+          group.add(fW);
+        }
+        if (sides.e) {
+          const fE = new THREE.Mesh(new THREE.BoxGeometry(fD, fH, rd - fD * 2), corniceMat);
+          fE.position.set(maxX - fD / 2, fy, cz);
+          group.add(fE);
+        }
 
         // Band 2: Cyma-Reversa Crown Cove Bed Molding (beneath fillet)
         const cH = 0.08;
         const cD = 0.08;
         const cy = y0 + ceilH - fH - cH / 2;
-        const cN = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
-        cN.position.set(cx, cy, minZ + cD / 2);
-        group.add(cN);
-        const cS = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
-        cS.position.set(cx, cy, maxZ - cD / 2);
-        group.add(cS);
-        const cW = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
-        cW.position.set(minX + cD / 2, cy, cz);
-        group.add(cW);
-        const cE = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
-        cE.position.set(maxX - cD / 2, cy, cz);
-        group.add(cE);
+        if (sides.n) {
+          const cN = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
+          cN.position.set(cx, cy, minZ + cD / 2);
+          group.add(cN);
+        }
+        if (sides.s) {
+          const cS = new THREE.Mesh(new THREE.BoxGeometry(rw, cH, cD), corniceMat);
+          cS.position.set(cx, cy, maxZ - cD / 2);
+          group.add(cS);
+        }
+        if (sides.w) {
+          const cW = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
+          cW.position.set(minX + cD / 2, cy, cz);
+          group.add(cW);
+        }
+        if (sides.e) {
+          const cE = new THREE.Mesh(new THREE.BoxGeometry(cD, cH, rd - cD * 2), corniceMat);
+          cE.position.set(maxX - cD / 2, cy, cz);
+          group.add(cE);
+        }
 
         // Band 3: Classical Dentil / Bed Fascia Trim (beneath cove)
         const dH = 0.06;
         const dD = 0.05;
         const dy = y0 + ceilH - fH - cH - dH / 2;
-        const dN = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
-        dN.position.set(cx, dy, minZ + dD / 2);
-        group.add(dN);
-        const dS = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
-        dS.position.set(cx, dy, maxZ - dD / 2);
-        group.add(dS);
-        const dW = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
-        dW.position.set(minX + dD / 2, dy, cz);
-        group.add(dW);
-        const dE = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
-        dE.position.set(maxX - dD / 2, dy, cz);
-        group.add(dE);
-
-
+        if (sides.n) {
+          const dN = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
+          dN.position.set(cx, dy, minZ + dD / 2);
+          group.add(dN);
+        }
+        if (sides.s) {
+          const dS = new THREE.Mesh(new THREE.BoxGeometry(rw, dH, dD), dentilMat);
+          dS.position.set(cx, dy, maxZ - dD / 2);
+          group.add(dS);
+        }
+        if (sides.w) {
+          const dW = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
+          dW.position.set(minX + dD / 2, dy, cz);
+          group.add(dW);
+        }
+        if (sides.e) {
+          const dE = new THREE.Mesh(new THREE.BoxGeometry(dD, dH, rd - dD * 2), dentilMat);
+          dE.position.set(maxX - dD / 2, dy, cz);
+          group.add(dE);
+        }
 
         this.scene.add(group);
       };
@@ -5517,13 +5520,14 @@
         this.scene.add(skylightGroup);
       };
 
-      // Apply classical room-bounded entablature cornices to all exhibition wings
+      // Apply classical room-bounded entablature cornices strictly along actual solid walls (never across open Rotunda colonnades or open halls)
       addRoomPerimeterCornice(-35.8, -16.2, -5.8, 17.8); // West Wing Exhibition Gallery
       addRoomPerimeterCornice(-15.8, -4.2, -17.8, 27.8); // Main Gallery Concourse
-      addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8);    // East Main Hall
-      addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2); // North Antiquities Gallery
+      addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8, { n: true, s: false, w: true, e: false }); // East Main Hall North & West walls
+      addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2, { n: false, s: true, w: true, e: true }); // North Antiquities Gallery
       addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8);   // Arts & Music Office
-      addRoomPerimeterCornice(4.2, 27.8, 18.2, 27.8);    // South-East Media Wing
+      addRoomPerimeterCornice(-3.8, 11.8, 18.2, 27.8, { n: false, s: true, w: false, e: false }); // South Cross-Passage South wall (stops cleanly before Rotunda columns!)
+      addRoomPerimeterCornice(19.2, 27.8, 18.2, 27.8, { n: true, s: false, w: false, e: true });  // South-East Media Wing North & East walls
       addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8);// West Office
 
       // Apply grand coffered laylights to the elevated ceilings of the monumental halls
@@ -8819,7 +8823,7 @@
     // third-person player model both show up naturally.
     createHallwayMirror(mx, mz, y0) {
       const MX = mx, MZ = mz;          // world position of the mirror
-      const W = 2.015, H = 2.1;            // reflective surface size
+      const W = 2.015, H = 2.55;           // reflective surface size (taller full-length proportion)
       const bottom = 0.18;               // gap between floor and glass
 
       const group = new THREE.Group();
@@ -8846,7 +8850,7 @@
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 512;
+      const rtSize = Math.round(1024 * Math.min(window.devicePixelRatio || 1, 2));
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -11696,8 +11700,9 @@
           const art = arts[idx % arts.length];
 
           // Monumental museum sizing: fills the 7.5m-tall gallery walls while clamping cleanly to narrower architectural piers
+          const isBehindWestMirror = Math.abs(slot.x - (-26.0)) < 0.1 && Math.abs(slot.z - (-4.15)) < 0.1;
           const maxW = slot.maxW || 4.00;
-          const maxH = 3.80;
+          const maxH = isBehindWestMirror ? 3.00 : 3.80;
           let renderW = art.w * 1.78;
           let renderH = art.h * 1.78;
           const aspect = renderW / renderH;
@@ -11712,7 +11717,7 @@
           renderW = +renderW.toFixed(3);
           renderH = +renderH.toFixed(3);
 
-          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + 3.25;
+          const slotY = slot.floor * CONFIG.FLOOR_HEIGHT + (isBehindWestMirror ? 4.95 : 3.25);
           slot.y = slotY;
           art.x = slot.x;
           art.y = slotY;
