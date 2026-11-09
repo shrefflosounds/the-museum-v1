@@ -11749,6 +11749,23 @@
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
+          if (artTextureCache.has(art.file)) {
+            canvasMesh.material.map = artTextureCache.get(art.file);
+            canvasMesh.material.needsUpdate = true;
+          } else {
+            this.texLoader.load(
+              art.file,
+              (tex) => {
+                tex.colorSpace = THREE.SRGBColorSpace;
+                artTextureCache.set(art.file, tex);
+                canvasMesh.material.map = tex;
+                canvasMesh.material.needsUpdate = true;
+              },
+              undefined,
+              () => {}
+            );
+          }
+
           const plaqueTex = TextureFactory.createPlaqueTexture(art.title, art.artist || 'Smitty Fantastic');
           const plaqueMesh = new THREE.Mesh(
             plaqueGeom,
@@ -11775,9 +11792,7 @@
             z: slot.z + nz,
             floor: f,
             mesh: group,
-            canvasMesh: canvasMesh,
-            textureLoaded: false,
-            textureLoading: false
+            canvasMesh: canvasMesh
           };
           this.paintings.push(paintingEntry);
         });
@@ -13284,40 +13299,11 @@
         }
       }
       // Major Performance Optimization: cull all paintings on inactive floors
-      // and lazily stream textures only for the active floor (with mipmaps disabled to save 33% VRAM and prevent frame drops)
+      // Only render artworks on the player's current floor, eliminating hundreds of draw calls & texture lookups!
       if (this.paintings) {
-        if (!this._artTextureCache) this._artTextureCache = new Map();
         for (let p of this.paintings) {
-          const isCurFloor = (p.floor === this.playerFloor);
           if (p.mesh) {
-            p.mesh.visible = isCurFloor;
-          }
-          if (isCurFloor && !p.textureLoaded && !p.textureLoading && p.canvasMesh) {
-            if (this._artTextureCache.has(p.file)) {
-              p.canvasMesh.material.map = this._artTextureCache.get(p.file);
-              p.canvasMesh.material.needsUpdate = true;
-              p.textureLoaded = true;
-            } else {
-              p.textureLoading = true;
-              this.texLoader.load(
-                p.file,
-                (tex) => {
-                  tex.colorSpace = THREE.SRGBColorSpace;
-                  tex.generateMipmaps = false;
-                  tex.minFilter = THREE.LinearFilter;
-                  tex.magFilter = THREE.LinearFilter;
-                  this._artTextureCache.set(p.file, tex);
-                  p.canvasMesh.material.map = tex;
-                  p.canvasMesh.material.needsUpdate = true;
-                  p.textureLoaded = true;
-                  p.textureLoading = false;
-                },
-                undefined,
-                () => {
-                  p.textureLoading = false;
-                }
-              );
-            }
+            p.mesh.visible = (p.floor === this.playerFloor);
           }
         }
       }
@@ -17273,12 +17259,12 @@
 
           const time = performance.now() * 0.002;
 
-          // Dynamic distance culling for paintings: generous render distance on current floor
+          // Dynamic distance culling for paintings: generous render distance on current floor (or all floors in spectator mode)
           if (this.paintings) {
             const px = this.playerPos.x;
             const pz = this.playerPos.z;
             for (let p of this.paintings) {
-              if (p.floor !== this.playerFloor) {
+              if (!this.isSpectatorMode && p.floor !== this.playerFloor) {
                 if (p.mesh.visible) p.mesh.visible = false;
               } else {
                 const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
