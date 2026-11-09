@@ -264,483 +264,332 @@ floor.4 = 4TH FLOOR
 
 [ ARTWORK TITLES ]
 # Shown on the wall plaque, in the [E] prompt, and in the artwork popup.
-# The image file for each one is noted in the line above it.
-# image: 001_1-1-Painted-Colors-2023.jpg
+
+# --- 1ST FLOOR (1 (Complete Artworks)) ---
 art.001 = Painted Colors (2023)
-
-# image: 002_1-2-Painted-Face-2023.jpg
+art.artist.001 = Smitty Fantastic
 art.002 = Painted Face (2023)
-
-# image: 003_1-3-Reddish-House-2023.jpg
+art.artist.002 = Smitty Fantastic
 art.003 = Reddish House (2023)
-
-# image: 004_2-Mocha-Surprise-2022.jpg
+art.artist.003 = Smitty Fantastic
 art.004 = Mocha Surprise (2022)
-
-# image: 005_3-Emoji-2024.jpg
+art.artist.004 = Smitty Fantastic
 art.005 = Emoji (2024)
-
-# image: 006_4-Chloe-Bailey-Portrait-2021.jpg
+art.artist.005 = Smitty Fantastic
 art.006 = Chloe Bailey Portrait (2021)
-
-# image: 007_Accident-2022.jpg
+art.artist.006 = Smitty Fantastic
 art.007 = Accident (2022)
-
-# image: 008_Astonishment-2021.jpg
+art.artist.007 = Smitty Fantastic
 art.008 = Astonishment (2021)
-
-# image: 009_Banner-2024.jpg
+art.artist.008 = Smitty Fantastic
 art.009 = Banner (2024)
-
-# image: 010_Beekeeper-2024.jpg
+art.artist.009 = Smitty Fantastic
 art.010 = Beekeeper (2024)
-
-# image: 011_Behind-Glass-2021.jpg
+art.artist.010 = Smitty Fantastic
 art.011 = Behind Glass (2021)
-
-# image: 012_Car-Fire-2024.jpg
+art.artist.011 = Smitty Fantastic
 art.012 = Car Fire (2024)
-
-# image: 013_Ee9-2025.jpg
+art.artist.012 = Smitty Fantastic
 art.013 = Ee9 (2025)
-
-# image: 014_Elderly-Portrait-2021.jpg
+art.artist.013 = Smitty Fantastic
 art.014 = Elderly Portrait (2021)
-
-# image: 015_Environment-2025.png
+art.artist.014 = Smitty Fantastic
 art.015 = Environment (2025)
-
-# image: 016_Fast-2020.jpg
+art.artist.015 = Smitty Fantastic
 art.016 = Fast (2020)
-
-# image: 017_Framed-Flame-2025.jpg
+art.artist.016 = Smitty Fantastic
 art.017 = Framed Flame (2025)
-
-# image: 018_Green-Drawing-2025.jpg
+art.artist.017 = Smitty Fantastic
 art.018 = Green Drawing (2025)
-
-# image: 019_Grey-Face-2021.jpg
+art.artist.018 = Smitty Fantastic
 art.019 = Grey Face (2021)
-
-# image: 020_Growth-House-2020.jpg
+art.artist.019 = Smitty Fantastic
 art.020 = Growth House (2020)
-
-# image: 021_I-Want-To-Live-By-The-Sea-2024.jpg
+art.artist.020 = Smitty Fantastic
 art.021 = I Want To Live By The Sea (2024)
-
-# image: 022_Jewelry-2025.jpg
+art.artist.021 = Smitty Fantastic
 art.022 = Jewelry (2025)
-
-# image: 023_Leadership-Lemon-2023.jpg
+art.artist.022 = Smitty Fantastic
 art.023 = Leadership Lemon (2023)
-
-# image: 024_Melt-2025.jpg
+art.artist.023 = Smitty Fantastic
 art.024 = Melt (2025)
-
-# image: 025_Memorial-2023.jpg
+art.artist.024 = Smitty Fantastic
 art.025 = Memorial (2023)
-
-# image: 026_Mount-Saint-2022.jpg
+art.artist.025 = Smitty Fantastic
 art.026 = Mount Saint (2022)
-
-# image: 027_Odi-2021.jpg
+art.artist.026 = Smitty Fantastic
 art.027 = Odi (2021)
-
-# image: 028_Omelette-and-Pen-on-Paper-2023.jpg
+art.artist.027 = Smitty Fantastic
 art.028 = Omelette and Pen on Paper (2023)
-
-# image: 029_Pink-Creature-2025.jpg
-art.029 = Pink Creature (2025)
-
-# image: 030_Pink-Life-2022.jpg
-art.030 = Pink Life (2022)
-
-# image: 031_Purple-Face-2021.jpg
-art.031 = Purple Face (2021)
-
-# image: 032_Ratatoing-Reheated-Album-Cover-2026.png
-art.032 = Ratatoing Reheated Album Cover (2026)
-
-# image: 033_Ricky-Bascom-School-Is-Slavery-2-Unused-Cover.jpg
-art.033 = Ricky Bascom School Is Slavery 2 Unused Cover
-
-# image: 034_Screenshot-2022.jpg
-art.034 = Screenshot (2022)
-
-# image: 035_Sea-Serpent-2025.jpg
-art.035 = Sea Serpent (2025)
-
-# image: 036_Selfie-in-the-Woods-2023.jpg
-art.036 = Selfie in the Woods (2023)
-
-# image: 037_SF2-Space-Ad-2026.png
-art.037 = SF2 Space Ad (2026)
-
-# image: 038_Shake-it-for-Me-2026.jpg
+art.artist.028 = Smitty Fantastic
+art.029 = PendulumFlickRMX Cover (2026)
+art.artist.029 = Smitty Fantastic
+art.030 = Pink Creature (2025)
+art.artist.030 = Smitty Fantastic
+art.031 = Pink Life (2022)
+art.artist.031 = Smitty Fantastic
+art.032 = Purple Face (2021)
+art.artist.032 = Smitty Fantastic
+art.033 = Ratatoing Reheated Album Cover (2026)
+art.artist.033 = Smitty Fantastic
+art.034 = Ricky Bascom School Is Slavery 2 Unused Cover
+art.artist.034 = Smitty Fantastic
+art.035 = Screenshot (2022)
+art.artist.035 = Smitty Fantastic
+art.036 = Sea Serpent (2025)
+art.artist.036 = Smitty Fantastic
+art.037 = Selfie in the Woods (2023)
+art.artist.037 = Smitty Fantastic
 art.038 = Shake it for Me (2026)
-
-# image: 039_Wet-Paint-2023.jpg
+art.artist.038 = Smitty Fantastic
 art.039 = Wet Paint (2023)
-
-# image: 040_Writing-2024.jpg
+art.artist.039 = Smitty Fantastic
 art.040 = Writing (2024)
+art.artist.040 = Smitty Fantastic
+
+# --- 2ND FLOOR (2 (Promo : sketches)) ---
+art.041 = 4Who
+art.artist.041 = Smitty Fantastic
+art.042 = Birth of Smitty (2019)
+art.artist.042 = Smitty Fantastic
+art.043 = Burning
+art.artist.043 = Smitty Fantastic
+art.044 = Car and Creature
+art.artist.044 = Smitty Fantastic
+art.045 = Dog Gators
+art.artist.045 = Smitty Fantastic
+art.046 = Est Fni Early Cover
+art.artist.046 = Smitty Fantastic
+art.047 = Flight Tee Ad
+art.artist.047 = Smitty Fantastic
+art.048 = Gemini
+art.artist.048 = Smitty Fantastic
+art.049 = Graffiti Tee Ad
+art.artist.049 = Smitty Fantastic
+art.050 = Gumby Said Watch Me Whip
+art.artist.050 = Smitty Fantastic
+art.051 = Harbinger Sketch
+art.artist.051 = Smitty Fantastic
+art.052 = Heknah Ad
+art.artist.052 = Smitty Fantastic
+art.053 = Olive Green Sweater
+art.artist.053 = Smitty Fantastic
+art.054 = Petalboy
+art.artist.054 = Smitty Fantastic
+art.055 = Powerman
+art.artist.055 = Smitty Fantastic
+art.056 = Ricky Bascom Cover (early notes)
+art.artist.056 = Smitty Fantastic
+art.057 = Safehaven
+art.artist.057 = Smitty Fantastic
+art.058 = SF2 Album Ad
+art.artist.058 = Smitty Fantastic
+art.059 = SF2 Space Ad (2026)
+art.artist.059 = Smitty Fantastic
+art.060 = Shrefflo Beanie Ad
+art.artist.060 = Smitty Fantastic
+art.061 = Shrefflo Black Tee Ad
+art.artist.061 = Smitty Fantastic
+art.062 = Shrefflo Chase Scene
+art.artist.062 = Smitty Fantastic
+art.063 = Shrefflo Clear Bags Ad
+art.artist.063 = Smitty Fantastic
+art.064 = Shrefflo Clones Ad
+art.artist.064 = Smitty Fantastic
+art.065 = Shrefflo Early Shop Ad
+art.artist.065 = Smitty Fantastic
+art.066 = Shrefflo Gaiter Ad
+art.artist.066 = Smitty Fantastic
+art.067 = Shrefflo Ocean Cap Ad
+art.artist.067 = Smitty Fantastic
+art.068 = Shrefflo Physical Media Ad
+art.artist.068 = Smitty Fantastic
+art.069 = Shrefflo Purple Ad
+art.artist.069 = Smitty Fantastic
+art.070 = Shrefflo Script Tee Ad
+art.artist.070 = Smitty Fantastic
+art.071 = Shrefflo Space Scene
+art.artist.071 = Smitty Fantastic
+art.072 = Shrefflo Visual
+art.artist.072 = Smitty Fantastic
+art.073 = Shrefflo White Text Tee Ad
+art.artist.073 = Smitty Fantastic
+art.074 = Shrefflo Winter 2022 Ad
+art.artist.074 = Smitty Fantastic
+art.075 = Sky Selfie
+art.artist.075 = Smitty Fantastic
+art.076 = Smitty Dirt
+art.artist.076 = Smitty Fantastic
+art.077 = Smitty Round Sketch
+art.artist.077 = Smitty Fantastic
+art.078 = Smitty Website Asset
+art.artist.078 = Smitty Fantastic
+art.079 = Smitty, Heknah, and the Ascetic Sebring Ad
+art.artist.079 = Smitty Fantastic
+art.080 = Spotify Ad
+art.artist.080 = Smitty Fantastic
+
+# --- 3RD FLOOR (3 (Community Art)) ---
+art.081 = ShreffloPaint
+art.artist.081 = Heknah
+art.082 = Eye with Sigil (2026)
+art.artist.082 = Heknah
+art.083 = Self Portrait 1 (2026)
+art.artist.083 = Heknah
+art.084 = Self Portrait 2 (2026)
+art.artist.084 = Heknah
+art.085 = Self Portrait 3 (2026)
+art.artist.085 = Heknah
+art.086 = The Shreffloker (2026)
+art.artist.086 = Heknah
+art.087 = Nun (2026)
+art.artist.087 = Sharksa Shivers
+art.088 = JJar (2026)
+art.artist.088 = R3E4
+art.089 = Dumb & Ass (2026)
+art.artist.089 = R3E4
+art.090 = Statue Concepts (2026)
+art.artist.090 = R3E4
+art.091 = The Purple Dimension (2026)
+art.artist.091 = R3E4
+art.092 = Moments Before Disaster (2026)
+art.artist.092 = R3E4
+art.093 = Eye had a dream once (2026)
+art.artist.093 = R3E4
+art.094 = Button (2026)
+art.artist.094 = R3E4
+art.095 = SF Face (2026)
+art.artist.095 = R3E4
+art.096 = 2 Much Slimey (2026)
+art.artist.096 = R3E4
+art.097 = AUX Album Cover (2024)
+art.artist.097 = R3E4
+art.098 = Curser Album Cover (2026)
+art.artist.098 = R3E4
+art.099 = DVI Album Cover (2024)
+art.artist.099 = R3E4
+art.100 = Floppy Disc Album Cover (2024)
+art.artist.100 = R3E4
+art.101 = HDMI Album Cover (2024)
+art.artist.101 = R3E4
+art.102 = Memory Card Album Cover (2025)
+art.artist.102 = R3E4
+art.103 = P.O.T.S. (2024)
+art.artist.103 = R3E4
+art.104 = USB Album Cover (2024)
+art.artist.104 = R3E4
+art.105 = Wi-Fi Album Cover (2025)
+art.artist.105 = R3E4
+art.106 = Abstract Digital (2025)
+art.artist.106 = Ro Mack
+art.107 = Anguished Dog (2025)
+art.artist.107 = Smitty Fantastic
+art.108 = Conspiracy (2026)
+art.artist.108 = Smitty Fantastic
+art.109 = Dr. Coach unedited cover (2021)
+art.artist.109 = Smitty Fantastic
+art.110 = Flower Phone Doodle (2023)
+art.artist.110 = Smitty Fantastic
+art.111 = Hand Puppet (2024)
+art.artist.111 = Smitty Fantastic
+art.112 = Lined Creature (2026)
+art.artist.112 = Smitty Fantastic
+art.113 = Oo wow (2025)
+art.artist.113 = Smitty Fantastic
+art.114 = Planet Me (2025)
+art.artist.114 = Smitty Fantastic
+art.115 = Rat At Toing (2026)
+art.artist.115 = Smitty Fantastic
+art.116 = The Grid (2026)
+art.artist.116 = Smitty Fantastic
+art.117 = Three Creatures (2024)
+art.artist.117 = Smitty Fantastic
+art.118 = Three Faces (2023)
+art.artist.118 = Smitty Fantastic
+art.119 = Water Selfie (2025)
+art.artist.119 = Smitty Fantastic
+art.120 = Writing 2 (2024)
+art.artist.120 = Smitty Fantastic
+
+# --- 4TH FLOOR (4 (Odds & Ends)) ---
+art.121 = Annoying Orange Message
+art.artist.121 = Smitty Fantastic
+art.122 = Annoying Orange
+art.artist.122 = Smitty Fantastic
+art.123 = Bed Room
+art.artist.123 = Smitty Fantastic
+art.124 = Birth of Sand
+art.artist.124 = Smitty Fantastic
+art.125 = Browser Theme
+art.artist.125 = Smitty Fantastic
+art.126 = Collage
+art.artist.126 = Smitty Fantastic
+art.127 = Crate Challenge
+art.artist.127 = Smitty Fantastic
+art.128 = Darling
+art.artist.128 = Smitty Fantastic
+art.129 = Dogman
+art.artist.129 = Smitty Fantastic
+art.130 = Friendly Faces
+art.artist.130 = Smitty Fantastic
+art.131 = Full Speed
+art.artist.131 = Smitty Fantastic
+art.132 = Grabbing a Slice
+art.artist.132 = Smitty Fantastic
+art.133 = Green Fish
+art.artist.133 = Smitty Fantastic
+art.134 = Green Selfie
+art.artist.134 = Smitty Fantastic
+art.135 = Gym Rat
+art.artist.135 = Smitty Fantastic
+art.136 = Harbinger Music Video Behind the Scenes
+art.artist.136 = Smitty Fantastic
+art.137 = I made u a bird
+art.artist.137 = Smitty Fantastic
+art.138 = Kanye Nightmare Recreation
+art.artist.138 = Smitty Fantastic
+art.139 = Many Faces
+art.artist.139 = Smitty Fantastic
+art.140 = Monta-Monat
+art.artist.140 = Smitty Fantastic
+art.141 = No Weather Data
+art.artist.141 = Smitty Fantastic
+art.142 = Nun Portrait
+art.artist.142 = Smitty Fantastic
+art.143 = Paddington
+art.artist.143 = Smitty Fantastic
+art.144 = Penguin1
+art.artist.144 = Smitty Fantastic
+art.145 = Penguin2
+art.artist.145 = Smitty Fantastic
+art.146 = Peter Griffin
+art.artist.146 = Smitty Fantastic
+art.147 = Plush Monkey
+art.artist.147 = Smitty Fantastic
+art.148 = Purple Look
+art.artist.148 = Smitty Fantastic
+art.149 = Sacred Cow
+art.artist.149 = Smitty Fantastic
+art.150 = Sculpture
+art.artist.150 = Smitty Fantastic
+art.151 = Self Portrait
+art.artist.151 = Smitty Fantastic
+art.152 = A Red Fox (2008)
+art.artist.152 = Smitty Fantastic
+art.153 = Snapchat Filter
+art.artist.153 = Smitty Fantastic
+art.154 = Spew
+art.artist.154 = Smitty Fantastic
+art.155 = The Lake - Purple Version
+art.artist.155 = Smitty Fantastic
+art.156 = Trumpa
+art.artist.156 = Smitty Fantastic
+art.157 = Vipes-Hippo
+art.artist.157 = Smitty Fantastic
+art.158 = Welcome To My Land
+art.artist.158 = Smitty Fantastic
+art.159 = Wired
+art.artist.159 = Smitty Fantastic
+art.160 = Yoda Smoking Weed
+art.artist.160 = Smitty Fantastic
 
-# image: 041_001.jpg
-art.041 = Spotify Ad
-
-# image: 042_002-copy.jpg
-art.042 = Shake It For Me
-
-# image: 043_003-copy.jpg
-art.043 = Shirt Ad Flight
-
-# image: 044_006-copy.jpg
-art.044 = 4who
-
-# image: 045_007-copy.jpg
-art.045 = Joyous Protection
-
-# image: 046_012-copy.jpg
-art.046 = The Harbinger
-
-# image: 047_013-copy-2.jpg
-art.047 = Gemini
-
-# image: 048_013-copy.jpg
-art.048 = Shrefflo Ocean Cap Ad
-
-# image: 049_013.jpg
-art.049 = Lake Excursion Ad
-
-# image: 050_014.jpg
-art.050 = Now Watch Me Whip
-
-# image: 051_015-copy.jpg
-art.051 = Luv Graffiti Shirt Ad
-
-# image: 052_016-copy.jpg
-art.052 = Sf Mini Drawing Red
-
-# image: 053_018-copy.jpg
-art.053 = Person With Mask Behind
-
-# image: 054_019.jpg
-art.054 = Sf Astonishment Ad
-
-# image: 055_020.jpg
-art.055 = Heknah Wallpaper As
-
-# image: 056_022.jpg
-art.056 = Gaiter Mask Dr Coach Ad
-
-# image: 057_027.jpg
-art.057 = Winter 2022 Ad
-
-# image: 058_029-copy.jpg
-art.058 = Auto Shop Nightmare
-
-# image: 059_029.jpg
-art.059 = Ascetic Sebring Ad
-
-# image: 060_033.jpg
-art.060 = Green Beanie Ad
-
-# image: 061_034.jpg
-art.061 = Person On Fire
-
-# image: 062_035.jpg
-art.062 = Est FNI First Cover
-
-# image: 063_037.jpg
-art.063 = Shrefflo Store 2025 Ad
-
-# image: 064_ad-bags-clear.png
-art.064 = Ad Bags Clear
-
-# image: 065_ad-shrefflo-script.png
-art.065 = Ad Shrefflo Script
-
-# image: 066_Bascom-notes.png
-art.066 = Bascom Notes
-
-# image: 067_candyassboy.jpeg
-art.067 = Candyassboy
-
-# image: 068_chase.png
-art.068 = Chase
-
-# image: 069_dog-gators.png
-art.069 = Dog Gators
-
-# image: 070_ggg.png
-art.070 = Ggg
-
-# image: 071_neeeww.png
-art.071 = Neeeww
-
-# image: 072_og1.jpg
-art.072 = Smittys First Appearance
-
-# image: 073_petalboy.png
-art.073 = Petalboy
-
-# image: 074_physicals.png
-art.074 = Physicals
-
-# image: 075_Powerman.png
-art.075 = Powerman
-
-# image: 076_SF2-bumper.png
-art.076 = SF2 Bumper
-
-# image: 077_shrefflo-white-ad.png
-art.077 = Shrefflo White Ad
-
-# image: 078_space.png
-art.078 = Space
-
-# image: 079_Untitled-2.png
-art.079 = Untitled 2
-
-# image: 080_z-3-copy.png
-art.080 = Z 3
-
-# image: 081_1-Heknah-ShreffloPaint.png
-art.081 = Heknah - ShreffloPaint
-
-# image: 082_2-Heknah-Eye-with-Sigil-2026.png
-art.082 = Heknah - Eye with Sigil (2026)
-
-# image: 083_3-Heknah-Self-Portrait-1-2026.jpg
-art.083 = Heknah - Self Portrait 1 (2026)
-
-# image: 084_4-Heknah-Self-Portrait-2-2026.png
-art.084 = Heknah - Self Portrait 2 (2026)
-
-# image: 085_5-Heknah-Self-Portrait-3-2026.png
-art.085 = Heknah - Self Portrait 3 (2026)
-
-# image: 086_6-Heknah-The-Shreffloker-2026.png
-art.086 = Heknah - The Shreffloker (2026)
-
-# image: 087_7-Sharksa-Shivers-Nun-2026.png
-art.087 = Sharksa Shivers - Nun (2026)
-
-# image: 088_8-R3E4-JJar-2026.jpg
-art.088 = R3E4 - JJar (2026)
-
-# image: 089_9-R3E4-Dumb-Ass-2026.png
-art.089 = R3E4 - Dumb & Ass (2026)
-
-# image: 090_10-R3E4-Statue-Concepts-2026.png
-art.090 = R3E4 - Statue Concepts (2026)
-
-# image: 091_11-R3E4-The-Purple-Dimension-2026.png
-art.091 = R3E4 - The Purple Dimension (2026)
-
-# image: 092_12-R3E4-Moments-Before-Disaster-2026.png
-art.092 = R3E4 - Moments Before Disaster (2026)
-
-# image: 093_13-R3E4-Eye-had-a-dream-once-2026.png
-art.093 = R3E4 - Eye had a dream once (2026)
-
-# image: 094_14-R3E4-Button-2026.png
-art.094 = R3E4 - Button (2026)
-
-# image: 095_15-R3E4-SF-Face-2026.png
-art.095 = R3E4 - SF Face (2026)
-
-# image: 096_16-R3E4-2-Much-Slimey-2026.png
-art.096 = R3E4 - 2 Much Slimey (2026)
-
-# image: 097_R3E4-AUX-Album-Cover-2024.png
-art.097 = R3E4 - AUX Album Cover (2024)
-
-# image: 098_R3E4-Curser-Album-Cover-2026.png
-art.098 = R3E4 - Curser Album Cover (2026)
-
-# image: 099_R3E4-DVI-Album-Cover-2024.png
-art.099 = R3E4 - DVI Album Cover (2024)
-
-# image: 100_R3E4-Floppy-Disc-Album-Cover-2024.png
-art.100 = R3E4 - Floppy Disc Album Cover (2024)
-
-# image: 101_R3E4-HDMI-Album-Cover-2024.png
-art.101 = R3E4 - HDMI Album Cover (2024)
-
-# image: 102_R3E4-Memory-Card-Album-Cover-2025.png
-art.102 = R3E4 - Memory Card Album Cover (2025)
-
-# image: 103_R3E4-P-O-T-S-2024.png
-art.103 = R3E4 - P.O.T.S. (2024)
-
-# image: 104_R3E4-USB-Album-Cover-2024.png
-art.104 = R3E4 - USB Album Cover (2024)
-
-# image: 105_R3E4-Wi-Fi-Album-Cover-2025.png
-art.105 = R3E4 - Wi-Fi Album Cover (2025)
-
-# image: 106_Ro-Mack-Abstract-Digital-2025.png
-art.106 = Ro Mack - Abstract Digital (2025)
-
-# image: 107_Smitty-Fantastic-Anguished-Dog-2025.png
-art.107 = Smitty Fantastic - Anguished Dog (2025)
-
-# image: 108_Smitty-Fantastic-Conspiracy-2026.png
-art.108 = Smitty Fantastic - Conspiracy (2026)
-
-# image: 109_Smitty-Fantastic-Dr-Coach-unedited-cover-2021.jpg
-art.109 = Smitty Fantastic - Dr. Coach unedited cover (2021)
-
-# image: 110_Smitty-Fantastic-Flower-Phone-Doodle-2023.jpg
-art.110 = Smitty Fantastic - Flower Phone Doodle (2023)
-
-# image: 111_Smitty-Fantastic-Hand-Puppet-2024.png
-art.111 = Smitty Fantastic - Hand Puppet (2024)
-
-# image: 112_Smitty-Fantastic-Lined-Creature-2026.png
-art.112 = Smitty Fantastic - Lined Creature (2026)
-
-# image: 113_Smitty-Fantastic-Oo-wow-2025.png
-art.113 = Smitty Fantastic - Oo wow (2025)
-
-# image: 114_Smitty-Fantastic-Planet-Me-2025.jpg
-art.114 = Smitty Fantastic - Planet Me (2025)
-
-# image: 115_Smitty-Fantastic-Rat-At-Toing-2026.png
-art.115 = Smitty Fantastic - Rat At Toing (2026)
-
-# image: 116_Smitty-Fantastic-The-Grid-2026.png
-art.116 = Smitty Fantastic - The Grid (2026)
-
-# image: 117_Smitty-Fantastic-Three-Creatures-2024.jpg
-art.117 = Smitty Fantastic - Three Creatures (2024)
-
-# image: 118_Smitty-Fantastic-Three-Faces-2023.png
-art.118 = Smitty Fantastic - Three Faces (2023)
-
-# image: 119_Smitty-Fantastic-Water-Selfie-2025.jpg
-art.119 = Smitty Fantastic - Water Selfie (2025)
-
-# image: 120_Smitty-Fantastic-Writing-2-2024.jpg
-art.120 = Smitty Fantastic - Writing 2 (2024)
-
-# image: 121_001-copy.jpg
-art.121 = Penguin 2
-
-# image: 122_5am.png
-art.122 = 5am
-
-# image: 123_006.jpg
-art.123 = Darling Actor Drawing
-
-# image: 124_008-copy-3.jpg
-art.124 = Made U A Bird
-
-# image: 125_008.jpg
-art.125 = Consumer Sculpture
-
-# image: 126_012-copy.jpg
-art.126 = Shocksites
-
-# image: 127_012.jpg
-art.127 = Blip Vision Pizza Reach
-
-# image: 128_013-copy-3.jpg
-art.128 = Monkey Full Body
-
-# image: 129_014.jpg
-art.129 = Sand
-
-# image: 130_016-copy-2.jpg
-art.130 = Orange Kitchen Visions
-
-# image: 131_016-copy.jpg
-art.131 = Peter Griffin Tribute
-
-# image: 132_016.jpg
-art.132 = Crate Challenge
-
-# image: 133_017-copy.jpg
-art.133 = Imagen
-
-# image: 134_018-copy.jpg
-art.134 = Yoda Smoking Weed
-
-# image: 135_018.jpg
-art.135 = Spew
-
-# image: 136_019-copy-2.jpg
-art.136 = Photo Turned Drawing Creatureg
-
-# image: 137_019.jpg
-art.137 = Purple Smile
-
-# image: 138_021.jpg
-art.138 = Snapchat Athlete Gun Woman Boo
-
-# image: 139_022-copy.jpg
-art.139 = Smitty Cow
-
-# image: 140_025-copy.jpg
-art.140 = Shawtys Mix
-
-# image: 141_027-copy.jpg
-art.141 = Minnesota Fish Painting
-
-# image: 142_027.jpg
-art.142 = Annoyeornej
-
-# image: 143_030-copy.jpg
-art.143 = Trumpa
-
-# image: 144_031-copy.jpg
-art.144 = Lake Blue Violet
-
-# image: 145_034-copy.jpg
-art.145 = Sf Penguin 1
-
-# image: 146_037-copy.jpg
-art.146 = Harbinger Smitty Live Action
-
-# image: 147_037.jpg
-art.147 = Coach Nun
-
-# image: 148_038-copy.jpg
-art.148 = Smitty Colorful Mask Edit
-
-# image: 149_038.jpg
-art.149 = Rat YMCA
-
-# image: 150_20261017201139.png
-art.150 = 20261017201139
-
-# image: 151_creature1.jpg
-art.151 = 2008 Red Fox
-
-# image: 152_dogman.png
-art.152 = Dogman
-
-# image: 153_dol1.jpg
-art.153 = Dol1
-
-# image: 154_house3.jpg
-art.154 = Painting With A Bed
-
-# image: 155_kanye-nightmare.png
-art.155 = Kanye Nightmare
-
-# image: 156_live-action-smitty.jpg
-art.156 = Live Action Smitty
-
-# image: 157_monta-monat.png
-art.157 = Monta Monat
-
-# image: 158_noweatherdata.jpg
-art.158 = No Weather Data
-
-# image: 159_tex.jpg
-art.159 = Liberal Lawn Sign
-
-# image: 160_vipes-hippo.png
-art.160 = Vipes Hippo

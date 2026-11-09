@@ -818,7 +818,7 @@
       return new THREE.CanvasTexture(canvas);
     }
 
-    static createPlaqueTexture(title = 'EXHIBIT') {
+    static createPlaqueTexture(title = 'EXHIBIT', subtitle = '') {
       const canvas = document.createElement('canvas');
       canvas.width = 256;
       canvas.height = 64;
@@ -840,7 +840,8 @@
 
       ctx.font = '10px sans-serif';
       ctx.fillStyle = '#3a2e15';
-      ctx.fillText(T('plaque.subtitle', 'SHREFFLO MUSEUM ARCHIVE'), 128, 44);
+      const subText = subtitle ? subtitle.toUpperCase() : T('plaque.subtitle', 'SHREFFLO MUSEUM ARCHIVE');
+      ctx.fillText(subText, 128, 44);
 
       return new THREE.CanvasTexture(canvas);
     }
@@ -2318,7 +2319,8 @@
     "id": 1,
     "floor": 0,
     "title": "Painted Colors (2023)",
-    "file": "assets/gallery/001_1-1-Painted-Colors-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/001_1-1-painted-colors-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.443
@@ -2327,7 +2329,8 @@
     "id": 2,
     "floor": 0,
     "title": "Painted Face (2023)",
-    "file": "assets/gallery/002_1-2-Painted-Face-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/002_1-2-painted-face-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.383
@@ -2336,7 +2339,8 @@
     "id": 3,
     "floor": 0,
     "title": "Reddish House (2023)",
-    "file": "assets/gallery/003_1-3-Reddish-House-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/003_1-3-reddish-house-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.402
@@ -2345,7 +2349,8 @@
     "id": 4,
     "floor": 0,
     "title": "Mocha Surprise (2022)",
-    "file": "assets/gallery/004_2-Mocha-Surprise-2022.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/004_2-mocha-surprise-2022.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2354,7 +2359,8 @@
     "id": 5,
     "floor": 0,
     "title": "Emoji (2024)",
-    "file": "assets/gallery/005_3-Emoji-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/005_3-emoji-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2363,7 +2369,8 @@
     "id": 6,
     "floor": 0,
     "title": "Chloe Bailey Portrait (2021)",
-    "file": "assets/gallery/006_4-Chloe-Bailey-Portrait-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/006_4-chloe-bailey-portrait-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.01,
     "h": 2.15
@@ -2372,7 +2379,8 @@
     "id": 7,
     "floor": 0,
     "title": "Accident (2022)",
-    "file": "assets/gallery/007_Accident-2022.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/007_accident-2022.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2381,7 +2389,8 @@
     "id": 8,
     "floor": 0,
     "title": "Astonishment (2021)",
-    "file": "assets/gallery/008_Astonishment-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/008_astonishment-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.252
@@ -2390,7 +2399,8 @@
     "id": 9,
     "floor": 0,
     "title": "Banner (2024)",
-    "file": "assets/gallery/009_Banner-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/009_banner-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.209
@@ -2399,7 +2409,8 @@
     "id": 10,
     "floor": 0,
     "title": "Beekeeper (2024)",
-    "file": "assets/gallery/010_Beekeeper-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/010_beekeeper-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2408,7 +2419,8 @@
     "id": 11,
     "floor": 0,
     "title": "Behind Glass (2021)",
-    "file": "assets/gallery/011_Behind-Glass-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/011_behind-glass-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.715
@@ -2417,16 +2429,18 @@
     "id": 12,
     "floor": 0,
     "title": "Car Fire (2024)",
-    "file": "assets/gallery/012_Car-Fire-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/012_car-fire-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.612
+    "h": 1.613
   },
   {
     "id": 13,
     "floor": 0,
     "title": "Ee9 (2025)",
-    "file": "assets/gallery/013_Ee9-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/013_ee9-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2435,16 +2449,18 @@
     "id": 14,
     "floor": 0,
     "title": "Elderly Portrait (2021)",
-    "file": "assets/gallery/014_Elderly-Portrait-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/014_elderly-portrait-2021.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.437,
+    "w": 1.436,
     "h": 2.15
   },
   {
     "id": 15,
     "floor": 0,
     "title": "Environment (2025)",
-    "file": "assets/gallery/015_Environment-2025.png",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/015_environment-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.209
@@ -2453,7 +2469,8 @@
     "id": 16,
     "floor": 0,
     "title": "Fast (2020)",
-    "file": "assets/gallery/016_Fast-2020.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/016_fast-2020.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.641
@@ -2462,7 +2479,8 @@
     "id": 17,
     "floor": 0,
     "title": "Framed Flame (2025)",
-    "file": "assets/gallery/017_Framed-Flame-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/017_framed-flame-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.609
@@ -2471,7 +2489,8 @@
     "id": 18,
     "floor": 0,
     "title": "Green Drawing (2025)",
-    "file": "assets/gallery/018_Green-Drawing-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/018_green-drawing-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.535
@@ -2480,7 +2499,8 @@
     "id": 19,
     "floor": 0,
     "title": "Grey Face (2021)",
-    "file": "assets/gallery/019_Grey-Face-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/019_grey-face-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 1.683,
     "h": 2.15
@@ -2489,7 +2509,8 @@
     "id": 20,
     "floor": 0,
     "title": "Growth House (2020)",
-    "file": "assets/gallery/020_Growth-House-2020.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/020_growth-house-2020.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2498,16 +2519,18 @@
     "id": 21,
     "floor": 0,
     "title": "I Want To Live By The Sea (2024)",
-    "file": "assets/gallery/021_I-Want-To-Live-By-The-Sea-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/021_i-want-to-live-by-the-sea-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.612
+    "h": 1.613
   },
   {
     "id": 22,
     "floor": 0,
     "title": "Jewelry (2025)",
-    "file": "assets/gallery/022_Jewelry-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/022_jewelry-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.053,
     "h": 2.15
@@ -2516,16 +2539,18 @@
     "id": 23,
     "floor": 0,
     "title": "Leadership Lemon (2023)",
-    "file": "assets/gallery/023_Leadership-Lemon-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/023_leadership-lemon-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.612
+    "h": 1.613
   },
   {
     "id": 24,
     "floor": 0,
     "title": "Melt (2025)",
-    "file": "assets/gallery/024_Melt-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/024_melt-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2534,7 +2559,8 @@
     "id": 25,
     "floor": 0,
     "title": "Memorial (2023)",
-    "file": "assets/gallery/025_Memorial-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/025_memorial-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.135
@@ -2543,7 +2569,8 @@
     "id": 26,
     "floor": 0,
     "title": "Mount Saint (2022)",
-    "file": "assets/gallery/026_Mount-Saint-2022.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/026_mount-saint-2022.jpg",
     "wing": "1ST FLOOR",
     "w": 1.53,
     "h": 2.15
@@ -2552,7 +2579,8 @@
     "id": 27,
     "floor": 0,
     "title": "Odi (2021)",
-    "file": "assets/gallery/027_Odi-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/027_odi-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2561,52 +2589,58 @@
     "id": 28,
     "floor": 0,
     "title": "Omelette and Pen on Paper (2023)",
-    "file": "assets/gallery/028_Omelette-and-Pen-on-Paper-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/028_omelette-and-pen-on-paper-2023.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.661,
+    "w": 1.66,
     "h": 2.15
   },
   {
     "id": 29,
     "floor": 0,
+    "title": "PendulumFlickRMX Cover (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/029_pendulumflickrmx-cover-2026.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 30,
+    "floor": 0,
     "title": "Pink Creature (2025)",
-    "file": "assets/gallery/029_Pink-Creature-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/030_pink-creature-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.391
   },
   {
-    "id": 30,
+    "id": 31,
     "floor": 0,
     "title": "Pink Life (2022)",
-    "file": "assets/gallery/030_Pink-Life-2022.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/031_pink-life-2022.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.137
   },
   {
-    "id": 31,
+    "id": 32,
     "floor": 0,
     "title": "Purple Face (2021)",
-    "file": "assets/gallery/031_Purple-Face-2021.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/032_purple-face-2021.jpg",
     "wing": "1ST FLOOR",
     "w": 1.93,
     "h": 2.15
   },
   {
-    "id": 32,
-    "floor": 0,
-    "title": "Ratatoing Reheated Album Cover (2026)",
-    "file": "assets/gallery/032_Ratatoing-Reheated-Album-Cover-2026.png",
-    "wing": "1ST FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
     "id": 33,
     "floor": 0,
-    "title": "Ricky Bascom School Is Slavery 2 Unused Cover",
-    "file": "assets/gallery/033_Ricky-Bascom-School-Is-Slavery-2-Unused-Cover.jpg",
+    "title": "Ratatoing Reheated Album Cover (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/033_ratatoing-reheated-album-cover-2026.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2614,8 +2648,9 @@
   {
     "id": 34,
     "floor": 0,
-    "title": "Screenshot (2022)",
-    "file": "assets/gallery/034_Screenshot-2022.jpg",
+    "title": "Ricky Bascom School Is Slavery 2 Unused Cover",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/034_ricky-bascom-school-is-slavery-2-unused-cover.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2623,44 +2658,49 @@
   {
     "id": 35,
     "floor": 0,
+    "title": "Screenshot (2022)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/035_screenshot-2022.jpg",
+    "wing": "1ST FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 36,
+    "floor": 0,
     "title": "Sea Serpent (2025)",
-    "file": "assets/gallery/035_Sea-Serpent-2025.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/036_sea-serpent-2025.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 1.818
   },
   {
-    "id": 36,
-    "floor": 0,
-    "title": "Selfie in the Woods (2023)",
-    "file": "assets/gallery/036_Selfie-in-the-Woods-2023.jpg",
-    "wing": "1ST FLOOR",
-    "w": 1.741,
-    "h": 2.15
-  },
-  {
     "id": 37,
     "floor": 0,
-    "title": "SF2 Space Ad (2026)",
-    "file": "assets/gallery/037_SF2-Space-Ad-2026.png",
+    "title": "Selfie in the Woods (2023)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/037_selfie-in-the-woods-2023.jpg",
     "wing": "1ST FLOOR",
-    "w": 1.659,
+    "w": 1.741,
     "h": 2.15
   },
   {
     "id": 38,
     "floor": 0,
     "title": "Shake it for Me (2026)",
-    "file": "assets/gallery/038_Shake-it-for-Me-2026.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/038_shake-it-for-me-2026.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
-    "h": 1.391
+    "h": 1.39
   },
   {
     "id": 39,
     "floor": 0,
     "title": "Wet Paint (2023)",
-    "file": "assets/gallery/039_Wet-Paint-2023.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/039_wet-paint-2023.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.132
@@ -2669,7 +2709,8 @@
     "id": 40,
     "floor": 0,
     "title": "Writing (2024)",
-    "file": "assets/gallery/040_Writing-2024.jpg",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/040_writing-2024.jpg",
     "wing": "1ST FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2677,89 +2718,99 @@
   {
     "id": 41,
     "floor": 1,
-    "title": "Spotify Ad",
-    "file": "assets/gallery/041_001.jpg",
+    "title": "4Who",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/041_4who.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.021
+    "h": 2.15
   },
   {
     "id": 42,
     "floor": 1,
-    "title": "Shake It For Me",
-    "file": "assets/gallery/042_002-copy.jpg",
+    "title": "Birth of Smitty (2019)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/042_birth-of-smitty-2019.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.391
+    "w": 1.612,
+    "h": 2.15
   },
   {
     "id": 43,
     "floor": 1,
-    "title": "Shirt Ad Flight",
-    "file": "assets/gallery/043_003-copy.jpg",
+    "title": "Burning",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/043_burning.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.141
+    "h": 1.46
   },
   {
     "id": 44,
     "floor": 1,
-    "title": "4who",
-    "file": "assets/gallery/044_006-copy.jpg",
+    "title": "Car and Creature",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/044_car-and-creature.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 2.134
   },
   {
     "id": 45,
     "floor": 1,
-    "title": "Joyous Protection",
-    "file": "assets/gallery/045_007-copy.jpg",
+    "title": "Dog Gators",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/045_dog-gators.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.561
   },
   {
     "id": 46,
     "floor": 1,
-    "title": "The Harbinger",
-    "file": "assets/gallery/046_012-copy.jpg",
+    "title": "Est Fni Early Cover",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/046_est-fni-early-cover.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.794,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 47,
     "floor": 1,
-    "title": "Gemini",
-    "file": "assets/gallery/047_013-copy-2.jpg",
+    "title": "Flight Tee Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/047_flight-tee-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.661,
-    "h": 2.15
+    "w": 2.15,
+    "h": 2.141
   },
   {
     "id": 48,
     "floor": 1,
-    "title": "Shrefflo Ocean Cap Ad",
-    "file": "assets/gallery/048_013-copy.jpg",
+    "title": "Gemini",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/048_gemini.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
+    "w": 1.66,
     "h": 2.15
   },
   {
     "id": 49,
     "floor": 1,
-    "title": "Lake Excursion Ad",
-    "file": "assets/gallery/049_013.jpg",
+    "title": "Graffiti Tee Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/049_graffiti-tee-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.209
+    "h": 2.15
   },
   {
     "id": 50,
     "floor": 1,
-    "title": "Now Watch Me Whip",
-    "file": "assets/gallery/050_014.jpg",
+    "title": "Gumby Said Watch Me Whip",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/050_gumby-said-watch-me-whip.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2767,26 +2818,29 @@
   {
     "id": 51,
     "floor": 1,
-    "title": "Luv Graffiti Shirt Ad",
-    "file": "assets/gallery/051_015-copy.jpg",
+    "title": "Harbinger Sketch",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/051_harbinger-sketch.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
+    "w": 1.794,
     "h": 2.15
   },
   {
     "id": 52,
     "floor": 1,
-    "title": "Sf Mini Drawing Red",
-    "file": "assets/gallery/052_016-copy.jpg",
+    "title": "Heknah Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/052_heknah-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.669
+    "h": 1.209
   },
   {
     "id": 53,
     "floor": 1,
-    "title": "Person With Mask Behind",
-    "file": "assets/gallery/053_018-copy.jpg",
+    "title": "Olive Green Sweater",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/053_olive-green-sweater.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 1.295
@@ -2794,26 +2848,29 @@
   {
     "id": 54,
     "floor": 1,
-    "title": "Sf Astonishment Ad",
-    "file": "assets/gallery/054_019.jpg",
+    "title": "Petalboy",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/054_petalboy.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.141
+    "h": 1.372
   },
   {
     "id": 55,
     "floor": 1,
-    "title": "Heknah Wallpaper As",
-    "file": "assets/gallery/055_020.jpg",
+    "title": "Powerman",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/055_powerman.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.209
+    "h": 2.15
   },
   {
     "id": 56,
     "floor": 1,
-    "title": "Gaiter Mask Dr Coach Ad",
-    "file": "assets/gallery/056_022.jpg",
+    "title": "Ricky Bascom Cover (early notes)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/056_ricky-bascom-cover-early-notes.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2821,35 +2878,39 @@
   {
     "id": 57,
     "floor": 1,
-    "title": "Winter 2022 Ad",
-    "file": "assets/gallery/057_027.jpg",
+    "title": "Safehaven",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/057_safehaven.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.357
+    "h": 1.666
   },
   {
     "id": 58,
     "floor": 1,
-    "title": "Auto Shop Nightmare",
-    "file": "assets/gallery/058_029-copy.jpg",
+    "title": "SF2 Album Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/058_sf2-album-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.134
+    "h": 1.62
   },
   {
     "id": 59,
     "floor": 1,
-    "title": "Ascetic Sebring Ad",
-    "file": "assets/gallery/059_029.jpg",
+    "title": "SF2 Space Ad (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/059_sf2-space-ad-2026.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
+    "w": 1.659,
     "h": 2.15
   },
   {
     "id": 60,
     "floor": 1,
-    "title": "Green Beanie Ad",
-    "file": "assets/gallery/060_033.jpg",
+    "title": "Shrefflo Beanie Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/060_shrefflo-beanie-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.143
@@ -2857,53 +2918,59 @@
   {
     "id": 61,
     "floor": 1,
-    "title": "Person On Fire",
-    "file": "assets/gallery/061_034.jpg",
+    "title": "Shrefflo Black Tee Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/061_shrefflo-black-tee-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.46
+    "h": 2.141
   },
   {
     "id": 62,
     "floor": 1,
-    "title": "Est FNI First Cover",
-    "file": "assets/gallery/062_035.jpg",
+    "title": "Shrefflo Chase Scene",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/062_shrefflo-chase-scene.jpg",
+    "wing": "2ND FLOOR",
+    "w": 2.15,
+    "h": 1.39
+  },
+  {
+    "id": 63,
+    "floor": 1,
+    "title": "Shrefflo Clear Bags Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/063_shrefflo-clear-bags-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
   },
   {
-    "id": 63,
+    "id": 64,
     "floor": 1,
-    "title": "Shrefflo Store 2025 Ad",
-    "file": "assets/gallery/063_037.jpg",
+    "title": "Shrefflo Clones Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/064_shrefflo-clones-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 1.619
   },
   {
-    "id": 64,
-    "floor": 1,
-    "title": "Ad Bags Clear",
-    "file": "assets/gallery/064_ad-bags-clear.png",
-    "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
     "id": 65,
     "floor": 1,
-    "title": "Ad Shrefflo Script",
-    "file": "assets/gallery/065_ad-shrefflo-script.png",
+    "title": "Shrefflo Early Shop Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/065_shrefflo-early-shop-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.209
   },
   {
     "id": 66,
     "floor": 1,
-    "title": "Bascom Notes",
-    "file": "assets/gallery/066_Bascom-notes.png",
+    "title": "Shrefflo Gaiter Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/066_shrefflo-gaiter-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -2911,134 +2978,149 @@
   {
     "id": 67,
     "floor": 1,
-    "title": "Candyassboy",
-    "file": "assets/gallery/067_candyassboy.jpeg",
+    "title": "Shrefflo Ocean Cap Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/067_shrefflo-ocean-cap-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.753,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 68,
     "floor": 1,
-    "title": "Chase",
-    "file": "assets/gallery/068_chase.png",
+    "title": "Shrefflo Physical Media Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/068_shrefflo-physical-media-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.391
+    "w": 1.535,
+    "h": 2.15
   },
   {
     "id": 69,
     "floor": 1,
-    "title": "Dog Gators",
-    "file": "assets/gallery/069_dog-gators.png",
+    "title": "Shrefflo Purple Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/069_shrefflo-purple-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
-    "h": 1.561
+    "w": 1.535,
+    "h": 2.15
   },
   {
     "id": 70,
     "floor": 1,
-    "title": "Ggg",
-    "file": "assets/gallery/070_ggg.png",
+    "title": "Shrefflo Script Tee Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/070_shrefflo-script-tee-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.052,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 71,
     "floor": 1,
-    "title": "Neeeww",
-    "file": "assets/gallery/071_neeeww.png",
+    "title": "Shrefflo Space Scene",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/071_shrefflo-space-scene.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.659,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.39
   },
   {
     "id": 72,
     "floor": 1,
-    "title": "Smittys First Appearance",
-    "file": "assets/gallery/072_og1.jpg",
+    "title": "Shrefflo Visual",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/072_shrefflo-visual.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.612,
+    "w": 2.15,
     "h": 2.15
   },
   {
     "id": 73,
     "floor": 1,
-    "title": "Petalboy",
-    "file": "assets/gallery/073_petalboy.png",
+    "title": "Shrefflo White Text Tee Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/073_shrefflo-white-text-tee-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.373
+    "h": 2.15
   },
   {
     "id": 74,
     "floor": 1,
-    "title": "Physicals",
-    "file": "assets/gallery/074_physicals.png",
+    "title": "Shrefflo Winter 2022 Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/074_shrefflo-winter-2022-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.536,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.357
   },
   {
     "id": 75,
     "floor": 1,
-    "title": "Powerman",
-    "file": "assets/gallery/075_Powerman.png",
+    "title": "Sky Selfie",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/075_sky-selfie.jpg",
     "wing": "2ND FLOOR",
-    "w": 2.15,
+    "w": 1.753,
     "h": 2.15
   },
   {
     "id": 76,
     "floor": 1,
-    "title": "SF2 Bumper",
-    "file": "assets/gallery/076_SF2-bumper.png",
+    "title": "Smitty Dirt",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/076_smitty-dirt.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.621
+    "h": 1.613
   },
   {
     "id": 77,
     "floor": 1,
-    "title": "Shrefflo White Ad",
-    "file": "assets/gallery/077_shrefflo-white-ad.png",
+    "title": "Smitty Round Sketch",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/077_smitty-round-sketch.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 2.15
+    "h": 1.669
   },
   {
     "id": 78,
     "floor": 1,
-    "title": "Space",
-    "file": "assets/gallery/078_space.png",
+    "title": "Smitty Website Asset",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/078_smitty-website-asset.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.391
+    "h": 1.535
   },
   {
     "id": 79,
     "floor": 1,
-    "title": "Untitled 2",
-    "file": "assets/gallery/079_Untitled-2.png",
+    "title": "Smitty, Heknah, and the Ascetic Sebring Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/079_smitty-heknah-and-the-ascetic-sebring-ad.jpg",
     "wing": "2ND FLOOR",
     "w": 2.15,
-    "h": 1.612
+    "h": 2.15
   },
   {
     "id": 80,
     "floor": 1,
-    "title": "Z 3",
-    "file": "assets/gallery/080_z-3-copy.png",
+    "title": "Spotify Ad",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/080_spotify-ad.jpg",
     "wing": "2ND FLOOR",
-    "w": 1.536,
-    "h": 2.15
+    "w": 2.15,
+    "h": 2.021
   },
   {
     "id": 81,
     "floor": 2,
-    "title": "Heknah - ShreffloPaint",
-    "file": "assets/gallery/081_1-Heknah-ShreffloPaint.png",
+    "title": "ShreffloPaint",
+    "artist": "Heknah",
+    "file": "assets/gallery/081_1-heknah-shrefflopaint.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3046,8 +3128,9 @@
   {
     "id": 82,
     "floor": 2,
-    "title": "Heknah - Eye with Sigil (2026)",
-    "file": "assets/gallery/082_2-Heknah-Eye-with-Sigil-2026.png",
+    "title": "Eye with Sigil (2026)",
+    "artist": "Heknah",
+    "file": "assets/gallery/082_2-heknah-eye-with-sigil-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3055,8 +3138,9 @@
   {
     "id": 83,
     "floor": 2,
-    "title": "Heknah - Self Portrait 1 (2026)",
-    "file": "assets/gallery/083_3-Heknah-Self-Portrait-1-2026.jpg",
+    "title": "Self Portrait 1 (2026)",
+    "artist": "Heknah",
+    "file": "assets/gallery/083_3-heknah-self-portrait-1-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3064,8 +3148,9 @@
   {
     "id": 84,
     "floor": 2,
-    "title": "Heknah - Self Portrait 2 (2026)",
-    "file": "assets/gallery/084_4-Heknah-Self-Portrait-2-2026.png",
+    "title": "Self Portrait 2 (2026)",
+    "artist": "Heknah",
+    "file": "assets/gallery/084_4-heknah-self-portrait-2-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3073,8 +3158,9 @@
   {
     "id": 85,
     "floor": 2,
-    "title": "Heknah - Self Portrait 3 (2026)",
-    "file": "assets/gallery/085_5-Heknah-Self-Portrait-3-2026.png",
+    "title": "Self Portrait 3 (2026)",
+    "artist": "Heknah",
+    "file": "assets/gallery/085_5-heknah-self-portrait-3-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3082,8 +3168,9 @@
   {
     "id": 86,
     "floor": 2,
-    "title": "Heknah - The Shreffloker (2026)",
-    "file": "assets/gallery/086_6-Heknah-The-Shreffloker-2026.png",
+    "title": "The Shreffloker (2026)",
+    "artist": "Heknah",
+    "file": "assets/gallery/086_6-heknah-the-shreffloker-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3091,8 +3178,9 @@
   {
     "id": 87,
     "floor": 2,
-    "title": "Sharksa Shivers - Nun (2026)",
-    "file": "assets/gallery/087_7-Sharksa-Shivers-Nun-2026.png",
+    "title": "Nun (2026)",
+    "artist": "Sharksa Shivers",
+    "file": "assets/gallery/087_7-sharksa-shivers-nun-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.021,
     "h": 2.15
@@ -3100,8 +3188,9 @@
   {
     "id": 88,
     "floor": 2,
-    "title": "R3E4 - JJar (2026)",
-    "file": "assets/gallery/088_8-R3E4-JJar-2026.jpg",
+    "title": "JJar (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/088_8-r3e4-jjar-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3109,8 +3198,9 @@
   {
     "id": 89,
     "floor": 2,
-    "title": "R3E4 - Dumb & Ass (2026)",
-    "file": "assets/gallery/089_9-R3E4-Dumb-Ass-2026.png",
+    "title": "Dumb & Ass (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/089_9-r3e4-dumb-ass-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3118,8 +3208,9 @@
   {
     "id": 90,
     "floor": 2,
-    "title": "R3E4 - Statue Concepts (2026)",
-    "file": "assets/gallery/090_10-R3E4-Statue-Concepts-2026.png",
+    "title": "Statue Concepts (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/090_10-r3e4-statue-concepts-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3127,8 +3218,9 @@
   {
     "id": 91,
     "floor": 2,
-    "title": "R3E4 - The Purple Dimension (2026)",
-    "file": "assets/gallery/091_11-R3E4-The-Purple-Dimension-2026.png",
+    "title": "The Purple Dimension (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/091_11-r3e4-the-purple-dimension-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3136,8 +3228,9 @@
   {
     "id": 92,
     "floor": 2,
-    "title": "R3E4 - Moments Before Disaster (2026)",
-    "file": "assets/gallery/092_12-R3E4-Moments-Before-Disaster-2026.png",
+    "title": "Moments Before Disaster (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/092_12-r3e4-moments-before-disaster-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3145,8 +3238,9 @@
   {
     "id": 93,
     "floor": 2,
-    "title": "R3E4 - Eye had a dream once (2026)",
-    "file": "assets/gallery/093_13-R3E4-Eye-had-a-dream-once-2026.png",
+    "title": "Eye had a dream once (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/093_13-r3e4-eye-had-a-dream-once-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.184
@@ -3154,8 +3248,9 @@
   {
     "id": 94,
     "floor": 2,
-    "title": "R3E4 - Button (2026)",
-    "file": "assets/gallery/094_14-R3E4-Button-2026.png",
+    "title": "Button (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/094_14-r3e4-button-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.184
@@ -3163,8 +3258,9 @@
   {
     "id": 95,
     "floor": 2,
-    "title": "R3E4 - SF Face (2026)",
-    "file": "assets/gallery/095_15-R3E4-SF-Face-2026.png",
+    "title": "SF Face (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/095_15-r3e4-sf-face-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3172,8 +3268,9 @@
   {
     "id": 96,
     "floor": 2,
-    "title": "R3E4 - 2 Much Slimey (2026)",
-    "file": "assets/gallery/096_16-R3E4-2-Much-Slimey-2026.png",
+    "title": "2 Much Slimey (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/096_16-r3e4-2-much-slimey-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.135
@@ -3181,8 +3278,9 @@
   {
     "id": 97,
     "floor": 2,
-    "title": "R3E4 - AUX Album Cover (2024)",
-    "file": "assets/gallery/097_R3E4-AUX-Album-Cover-2024.png",
+    "title": "AUX Album Cover (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/097_r3e4-aux-album-cover-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3190,8 +3288,9 @@
   {
     "id": 98,
     "floor": 2,
-    "title": "R3E4 - Curser Album Cover (2026)",
-    "file": "assets/gallery/098_R3E4-Curser-Album-Cover-2026.png",
+    "title": "Curser Album Cover (2026)",
+    "artist": "R3E4",
+    "file": "assets/gallery/098_r3e4-curser-album-cover-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3199,8 +3298,9 @@
   {
     "id": 99,
     "floor": 2,
-    "title": "R3E4 - DVI Album Cover (2024)",
-    "file": "assets/gallery/099_R3E4-DVI-Album-Cover-2024.png",
+    "title": "DVI Album Cover (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/099_r3e4-dvi-album-cover-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3208,8 +3308,9 @@
   {
     "id": 100,
     "floor": 2,
-    "title": "R3E4 - Floppy Disc Album Cover (2024)",
-    "file": "assets/gallery/100_R3E4-Floppy-Disc-Album-Cover-2024.png",
+    "title": "Floppy Disc Album Cover (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/100_r3e4-floppy-disc-album-cover-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3217,8 +3318,9 @@
   {
     "id": 101,
     "floor": 2,
-    "title": "R3E4 - HDMI Album Cover (2024)",
-    "file": "assets/gallery/101_R3E4-HDMI-Album-Cover-2024.png",
+    "title": "HDMI Album Cover (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/101_r3e4-hdmi-album-cover-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3226,8 +3328,9 @@
   {
     "id": 102,
     "floor": 2,
-    "title": "R3E4 - Memory Card Album Cover (2025)",
-    "file": "assets/gallery/102_R3E4-Memory-Card-Album-Cover-2025.png",
+    "title": "Memory Card Album Cover (2025)",
+    "artist": "R3E4",
+    "file": "assets/gallery/102_r3e4-memory-card-album-cover-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3235,8 +3338,9 @@
   {
     "id": 103,
     "floor": 2,
-    "title": "R3E4 - P.O.T.S. (2024)",
-    "file": "assets/gallery/103_R3E4-P-O-T-S-2024.png",
+    "title": "P.O.T.S. (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/103_r3e4-p-o-t-s-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3244,8 +3348,9 @@
   {
     "id": 104,
     "floor": 2,
-    "title": "R3E4 - USB Album Cover (2024)",
-    "file": "assets/gallery/104_R3E4-USB-Album-Cover-2024.png",
+    "title": "USB Album Cover (2024)",
+    "artist": "R3E4",
+    "file": "assets/gallery/104_r3e4-usb-album-cover-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3253,8 +3358,9 @@
   {
     "id": 105,
     "floor": 2,
-    "title": "R3E4 - Wi-Fi Album Cover (2025)",
-    "file": "assets/gallery/105_R3E4-Wi-Fi-Album-Cover-2025.png",
+    "title": "Wi-Fi Album Cover (2025)",
+    "artist": "R3E4",
+    "file": "assets/gallery/105_r3e4-wi-fi-album-cover-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3262,8 +3368,9 @@
   {
     "id": 106,
     "floor": 2,
-    "title": "Ro Mack - Abstract Digital (2025)",
-    "file": "assets/gallery/106_Ro-Mack-Abstract-Digital-2025.png",
+    "title": "Abstract Digital (2025)",
+    "artist": "Ro Mack",
+    "file": "assets/gallery/106_ro-mack-abstract-digital-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.666
@@ -3271,8 +3378,9 @@
   {
     "id": 107,
     "floor": 2,
-    "title": "Smitty Fantastic - Anguished Dog (2025)",
-    "file": "assets/gallery/107_Smitty-Fantastic-Anguished-Dog-2025.png",
+    "title": "Anguished Dog (2025)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/107_smitty-fantastic-anguished-dog-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.026
@@ -3280,8 +3388,9 @@
   {
     "id": 108,
     "floor": 2,
-    "title": "Smitty Fantastic - Conspiracy (2026)",
-    "file": "assets/gallery/108_Smitty-Fantastic-Conspiracy-2026.png",
+    "title": "Conspiracy (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/108_smitty-fantastic-conspiracy-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3289,8 +3398,9 @@
   {
     "id": 109,
     "floor": 2,
-    "title": "Smitty Fantastic - Dr. Coach unedited cover (2021)",
-    "file": "assets/gallery/109_Smitty-Fantastic-Dr-Coach-unedited-cover-2021.jpg",
+    "title": "Dr. Coach unedited cover (2021)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/109_smitty-fantastic-dr-coach-unedited-cover-2021.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3298,8 +3408,9 @@
   {
     "id": 110,
     "floor": 2,
-    "title": "Smitty Fantastic - Flower Phone Doodle (2023)",
-    "file": "assets/gallery/110_Smitty-Fantastic-Flower-Phone-Doodle-2023.jpg",
+    "title": "Flower Phone Doodle (2023)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/110_smitty-fantastic-flower-phone-doodle-2023.jpg",
     "wing": "3RD FLOOR",
     "w": 1.746,
     "h": 2.15
@@ -3307,8 +3418,9 @@
   {
     "id": 111,
     "floor": 2,
-    "title": "Smitty Fantastic - Hand Puppet (2024)",
-    "file": "assets/gallery/111_Smitty-Fantastic-Hand-Puppet-2024.png",
+    "title": "Hand Puppet (2024)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/111_smitty-fantastic-hand-puppet-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3316,8 +3428,9 @@
   {
     "id": 112,
     "floor": 2,
-    "title": "Smitty Fantastic - Lined Creature (2026)",
-    "file": "assets/gallery/112_Smitty-Fantastic-Lined-Creature-2026.png",
+    "title": "Lined Creature (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/112_smitty-fantastic-lined-creature-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3325,8 +3438,9 @@
   {
     "id": 113,
     "floor": 2,
-    "title": "Smitty Fantastic - Oo wow (2025)",
-    "file": "assets/gallery/113_Smitty-Fantastic-Oo-wow-2025.png",
+    "title": "Oo wow (2025)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/113_smitty-fantastic-oo-wow-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3334,8 +3448,9 @@
   {
     "id": 114,
     "floor": 2,
-    "title": "Smitty Fantastic - Planet Me (2025)",
-    "file": "assets/gallery/114_Smitty-Fantastic-Planet-Me-2025.jpg",
+    "title": "Planet Me (2025)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/114_smitty-fantastic-planet-me-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3343,8 +3458,9 @@
   {
     "id": 115,
     "floor": 2,
-    "title": "Smitty Fantastic - Rat At Toing (2026)",
-    "file": "assets/gallery/115_Smitty-Fantastic-Rat-At-Toing-2026.png",
+    "title": "Rat At Toing (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/115_smitty-fantastic-rat-at-toing-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3352,8 +3468,9 @@
   {
     "id": 116,
     "floor": 2,
-    "title": "Smitty Fantastic - The Grid (2026)",
-    "file": "assets/gallery/116_Smitty-Fantastic-The-Grid-2026.png",
+    "title": "The Grid (2026)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/116_smitty-fantastic-the-grid-2026.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.669
@@ -3361,8 +3478,9 @@
   {
     "id": 117,
     "floor": 2,
-    "title": "Smitty Fantastic - Three Creatures (2024)",
-    "file": "assets/gallery/117_Smitty-Fantastic-Three-Creatures-2024.jpg",
+    "title": "Three Creatures (2024)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/117_smitty-fantastic-three-creatures-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.22
@@ -3370,8 +3488,9 @@
   {
     "id": 118,
     "floor": 2,
-    "title": "Smitty Fantastic - Three Faces (2023)",
-    "file": "assets/gallery/118_Smitty-Fantastic-Three-Faces-2023.png",
+    "title": "Three Faces (2023)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/118_smitty-fantastic-three-faces-2023.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 1.474
@@ -3379,8 +3498,9 @@
   {
     "id": 119,
     "floor": 2,
-    "title": "Smitty Fantastic - Water Selfie (2025)",
-    "file": "assets/gallery/119_Smitty-Fantastic-Water-Selfie-2025.jpg",
+    "title": "Water Selfie (2025)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/119_smitty-fantastic-water-selfie-2025.jpg",
     "wing": "3RD FLOOR",
     "w": 2.15,
     "h": 2.15
@@ -3388,8 +3508,9 @@
   {
     "id": 120,
     "floor": 2,
-    "title": "Smitty Fantastic - Writing 2 (2024)",
-    "file": "assets/gallery/120_Smitty-Fantastic-Writing-2-2024.jpg",
+    "title": "Writing 2 (2024)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/120_smitty-fantastic-writing-2-2024.jpg",
     "wing": "3RD FLOOR",
     "w": 1.683,
     "h": 2.15
@@ -3397,369 +3518,410 @@
   {
     "id": 121,
     "floor": 3,
-    "title": "Penguin 2",
-    "file": "assets/gallery/121_001-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.209
-  },
-  {
-    "id": 122,
-    "floor": 3,
-    "title": "5am",
-    "file": "assets/gallery/122_5am.png",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 123,
-    "floor": 3,
-    "title": "Darling Actor Drawing",
-    "file": "assets/gallery/123_006.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.781,
-    "h": 2.15
-  },
-  {
-    "id": 124,
-    "floor": 3,
-    "title": "Made U A Bird",
-    "file": "assets/gallery/124_008-copy-3.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.768,
-    "h": 2.15
-  },
-  {
-    "id": 125,
-    "floor": 3,
-    "title": "Consumer Sculpture",
-    "file": "assets/gallery/125_008.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.463
-  },
-  {
-    "id": 126,
-    "floor": 3,
-    "title": "Shocksites",
-    "file": "assets/gallery/126_012-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.433
-  },
-  {
-    "id": 127,
-    "floor": 3,
-    "title": "Blip Vision Pizza Reach",
-    "file": "assets/gallery/127_012.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 128,
-    "floor": 3,
-    "title": "Monkey Full Body",
-    "file": "assets/gallery/128_013-copy-3.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.033,
-    "h": 2.15
-  },
-  {
-    "id": 129,
-    "floor": 3,
-    "title": "Sand",
-    "file": "assets/gallery/129_014.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.474
-  },
-  {
-    "id": 130,
-    "floor": 3,
-    "title": "Orange Kitchen Visions",
-    "file": "assets/gallery/130_016-copy-2.jpg",
+    "title": "Annoying Orange Message",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/121_annoying-orange-message.jpg",
     "wing": "4TH FLOOR",
     "w": 1.662,
     "h": 2.15
   },
   {
-    "id": 131,
+    "id": 122,
     "floor": 3,
-    "title": "Peter Griffin Tribute",
-    "file": "assets/gallery/131_016-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.474
-  },
-  {
-    "id": 132,
-    "floor": 3,
-    "title": "Crate Challenge",
-    "file": "assets/gallery/132_016.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.391
-  },
-  {
-    "id": 133,
-    "floor": 3,
-    "title": "Imagen",
-    "file": "assets/gallery/133_017-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.991
-  },
-  {
-    "id": 134,
-    "floor": 3,
-    "title": "Yoda Smoking Weed",
-    "file": "assets/gallery/134_018-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.892
-  },
-  {
-    "id": 135,
-    "floor": 3,
-    "title": "Spew",
-    "file": "assets/gallery/135_018.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.474
-  },
-  {
-    "id": 136,
-    "floor": 3,
-    "title": "Photo Turned Drawing Creatureg",
-    "file": "assets/gallery/136_019-copy-2.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.444,
-    "h": 2.15
-  },
-  {
-    "id": 137,
-    "floor": 3,
-    "title": "Purple Smile",
-    "file": "assets/gallery/137_019.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.378
-  },
-  {
-    "id": 138,
-    "floor": 3,
-    "title": "Snapchat Athlete Gun Woman Boo",
-    "file": "assets/gallery/138_021.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 139,
-    "floor": 3,
-    "title": "Smitty Cow",
-    "file": "assets/gallery/139_022-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 140,
-    "floor": 3,
-    "title": "Shawtys Mix",
-    "file": "assets/gallery/140_025-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.661,
-    "h": 2.15
-  },
-  {
-    "id": 141,
-    "floor": 3,
-    "title": "Minnesota Fish Painting",
-    "file": "assets/gallery/141_027-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.614
-  },
-  {
-    "id": 142,
-    "floor": 3,
-    "title": "Annoyeornej",
-    "file": "assets/gallery/142_027.jpg",
+    "title": "Annoying Orange",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/122_annoying-orange.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 1.207
   },
   {
-    "id": 143,
+    "id": 123,
     "floor": 3,
-    "title": "Trumpa",
-    "file": "assets/gallery/143_030-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.969,
-    "h": 2.15
-  },
-  {
-    "id": 144,
-    "floor": 3,
-    "title": "Lake Blue Violet",
-    "file": "assets/gallery/144_031-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.612
-  },
-  {
-    "id": 145,
-    "floor": 3,
-    "title": "Sf Penguin 1",
-    "file": "assets/gallery/145_034-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 146,
-    "floor": 3,
-    "title": "Harbinger Smitty Live Action",
-    "file": "assets/gallery/146_037-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.612,
-    "h": 2.15
-  },
-  {
-    "id": 147,
-    "floor": 3,
-    "title": "Coach Nun",
-    "file": "assets/gallery/147_037.jpg",
-    "wing": "4TH FLOOR",
-    "w": 1.616,
-    "h": 2.15
-  },
-  {
-    "id": 148,
-    "floor": 3,
-    "title": "Smitty Colorful Mask Edit",
-    "file": "assets/gallery/148_038-copy.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.612
-  },
-  {
-    "id": 149,
-    "floor": 3,
-    "title": "Rat YMCA",
-    "file": "assets/gallery/149_038.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.669
-  },
-  {
-    "id": 150,
-    "floor": 3,
-    "title": "20261017201139",
-    "file": "assets/gallery/150_20261017201139.png",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.669
-  },
-  {
-    "id": 151,
-    "floor": 3,
-    "title": "2008 Red Fox",
-    "file": "assets/gallery/151_creature1.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.47
-  },
-  {
-    "id": 152,
-    "floor": 3,
-    "title": "Dogman",
-    "file": "assets/gallery/152_dogman.png",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 2.15
-  },
-  {
-    "id": 153,
-    "floor": 3,
-    "title": "Dol1",
-    "file": "assets/gallery/153_dol1.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.795
-  },
-  {
-    "id": 154,
-    "floor": 3,
-    "title": "Painting With A Bed",
-    "file": "assets/gallery/154_house3.jpg",
+    "title": "Bed Room",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/123_bed-room.jpg",
     "wing": "4TH FLOOR",
     "w": 2.143,
     "h": 2.15
   },
   {
-    "id": 155,
+    "id": 124,
     "floor": 3,
-    "title": "Kanye Nightmare",
-    "file": "assets/gallery/155_kanye-nightmare.png",
+    "title": "Birth of Sand",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/124_birth-of-sand.jpg",
     "wing": "4TH FLOOR",
-    "w": 1.651,
+    "w": 2.15,
+    "h": 1.474
+  },
+  {
+    "id": 125,
+    "floor": 3,
+    "title": "Browser Theme",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/125_browser-theme.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.433
+  },
+  {
+    "id": 126,
+    "floor": 3,
+    "title": "Collage",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/126_collage.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.66,
     "h": 2.15
   },
   {
-    "id": 156,
+    "id": 127,
     "floor": 3,
-    "title": "Live Action Smitty",
-    "file": "assets/gallery/156_live-action-smitty.jpg",
+    "title": "Crate Challenge",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/127_crate-challenge.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 2.012
+    "h": 1.391
   },
   {
-    "id": 157,
+    "id": 128,
     "floor": 3,
-    "title": "Monta Monat",
-    "file": "assets/gallery/157_monta-monat.png",
+    "title": "Darling",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/128_darling.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.78,
+    "h": 2.15
+  },
+  {
+    "id": 129,
+    "floor": 3,
+    "title": "Dogman",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/129_dogman.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
-    "h": 1.612
+    "h": 2.15
   },
   {
-    "id": 158,
+    "id": 130,
     "floor": 3,
-    "title": "No Weather Data",
-    "file": "assets/gallery/158_noweatherdata.jpg",
-    "wing": "4TH FLOOR",
-    "w": 2.15,
-    "h": 1.655
-  },
-  {
-    "id": 159,
-    "floor": 3,
-    "title": "Liberal Lawn Sign",
-    "file": "assets/gallery/159_tex.jpg",
+    "title": "Friendly Faces",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/130_friendly-faces.jpg",
     "wing": "4TH FLOOR",
     "w": 2.15,
     "h": 1.546
   },
   {
+    "id": 131,
+    "floor": 3,
+    "title": "Full Speed",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/131_full-speed.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.991
+  },
+  {
+    "id": 132,
+    "floor": 3,
+    "title": "Grabbing a Slice",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/132_grabbing-a-slice.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 133,
+    "floor": 3,
+    "title": "Green Fish",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/133_green-fish.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.614
+  },
+  {
+    "id": 134,
+    "floor": 3,
+    "title": "Green Selfie",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/134_green-selfie.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.613
+  },
+  {
+    "id": 135,
+    "floor": 3,
+    "title": "Gym Rat",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/135_gym-rat.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.669
+  },
+  {
+    "id": 136,
+    "floor": 3,
+    "title": "Harbinger Music Video Behind the Scenes",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/136_harbinger-music-video-behind-the-scenes.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.612,
+    "h": 2.15
+  },
+  {
+    "id": 137,
+    "floor": 3,
+    "title": "I made u a bird",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/137_i-made-u-a-bird.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.768,
+    "h": 2.15
+  },
+  {
+    "id": 138,
+    "floor": 3,
+    "title": "Kanye Nightmare Recreation",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/138_kanye-nightmare-recreation.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.651,
+    "h": 2.15
+  },
+  {
+    "id": 139,
+    "floor": 3,
+    "title": "Many Faces",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/139_many-faces.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.669
+  },
+  {
+    "id": 140,
+    "floor": 3,
+    "title": "Monta-Monat",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/140_monta-monat.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.613
+  },
+  {
+    "id": 141,
+    "floor": 3,
+    "title": "No Weather Data",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/141_no-weather-data.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.655
+  },
+  {
+    "id": 142,
+    "floor": 3,
+    "title": "Nun Portrait",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/142_nun-portrait.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.615,
+    "h": 2.15
+  },
+  {
+    "id": 143,
+    "floor": 3,
+    "title": "Paddington",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/143_paddington.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.795
+  },
+  {
+    "id": 144,
+    "floor": 3,
+    "title": "Penguin1",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/144_penguin1.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 145,
+    "floor": 3,
+    "title": "Penguin2",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/145_penguin2.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.209
+  },
+  {
+    "id": 146,
+    "floor": 3,
+    "title": "Peter Griffin",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/146_peter-griffin.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.474
+  },
+  {
+    "id": 147,
+    "floor": 3,
+    "title": "Plush Monkey",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/147_plush-monkey.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.033,
+    "h": 2.15
+  },
+  {
+    "id": 148,
+    "floor": 3,
+    "title": "Purple Look",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/148_purple-look.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.378
+  },
+  {
+    "id": 149,
+    "floor": 3,
+    "title": "Sacred Cow",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/149_sacred-cow.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 150,
+    "floor": 3,
+    "title": "Sculpture",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/150_sculpture.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.463
+  },
+  {
+    "id": 151,
+    "floor": 3,
+    "title": "Self Portrait",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/151_self-portrait.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.444,
+    "h": 2.15
+  },
+  {
+    "id": 152,
+    "floor": 3,
+    "title": "A Red Fox (2008)",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/152_smitty-fantastic-a-red-fox-2008.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.47
+  },
+  {
+    "id": 153,
+    "floor": 3,
+    "title": "Snapchat Filter",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/153_snapchat-filter.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 154,
+    "floor": 3,
+    "title": "Spew",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/154_spew.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.474
+  },
+  {
+    "id": 155,
+    "floor": 3,
+    "title": "The Lake - Purple Version",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/155_the-lake-purple-version.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 1.613
+  },
+  {
+    "id": 156,
+    "floor": 3,
+    "title": "Trumpa",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/156_trumpa.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.969,
+    "h": 2.15
+  },
+  {
+    "id": 157,
+    "floor": 3,
+    "title": "Vipes-Hippo",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/157_vipes-hippo.jpg",
+    "wing": "4TH FLOOR",
+    "w": 1.499,
+    "h": 2.15
+  },
+  {
+    "id": 158,
+    "floor": 3,
+    "title": "Welcome To My Land",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/158_welcome-to-my-land.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.15
+  },
+  {
+    "id": 159,
+    "floor": 3,
+    "title": "Wired",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/159_wired.jpg",
+    "wing": "4TH FLOOR",
+    "w": 2.15,
+    "h": 2.012
+  },
+  {
     "id": 160,
     "floor": 3,
-    "title": "Vipes Hippo",
-    "file": "assets/gallery/160_vipes-hippo.png",
+    "title": "Yoda Smoking Weed",
+    "artist": "Smitty Fantastic",
+    "file": "assets/gallery/160_yoda-smoking-weed.jpg",
     "wing": "4TH FLOOR",
-    "w": 1.5,
-    "h": 2.15
+    "w": 2.15,
+    "h": 1.892
   }
 ];
 
-  // Apply custom artwork titles and floor labels from GAME_TEXT.txt
+  // Apply custom artwork titles, artists, and floor labels from GAME_TEXT.txt
   (() => {
     CURATED_ARTWORKS.forEach(a => {
       a.title = T('art.' + String(a.id).padStart(3, '0'), a.title);
+      a.artist = T('art.artist.' + String(a.id).padStart(3, '0'), a.artist || 'Smitty Fantastic');
       a.wing = T('floor.' + (a.floor + 1), a.wing);
     });
   })();
@@ -4094,6 +4256,7 @@
         artModal: document.getElementById('art-modal'),
         artModalImg: document.getElementById('art-modal-img'),
         artModalTitle: document.getElementById('art-modal-title'),
+        artModalArtist: document.getElementById('art-modal-artist'),
         artModalWing: document.getElementById('art-modal-wing'),
         artCloseBtn: document.getElementById('art-close-btn'),
         optionsModal: document.getElementById('options-modal'),
@@ -8682,7 +8845,7 @@
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 1024;
+      const rtSize = 512;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -8736,19 +8899,21 @@
 
         // Only update when viewer is on the same floor and within visible corridor range
         if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 18.0) return;
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 15.0) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
         view.subVectors(reflectorWorldPosition, cameraWorldPosition);
         if (view.dot(normal) > 0) return;  // camera is behind the mirror
 
-        view.reflect(normal).negate();
-        view.add(reflectorWorldPosition);
-
         rotationMatrix.extractRotation(camera.matrixWorld);
         lookAtPosition.set(0, 0, -1).applyMatrix4(rotationMatrix);
+        // Skip full scene render if camera is looking away from the mirror
+        if (view.dot(lookAtPosition) < -1.5) return;
         lookAtPosition.add(cameraWorldPosition);
+
+        view.reflect(normal).negate();
+        view.add(reflectorWorldPosition);
         target.subVectors(reflectorWorldPosition, lookAtPosition);
         target.reflect(normal).negate();
         target.add(reflectorWorldPosition);
@@ -11584,27 +11749,7 @@
           canvasMesh.position.z = depth / 2 + 0.005;
           group.add(canvasMesh);
 
-          if (artTextureCache.has(art.file)) {
-            canvasMesh.material.map = artTextureCache.get(art.file);
-            canvasMesh.material.needsUpdate = true;
-          } else {
-            this.texLoader.load(
-              art.file,
-              (tex) => {
-                tex.colorSpace = THREE.SRGBColorSpace;
-                artTextureCache.set(art.file, tex);
-                canvasMesh.material.map = tex;
-                canvasMesh.material.needsUpdate = true;
-                if (this.renderer) {
-                  this.renderer.initTexture(tex);
-                }
-              },
-              undefined,
-              () => {}
-            );
-          }
-
-          const plaqueTex = TextureFactory.createPlaqueTexture(art.title);
+          const plaqueTex = TextureFactory.createPlaqueTexture(art.title, art.artist || 'Smitty Fantastic');
           const plaqueMesh = new THREE.Mesh(
             plaqueGeom,
             new THREE.MeshBasicMaterial({
@@ -11619,17 +11764,22 @@
 
           this.scene.add(group);
 
-          this.paintings.push({
+          const paintingEntry = {
             id: art.id,
             title: art.title,
+            artist: art.artist || 'Smitty Fantastic',
             file: art.file,
             wing: art.wing,
             x: slot.x + nx,
             y: slot.y,
             z: slot.z + nz,
             floor: f,
-            mesh: group
-          });
+            mesh: group,
+            canvasMesh: canvasMesh,
+            textureLoaded: false,
+            textureLoading: false
+          };
+          this.paintings.push(paintingEntry);
         });
       }
       this.updateRelicFloorVisibility();
@@ -13134,11 +13284,40 @@
         }
       }
       // Major Performance Optimization: cull all paintings on inactive floors
-      // Only render artworks on the player's current floor, eliminating hundreds of draw calls & texture lookups!
+      // and lazily stream textures only for the active floor (with mipmaps disabled to save 33% VRAM and prevent frame drops)
       if (this.paintings) {
+        if (!this._artTextureCache) this._artTextureCache = new Map();
         for (let p of this.paintings) {
+          const isCurFloor = (p.floor === this.playerFloor);
           if (p.mesh) {
-            p.mesh.visible = (p.floor === this.playerFloor);
+            p.mesh.visible = isCurFloor;
+          }
+          if (isCurFloor && !p.textureLoaded && !p.textureLoading && p.canvasMesh) {
+            if (this._artTextureCache.has(p.file)) {
+              p.canvasMesh.material.map = this._artTextureCache.get(p.file);
+              p.canvasMesh.material.needsUpdate = true;
+              p.textureLoaded = true;
+            } else {
+              p.textureLoading = true;
+              this.texLoader.load(
+                p.file,
+                (tex) => {
+                  tex.colorSpace = THREE.SRGBColorSpace;
+                  tex.generateMipmaps = false;
+                  tex.minFilter = THREE.LinearFilter;
+                  tex.magFilter = THREE.LinearFilter;
+                  this._artTextureCache.set(p.file, tex);
+                  p.canvasMesh.material.map = tex;
+                  p.canvasMesh.material.needsUpdate = true;
+                  p.textureLoaded = true;
+                  p.textureLoading = false;
+                },
+                undefined,
+                () => {
+                  p.textureLoading = false;
+                }
+              );
+            }
           }
         }
       }
@@ -14711,6 +14890,9 @@
       this.releaseNativeOrBrowserLock();
       this.dom.artModalImg.src = painting.file;
       this.dom.artModalTitle.textContent = painting.title;
+      if (this.dom.artModalArtist) {
+        this.dom.artModalArtist.textContent = painting.artist || 'Smitty Fantastic';
+      }
       this.dom.artModalWing.textContent = painting.wing;
       this.dom.artModal.classList.remove('hidden');
     }
