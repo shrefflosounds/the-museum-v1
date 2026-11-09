@@ -4079,6 +4079,11 @@
       this.isSprinting = false;
       this.sprintExhausted = false;
       this.relicsCollected = 0;
+      this.isMuseumMode = false;
+      this.museumTourIndex = 0;
+      this.museumTourWaypoints = [];
+      this.museumTourWaypointIndex = 0;
+      this.museumTourPauseTimer = 0;
       this.hasPlayedAllRelicsCutscene = false;
       this.isPlayingCutscene = false;
       this.isGameOver = false;
@@ -4238,6 +4243,9 @@
         hud: document.getElementById('hud'),
         startScreen: document.getElementById('start-screen'),
         startBtn: document.getElementById('start-btn'),
+        museumModeBtn: document.getElementById('museum-mode-btn'),
+        museumModeBanner: document.getElementById('museum-mode-banner'),
+        museumModeArtInfo: document.getElementById('museum-mode-art-info'),
         startQuitBtn: document.getElementById('start-quit-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
@@ -13320,13 +13328,13 @@
 
     updateRelicFloorVisibility() {
       for (let r of this.relics) {
-        const show = (!r.collected && r.floor === this.playerFloor);
+        const show = (!this.isMuseumMode && !r.collected && r.floor === this.playerFloor);
         if (r.mesh) {
           r.mesh.visible = show;
         }
       }
       for (let p of this.ammoPickups) {
-        const show = (p.active && p.floor === this.playerFloor);
+        const show = (!this.isMuseumMode && p.active && p.floor === this.playerFloor);
         if (p.mesh) {
           p.mesh.visible = show;
         }
@@ -13845,6 +13853,13 @@
         this.updateHud();
         this.requestNativeOrBrowserLock();
       });
+
+      if (this.dom.museumModeBtn) {
+        this.dom.museumModeBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.startMuseumMode();
+        });
+      }
 
       // Multiplayer Host Flow
       if (this.dom.hostGameBtn) {
@@ -14439,6 +14454,10 @@
           }
         } else if (e.code === 'Escape') {
           e.preventDefault();
+          if (this.isMuseumMode) {
+            this.exitMuseumModeToMenu();
+            return;
+          }
           if (performance.now() - (this.lastPointerLockExitTime || 0) < 300) {
             return;
           }
@@ -14861,6 +14880,260 @@
       }
     }
 
+    startMuseumMode() {
+      this.isMuseumMode = true;
+      this.gameStarted = true;
+      this.startTime = Date.now();
+      this.keys = {};
+      this.isSprinting = false;
+      this.sprintExhausted = false;
+      this.isGameOver = false;
+      this.isVictory = false;
+      this.isPaused = false;
+      this.isPlayingCutscene = false;
+
+      // Curator OFF, Statues OFF, Relics OFF
+      this.setSmittyMode(false);
+      this.setStatuesMode(false);
+      this.updateRelicFloorVisibility();
+
+      // Ensure Day lighting in museum
+      if (this.ambientLight) {
+        this.ambientLight.color.setHex(0x9a8f82);
+        this.ambientLight.intensity = 0.65;
+      }
+      if (this.hemiLight) {
+        this.hemiLight.color.setHex(0xc8bdaf);
+        this.hemiLight.groundColor.setHex(0x5a483a);
+        this.hemiLight.intensity = 0.38;
+      }
+      this.renderer.toneMappingExposure = 1.0;
+
+      // Hide gameplay HUD & weapons/arms
+      if (this.dom.hud) this.dom.hud.classList.add('hud-hidden');
+      if (this.weaponRig) this.weaponRig.visible = false;
+      if (this.leftArmRig) this.leftArmRig.visible = false;
+      if (this.dom.interactPrompt) this.dom.interactPrompt.classList.add('hidden');
+      if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
+      if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.remove('hidden');
+
+      // Music playing gently in the background
+      this.audio.init();
+      this.audio.startGameplayAudio();
+      if (this.musicEnabled) {
+        this.audio.playMenuMusic();
+      }
+
+      // Build ordered tour itinerary across all floors
+      this.buildMuseumTourItinerary();
+
+      // Spawn at first tour point
+      if (this.museumTourList && this.museumTourList.length > 0) {
+        this.museumTourIndex = 0;
+        const first = this.museumTourList[0];
+        this.playerFloor = first.floor;
+        this.playerPos.set(first.standX, first.floor * CONFIG.FLOOR_HEIGHT + 1.82, first.standZ);
+        this.playerYaw = first.lookYaw;
+        this.playerPitch = first.lookPitch;
+        this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+        this.camera.rotation.set(0, 0, 0);
+        this.camera.rotation.y = this.playerYaw;
+        this.camera.rotation.x = this.playerPitch;
+        this.museumTourPauseTimer = 3.0; // Pause briefly on first artwork
+        this.museumTourWaypoints = [];
+        this.museumTourWaypointIndex = 0;
+        this.updateMuseumModeBannerText(first);
+      }
+      this.updateRelicFloorVisibility();
+    }
+
+    buildMuseumTourItinerary() {
+      // Sort paintings floor by floor, then sequentially around each floor
+      const tour = [];
+      for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
+        const floorPaintings = (this.paintings || []).filter(p => p.floor === fl);
+        // Sort geographically by angle so movement flows naturally around the museum floor
+        floorPaintings.sort((a, b) => {
+          const angleA = Math.atan2(a.z, a.x);
+          const angleB = Math.atan2(b.z, b.x);
+          return angleA - angleB;
+        });
+
+        for (let p of floorPaintings) {
+          const rot = p.mesh ? p.mesh.rotation.y : 0;
+          const nx = Math.sin(rot);
+          const nz = Math.cos(rot);
+          // Optimal viewing distance
+          const dist = 2.45;
+          const standX = p.x + nx * dist;
+          const standZ = p.z + nz * dist;
+          const lookYaw = Math.atan2(-nx, -nz);
+          const lookPitch = 0.05;
+
+          tour.push({
+            id: p.id,
+            title: p.title,
+            artist: p.artist || 'Smitty Fantastic',
+            wing: p.wing,
+            floor: p.floor,
+            x: p.x,
+            y: p.y,
+            z: p.z,
+            standX,
+            standZ,
+            lookYaw,
+            lookPitch
+          });
+        }
+      }
+      this.museumTourList = tour;
+    }
+
+    updateMuseumModeBannerText(art) {
+      if (!this.dom.museumModeArtInfo) return;
+      if (!art) {
+        this.dom.museumModeArtInfo.textContent = 'EXHIBITION COMPLETED';
+        return;
+      }
+      const floorNames = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
+      const flName = floorNames[art.floor] || 'GALLERY';
+      this.dom.museumModeArtInfo.innerHTML = `<strong>${art.title}</strong> &mdash; <span style="color:#94a3b8;font-size:15px;">${art.artist} (${flName} • ${art.wing || 'GALLERY'})</span>`;
+    }
+
+    updateMuseumModeTour(delta) {
+      if (!this.museumTourList || this.museumTourList.length === 0) {
+        this.exitMuseumModeToMenu();
+        return;
+      }
+
+      const currentArt = this.museumTourList[this.museumTourIndex];
+      if (!currentArt) {
+        this.exitMuseumModeToMenu();
+        return;
+      }
+
+      // If pausing to view artwork
+      if (this.museumTourPauseTimer > 0) {
+        this.museumTourPauseTimer -= delta;
+
+        // Smoothly pan camera slightly while admiring the art
+        const subtlePan = Math.sin(performance.now() * 0.0006) * 0.04;
+        this.camera.rotation.y = currentArt.lookYaw + subtlePan;
+        this.camera.rotation.x = currentArt.lookPitch + Math.cos(performance.now() * 0.0005) * 0.015;
+
+        if (this.museumTourPauseTimer <= 0) {
+          // Advance to next artwork
+          this.museumTourIndex++;
+          if (this.museumTourIndex >= this.museumTourList.length) {
+            // Tour finished! Return to main menu
+            this.exitMuseumModeToMenu();
+            return;
+          }
+          const nextArt = this.museumTourList[this.museumTourIndex];
+          this.prepareMuseumTourPath(nextArt);
+        }
+        return;
+      }
+
+      // Walking along waypoints to next artwork
+      if (!this.museumTourWaypoints || this.museumTourWaypointIndex >= this.museumTourWaypoints.length) {
+        // Arrived at destination stand position
+        this.arriveAtArtwork(currentArt);
+        return;
+      }
+
+      const targetWp = this.museumTourWaypoints[this.museumTourWaypointIndex];
+      const dx = targetWp.x - this.playerPos.x;
+      const dz = targetWp.z - this.playerPos.z;
+      const targetY = targetWp.floor * CONFIG.FLOOR_HEIGHT + 1.82;
+      const dist2D = Math.hypot(dx, dz);
+
+      // Smooth walking speed (2.6 m/s)
+      const walkSpeed = 2.6;
+      const step = walkSpeed * delta;
+
+      if (dist2D < 0.28) {
+        this.museumTourWaypointIndex++;
+        if (this.museumTourWaypointIndex >= this.museumTourWaypoints.length) {
+          this.arriveAtArtwork(currentArt);
+          return;
+        }
+      } else {
+        const moveRatio = Math.min(1.0, step / dist2D);
+        this.playerPos.x += dx * moveRatio;
+        this.playerPos.z += dz * moveRatio;
+        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetY, Math.min(1.0, delta * 6.0));
+
+        // Smoothly orient camera towards walking direction
+        const walkYaw = Math.atan2(-dx, -dz);
+        this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 5.0));
+        this.playerPitch = THREE.MathUtils.lerp(this.playerPitch, 0.0, Math.min(1.0, delta * 4.0));
+      }
+
+      if (this.playerFloor !== targetWp.floor) {
+        this.playerFloor = targetWp.floor;
+        this.updateRelicFloorVisibility();
+      }
+
+      // Bobbing walking camera
+      const walkBob = Math.sin(performance.now() * 0.007) * 0.035;
+      this.camera.position.set(this.playerPos.x, this.playerPos.y + walkBob, this.playerPos.z);
+      this.camera.rotation.set(0, 0, 0);
+      this.camera.rotation.y = this.playerYaw;
+      this.camera.rotation.x = this.playerPitch;
+    }
+
+    prepareMuseumTourPath(targetArt) {
+      this.updateMuseumModeBannerText(targetArt);
+      const startId = this.findNearestNavNode({ x: this.playerPos.x, z: this.playerPos.z }, this.playerFloor);
+      const goalId = this.findNearestNavNode({ x: targetArt.standX, z: targetArt.standZ }, targetArt.floor);
+
+      let wps = [];
+      if (startId >= 0 && goalId >= 0 && startId !== goalId) {
+        const rawPath = this.findShortestPath(startId, goalId);
+        wps = rawPath.map(n => ({ x: n.x, z: n.z, floor: n.floor }));
+      }
+      // Add final exact viewing position
+      wps.push({ x: targetArt.standX, z: targetArt.standZ, floor: targetArt.floor });
+      this.museumTourWaypoints = wps;
+      this.museumTourWaypointIndex = 0;
+    }
+
+    arriveAtArtwork(art) {
+      this.playerFloor = art.floor;
+      this.playerPos.set(art.standX, art.floor * CONFIG.FLOOR_HEIGHT + 1.82, art.standZ);
+      this.playerYaw = art.lookYaw;
+      this.playerPitch = art.lookPitch;
+      this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+      this.camera.rotation.set(0, 0, 0);
+      this.camera.rotation.y = this.playerYaw;
+      this.camera.rotation.x = this.playerPitch;
+      this.museumTourPauseTimer = 4.5; // Gaze at painting for 4.5 seconds
+      this.updateRelicFloorVisibility();
+    }
+
+    lerpAngle(a, b, t) {
+      let diff = (b - a) % (Math.PI * 2);
+      if (diff < -Math.PI) diff += Math.PI * 2;
+      if (diff > Math.PI) diff -= Math.PI * 2;
+      return a + diff * t;
+    }
+
+    exitMuseumModeToMenu() {
+      this.isMuseumMode = false;
+      this.gameStarted = false;
+      this.isPaused = false;
+      this.isVictory = false;
+      this.isGameOver = false;
+
+      // Hide tour banner
+      if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.add('hidden');
+
+      // Release locks & reload cleanly back to main menu
+      this.releaseNativeOrBrowserLock();
+      window.location.reload();
+    }
+
     openControlsModal() {
       this.openSettingsModal();
     }
@@ -15124,6 +15397,11 @@
     }
 
     updatePlayer(delta) {
+      if (this.isMuseumMode) {
+        this.updateMuseumModeTour(delta);
+        return;
+      }
+
       if (!this.gameStarted || this.isGameOver || this.isVictory || this.isPaused || this.isExaminingArt || this.isPlayingCutscene) return;
 
       if (this.isNoClipMode) {

@@ -54,6 +54,13 @@
     <!-- Spectator Mode Badge -->
     <div id="spectator-indicator" class="hidden" data-text="hud.spectator_badge">SPECTATOR MODE</div>
 
+    <!-- Museum Mode Tour HUD Overlay -->
+    <div id="museum-mode-banner" class="hidden">
+      <div class="museum-tour-badge">MUSEUM TOUR MODE</div>
+      <div id="museum-mode-art-info" class="museum-tour-title">ENTERING EXHIBITION...</div>
+      <div class="museum-tour-skip-hint">PRESS [ESC] TO EXIT TO MAIN MENU</div>
+    </div>
+
     <!-- Non-Intrusive Relic Pickup Notification -->
     <div id="relic-notification"></div>
 
@@ -110,6 +117,9 @@
 
       <button id="start-btn" class="museum-btn" title="Enter the museum and begin the exhibition" data-text="start.button">ENTER THE MUSEUM</button>
       
+      <!-- Museum Tour Autonomous Mode Button -->
+      <button id="museum-mode-btn" class="museum-btn museum-tour-btn" type="button" title="Sit back and experience an autonomous guided tour of all museum artwork" style="margin-top: 10px; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.5); color: #38bdf8;">MUSEUM MODE (AUTONOMOUS TOUR)</button>
+
       <!-- Multiplayer Actions -->
       <div class="mp-btn-row">
         <button id="host-game-btn" class="museum-btn mp-action-btn" type="button" title="Host a cooperative game">HOST CO-OP</button>
