@@ -14946,42 +14946,37 @@
     }
 
     buildMuseumTourItinerary() {
-      // Constructs a scenic, curated walking path across all 4 floors:
-      //  1. Strolls the Grand Promenade / Main Gallery viewing hall
-      //  2. Explores the West Wing & West Hallway Mirror Salon, walking around the framed paintings
+      // Constructs a simple, natural, obstacle-free architectural tour across all 4 floors:
+      //  1. Strolls the Grand Promenade down the Main Gallery
+      //  2. Turns cleanly through the West Wing archway into the West Salon
       //  3. Enters the Video Installation Theater, plays the video, and pauses for 10 seconds facing the screen
-      //  4. Explores the East Wing & East Mirror Salon, looping past classical sculptures and artworks
-      //  5. Visits the North Pavilion & Atrium galleries
-      //  6. Ascends via the Stairwell to the next floor
-      //  7. Returns to the main menu when the full tour finishes
+      //  4. Exits smoothly via the south cross-passage into the Central Transept & East Wing
+      //  5. Visits the Southeast Hall and majestic Rotunda
+      //  6. Walks the spacious East Grand Aisle into the North Egyptian Pavilion
+      //  7. Steps into the central North Stairwell to ascend naturally to the next floor
+      //  8. Concludes seamlessly after Floor 4 and returns to main menu
       const waypoints = [];
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const floorName = (fl === 0 ? "1ST FLOOR" : fl === 1 ? "2ND FLOOR" : fl === 2 ? "3RD FLOOR" : "4TH FLOOR");
 
-        // Leg A: Main Gallery Entrance -> Grand Promenade
+        // 1. Grand Promenade (Main Gallery Spine)
         waypoints.push({ x: -10.0, z: 22.0, floor: fl, label: `${floorName} • GRAND PROMENADE`, yaw: 0 });
-        waypoints.push({ x: -10.0, z: 10.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
-        waypoints.push({ x: -10.0, z: 2.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+        waypoints.push({ x: -10.0, z: 12.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+        waypoints.push({ x: -10.0, z: 6.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
 
-        // Leg B: Enter West Gallery Wing & West Mirror Room (Mirror at x: -26, z: -3)
+        // 2. West Wing Archway & Salon (wide, clear central aisle)
         waypoints.push({ x: -12.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING ARCHWAY`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -19.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING SALON`, yaw: -Math.PI / 2 });
-        
-        // Loop through the West Mirror Gallery room around the artworks:
-        waypoints.push({ x: -20.5, z: 0.0, floor: fl, label: `${floorName} • WEST MIRROR SALON`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -26.0, z: -2.0, floor: fl, label: `${floorName} • WEST EXHIBIT & REFLECTOR`, yaw: 0, pauseDuration: 2.0 });
-        waypoints.push({ x: -31.5, z: -2.0, floor: fl, label: `${floorName} • WEST EXHIBIT VIEWING WALK`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -32.5, z: 3.4, floor: fl, label: `${floorName} • WEST WING MASTERPIECES`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -32.5, z: 8.6, floor: fl, label: `${floorName} • WEST CONTEMPORARY WING`, yaw: Math.PI });
-        waypoints.push({ x: -26.0, z: 12.0, floor: fl, label: `${floorName} • WEST GALLERY PLAZA`, yaw: Math.PI });
-        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST THEATER APPROACH`, yaw: Math.PI });
+        waypoints.push({ x: -19.5, z: 6.0, floor: fl, label: `${floorName} • WEST SALON`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -26.0, z: 6.0, floor: fl, label: `${floorName} • WEST EXHIBITION HALL`, yaw: Math.PI });
+        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST CONTEMPORARY GALLERY`, yaw: Math.PI });
 
-        // Leg C: Walk directly into the Video Installation Theater
-        waypoints.push({ x: -29.0, z: 18.5, floor: fl, label: `${floorName} • VIDEO THEATER ENTRY`, yaw: Math.PI });
+        // 3. Video Installation Theater (Doorway at x: -30, z: 18)
+        waypoints.push({ x: -30.0, z: 16.0, floor: fl, label: `${floorName} • THEATER PASSAGE`, yaw: Math.PI });
+        waypoints.push({ x: -30.0, z: 18.0, floor: fl, label: `${floorName} • VIDEO THEATER ENTRY`, yaw: Math.PI });
         waypoints.push({
           x: -29.0,
-          z: 22.0,
+          z: 21.5,
           floor: fl,
           label: `${floorName} • VIDEO INSTALLATION THEATER`,
           yaw: Math.PI,
@@ -14990,44 +14985,53 @@
           pauseDuration: 10.0 // Pause for 10 seconds to watch the video
         });
 
-        // Leg D: Exit Video Room back towards Main Corridor
-        waypoints.push({ x: -26.0, z: 19.7, floor: fl, label: `${floorName} • CORRIDOR PASSAGE`, yaw: Math.PI / 2 });
-        waypoints.push({ x: -16.0, z: 19.7, floor: fl, label: `${floorName} • MAIN CROSSWAY`, yaw: Math.PI / 2 });
-        waypoints.push({ x: -10.0, z: 18.0, floor: fl, label: `${floorName} • MAIN GALLERY SOUTH`, yaw: -Math.PI });
+        // 4. Smooth Exit from Video Theater via SW Corridor
+        waypoints.push({ x: -26.0, z: 19.7, floor: fl, label: `${floorName} • THEATER CORRIDOR`, yaw: Math.PI / 2 });
+        waypoints.push({ x: -20.0, z: 19.7, floor: fl, label: `${floorName} • CORRIDOR PASSAGE`, yaw: Math.PI / 2 });
+        waypoints.push({ x: -16.0, z: 19.7, floor: fl, label: `${floorName} • MAIN ARCHWAY`, yaw: Math.PI / 2 });
+        waypoints.push({ x: -13.5, z: 19.7, floor: fl, label: `${floorName} • MAIN CROSSWAY`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -10.0, z: 18.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
 
-        // Leg E: Cross over into East Wing & East Mirror Salon (Mirror at x: 9, z: 3)
-        waypoints.push({ x: -6.5, z: 5.0, floor: fl, label: `${floorName} • CENTRAL TRANSEPT`, yaw: Math.PI / 2 });
+        // 5. Cross Central Transept into East Wing
+        waypoints.push({ x: -10.0, z: 6.0, floor: fl, label: `${floorName} • CENTRAL TRANSEPT ARCH`, yaw: 0 });
+        waypoints.push({ x: -6.5, z: 5.0, floor: fl, label: `${floorName} • TRANSEPT WEST`, yaw: Math.PI / 2 });
         waypoints.push({ x: 0.0, z: 5.0, floor: fl, label: `${floorName} • CENTRAL ROTUNDA CROSS`, yaw: Math.PI / 2 });
         waypoints.push({ x: 6.5, z: 5.0, floor: fl, label: `${floorName} • EAST WING PROMENADE`, yaw: Math.PI / 2 });
-        
-        // Loop past East Hall Mirror and side galleries:
-        waypoints.push({ x: 9.0, z: 1.5, floor: fl, label: `${floorName} • EAST MIRROR GALLERY`, yaw: 0, pauseDuration: 2.0 });
-        waypoints.push({ x: 14.0, z: 4.0, floor: fl, label: `${floorName} • EAST SCULPTURE SALON`, yaw: Math.PI / 2 });
-        waypoints.push({ x: 23.5, z: 5.0, floor: fl, label: `${floorName} • EAST MASTERPIECE CORRIDOR`, yaw: Math.PI });
-        waypoints.push({ x: 23.5, z: 15.0, floor: fl, label: `${floorName} • EAST GALLERY SOUTH`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA PORTAL`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 32.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA DOME`, yaw: Math.PI, pauseDuration: 3.0 });
-        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA EXIT`, yaw: 0 });
 
-        // Leg F: Walk through North East Gallery
-        waypoints.push({ x: 6.5, z: 10.0, floor: fl, label: `${floorName} • EAST CLASSICAL GALLERY`, yaw: 0 });
-        waypoints.push({ x: 6.5, z: -7.5, floor: fl, label: `${floorName} • EAST LONG GALLERY`, yaw: 0 });
-        waypoints.push({ x: 6.5, z: -17.5, floor: fl, label: `${floorName} • EAST NORTH PASSAGE`, yaw: 0 });
-        waypoints.push({ x: 12.0, z: -30.0, floor: fl, label: `${floorName} • NORTH EXHIBITION HALL`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: 12.0, z: -35.0, floor: fl, label: `${floorName} • NORTH ATRIUM GALLERY`, yaw: 0, pauseDuration: 3.5 });
-        waypoints.push({ x: 2.0, z: -33.0, floor: fl, label: `${floorName} • NORTH PAVILION`, yaw: -Math.PI / 2 });
+        // 6. East Wing & Southeast Rotunda
+        waypoints.push({ x: 6.5, z: 12.0, floor: fl, label: `${floorName} • EAST SCULPTURE SALON`, yaw: Math.PI });
+        waypoints.push({ x: 12.0, z: 20.0, floor: fl, label: `${floorName} • SOUTHEAST GALLERY`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA PORTAL`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 31.0, floor: fl, label: `${floorName} • ROTUNDA DOME`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA PORTAL`, yaw: 0 });
+        waypoints.push({ x: 12.0, z: 20.0, floor: fl, label: `${floorName} • SOUTHEAST GALLERY`, yaw: -Math.PI / 2 });
 
-        // Leg G: Move to North Stairwell to ascend to next floor
+        // 7. Northward along East Grand Aisle to North Antiquities Pavilion
+        waypoints.push({ x: 6.5, z: 10.0, floor: fl, label: `${floorName} • EAST LONG GALLERY`, yaw: 0 });
+        waypoints.push({ x: 6.5, z: -2.5, floor: fl, label: `${floorName} • EAST GRAND AISLE`, yaw: 0 });
+        waypoints.push({ x: 6.5, z: -15.4, floor: fl, label: `${floorName} • EAST FOYER`, yaw: 0 });
+        waypoints.push({ x: 6.5, z: -23.0, floor: fl, label: `${floorName} • NORTH PAVILION APPROACH`, yaw: 0 });
+        waypoints.push({ x: 6.0, z: -26.0, floor: fl, label: `${floorName} • NORTH ARCHWAY`, yaw: 0 });
+        waypoints.push({ x: 12.0, z: -32.0, floor: fl, label: `${floorName} • NORTH ANTIQUITIES PAVILION`, yaw: 0 });
+        waypoints.push({ x: 6.0, z: -26.0, floor: fl, label: `${floorName} • NORTH ARCHWAY`, yaw: Math.PI });
+        waypoints.push({ x: 6.5, z: -23.0, floor: fl, label: `${floorName} • EAST AISLE FOYER`, yaw: Math.PI });
+        waypoints.push({ x: 6.5, z: -15.4, floor: fl, label: `${floorName} • STAIR FOYER`, yaw: -Math.PI / 2 });
+
+        // 8. North Stairwell to ascend to next floor
         if (fl < CONFIG.NUM_FLOORS - 1) {
+          waypoints.push({ x: 4.0, z: -15.4, floor: fl, label: `${floorName} • STAIRWELL PORTAL`, yaw: -Math.PI / 2 });
           waypoints.push({ x: 0.0, z: -15.4, floor: fl, label: `${floorName} • NORTH STAIRWELL LANDING`, yaw: 0 });
-          // Stair ascending sequence
+
+          // Smooth architectural stair ascent
           waypoints.push({ x: -2.0, z: -15.4, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
           waypoints.push({ x: -2.0, z: -24.0, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
           waypoints.push({ x: 2.0, z: -24.0, floor: fl + 1, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: Math.PI });
           waypoints.push({ x: 2.0, z: -15.4, floor: fl + 1, label: `ENTERING ${fl + 2}ND FLOOR`, yaw: Math.PI });
           waypoints.push({ x: 0.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • STAIRWELL FOYER`, yaw: -Math.PI / 2 });
+          waypoints.push({ x: -4.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GALLERY PORTAL`, yaw: -Math.PI / 2 });
           waypoints.push({ x: -7.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND GALLERY NORTH`, yaw: -Math.PI / 2 });
-          waypoints.push({ x: -10.0, z: -10.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE`, yaw: Math.PI });
+          waypoints.push({ x: -10.0, z: -16.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE NORTH`, yaw: Math.PI });
+          waypoints.push({ x: -10.0, z: 0.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE`, yaw: Math.PI });
         }
       }
 
