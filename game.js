@@ -4553,7 +4553,8 @@
       this.createLintel(-20.0, y0, 18, 3.0, t, ceilH, mainWallMat);
 
       // B. WEST OFFICE (x: -34..-24, z: 18..28)
-      this.createWall(-34, ycFull, 23.0, t, h, 10.4, accentWallMat, true, fl);    // 17.8..28.2 (Full height h=5.20m to eliminate plenum slit)
+      // Start North end at z = 18.20 flush with the z = 18.0 south wall (z: 17.80..18.20) to eliminate Z-fighting with the West Wing south wall
+      this.createWall(-34, ycFull, 23.2, t, h, 10.0, accentWallMat, true, fl);    // 18.2..28.2 (Full height h=5.20m to eliminate plenum slit)
       this.createWall(-29, ycFull, 28, 10.4, h, t, accentWallMat, true, fl);      // -34.2..-23.8 (Full height h=5.20m sealing South edge)
       // East wall of West Office (x = -24, z: 18.0..28.2) with doorway at z: 18.6..20.8 into SW Stairwell Landing
       // Start North jamb at z = 18.20 flush with the stairwell landing box (z: 18.20..20.80) to eliminate corner fight with z=18.0 south wall
