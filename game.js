@@ -4334,7 +4334,12 @@
         winTime: document.getElementById('win-time')
       };
 
-      window.game = this;
+            window.testRelicCutscene = () => {
+        this.relicsCollected = CONFIG.TOTAL_RELICS;
+        this.unsealExitDoors();
+      };
+      window.playAllRelicsFoundCutscene = () => this.playAllRelicsFoundCutscene(false);
+window.game = this;
       this.floorLights = [[], [], [], []];
 
       console.log('%c[THE MUSEUM]%c Ready', 'color:#00ff88;font-weight:bold;background:#111;padding:3px 6px;border-radius:3px', 'color:#fff;background:#222;padding:3px 6px');
@@ -14195,7 +14200,7 @@
       });
 
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isPlayingCutscene) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isGameOver && !this.isVictory && !this.isPlayingCutscene) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
           }
@@ -14244,7 +14249,7 @@
             return;
           }
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
-              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused) {
+              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene) {
             this.pauseGame();
             this.lastPointerLockExitTime = performance.now();
           }
@@ -15317,6 +15322,8 @@
       if (this.hasPlayedAllRelicsCutscene) return;
       this.hasPlayedAllRelicsCutscene = true;
 
+      console.log('[CUTSCENE] All relics collected! Triggering cutscene sequence (5s countdown)...');
+
       if (broadcast && this.mp) {
         this.mp.notifyAllRelicsFoundCutscene();
       }
@@ -15325,12 +15332,19 @@
       const videoEl = this.dom.allRelicsVideo;
       const skipPrompt = this.dom.allRelicsSkipPrompt;
       const fadeOverlay = this.dom.cinemaFadeOverlay;
-      if (!cutsceneOverlay || !videoEl) return;
+      if (!cutsceneOverlay || !videoEl) {
+        console.error('[CUTSCENE] DOM elements missing!', { cutsceneOverlay, videoEl });
+        return;
+      }
+
+      // Pre-warm / preload video buffer immediately
+      videoEl.load();
 
       // 5-second countdown after collecting the final relic before fading to black and starting cutscene
       setTimeout(() => {
-        // If player already died or won during the 5s delay, abort
         if (this.isGameOver || this.isVictory) return;
+
+        console.log('[CUTSCENE] 5s countdown finished. Starting fade to black...');
 
         // Step 1: Fade to black over 1.2s
         if (fadeOverlay) {
@@ -15343,6 +15357,8 @@
             return;
           }
 
+          console.log('[CUTSCENE] Faded to black. Initializing cutscene video playback...');
+
           this.isPlayingCutscene = true;
           this.keys = {};
           this.isSprinting = false;
@@ -15351,6 +15367,9 @@
           if (this.audio) {
             this.audio.pauseGameplayAudio();
           }
+
+          // Temporarily release pointer lock for clean video presentation
+          this.releaseNativeOrBrowserLock();
 
           cutsceneOverlay.classList.remove('hidden');
           cutsceneOverlay.style.opacity = '1';
@@ -15367,6 +15386,8 @@
           const finishCutscene = () => {
             if (isFinishing) return;
             isFinishing = true;
+
+            console.log('[CUTSCENE] Finishing cutscene and returning to gameplay...');
 
             if (cleanupListeners) {
               cleanupListeners();
@@ -15395,7 +15416,7 @@
             }, 600);
           };
 
-          // Show "ANY KEY TO CONTINUE" prompt at 37 seconds
+          // Show "PRESS ANY KEY TO CONTINUE" prompt at 37 seconds
           const onTimeUpdate = () => {
             if (skipPrompt && videoEl.currentTime >= 37) {
               skipPrompt.classList.remove('hidden');
@@ -15403,7 +15424,7 @@
           };
           videoEl.addEventListener('timeupdate', onTimeUpdate);
 
-          // Allow skipping at any time via any keypress or click
+          // Allow skipping after a grace period of 1.5 seconds so accidental touches don't abort it
           const onKeyDown = (e) => {
             if (!this.isPlayingCutscene || isFinishing) return;
             e.preventDefault();
@@ -15418,37 +15439,38 @@
             finishCutscene();
           };
 
-          // Slight delay (200ms) before registering skip listener
+          // 1.5-second grace period before registering skip listener
           const skipAttachTimer = setTimeout(() => {
             window.addEventListener('keydown', onKeyDown, { capture: true });
-            window.addEventListener('pointerdown', onClick, { capture: true });
             window.addEventListener('click', onClick, { capture: true });
-          }, 200);
+          }, 1500);
 
           cleanupListeners = () => {
             clearTimeout(skipAttachTimer);
             videoEl.removeEventListener('timeupdate', onTimeUpdate);
             window.removeEventListener('keydown', onKeyDown, { capture: true });
-            window.removeEventListener('pointerdown', onClick, { capture: true });
             window.removeEventListener('click', onClick, { capture: true });
           };
 
           videoEl.onended = () => {
+            console.log('[CUTSCENE] Video playback finished.');
             finishCutscene();
           };
 
           videoEl.onerror = (e) => {
-            console.warn('All relics video playback error, finishing cutscene:', e);
+            console.warn('[CUTSCENE] Video playback error, finishing cutscene:', e);
             finishCutscene();
           };
 
           const playPromise = videoEl.play();
           if (playPromise !== undefined) {
-            playPromise.catch(err => {
-              console.warn('Autoplay with sound prevented, attempting muted play:', err);
+            playPromise.then(() => {
+              console.log('[CUTSCENE] Video playing successfully with audio.');
+            }).catch(err => {
+              console.warn('[CUTSCENE] Autoplay with sound prevented, attempting muted play:', err);
               videoEl.muted = true;
               videoEl.play().catch(e => {
-                console.error('Failed to play all relics video:', e);
+                console.error('[CUTSCENE] Failed to play video even muted:', e);
                 finishCutscene();
               });
             });
