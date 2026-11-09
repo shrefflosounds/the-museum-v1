@@ -4086,6 +4086,7 @@
       this.museumTourPauseTimer = 0;
       this.hasPlayedAllRelicsCutscene = false;
       this.isPlayingCutscene = false;
+      this.isRelicCutscenePending = false;
       this.isGameOver = false;
       this.isVictory = false;
       this.isPaused = false;
@@ -14200,7 +14201,7 @@ window.game = this;
       });
 
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isGameOver && !this.isVictory && !this.isPlayingCutscene) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending && !this.isGameOver && !this.isVictory) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
           }
@@ -14249,7 +14250,7 @@ window.game = this;
             return;
           }
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
-              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene) {
+              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
             this.pauseGame();
             this.lastPointerLockExitTime = performance.now();
           }
@@ -14317,7 +14318,7 @@ window.game = this;
       }, { passive: false });
 
       window.addEventListener('mousedown', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene || this.isRelicCutscenePending) return;
 
         // Ensure browser lock is requested if not locked, without blocking gameplay action
         if (!this.isPointerLocked && !this.isNativeLocked) {
@@ -14478,8 +14479,8 @@ window.game = this;
           } else if (this.isAboutModalOpen) {
             this.closeAboutModal();
           } else if (this.gameStarted) {
-            // Escape only pauses the game, never unpauses
-            if (!this.isPaused) {
+            // Escape only pauses the game, never unpauses (disabled during cutscene)
+            if (!this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
               this.pauseGame();
             }
           }
@@ -15321,6 +15322,7 @@ window.game = this;
     playAllRelicsFoundCutscene(broadcast = true) {
       if (this.hasPlayedAllRelicsCutscene) return;
       this.hasPlayedAllRelicsCutscene = true;
+      this.isRelicCutscenePending = true;
 
       console.log('[CUTSCENE] All relics collected! Triggering cutscene sequence (5s countdown)...');
 
@@ -15334,15 +15336,22 @@ window.game = this;
       const fadeOverlay = this.dom.cinemaFadeOverlay;
       if (!cutsceneOverlay || !videoEl) {
         console.error('[CUTSCENE] DOM elements missing!', { cutsceneOverlay, videoEl });
+        this.isRelicCutscenePending = false;
         return;
       }
 
-      // Pre-warm / preload video buffer immediately
+      // Pre-warm / preload video buffer immediately directly on element
+      if (!videoEl.src || !videoEl.src.includes('AllRelicsFound.mp4')) {
+        videoEl.src = 'assets/AllRelicsFound.mp4';
+      }
       videoEl.load();
 
       // 5-second countdown after collecting the final relic before fading to black and starting cutscene
       setTimeout(() => {
-        if (this.isGameOver || this.isVictory) return;
+        if (this.isGameOver || this.isVictory) {
+          this.isRelicCutscenePending = false;
+          return;
+        }
 
         console.log('[CUTSCENE] 5s countdown finished. Starting fade to black...');
 
@@ -15354,12 +15363,14 @@ window.game = this;
         setTimeout(() => {
           if (this.isGameOver || this.isVictory) {
             if (fadeOverlay) fadeOverlay.classList.remove('active');
+            this.isRelicCutscenePending = false;
             return;
           }
 
           console.log('[CUTSCENE] Faded to black. Initializing cutscene video playback...');
 
           this.isPlayingCutscene = true;
+          this.isRelicCutscenePending = false;
           this.keys = {};
           this.isSprinting = false;
 
@@ -15434,6 +15445,13 @@ window.game = this;
 
           const onClick = (e) => {
             if (!this.isPlayingCutscene || isFinishing) return;
+            // If video was forced into muted playback due to browser autoplay policy,
+            // the first click cleanly restores unmuted audio rather than skipping the cutscene.
+            if (videoEl.muted) {
+              videoEl.muted = false;
+              videoEl.volume = 1.0;
+              return;
+            }
             e.preventDefault();
             e.stopPropagation();
             finishCutscene();
@@ -15467,7 +15485,7 @@ window.game = this;
             playPromise.then(() => {
               console.log('[CUTSCENE] Video playing successfully with audio.');
             }).catch(err => {
-              console.warn('[CUTSCENE] Autoplay with sound prevented, attempting muted play:', err);
+              console.warn('[CUTSCENE] Autoplay with sound prevented, playing muted with click-to-unmute:', err);
               videoEl.muted = true;
               videoEl.play().catch(e => {
                 console.error('[CUTSCENE] Failed to play video even muted:', e);
