@@ -4079,6 +4079,8 @@
       this.isSprinting = false;
       this.sprintExhausted = false;
       this.relicsCollected = 0;
+      this.hasPlayedAllRelicsCutscene = false;
+      this.isPlayingCutscene = false;
       this.isGameOver = false;
       this.isVictory = false;
       this.isPaused = false;
@@ -4305,6 +4307,9 @@
         floorIndicator: document.getElementById('floor-indicator'),
         spectatorIndicator: document.getElementById('spectator-indicator'),
         relicNotification: document.getElementById('relic-notification'),
+        allRelicsCutscene: document.getElementById('all-relics-cutscene'),
+        allRelicsVideo: document.getElementById('all-relics-video'),
+        allRelicsSkipPrompt: document.getElementById('all-relics-skip-prompt'),
         systemNotification: document.getElementById('system-notification'),
         healthValue: document.getElementById('health-value'),
         healthFill: document.getElementById('health-fill'),
@@ -14174,7 +14179,7 @@
       });
 
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isPlayingCutscene) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
           }
@@ -14263,7 +14268,7 @@
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) {
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene) {
           this.lastClientX = null;
           this.lastClientY = null;
           return;
@@ -15002,10 +15007,124 @@
 
       this.dom.roomIndicator.textContent = T('hud.exit_unlocked', 'LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!');
       this.dom.roomIndicator.style.color = '#34d399';
+
+      this.playAllRelicsFoundCutscene(true);
+    }
+
+    playAllRelicsFoundCutscene(broadcast = true) {
+      if (this.hasPlayedAllRelicsCutscene) return;
+      this.hasPlayedAllRelicsCutscene = true;
+
+      if (broadcast && this.mp) {
+        this.mp.notifyAllRelicsFoundCutscene();
+      }
+
+      const cutsceneOverlay = this.dom.allRelicsCutscene;
+      const videoEl = this.dom.allRelicsVideo;
+      const skipPrompt = this.dom.allRelicsSkipPrompt;
+      if (!cutsceneOverlay || !videoEl) return;
+
+      this.isPlayingCutscene = true;
+      this.keys = {};
+      this.isSprinting = false;
+
+      // Pause background gameplay audio during cutscene
+      if (this.audio) {
+        this.audio.pauseGameplayAudio();
+      }
+
+      cutsceneOverlay.classList.remove('hidden');
+      cutsceneOverlay.style.opacity = '1';
+      if (skipPrompt) {
+        skipPrompt.classList.add('hidden');
+      }
+
+      videoEl.currentTime = 0;
+      videoEl.muted = false;
+
+      let cleanupListeners = null;
+
+      const finishCutscene = () => {
+        if (!this.isPlayingCutscene) return;
+        this.isPlayingCutscene = false;
+
+        if (cleanupListeners) {
+          cleanupListeners();
+          cleanupListeners = null;
+        }
+
+        cutsceneOverlay.style.opacity = '0';
+        setTimeout(() => {
+          cutsceneOverlay.classList.add('hidden');
+          if (skipPrompt) skipPrompt.classList.add('hidden');
+          videoEl.pause();
+          if (this.audio && !this.isGameOver && !this.isVictory && !this.isPaused) {
+            this.audio.resumeGameplayAudio();
+          }
+          this.requestNativeOrBrowserLock();
+        }, 400);
+      };
+
+      // Show "ANY KEY TO CONTINUE" prompt at 37 seconds
+      const onTimeUpdate = () => {
+        if (skipPrompt && videoEl.currentTime >= 37) {
+          skipPrompt.classList.remove('hidden');
+        }
+      };
+      videoEl.addEventListener('timeupdate', onTimeUpdate);
+
+      // Allow skipping at any time via any keypress or click
+      const onKeyDown = (e) => {
+        if (!this.isPlayingCutscene) return;
+        e.preventDefault();
+        e.stopPropagation();
+        finishCutscene();
+      };
+
+      const onClick = (e) => {
+        if (!this.isPlayingCutscene) return;
+        e.preventDefault();
+        e.stopPropagation();
+        finishCutscene();
+      };
+
+      // Slight delay (200ms) before registering skip listener so the interaction key that grabbed the relic doesn't immediately skip
+      const skipAttachTimer = setTimeout(() => {
+        window.addEventListener('keydown', onKeyDown, { capture: true });
+        window.addEventListener('mousedown', onClick, { capture: true });
+      }, 200);
+
+      cleanupListeners = () => {
+        clearTimeout(skipAttachTimer);
+        videoEl.removeEventListener('timeupdate', onTimeUpdate);
+        window.removeEventListener('keydown', onKeyDown, { capture: true });
+        window.removeEventListener('mousedown', onClick, { capture: true });
+      };
+
+      videoEl.onended = () => {
+        finishCutscene();
+      };
+
+      videoEl.onerror = (e) => {
+        console.warn('All relics video playback error, finishing cutscene:', e);
+        finishCutscene();
+      };
+
+      const playPromise = videoEl.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(err => {
+          console.warn('Autoplay with sound prevented, attempting muted play:', err);
+          videoEl.muted = true;
+          videoEl.play().catch(e => {
+            console.error('Failed to play all relics video:', e);
+            finishCutscene();
+          });
+        });
+      }
     }
 
     updatePlayer(delta) {
-      if (!this.gameStarted || this.isGameOver || this.isVictory || this.isPaused || this.isExaminingArt) return;
+      if (!this.gameStarted || this.isGameOver || this.isVictory || this.isPaused || this.isExaminingArt || this.isPlayingCutscene) return;
 
       if (this.isNoClipMode) {
         // Garry's Mod style 3D free flight

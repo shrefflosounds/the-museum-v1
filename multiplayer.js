@@ -233,6 +233,12 @@
           }
           break;
 
+        case 'all_relics_found_cutscene':
+          if (this.game && typeof this.game.playAllRelicsFoundCutscene === 'function') {
+            this.game.playAllRelicsFoundCutscene(false);
+          }
+          break;
+
         case 'curator_sync':
           if (!this.isHost && this.game && typeof this.game.onCuratorSync === 'function') {
             this.game.onCuratorSync(data);
@@ -418,6 +424,12 @@
       this.publish({
         type: 'relic_pickup',
         relicIndex: relicIndex
+      });
+    }
+
+    notifyAllRelicsFoundCutscene() {
+      this.publish({
+        type: 'all_relics_found_cutscene'
       });
     }
 
