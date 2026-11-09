@@ -14945,39 +14945,48 @@
     }
 
     buildMuseumTourItinerary() {
-      // Constructs a scenic, curated walking path across all 4 floors.
-      // On each floor:
-      //  1. Walks the Grand Promenade / Main Gallery viewing hall
-      //  2. Explores the West Wing and walks into the Video Installation Theater (pausing ~10s to watch the screen)
-      //  3. Loops through the East Wing & North Galleries
-      //  4. Ascends to the next floor via the Stairwell
-      //  5. Concludes on Floor 3 after the final gallery walkthrough and returns to menu.
+      // Constructs a scenic, curated walking path across all 4 floors:
+      //  1. Strolls the Grand Promenade / Main Gallery viewing hall
+      //  2. Explores the West Wing & West Hallway Mirror Salon, walking around the framed paintings
+      //  3. Enters the Video Installation Theater, plays the video, and pauses for 10 seconds facing the screen
+      //  4. Explores the East Wing & East Mirror Salon, looping past classical sculptures and artworks
+      //  5. Visits the North Pavilion & Atrium galleries
+      //  6. Ascends via the Stairwell to the next floor
+      //  7. Returns to the main menu when the full tour finishes
       const waypoints = [];
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const floorName = (fl === 0 ? "1ST FLOOR" : fl === 1 ? "2ND FLOOR" : fl === 2 ? "3RD FLOOR" : "4TH FLOOR");
 
-        // Leg A: Main Gallery Entrance -> Promenade
+        // Leg A: Main Gallery Entrance -> Grand Promenade
         waypoints.push({ x: -10.0, z: 22.0, floor: fl, label: `${floorName} • GRAND PROMENADE`, yaw: 0 });
         waypoints.push({ x: -10.0, z: 10.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
         waypoints.push({ x: -10.0, z: 2.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
 
-        // Leg B: Enter West Gallery Wing
+        // Leg B: Enter West Gallery Wing & West Mirror Room (Mirror at x: -26, z: -3)
         waypoints.push({ x: -12.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING ARCHWAY`, yaw: -Math.PI / 2 });
         waypoints.push({ x: -19.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING SALON`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -26.0, z: 6.0, floor: fl, label: `${floorName} • WEST EXHIBITION HALL`, yaw: Math.PI });
-        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST CONTEMPORARY GALLERY`, yaw: Math.PI });
+        
+        // Loop through the West Mirror Gallery room around the artworks:
+        waypoints.push({ x: -20.5, z: 0.0, floor: fl, label: `${floorName} • WEST MIRROR SALON`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -26.0, z: -2.0, floor: fl, label: `${floorName} • WEST EXHIBIT & REFLECTOR`, yaw: 0, pauseDuration: 2.0 });
+        waypoints.push({ x: -31.5, z: -2.0, floor: fl, label: `${floorName} • WEST EXHIBIT VIEWING WALK`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -32.5, z: 3.4, floor: fl, label: `${floorName} • WEST WING MASTERPIECES`, yaw: -Math.PI / 2 });
+        waypoints.push({ x: -32.5, z: 8.6, floor: fl, label: `${floorName} • WEST CONTEMPORARY WING`, yaw: Math.PI });
+        waypoints.push({ x: -26.0, z: 12.0, floor: fl, label: `${floorName} • WEST GALLERY PLAZA`, yaw: Math.PI });
+        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST THEATER APPROACH`, yaw: Math.PI });
 
-        // Leg C: Walk into Video Installation Room (Screen center at x: -29.0, z: 27.7 facing North)
-        waypoints.push({ x: -30.0, z: 18.0, floor: fl, label: `${floorName} • VIDEO INSTALLATION ENTRY`, yaw: Math.PI });
+        // Leg C: Walk directly into the Video Installation Theater
+        waypoints.push({ x: -29.0, z: 18.5, floor: fl, label: `${floorName} • VIDEO THEATER ENTRY`, yaw: Math.PI });
         waypoints.push({
           x: -29.0,
-          z: 22.2,
+          z: 22.0,
           floor: fl,
           label: `${floorName} • VIDEO INSTALLATION THEATER`,
           yaw: Math.PI,
           pitch: 0.05,
-          pauseDuration: 10.0 // Stop for 10 seconds to watch the video
+          isVideoStop: true,
+          pauseDuration: 10.0 // Pause for 10 seconds to watch the video
         });
 
         // Leg D: Exit Video Room back towards Main Corridor
@@ -14985,12 +14994,17 @@
         waypoints.push({ x: -16.0, z: 19.7, floor: fl, label: `${floorName} • MAIN CROSSWAY`, yaw: Math.PI / 2 });
         waypoints.push({ x: -10.0, z: 18.0, floor: fl, label: `${floorName} • MAIN GALLERY SOUTH`, yaw: -Math.PI });
 
-        // Leg E: Cross over into East Wing
+        // Leg E: Cross over into East Wing & East Mirror Salon (Mirror at x: 9, z: 3)
         waypoints.push({ x: -6.5, z: 5.0, floor: fl, label: `${floorName} • CENTRAL TRANSEPT`, yaw: Math.PI / 2 });
         waypoints.push({ x: 0.0, z: 5.0, floor: fl, label: `${floorName} • CENTRAL ROTUNDA CROSS`, yaw: Math.PI / 2 });
         waypoints.push({ x: 6.5, z: 5.0, floor: fl, label: `${floorName} • EAST WING PROMENADE`, yaw: Math.PI / 2 });
-        waypoints.push({ x: 14.0, z: 10.0, floor: fl, label: `${floorName} • EAST SCULPTURE CORRIDOR`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 28.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA PORTAL`, yaw: Math.PI });
+        
+        // Loop past East Hall Mirror and side galleries:
+        waypoints.push({ x: 9.0, z: 1.5, floor: fl, label: `${floorName} • EAST MIRROR GALLERY`, yaw: 0, pauseDuration: 2.0 });
+        waypoints.push({ x: 14.0, z: 4.0, floor: fl, label: `${floorName} • EAST SCULPTURE SALON`, yaw: Math.PI / 2 });
+        waypoints.push({ x: 23.5, z: 5.0, floor: fl, label: `${floorName} • EAST MASTERPIECE CORRIDOR`, yaw: Math.PI });
+        waypoints.push({ x: 23.5, z: 15.0, floor: fl, label: `${floorName} • EAST GALLERY SOUTH`, yaw: Math.PI });
+        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA PORTAL`, yaw: Math.PI });
         waypoints.push({ x: 19.0, z: 32.5, floor: fl, label: `${floorName} • SOUTH ROTUNDA DOME`, yaw: Math.PI, pauseDuration: 3.0 });
         waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA EXIT`, yaw: 0 });
 
@@ -15064,7 +15078,7 @@
       }
 
       // Smooth strolling speed: ~2.1 meters per second (relaxing, presentation-ready gallery walk)
-      const walkSpeed = 2.1;
+      const walkSpeed = 3.2;
       const dx = targetWp.x - this.playerPos.x;
       const dz = targetWp.z - this.playerPos.z;
       const dist2D = Math.hypot(dx, dz);
@@ -15082,6 +15096,15 @@
           this.museumTourPauseTimer = targetWp.pauseDuration;
           if (targetWp.yaw !== undefined) this.playerYaw = targetWp.yaw;
           if (targetWp.pitch !== undefined) this.playerPitch = targetWp.pitch;
+
+          if (targetWp.isVideoStop) {
+            // Force activate video installation playback for this floor
+            this.loadPlaylistForFloor(targetWp.floor);
+            this.sendYouTubeCommand(p => {
+              if (typeof p.unMute === "function") p.unMute();
+              if (typeof p.playVideo === "function") p.playVideo();
+            });
+          }
           return;
         }
 
