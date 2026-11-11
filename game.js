@@ -12015,6 +12015,18 @@ window.game = this;
       infillMesh.position.set(0, straightH, 0);
       portalGroup.add(infillMesh);
 
+      // Outer arch-ring infill: fills the ring between inner radius 1.40 and outer 1.85
+      // (the arch apex reaches straightH + 1.85 = 4.95, above the 4.68 lintel bottom)
+      const outerInfillShape = new THREE.Shape();
+      outerInfillShape.absarc(0, 0, 1.85, 0, Math.PI, false);
+      outerInfillShape.absarc(0, 0, 1.40, Math.PI, 0, true);
+      outerInfillShape.closePath();
+      const outerInfillGeom = new THREE.ExtrudeGeometry(outerInfillShape, { depth: 0.44, bevelEnabled: false, curveSegments: 36 });
+      outerInfillGeom.translate(0, 0, -0.22);
+      const outerInfillMesh = new THREE.Mesh(outerInfillGeom, stoneMat);
+      outerInfillMesh.position.set(0, straightH, 0);
+      portalGroup.add(outerInfillMesh);
+
       // Outer Arch Moulding Ring (Outer R: 1.98m)
       const outerMouldShape = new THREE.Shape();
       outerMouldShape.absarc(0, 0, 1.98, 0, Math.PI, false);
