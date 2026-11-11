@@ -4860,10 +4860,10 @@ window.game = this;
           addFlightCarriage(-2.09, y0, -16.8, y0 + halfH, -23.2, 3.82);
           addFlightCarriage( 2.09, y0 + halfH, -23.2, y0 + CONFIG.FLOOR_HEIGHT, -16.8, 3.82);
 
-          const numSteps = 22;
+          const numSteps = 20;
           const stepLen = 6.4 / numSteps;
           const stepH = halfH / numSteps;
-          const boxH = stepH + 0.30;
+          const boxH = stepH + 0.32;
           for (let s = 0; s < numSteps; s++) {
             const sz = -16.8 - (s + 0.5) * stepLen;
             // West Flight: top surface flush with mathematical slope y0 + (s + 0.5) * stepH
@@ -9151,10 +9151,13 @@ window.game = this;
       // Collision so the player/NPCs can't walk through the mirror stand
       if (this.colliders) {
         this.colliders.push({
-          type: 'box', floor: 0,
+          type: 'box',
+          floor: Math.round(y0 / CONFIG.FLOOR_HEIGHT),
           minX: MX - W / 2 - 0.15, maxX: MX + W / 2 + 0.15,
-          minZ: MZ - 0.45, maxZ: MZ + 0.12,
-          minY: y0, maxY: y0 + bottom + H + 0.2
+          // Cover the whole stand footprint, including the frontward splayed feet.
+          minZ: MZ - 0.48, maxZ: MZ + 0.28,
+          minY: y0, maxY: y0 + bottom + H + 0.2,
+          isWall: true
         });
       }
     }
