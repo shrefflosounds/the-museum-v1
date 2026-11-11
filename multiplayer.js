@@ -257,6 +257,18 @@
           }
           break;
 
+        case 'crate_throw':
+          if (this.isHost && this.game && typeof this.game.onRemoteCrateThrown === 'function') {
+            this.game.onRemoteCrateThrown(data);
+          }
+          break;
+
+        case 'crate_statue_hit':
+          if (this.game && typeof this.game.onRemoteCrateStatueHit === 'function') {
+            this.game.onRemoteCrateStatueHit(data);
+          }
+          break;
+
         case 'ammo_pickup':
           if (this.game && typeof this.game.onRemoteAmmoPickup === 'function') {
             this.game.onRemoteAmmoPickup(data.index);
@@ -464,8 +476,8 @@
       if (!this.isHost || !this.game || !this.game.physicsCrates || this.game.physicsCrates.length === 0) return;
       const crateData = [];
       this.game.physicsCrates.forEach((c, idx) => {
-        // Only send if moving, held, or collapsed to save bandwidth
-        if (c.isHeld || c.isCollapsed || Math.abs(c.vx) > 0.02 || Math.abs(c.vz) > 0.02) {
+        const moving = Math.abs(c.vx) > 0.02 || Math.abs(c.vy || 0) > 0.02 || Math.abs(c.vz) > 0.02;
+        if (c.isHeld || moving || c._syncDirty) {
           crateData.push({
             i: idx,
             x: Number(c.x.toFixed(3)),
@@ -476,6 +488,7 @@
             rotZ: Number(c.rotZ.toFixed(3)),
             held: !!c.isHeld
           });
+          if (!moving && !c.isHeld) c._syncDirty = false;
         }
       });
       if (crateData.length > 0) {
@@ -504,7 +517,7 @@
       });
     }
 
-    notifyPlayerHit(targetId, hitPoint, shotDir, damage = 25) {
+    notifyPlayerHit(targetId, hitPoint, shotDir, damage = 25, knockback = 0) {
       this.publish({
         type: 'player_hit',
         targetId: targetId,
@@ -514,7 +527,31 @@
         dirX: Number(shotDir.x.toFixed(3)),
         dirY: Number(shotDir.y.toFixed(3)),
         dirZ: Number(shotDir.z.toFixed(3)),
-        damage: damage
+        damage: damage,
+        knockback: knockback
+      });
+    }
+
+    notifyCrateThrown(index, body, thrower) {
+      if (!body) return;
+      this.publish({
+        type: 'crate_throw',
+        i: index,
+        x: body.position.x, y: body.position.y, z: body.position.z,
+        qx: body.quaternion.x, qy: body.quaternion.y,
+        qz: body.quaternion.z, qw: body.quaternion.w,
+        vx: body.velocity.x, vy: body.velocity.y, vz: body.velocity.z,
+        wx: body.angularVelocity.x, wy: body.angularVelocity.y, wz: body.angularVelocity.z,
+        thrower: thrower
+      });
+    }
+
+    notifyCrateStatueHit(statueId, hitPoint, direction) {
+      this.publish({
+        type: 'crate_statue_hit',
+        statueId: statueId,
+        x: hitPoint.x, y: hitPoint.y, z: hitPoint.z,
+        dx: direction.x, dy: direction.y, dz: direction.z
       });
     }
 

@@ -4221,6 +4221,7 @@
       this.timeSincePlayerSeen = 0;
 
       this.playerVelocity = new THREE.Vector3();
+      this.playerCrateKnockback = new THREE.Vector3();
       this.smittyStalkFreezeTimer = 0;
       this.lastChaseStingerTime = 0;
       this.smittySawPlayerStairsTimer = 0;
@@ -7986,11 +7987,16 @@ window.game = this;
 
     buildMilkCrateMesh(colorHex, w = 0.38, h = 0.31, d = 0.38) {
       const group = new THREE.Group();
-      const plasticMat = new THREE.MeshStandardMaterial({
-        color: colorHex,
-        roughness: 0.42,
-        metalness: 0.05
-      });
+      this.crateMaterials = this.crateMaterials || new Map();
+      let plasticMat = this.crateMaterials.get(colorHex);
+      if (!plasticMat) {
+        plasticMat = new THREE.MeshStandardMaterial({
+          color: colorHex,
+          roughness: 0.42,
+          metalness: 0.05
+        });
+        this.crateMaterials.set(colorHex, plasticMat);
+      }
 
       // 4 Heavy-duty reinforced corner columns with outer corner radius/caps
       const postW = 0.038;
@@ -8160,6 +8166,40 @@ window.game = this;
         }
       });
 
+      const positions = [];
+      const normals = [];
+      const uvs = [];
+      const indices = [];
+      let vertexOffset = 0;
+      for (const part of group.children) {
+        part.updateMatrix();
+        const geometry = part.geometry.clone();
+        geometry.applyMatrix4(part.matrix);
+        const pos = geometry.getAttribute('position');
+        const normal = geometry.getAttribute('normal');
+        const uv = geometry.getAttribute('uv');
+        for (let i = 0; i < pos.count; i++) {
+          positions.push(pos.getX(i), pos.getY(i), pos.getZ(i));
+          normals.push(normal.getX(i), normal.getY(i), normal.getZ(i));
+          uvs.push(uv.getX(i), uv.getY(i));
+        }
+        if (geometry.index) {
+          for (const index of geometry.index.array) indices.push(index + vertexOffset);
+        } else {
+          for (let i = 0; i < pos.count; i++) indices.push(vertexOffset + i);
+        }
+        vertexOffset += pos.count;
+        geometry.dispose();
+        part.geometry.dispose();
+      }
+      const mergedGeometry = new THREE.BufferGeometry();
+      mergedGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+      mergedGeometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+      mergedGeometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+      mergedGeometry.setIndex(indices);
+      mergedGeometry.computeBoundingSphere();
+      group.clear();
+      group.add(new THREE.Mesh(mergedGeometry, plasticMat));
       return group;
     }
 
@@ -8195,6 +8235,7 @@ window.game = this;
       if (bestCrate) {
         this.heldCrate = bestCrate;
         bestCrate.isHeld = true;
+        bestCrate.throwImpactActive = false;
         bestCrate.isCollapsed = true;
         // Lock a clean, upright carry orientation once. Do not chase the camera's
         // yaw through Euler angles; angle wrapping can look like violent flipping.
@@ -8247,6 +8288,7 @@ window.game = this;
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
 
       crate.isHeld = false;
+      crate.throwImpactActive = false;
       crate.collider.disabled = false;
       crate.isCollapsed = true;
 
@@ -8261,6 +8303,7 @@ window.game = this;
       body.velocity.set(fwd.x * 0.08, 0, fwd.z * 0.08);
       body.angularVelocity.set(0, 0, 0);
       body.wakeUp();
+      crate._syncDirty = true;
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
@@ -8293,9 +8336,128 @@ window.game = this;
         (Math.random() - 0.5) * 3.0
       );
       body.wakeUp();
+      crate._syncDirty = true;
+      crate.throwImpactActive = true;
+      crate.throwImpactUntil = performance.now() + 5000;
+      crate.throwHitTargets = new Set();
+      crate.throwerId = (this.mp && this.mp.client) ? this.mp.clientId : 'local';
+      if (this.mp && this.mp.client && this.mp.client.connected &&
+          typeof this.mp.notifyCrateThrown === 'function') {
+        this.mp.notifyCrateThrown(crate.id - 1, body, crate.throwerId);
+      }
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
+    }
+
+    onRemoteCrateThrown(data) {
+      if (!data || !this.physicsCrates || !this.cratePhysicsWorld) return;
+      const crate = this.physicsCrates[data.i];
+      if (!crate || !crate.body) return;
+      const body = crate.body;
+      body.type = CANNON.Body.DYNAMIC;
+      body.mass = crate.mass;
+      body.updateMassProperties();
+      body.collisionResponse = true;
+      if (body.world !== this.cratePhysicsWorld) this.cratePhysicsWorld.addBody(body);
+      body.position.set(data.x, data.y, data.z);
+      body.quaternion.set(data.qx, data.qy, data.qz, data.qw);
+      body.velocity.set(data.vx, data.vy, data.vz);
+      body.angularVelocity.set(data.wx || 0, data.wy || 0, data.wz || 0);
+      body.wakeUp();
+      crate.x = data.x;
+      crate.y = data.y - crate.h / 2;
+      crate.z = data.z;
+      crate.isHeld = false;
+      crate.collider.disabled = false;
+      crate.throwImpactActive = true;
+      crate.throwImpactUntil = performance.now() + 5000;
+      crate.throwHitTargets = new Set();
+      crate.throwerId = data.thrower || 'remote';
+      crate._syncDirty = true;
+    }
+
+    hitThrownCrateTargets(crate, fromX, fromY, fromZ) {
+      if (!crate.throwImpactActive || !crate.body) return;
+      if (performance.now() > crate.throwImpactUntil) {
+        crate.throwImpactActive = false;
+        return;
+      }
+      // In co-op, the host alone resolves actor impacts; clients send the throw
+      // to the host and receive normal crate/player sync.
+      if (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost) return;
+      const body = crate.body;
+      if (body.velocity.lengthSquared() < 6.25) return;
+      const ax = body.position.x - fromX;
+      const ay = body.position.y - fromY;
+      const az = body.position.z - fromZ;
+      const lenSq = ax * ax + ay * ay + az * az;
+      const checkTarget = (key, x, y, z, radius, onHit) => {
+        if (crate.throwHitTargets.has(key)) return false;
+        const t = lenSq > 1e-8
+          ? THREE.MathUtils.clamp(((x - fromX) * ax + (y - fromY) * ay + (z - fromZ) * az) / lenSq, 0, 1)
+          : 1;
+        const px = fromX + ax * t;
+        const py = fromY + ay * t;
+        const pz = fromZ + az * t;
+        const dx = px - x, dy = py - y, dz = pz - z;
+        const reach = radius + Math.hypot(crate.w, crate.h, crate.d) * 0.34;
+        if (dx * dx + dy * dy + dz * dz > reach * reach) return false;
+        crate.throwHitTargets.add(key);
+        const normal = new CANNON.Vec3(dx, dy, dz);
+        if (normal.lengthSquared() < 1e-6) normal.set(-body.velocity.x, -body.velocity.y, -body.velocity.z);
+        normal.normalize();
+        const direction = new THREE.Vector3(body.velocity.x, body.velocity.y, body.velocity.z);
+        if (direction.lengthSq() < 1e-6) direction.set(-normal.x, -normal.y, -normal.z);
+        direction.normalize();
+        const incoming = body.velocity.dot(normal);
+        if (incoming < 0) {
+          const bounce = 1.18 * incoming;
+          body.velocity.x -= normal.x * bounce;
+          body.velocity.y -= normal.y * bounce;
+          body.velocity.z -= normal.z * bounce;
+        }
+        body.position.set(px + normal.x * reach, py + normal.y * reach, pz + normal.z * reach);
+        body.aabbNeedsUpdate = true;
+        body.wakeUp();
+        const hitPoint = new THREE.Vector3(px, py, pz);
+        onHit(hitPoint, direction);
+        return true;
+      };
+
+      if (this.statues) {
+        for (const statue of this.statues) {
+          if (!statue.group.visible || statue.cfg.isSilverSmitty) continue;
+          const hit = checkTarget('statue:' + statue.cfg.id, statue.x, statue.y + 1.05, statue.z, 0.64,
+            (point, direction) => {
+              this.hitStatue(statue, point, direction);
+              if (this.mp && this.mp.isHost && typeof this.mp.notifyCrateStatueHit === 'function') {
+                this.mp.notifyCrateStatueHit(statue.cfg.id, point, direction);
+              }
+            });
+          if (hit) return;
+        }
+      }
+
+      if (this.smittyEnabled && this.smittyState !== 'DEAD' && this.smittyPos) {
+        const hit = checkTarget('curator', this.smittyPos.x, this.smittyPos.y + 1.15, this.smittyPos.z, 0.60,
+          (point, direction) => this.damageSmitty(12, point, direction));
+        if (hit) return;
+      }
+
+      if (this.mp && this.mp.remotePlayers) {
+        for (const [remoteId, player] of this.mp.remotePlayers) {
+          if (!player.group) continue;
+          const pos = player.group.position;
+          const hit = checkTarget('player:' + remoteId, pos.x, pos.y + 0.95, pos.z, 0.48,
+            (point, direction) => {
+              if (typeof this.mp.notifyPlayerHit === 'function') {
+                this.mp.notifyPlayerHit(remoteId, point, direction, 18, 3.5);
+              }
+            });
+          if (hit) return;
+        }
+      }
     }
 
     resolveCrateStaticCollisions(crate, floorIdx, previousY = crate.y) {
@@ -8449,6 +8611,33 @@ window.game = this;
         (this.cratePhysicsAccumulator || 0) + Math.min(Math.max(delta || 0, 0), 0.05),
         fixedStep * 6
       );
+      let hasAwakeBody = !!this.heldCrate;
+      if (!hasAwakeBody) {
+        const footY = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+        const playerRadius = CONFIG.PLAYER.RADIUS || 0.35;
+        for (const crate of this.physicsCrates) {
+          if (!crate.body || crate.body.type !== CANNON.Body.DYNAMIC) continue;
+          if (crate.body.sleepState !== CANNON.Body.SLEEPING) {
+            hasAwakeBody = true;
+            break;
+          }
+          const dx = crate.x - this.playerPos.x, dz = crate.z - this.playerPos.z;
+          const overlapsPlayer = Math.hypot(dx, dz) < playerRadius + crate.w * 0.55 &&
+            footY < crate.y + crate.h && footY + 1.8 > crate.y;
+          const standsOnCrate = this.isGrounded &&
+            Math.abs(footY - (crate.y + crate.h)) < 0.22 &&
+            Math.abs(dx) < crate.w / 2 + 0.08 && Math.abs(dz) < crate.d / 2 + 0.08;
+          if (overlapsPlayer || standsOnCrate) {
+            crate.body.wakeUp();
+            hasAwakeBody = true;
+            break;
+          }
+        }
+      }
+      if (!hasAwakeBody) {
+        this.cratePhysicsAccumulator = 0;
+        return;
+      }
       let steps = 0;
       while (this.cratePhysicsAccumulator + 1e-8 >= fixedStep && steps < 6) {
         this.stepCratePhysics(fixedStep);
@@ -8550,11 +8739,30 @@ window.game = this;
         standingCrate.body.wakeUp();
       }
 
+      const thrownStarts = [];
+      for (const crate of this.physicsCrates) {
+        if (crate.throwImpactActive && crate.body && crate.body.world === world) {
+          thrownStarts.push([crate, crate.body.position.x, crate.body.position.y, crate.body.position.z]);
+        }
+      }
       world.step(delta);
+      for (const [crate, x, y, z] of thrownStarts) {
+        this.hitThrownCrateTargets(crate, x, y, z);
+      }
 
       for (const crate of this.physicsCrates) {
         const body = crate.body;
         if (!body) continue;
+        if (!crate.isHeld && body.sleepState === CANNON.Body.SLEEPING) {
+          if (crate._wasAwake) {
+            crate._syncDirty = true;
+            crate._wasAwake = false;
+          }
+          crate.vx = crate.vy = crate.vz = 0;
+          crate.angVx = crate.angVy = crate.angVz = 0;
+          continue;
+        }
+        crate._wasAwake = true;
         if (crate.isHeld) {
           // Held crates are hand-driven visuals, not solver output.
           crate.x = body.position.x;
@@ -15655,6 +15863,18 @@ window.game = this;
         this.footstepTimer = 0;
       }
 
+      // Apply and damp crate-hit momentum through the normal collision resolver.
+      if (this.playerCrateKnockback && this.playerCrateKnockback.lengthSq() > 0.01) {
+        const knockDt = Math.min(delta, 0.05);
+        this.playerPos.x += this.playerCrateKnockback.x * knockDt;
+        this.playerPos.z += this.playerCrateKnockback.z * knockDt;
+        const knockFootY = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+        this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, knockFootY, this.currentCamHeight);
+        this.playerCrateKnockback.multiplyScalar(Math.exp(-6.0 * knockDt));
+      } else if (this.playerCrateKnockback) {
+        this.playerCrateKnockback.set(0, 0, 0);
+      }
+
       // Jump mechanics (Space)
       const wantsJump = !!this.keys['Space'];
       if (wantsJump && this.isGrounded && !isCrouching) {
@@ -18606,6 +18826,15 @@ window.game = this;
       });
     }
 
+    onRemoteCrateStatueHit(data) {
+      if (!data || !this.statues) return;
+      const statue = this.statues.find(s => s.cfg.id === data.statueId);
+      if (!statue) return;
+      this.hitStatue(statue,
+        new THREE.Vector3(data.x, data.y, data.z),
+        new THREE.Vector3(data.dx, data.dy, data.dz));
+    }
+
     onCratesSync(crateList) {
       if (!this.physicsCrates || !Array.isArray(crateList)) return;
       crateList.forEach(item => {
@@ -18656,9 +18885,9 @@ window.game = this;
       const hitPt = new THREE.Vector3(data.x, data.y, data.z);
       const shotDir = new THREE.Vector3(data.dirX, data.dirY, data.dirZ);
       // Spawn liquid blood spray & floor puddle from the impact
-      this.spawnLiquidBlood(hitPt, shotDir, 28, data.y);
+      this.spawnLiquidBlood(hitPt, shotDir, data.knockback ? 14 : 28, data.y);
 
-      // If local player was the target hit by the bullet:
+      // If local player was the target hit by a bullet or thrown crate:
       if (this.mp && data.targetId === this.mp.clientId) {
         if (this.dom.damageOverlay) {
           this.dom.damageOverlay.style.opacity = '1';
@@ -18669,8 +18898,13 @@ window.game = this;
         const dmg = data.damage || 25;
         this.health -= dmg;
         this.updateHud();
-        this.playerPitch += (Math.random() - 0.5) * 0.20;
-        this.playerYaw += (Math.random() - 0.5) * 0.20;
+        if (data.knockback && this.playerCrateKnockback) {
+          this.playerCrateKnockback.x += shotDir.x * data.knockback;
+          this.playerCrateKnockback.z += shotDir.z * data.knockback;
+        } else {
+          this.playerPitch += (Math.random() - 0.5) * 0.20;
+          this.playerYaw += (Math.random() - 0.5) * 0.20;
+        }
         if (this.health <= 0) {
           this.triggerGameOver();
         }
