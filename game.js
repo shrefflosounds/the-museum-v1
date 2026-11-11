@@ -10797,7 +10797,9 @@ window.game = this;
 
         const plate = new THREE.Mesh(
           new THREE.ExtrudeGeometry(shape, { depth: plateDepth, bevelEnabled: false, curveSegments: 8 }),
-          new THREE.MeshStandardMaterial({ color: 0xe51d2a, roughness: 0.38, metalness: 0.04, side: THREE.DoubleSide })
+          // The plate body and reverse are brushed silver; the red graphic is
+          // a separate one-sided face applied below.
+          new THREE.MeshStandardMaterial({ color: 0xb9c0c6, roughness: 0.30, metalness: 0.76, side: THREE.DoubleSide })
         );
         group.add(plate);
 
@@ -10853,7 +10855,7 @@ window.game = this;
         const faceTexture = new THREE.CanvasTexture(canvas);
         const face = new THREE.Mesh(
           new THREE.PlaneGeometry(signW, signH),
-          new THREE.MeshBasicMaterial({ map: faceTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
+          new THREE.MeshBasicMaterial({ map: faceTexture, transparent: true, side: THREE.FrontSide, depthWrite: false })
         );
         face.position.z = plateDepth + 0.002;
         group.add(face);
@@ -10861,16 +10863,24 @@ window.game = this;
         const silver = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, metalness: 0.82, roughness: 0.24 });
         const chainLinkGeo = new THREE.TorusGeometry(0.025, 0.0045, 6, 12);
         const grommetGeo = new THREE.TorusGeometry(0.043, 0.008, 8, 20);
+        const terminalLinkGeo = new THREE.TorusGeometry(0.029, 0.005, 8, 16);
         [-holeX, holeX].forEach((hx) => {
-          const grommet = new THREE.Mesh(grommetGeo, silver);
-          grommet.position.set(hx, holeY, plateDepth + 0.012);
-          group.add(grommet);
+          const frontGrommet = new THREE.Mesh(grommetGeo, silver);
+          frontGrommet.position.set(hx, holeY, plateDepth + 0.003);
+          group.add(frontGrommet);
+          const backGrommet = new THREE.Mesh(grommetGeo, silver);
+          backGrommet.position.set(hx, holeY, -0.003);
+          group.add(backGrommet);
 
-          const start = new THREE.Vector3(0, 1.015, plateDepth + 0.055);
-          const end = new THREE.Vector3(hx, holeY + 0.015, plateDepth + 0.055);
-          const middle = start.clone().lerp(end, 0.5);
+          // The chain physically passes through the grommet aperture and is
+          // retained by a small terminal link on the silver reverse.
+          const start = new THREE.Vector3(0, 1.015, 0.12);
+          const faceHole = new THREE.Vector3(hx, holeY, plateDepth + 0.003);
+          const end = new THREE.Vector3(hx, holeY, -0.04);
+          const middle = start.clone().lerp(faceHole, 0.5);
           middle.y -= 0.018;
-          const chainCurve = new THREE.QuadraticBezierCurve3(start, middle, end);
+          middle.z = plateDepth + 0.06;
+          const chainCurve = new THREE.CatmullRomCurve3([start, middle, faceHole, end], false, 'centripetal');
           const continuousChain = new THREE.Mesh(new THREE.TubeGeometry(chainCurve, 24, 0.006, 6, false), silver);
           group.add(continuousChain);
 
@@ -10880,12 +10890,19 @@ window.game = this;
             const link = new THREE.Mesh(chainLinkGeo, silver);
             link.position.copy(chainCurve.getPoint(t));
             const tangent = chainCurve.getTangent(t).normalize();
+            const planarNormal = new THREE.Vector3(-tangent.y, tangent.x, 0);
+            if (planarNormal.lengthSq() < 0.001) planarNormal.set(1, 0, 0);
+            else planarNormal.normalize();
             const linkNormal = i % 2
               ? new THREE.Vector3(0, 0, 1)
-              : new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
+              : planarNormal;
             link.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), linkNormal);
             group.add(link);
           }
+
+          const terminalLink = new THREE.Mesh(terminalLinkGeo, silver);
+          terminalLink.position.set(hx, holeY, -0.022);
+          group.add(terminalLink);
         });
 
         const nailShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.13, 8), silver);
