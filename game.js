@@ -4798,34 +4798,21 @@ window.game = this;
       const t = 0.4;
       const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
 
-      // Fill the triangular void beneath each flight with a solid sloped soffit.
-      // This closes the sightline through the floor opening while leaving the treads clear.
+      // Sloped stair carriage: a narrow support under the tread run, matching Stairwell A.
       const addFlightCarriage = (cx, yStart, zStart, yEnd, zEnd, width) => {
-        const dy = yEnd - yStart;
         const dz = zEnd - zStart;
-        const soffitOffset = 0.42;
-        const crossing = Math.min(1, soffitOffset / dy);
-        const zCross = zStart + dz * crossing;
-        const shape = new THREE.Shape();
-        shape.moveTo(-zStart, yStart);
-        shape.lineTo(-zEnd, yStart);
-        shape.lineTo(-zEnd, yEnd - soffitOffset);
-        shape.lineTo(-zCross, yStart);
-        shape.closePath();
-        const geometry = new THREE.ExtrudeGeometry(shape, {
-          depth: width + 0.20,
-          bevelEnabled: false,
-          steps: 1
-        });
-        const soffit = new THREE.Mesh(geometry, mats.stairStone);
-        soffit.position.x = cx - (width + 0.20) / 2;
-        soffit.rotation.y = Math.PI / 2;
-        this.scene.add(soffit);
+        const dy = yEnd - yStart;
+        const len = Math.hypot(dz, dy);
+        const angleX = Math.atan2(dy, dz);
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(width, 0.26, len + 0.25), mats.stairStone);
+        slab.position.set(cx, (yStart + yEnd) / 2 - 0.22, (zStart + zEnd) / 2);
+        slab.rotation.x = -angleX;
+        this.scene.add(slab);
       };
 
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
       // Stop the divider short of both landings so the player can turn between flights.
-      this.createWall(0, midY, -20.0, 0.34, totalH, 5.56, mats.wallConcrete, true, 'all');
+      this.createWall(0, midY, -20.0, 0.34, totalH, 6.40, mats.wallConcrete, true, 'all');
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
       // Solid pit floor under Stairwell B on Floor 0 so looking down between flights never exposes the void
@@ -4897,15 +4884,15 @@ window.game = this;
       this.createWall(2.0, 1.22, -16.85, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
       // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
-      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -17.10);
+      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
       this.scene.add(blockNW);
       this.colliders.push({
         type: 'box',
         floor: 3,
         minX: -4.0,
         maxX: -0.18,
-        minZ: -17.25,
-        maxZ: -16.95,
+        minZ: -17.15,
+        maxZ: -16.75,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
         maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
         isWall: true
@@ -4993,15 +4980,15 @@ window.game = this;
       this.createWall(-18.01, 1.20, 20.95, 3.62, 2.40, 0.28, mats.mahogany, true, 0);
       // Floor-to-ceiling wooden barricade on Floor 3 West Flight
       const blockSWW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
-      blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 21.10);
+      blockSWW.position.set(-21.91, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, 20.95);
       this.scene.add(blockSWW);
       this.colliders.push({
         type: 'box',
         floor: 3,
         minX: -24.0,
         maxX: -19.82,
-        minZ: 20.95,
-        maxZ: 21.25,
+        minZ: 20.75,
+        maxZ: 21.15,
         minY: 3 * CONFIG.FLOOR_HEIGHT,
         maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
         isWall: true
