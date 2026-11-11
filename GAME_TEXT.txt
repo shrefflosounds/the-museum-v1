@@ -20,13 +20,13 @@
 
 
 [ WINDOW / TAB TITLE ]
-window_title = The Museum
+window_title = Shrefflo Museum
 
 
 [ START SCREEN ]
-start.title = THE MUSEUM
+start.title = SHREFFLO MUSEUM
 start.goal = Recover all 14 relics to unlock the exit.
-start.button = ENTER THE MUSEUM
+start.button = ENTER SHREFFLO MUSEUM
 bubble.options = OPTIONS
 bubble.controls = CONTROLS
 bubble.settings = CONTROLS
@@ -47,7 +47,7 @@ options.done = DONE
 
 [ ABOUT ]
 about.title = ABOUT
-about.description = **The Museum** - An interactive art exhibit
+about.description = **Shrefflo Museum** - An interactive art exhibit
 about.byline = By Smitty Fantastic, built with Antigravity.
 about.build = Version 1.1.0 (Build 110)
 about.done = DONE
