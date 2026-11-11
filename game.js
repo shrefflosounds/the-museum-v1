@@ -11786,6 +11786,7 @@ window.game = this;
     createExitDoors(x, y, z, mats) {
       const group = new THREE.Group();
       group.position.set(x, y, z);
+      const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
 
       // Photographic internet-accurate textures from the reference arched door (Image 3)
       const doorLeftTex = this.texLoader.load('assets/textures/exit_door_left.jpg', (t) => {
