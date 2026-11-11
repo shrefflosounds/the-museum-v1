@@ -5221,32 +5221,83 @@ window.game = this;
       this.scene.add(mesh);
     }
 
-    createLintel(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
+    applyContinuousWallUVs(geometry, axis, centerAlong, y0) {
+      const positions = geometry.getAttribute('position');
+      const normals = geometry.getAttribute('normal');
+      const uvs = geometry.getAttribute('uv');
+      const floorHeight = CONFIG.FLOOR_HEIGHT - 0.06;
+      for (let i = 0; i < positions.count; i++) {
+        const nX = Math.abs(normals.getX(i));
+        const nY = Math.abs(normals.getY(i));
+        const nZ = Math.abs(normals.getZ(i));
+        const isExtrudedArch = geometry.type === 'ExtrudeGeometry';
+        const isWallFace = nY < 0.5 && (
+          axis === 'x'
+            ? nZ > 0.5
+            : (isExtrudedArch ? nZ > 0.5 : nX > 0.5)
+        );
+        if (!isWallFace) continue;
+        const localAlong = axis === 'x' || isExtrudedArch
+          ? positions.getX(i)
+          : positions.getZ(i);
+        // The wall texture repeats ten times horizontally and twice vertically.
+        // World-aligned UVs keep the same plaster grain running across each seam.
+        uvs.setXY(i, (centerAlong + localAlong) / 20.0, (y0 + positions.getY(i)) / floorHeight);
+      }
+      uvs.needsUpdate = true;
+    }
+
+    createArchedLintel(x, y0, z, span, thickness, ceilH, mat, doorH, axis) {
       const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
-      const lintelH = topH - doorH;
-      if (mat) mat.side = THREE.DoubleSide;
-      const mats6 = [this.hiddenCapMat, this.hiddenCapMat, this.hiddenCapMat, mat, mat, mat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(Math.max(0.01, w - 0.002), lintelH, d), mats6);
-      mesh.position.set(x, y0 + doorH + lintelH / 2, z);
+      const springY = Math.min(doorH, topH - 0.10);
+      const halfSpan = span / 2;
+      const archRise = Math.min(halfSpan, topH - springY - 0.08);
+      const shape = new THREE.Shape();
+      shape.moveTo(-halfSpan, topH);
+      shape.lineTo(halfSpan, topH);
+      shape.lineTo(halfSpan, springY);
+      shape.absellipse(0, springY, halfSpan, archRise, 0, Math.PI, false);
+      shape.lineTo(-halfSpan, topH);
+      shape.closePath();
+
+      const geometry = new THREE.ExtrudeGeometry(shape, {
+        depth: thickness,
+        bevelEnabled: false,
+        curveSegments: 24,
+        steps: 1
+      });
+      const tangentCenter = axis === 'x' ? x : z;
+      this.applyContinuousWallUVs(geometry, axis, tangentCenter, y0);
+      const mesh = new THREE.Mesh(geometry, [mat, mat]);
+      if (axis === 'x') {
+        mesh.position.set(x, y0, z - thickness / 2);
+      } else {
+        mesh.position.set(x + thickness / 2, y0, z);
+        mesh.rotation.y = -Math.PI / 2;
+      }
       this.scene.add(mesh);
     }
 
-    createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 2.4) {
-      const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
-      const lintelH = topH - doorH;
+    createLintel(x, y0, z, w, d, ceilH, mat, doorH = 3.0) {
       if (mat) mat.side = THREE.DoubleSide;
-      const mats6 = [mat, mat, this.hiddenCapMat, mat, this.hiddenCapMat, this.hiddenCapMat];
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(w, lintelH, Math.max(0.01, d - 0.002)), mats6);
-      mesh.position.set(x, y0 + doorH + lintelH / 2, z);
-      this.scene.add(mesh);
+      this.createArchedLintel(x, y0, z, w, d, ceilH, mat, doorH, 'x');
+    }
+
+    createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 3.0) {
+      if (mat) mat.side = THREE.DoubleSide;
+      this.createArchedLintel(x, y0, z, d, w, ceilH, mat, doorH, 'z');
     }
 
     createWall(x, y, z, w, h, d, mat, collide = true, floor = 'all') {
       if (mat) mat.side = THREE.DoubleSide;
       const mats6 = [mat, mat, this.hiddenCapMat, this.hiddenCapMat, mat, mat];
-      const adjW = w > d ? Math.max(0.01, w - 0.002) : w;
-      const adjD = d > w ? Math.max(0.01, d - 0.002) : d;
-      const mesh = new THREE.Mesh(new THREE.BoxGeometry(adjW, h, adjD), mats6);
+      // Use exact edge-to-edge dimensions: the old 2mm trim left hairline gaps
+      // at every wall section and doorway junction.
+      const adjW = w;
+      const adjD = d;
+      const geometry = new THREE.BoxGeometry(adjW, h, adjD);
+      this.applyContinuousWallUVs(geometry, w >= d ? 'x' : 'z', w >= d ? x : z, y - h / 2);
+      const mesh = new THREE.Mesh(geometry, mats6);
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
 
