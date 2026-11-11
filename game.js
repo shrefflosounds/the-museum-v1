@@ -8260,7 +8260,7 @@ window.game = this;
         if (landedOnObstacle) {
           crate.y = obstacleMaxY;
           if (Math.abs(crate.vy) > 1.4) {
-            crate.vy = -crate.vy * 0.18;
+            crate.vy = 0;
             crate.vx *= 0.55;
             crate.vz *= 0.55;
             impact = true;
@@ -8270,7 +8270,7 @@ window.game = this;
         } else if (hitObstacleUnderside) {
           crate.y = obstacleMinY - crate.h;
           if (crate.vy > 1.4) {
-            crate.vy = -crate.vy * 0.18;
+            crate.vy = 0;
             impact = true;
           } else {
             crate.vy = 0;
@@ -8347,6 +8347,21 @@ window.game = this;
     }
 
     updatePhysicsCrates(delta) {
+      if (!this.physicsCrates || this.physicsCrates.length === 0) return;
+      // Run crate contacts at a fixed rate so frame-time changes cannot turn
+      // tiny contact corrections into visible up/down jitter.
+      const frameDelta = Math.min(0.05, Math.max(0, delta || 0));
+      this.cratePhysicsAccumulator = (this.cratePhysicsAccumulator || 0) + frameDelta;
+      const fixedStep = 1 / 120;
+      let steps = 0;
+      while (this.cratePhysicsAccumulator + 1e-8 >= fixedStep && steps < 6) {
+        this.stepPhysicsCrates(fixedStep);
+        this.cratePhysicsAccumulator -= fixedStep;
+        steps++;
+      }
+    }
+
+    stepPhysicsCrates(delta) {
       if (!this.physicsCrates || this.physicsCrates.length === 0) return;
 
       const cosPitch = Math.cos(this.playerPitch);
@@ -8473,7 +8488,7 @@ window.game = this;
 
           // Realistic gravity acceleration
           const previousY = c.y;
-          c.vy -= 15.0 * delta;
+          c.vy -= 9.81 * delta;
           c.y += c.vy * delta;
 
           // Substep horizontal motion so fast throws cannot tunnel through thin wall colliders.
@@ -8497,9 +8512,7 @@ window.game = this;
           // Ceiling bounce
           if (c.y + c.h >= cCeilY && cCeilY > 0) {
             c.y = cCeilY - c.h;
-            c.vy = -Math.abs(c.vy) * 0.45;
-            c.angVx += (Math.random() - 0.5) * 6.0;
-            c.angVz += (Math.random() - 0.5) * 6.0;
+            c.vy = -Math.abs(c.vy) * 0.02;
             if (Math.abs(c.vy) > 0.6) this.audio.playCrateImpact();
           }
 
@@ -8512,7 +8525,7 @@ window.game = this;
           if (c.y <= groundY) {
             c.y = groundY;
             if (Math.abs(c.vy) > 1.4) {
-              c.vy = -c.vy * 0.18;
+              c.vy = 0;
               c.vx *= 0.55;
               c.vz *= 0.55;
               c.angVx *= 0.45;
@@ -8605,7 +8618,7 @@ window.game = this;
           const overlapX = halfW - Math.abs(dx);
           const overlapZ = halfD - Math.abs(dz);
           const overlapY = halfH - Math.abs(dy);
-          if (overlapX <= 0.005 || overlapZ <= 0.005 || overlapY <= 0.005) continue;
+          if (overlapX <= 0.005 || overlapZ <= 0.005 || overlapY <= 0.001) continue;
 
           if (overlapY < overlapX && overlapY < overlapZ) {
             const top = dy > 0 ? c2 : c1;
@@ -8679,7 +8692,7 @@ window.game = this;
 
             const invMassSum = invMass1 + invMass2;
             if (normVel < 0 && invMassSum > 0) {
-              const restitution = 0.08;
+              const restitution = 0.02;
               const impulse = -(1 + restitution) * normVel / invMassSum;
               c1.vx -= impulse * nx * invMass1;
               c1.vz -= impulse * nz * invMass1;
