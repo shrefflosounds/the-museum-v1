@@ -4604,7 +4604,7 @@ window.game = this;
       if (fl === 0) {
         this.createWall(-14.1, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);     // -15.8..-12.4
         this.createWall(-5.9, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);      // -7.6..-4.2
-        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat, 4.68);       // High lintel above grand stone arch
+        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat, 4.40);       // High lintel above grand stone arch
         this.createExitDoors(-10.0, 0, 28, mats);
       } else {
         this.createWall(-10, yc, 28, 11.6, wallH, t, mainWallMat, true, fl);      // -15.8..-4.2
