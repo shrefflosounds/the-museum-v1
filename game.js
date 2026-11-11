@@ -4604,7 +4604,7 @@ window.game = this;
       if (fl === 0) {
         this.createWall(-14.1, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);     // -15.8..-12.4
         this.createWall(-5.9, yc, 28, 3.4, wallH, t, mainWallMat, true, fl);      // -7.6..-4.2
-        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat, 4.90);       // High lintel above grand stone arch
+        this.createLintel(-10.0, y0, 28, 4.8, t, ceilH, mainWallMat, 5.05);       // High lintel above grand stone arch
         this.createExitDoors(-10.0, 0, 28, mats);
       } else {
         this.createWall(-10, yc, 28, 11.6, wallH, t, mainWallMat, true, fl);      // -15.8..-4.2
@@ -12026,6 +12026,12 @@ window.game = this;
       const outerInfillMesh = new THREE.Mesh(outerInfillGeom, stoneMat);
       outerInfillMesh.position.set(0, straightH, 0);
       portalGroup.add(outerInfillMesh);
+
+      // Solid rectangular infill spanning the full doorway width above the leaves
+      // up to the ceiling, guaranteeing no gap between door top, arch ring and lintel
+      const rectInfill = new THREE.Mesh(new THREE.BoxGeometry(2.86, 1.84, 0.44), stoneMat);
+      rectInfill.position.set(0, straightH + 0.92, 0);
+      portalGroup.add(rectInfill);
 
       // Outer Arch Moulding Ring (Outer R: 1.98m)
       const outerMouldShape = new THREE.Shape();
