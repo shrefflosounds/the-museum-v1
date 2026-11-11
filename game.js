@@ -4882,22 +4882,6 @@ window.game = this;
       }
       // Guardrail on Floor 0 East Flight of Stairwell B (stops safely below Floor 1 landing and flight)
       this.createWall(2.0, 1.22, -16.85, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
-      // Full floor-to-ceiling wooden barricade on Floor 3 West Flight
-      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
-      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
-      this.scene.add(blockNW);
-      this.colliders.push({
-        type: 'box',
-        floor: 3,
-        minX: -4.0,
-        maxX: -0.18,
-        minZ: -17.15,
-        maxZ: -16.75,
-        minY: 3 * CONFIG.FLOOR_HEIGHT,
-        maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
-        isWall: true
-      });
-
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
       // Leave turning clearance at south mid-landing (z: 25.6..28.0), but extend to z = 20.80 to seamlessly abut the north landing box with zero shaft gap!
