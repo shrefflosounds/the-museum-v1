@@ -4630,9 +4630,9 @@ window.game = this;
       this.createWall(4, ycFull, -21.4, t, h, 9.2, mainWallMat, true, fl);        // -26.0..-16.8 (Stairwell N East shaft)
       this.createLintelZ(4, y0, -15.4, t, 2.8, ceilH, mainWallMat);               // -16.8..-14.0 (Stairwell N East door)
       this.createWall(4, yc, -13.5, t, wallH, 1.0, mainWallMat, true, fl);        // -14.0..-13.0
-      this.createLintelZ(4, y0, -12.0, t, 2.0, ceilH, mainWallMat);               // -13.0..-11.0
+      this.createLintelZ(4, y0, -12.0, t, 2.0, ceilH, mainWallMat, 2.4, false);               // -13.0..-11.0
       this.createWall(4, yc, -10.0, t, wallH, 2.0, mainWallMat, true, fl);        // -11.0..-9.0
-      this.createLintelZ(4, y0, -8.0, t, 2.0, ceilH, mainWallMat);                // -9.0..-7.0
+      this.createLintelZ(4, y0, -8.0, t, 2.0, ceilH, mainWallMat, 2.4, false);                // -9.0..-7.0
       this.createWall(4, yc, -5.25, t, wallH, 3.5, mainWallMat, true, fl);        // -7.0..-3.5
       this.createLintelZ(4, y0, -2.0, t, 3.0, ceilH, mainWallMat);                // -3.5..-0.5
       this.createWall(4, yc, 1.0, t, wallH, 3.0, mainWallMat, true, fl);          // -0.5..2.5
@@ -4804,7 +4804,7 @@ window.game = this;
         const dy = yEnd - yStart;
         const len = Math.hypot(dz, dy);
         const angleX = Math.atan2(dy, dz);
-        const slab = new THREE.Mesh(new THREE.BoxGeometry(width, 0.26, len + 0.25), mats.stairStone);
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(width + 0.16, 0.34, len + 0.50), mats.stairStone);
         slab.position.set(cx, (yStart + yEnd) / 2 - 0.22, (zStart + zEnd) / 2);
         slab.rotation.x = -angleX;
         this.scene.add(slab);
@@ -5247,7 +5247,7 @@ window.game = this;
       uvs.needsUpdate = true;
     }
 
-    createArchedLintel(x, y0, z, span, thickness, ceilH, mat, doorH, axis) {
+    createArchedLintel(x, y0, z, span, thickness, ceilH, mat, doorH, axis, arched = true) {
       const topH = Math.min(ceilH, CONFIG.FLOOR_HEIGHT - 0.06);
       const springY = Math.min(doorH, topH - 0.10);
       const halfSpan = span / 2;
@@ -5256,7 +5256,11 @@ window.game = this;
       shape.moveTo(-halfSpan, topH);
       shape.lineTo(halfSpan, topH);
       shape.lineTo(halfSpan, springY);
-      shape.absellipse(0, springY, halfSpan, archRise, 0, Math.PI, false);
+      if (arched) {
+        shape.absellipse(0, springY, halfSpan, archRise, 0, Math.PI, false);
+      } else {
+        shape.lineTo(-halfSpan, springY);
+      }
       shape.lineTo(-halfSpan, topH);
       shape.closePath();
 
@@ -5283,9 +5287,9 @@ window.game = this;
       this.createArchedLintel(x, y0, z, w, d, ceilH, mat, doorH, 'x');
     }
 
-    createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 3.0) {
+    createLintelZ(x, y0, z, w, d, ceilH, mat, doorH = 3.0, arched = true) {
       if (mat) mat.side = THREE.DoubleSide;
-      this.createArchedLintel(x, y0, z, d, w, ceilH, mat, doorH, 'z');
+      this.createArchedLintel(x, y0, z, d, w, ceilH, mat, doorH, 'z', arched);
     }
 
     createWall(x, y, z, w, h, d, mat, collide = true, floor = 'all') {
