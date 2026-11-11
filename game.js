@@ -10918,11 +10918,10 @@ window.game = this;
       };
 
       // South entrance from the West Wing (door centered at x=-30, z=18).
-      addHangingVideoRoomSign(-30.0, y0 + 3.32, 17.80, Math.PI);
+      // Raise this plate and pull its nail head back to touch the south-wall face.
+      addHangingVideoRoomSign(-30.0, y0 + 3.60, 17.80, Math.PI, 0.07);
       // East entrance from Stairwell A (door centered at x=-24, z=19.7).
-      // Raise this plate and pull its nail head back to touch the east-wall face.
-      // The south-entrance sign above stays at its existing position.
-      addHangingVideoRoomSign(-23.80, y0 + 3.60, 19.7, Math.PI / 2, 0.07);
+      addHangingVideoRoomSign(-23.80, y0 + 3.32, 19.7, Math.PI / 2);
 
       // 1. South Back Wall Video Projection Screen (Image 2 Red Rectangle)
       // Room bounds: x: -34..-24, z: 18..28. Back south wall is at z = 28.
