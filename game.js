@@ -10767,7 +10767,7 @@ window.game = this;
       // Matching hanging room signs at both video-room entrances. These are
       // modeled as thin plastic plates, with through-holes, metal grommets,
       // short chain links, and a wall nail; the mockup image itself is not used.
-      const addHangingVideoRoomSign = (x, y, z, rotationY) => {
+      const addHangingVideoRoomSign = (x, y, z, rotationY, nailInset = 0) => {
         const signW = 1.55;
         const signH = 0.78;
         const plateDepth = 0.035;
@@ -10874,12 +10874,12 @@ window.game = this;
 
           // The chain physically passes through the grommet aperture and is
           // retained by a small terminal link on the silver reverse.
-          const start = new THREE.Vector3(0, 1.015, 0.12);
+          const start = new THREE.Vector3(0, 1.015, 0.12 - nailInset);
           const faceHole = new THREE.Vector3(hx, holeY, plateDepth + 0.003);
           const end = new THREE.Vector3(hx, holeY, -0.04);
           const middle = start.clone().lerp(faceHole, 0.5);
           middle.y -= 0.018;
-          middle.z = plateDepth + 0.06;
+          middle.z = plateDepth + 0.06 - nailInset;
           const chainCurve = new THREE.CatmullRomCurve3([start, middle, faceHole, end], false, 'centripetal');
           const continuousChain = new THREE.Mesh(new THREE.TubeGeometry(chainCurve, 24, 0.006, 6, false), silver);
           group.add(continuousChain);
@@ -10907,11 +10907,11 @@ window.game = this;
 
         const nailShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.13, 8), silver);
         nailShaft.rotation.x = Math.PI / 2;
-        nailShaft.position.set(0, 1.00, 0.045);
+        nailShaft.position.set(0, 1.00, 0.045 - nailInset);
         group.add(nailShaft);
         const nailHead = new THREE.Mesh(new THREE.SphereGeometry(0.043, 12, 8), silver);
         nailHead.scale.set(1, 0.78, 0.48);
-        nailHead.position.set(0, 1.025, 0.09);
+        nailHead.position.set(0, 1.025, 0.09 - nailInset);
         group.add(nailHead);
 
         this.scene.add(group);
@@ -10920,7 +10920,9 @@ window.game = this;
       // South entrance from the West Wing (door centered at x=-30, z=18).
       addHangingVideoRoomSign(-30.0, y0 + 3.32, 17.80, Math.PI);
       // East entrance from Stairwell A (door centered at x=-24, z=19.7).
-      addHangingVideoRoomSign(-23.80, y0 + 3.32, 19.7, Math.PI / 2);
+      // Raise this plate and pull its nail head back to touch the east-wall face.
+      // The south-entrance sign above stays at its existing position.
+      addHangingVideoRoomSign(-23.80, y0 + 3.60, 19.7, Math.PI / 2, 0.07);
 
       // 1. South Back Wall Video Projection Screen (Image 2 Red Rectangle)
       // Room bounds: x: -34..-24, z: 18..28. Back south wall is at z = 28.
