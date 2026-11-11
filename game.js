@@ -4664,6 +4664,25 @@ window.game = this;
       this.createLintel(18.2, y0, -26, 3.2, t, ceilH, mainWallMat);               // 16.6..19.8
       this.createWall(23.8, yc, -26, 8.0, wallH, t, mainWallMat, true, fl);       // 19.8..27.8
 
+      // North Gallery feature mural (one per floor) — large unframed cutout on the
+      // north face of the z = -26 wall between the two doorways (x: 7.4..16.6)
+      {
+        const muralFile = `assets/murals/north_mural_f${fl + 1}.png`;
+        const muralAspect = [853 / 907, 967 / 1024, 521 / 1024, 1.0][fl];
+        const maxMW = 7.6, maxMH = 5.4;
+        let mh = maxMH, mw = mh * muralAspect;
+        if (mw > maxMW) { mw = maxMW; mh = mw / muralAspect; }
+        const muralTex = this.texLoader.load(muralFile, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; });
+        const muralMat = new THREE.MeshLambertMaterial({
+          map: muralTex, transparent: true, alphaTest: 0.05, side: THREE.FrontSide,
+          polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2
+        });
+        const mural = new THREE.Mesh(new THREE.PlaneGeometry(mw, mh), muralMat);
+        mural.rotation.y = Math.PI; // face north into the gallery
+        mural.position.set(12.0, y0 + 0.55 + mh / 2, -26 - t / 2 - 0.02);
+        this.scene.add(mural);
+      }
+
       // F. EAST MAIN HALL ("NON-FICTION / BOOKS / ARTS & MUSIC") (x: 4..28, z: -26..18)
       // Entire x = 28 wall from z = -40.2 to 28.2 (disjoint collinear segments):
       this.createWall(28, yc, -31.0, t, wallH, 18.4, mainWallMat, true, fl);      // -40.2..-21.8
