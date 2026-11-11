@@ -6,7 +6,13 @@
       this.client = null;
       this.isHost = false;
       this.roomCode = null;
-      this.clientId = 'user_' + Math.random().toString(36).substr(2, 9);
+      const idBytes = new Uint8Array(9);
+      if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+        globalThis.crypto.getRandomValues(idBytes);
+      } else {
+        for (let i = 0; i < idBytes.length; i++) idBytes[i] = Math.floor(Math.random() * 256);
+      }
+      this.clientId = 'user_' + Array.from(idBytes, value => value.toString(36).padStart(2, '0')).join('');
       this.remotePlayers = new Map(); // clientId -> remote player object
       this.tickInterval = null;
       this.broadcastRate = 30; // 30Hz
@@ -29,11 +35,17 @@
       ];
     }
 
-    generateCode(len = 4) {
+    generateCode(len = 8) {
       const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const values = new Uint8Array(len);
+      if (globalThis.crypto && typeof globalThis.crypto.getRandomValues === 'function') {
+        globalThis.crypto.getRandomValues(values);
+      } else {
+        for (let i = 0; i < values.length; i++) values[i] = Math.floor(Math.random() * 256);
+      }
       let code = '';
       for (let i = 0; i < len; i++) {
-        code += chars.charAt(Math.floor(Math.random() * chars.length));
+        code += chars.charAt(values[i] % chars.length);
       }
       return code;
     }
@@ -45,7 +57,7 @@
     initHost(onReady, onError) {
       this.cleanup();
       this.isHost = true;
-      const code = this.generateCode(4);
+      const code = this.generateCode(8);
       this.roomCode = code;
       this.connectToBroker(code, () => {
         // Send host beacon
@@ -101,7 +113,6 @@
       }
 
       const brokerUrl = this.brokerUrls[brokerIndex];
-      console.log('[Multiplayer] Connecting to broker:', brokerUrl, 'for room:', code);
 
       try {
         if (typeof mqtt === 'undefined') {
@@ -111,7 +122,7 @@
         }
 
         const client = mqtt.connect(brokerUrl, {
-          clientId: this.clientId + '_' + Math.random().toString(16).substr(2, 6),
+          clientId: this.clientId,
           clean: true,
           connectTimeout: 5000,
           reconnectPeriod: 3000

@@ -142,8 +142,8 @@
     <div class="modal-box mp-code-box">
       <button id="join-code-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
       <h2 class="horror-title">JOIN CO-OP</h2>
-      <p class="mp-modal-subtitle">Enter the 4-character Room Code</p>
-      <input type="text" id="join-room-input" class="mp-input" maxlength="6" placeholder="CODE" autocomplete="off" spellcheck="false">
+      <p class="mp-modal-subtitle">Enter the 8-character Room Code</p>
+      <input type="text" id="join-room-input" class="mp-input" maxlength="8" placeholder="CODE" autocomplete="off" spellcheck="false">
       <div id="join-error-msg" class="mp-error hidden">Invalid code or host not found.</div>
       <button id="join-submit-btn" class="museum-btn" type="button" style="margin-top: 18px;">NEXT</button>
     </div>
@@ -155,7 +155,7 @@
       <button id="host-lobby-close-btn" class="close-btn" title="Close [ESC]">&times;</button>
       <h2 class="horror-title">HOSTING CO-OP</h2>
       <p class="mp-modal-subtitle">Share this room code with other players:</p>
-      <div id="host-room-code-display" class="mp-room-badge">----</div>
+      <div id="host-room-code-display" class="mp-room-badge">--------</div>
       <div id="host-players-list" class="mp-players-status">Waiting for players to connect...</div>
       <button id="host-proceed-btn" class="museum-btn" type="button" style="margin-top: 18px;">PROCEED</button>
     </div>
@@ -408,7 +408,7 @@
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
   <script src="libs/mqtt.min.js"></script>
-  <script src="multiplayer.js?v=2.4.1"></script>
+  <script src="multiplayer.js?v=2.4.2"></script>
   <script src="character_select.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1794184800"></script>
@@ -416,7 +416,7 @@
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.8.1794222011';
+    gameScript.src = 'game.js?v=2.8.1794222012';
     document.body.appendChild(gameScript);
   </script>
 </body>
