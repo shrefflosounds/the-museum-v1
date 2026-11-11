@@ -412,6 +412,12 @@
   <script src="character_select.js"></script>
   <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1794184800"></script>
-  <script src="game.js?v=2.8.1794222002"></script>
+  <script type="module">
+    import * as CANNON from './libs/cannon-es.js';
+    window.CANNON = CANNON;
+    const gameScript = document.createElement('script');
+    gameScript.src = 'game.js?v=2.8.1794222003';
+    document.body.appendChild(gameScript);
+  </script>
 </body>
 </html>
