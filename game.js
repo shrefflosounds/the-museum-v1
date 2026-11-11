@@ -4669,7 +4669,7 @@ window.game = this;
       {
         const muralFile = `assets/murals/north_mural_f${fl + 1}.png`;
         const muralAspect = [853 / 907, 967 / 1024, 521 / 1024, 1.0][fl];
-        const maxMW = 7.6, maxMH = 5.4;
+        const maxMW = 9.0, maxMH = 6.9;
         let mh = maxMH, mw = mh * muralAspect;
         if (mw > maxMW) { mw = maxMW; mh = mw / muralAspect; }
         const muralTex = this.texLoader.load(muralFile, (tx) => { tx.colorSpace = THREE.SRGBColorSpace; });
@@ -4679,7 +4679,7 @@ window.game = this;
         });
         const mural = new THREE.Mesh(new THREE.PlaneGeometry(mw, mh), muralMat);
         mural.rotation.y = Math.PI; // face north into the gallery
-        mural.position.set(12.0, y0 + 0.55 + mh / 2, -26 - t / 2 - 0.02);
+        mural.position.set(12.0, y0 + 0.02 + mh / 2, -26 - t / 2 - 0.02);
         this.scene.add(mural);
       }
 
