@@ -7766,13 +7766,14 @@
       crate.collider.disabled = false;
       crate.isCollapsed = true;
 
-      // Half-Life 2 style gentle release forward with slight player momentum
-      crate.vx = fwd.x * 1.5;
-      crate.vy = Math.max(-0.5, fwd.y * 1.5);
-      crate.vz = fwd.z * 1.5;
-      crate.angVx = (Math.random() - 0.5) * 1.5;
-      crate.angVy = (Math.random() - 0.5) * 1.5;
-      crate.angVz = (Math.random() - 0.5) * 1.5;
+      // A normal release is a careful placement. Let gravity settle the crate;
+      // only the explicit throw action adds a strong impulse.
+      crate.vx = fwd.x * 0.08;
+      crate.vy = 0;
+      crate.vz = fwd.z * 0.08;
+      crate.angVx = 0;
+      crate.angVy = 0;
+      crate.angVz = 0;
 
       this.heldCrate = null;
       this.audio.playCrateImpact();
@@ -7945,24 +7946,21 @@
       if (!baseCrate || baseCrate.isCollapsed) return;
       baseCrate.isCollapsed = true;
 
-      // Realistic Half-Life 2 prop impulse: absorb incoming momentum + scatter burst
-      baseCrate.vx = impactVx * 0.65 + (Math.random() - 0.5) * 3.2;
-      baseCrate.vz = impactVz * 0.65 + (Math.random() - 0.5) * 3.2;
-      baseCrate.vy = Math.max(0.6, Math.abs(impactVx + impactVz) * 0.25) + Math.random() * 0.8;
-      baseCrate.angVx = (Math.random() - 0.5) * 14.0;
-      baseCrate.angVz = (Math.random() - 0.5) * 14.0;
-      baseCrate.angVy = (Math.random() - 0.5) * 8.0;
+      // Wake a stack only when something actually moves it. Resting crates do
+      // not receive a random kick; a held/thrown crate or deliberate push can
+      // still topple the connected stack through normal collision response.
+      baseCrate.vx += impactVx * 0.22;
+      baseCrate.vz += impactVz * 0.22;
+      baseCrate.vy = Math.max(baseCrate.vy, 0);
+      baseCrate.angVx += impactVz * 0.16;
+      baseCrate.angVz -= impactVx * 0.16;
 
       if (baseCrate.supportedCrates && baseCrate.supportedCrates.length > 0) {
-        baseCrate.supportedCrates.forEach((child, idx) => {
-          // Propagate cascade toppling upwards through the stack
-          this.triggerCrateStackCollapse(child, baseCrate.vx * 0.85, baseCrate.vz * 0.85);
-        });
+        const children = baseCrate.supportedCrates.slice();
         baseCrate.supportedCrates = [];
-      }
-
-      if (Math.hypot(baseCrate.vx, baseCrate.vz, baseCrate.vy) > 1.8) {
-        this.audio.playCrateImpact();
+        children.forEach(child => {
+          this.triggerCrateStackCollapse(child, baseCrate.vx * 0.6, baseCrate.vz * 0.6);
+        });
       }
     }
 
@@ -8023,18 +8021,16 @@
         const offZ = this.playerPos.z - standingCrate.z;
         const leverage = Math.max(1, standingCrate.tier) * 0.95;
 
-        standingCrate.angVz -= (offX / 0.19) * 14.0 * leverage * delta;
-        standingCrate.angVx += (offZ / 0.19) * 14.0 * leverage * delta;
+        // Walking across a crate creates a small, predictable off-center load.
+        // It should feel solid underfoot instead of wobbling from random forces.
+        standingCrate.angVz -= offX * 1.2 * leverage * delta;
+        standingCrate.angVx += offZ * 1.2 * leverage * delta;
 
         const isMoving = this.playerVelocity.lengthSq() > 0.01;
-        if (isMoving) {
-          standingCrate.angVx += (Math.random() - 0.5) * 8.0 * delta;
-          standingCrate.angVz += (Math.random() - 0.5) * 8.0 * delta;
-          if (Math.random() < 0.035) this.audio.playCrateCreak();
-        }
+        if (isMoving && Math.random() < 0.006) this.audio.playCrateCreak();
 
         const totalTilt = Math.hypot(standingCrate.rotX, standingCrate.rotZ);
-        if (totalTilt > 0.28 || Math.hypot(standingCrate.angVx, standingCrate.angVz) > 4.8) {
+        if (totalTilt > 0.38 || Math.hypot(standingCrate.angVx, standingCrate.angVz) > 5.5) {
           this.triggerCrateStackCollapse(standingCrate);
           this.isGrounded = false;
           this.fallVelocity = 0;
@@ -8068,13 +8064,14 @@
             c.z += pnz * overlap * 0.90;
 
             const pSpeed = this.playerVelocity.length();
-            const pushImpulse = Math.max(3.8, pSpeed * 1.6) * (this.isSprinting ? 1.5 : 1.0);
+            const pushForce = Math.min(7.0, Math.max(1.0, pSpeed * 1.45)) *
+              (this.isSprinting ? 1.25 : 1.0);
+            const pushImpulse = pushForce * delta;
             c.vx += pnx * pushImpulse;
             c.vz += pnz * pushImpulse;
-            c.vy += 0.8; // realistic hop from foot contact
-            c.angVx += (Math.random() - 0.5) * 6.0;
-            c.angVz += (Math.random() - 0.5) * 6.0;
-            c.angVy += (Math.random() - 0.5) * 4.0;
+            // A horizontal body push should not make a crate hop or spin wildly.
+            c.angVx -= pnz * pushImpulse * 0.22;
+            c.angVz += pnx * pushImpulse * 0.22;
 
             if (Math.random() < 0.25) this.audio.playCrateCreak();
           }
@@ -8165,6 +8162,19 @@
               c.rotX = THREE.MathUtils.lerp(c.rotX, 0, Math.min(1, delta * 12.0));
               c.rotZ = THREE.MathUtils.lerp(c.rotZ, 0, Math.min(1, delta * 12.0));
             }
+
+            const nearlyStill = Math.abs(c.vy) < 0.12 &&
+              Math.hypot(c.vx, c.vz) < 0.16 &&
+              Math.hypot(c.angVx, c.angVy, c.angVz) < 0.18 &&
+              Math.hypot(c.rotX, c.rotZ) < 0.08;
+            if (nearlyStill) {
+              c.y = groundY;
+              c.baseY = groundY;
+              c.vx = c.vy = c.vz = 0;
+              c.angVx = c.angVy = c.angVz = 0;
+              c.rotX = c.rotZ = 0;
+              c.isCollapsed = false;
+            }
           }
 
           // Museum outer perimeter boundary containment
@@ -8194,90 +8204,108 @@
         c.collider.maxY = c.isCollapsed ? (c.y + 0.16) : (c.y + c.h);
       }
 
-      // 5. CRATE-ON-CRATE 3D Collisions & Momentum Exchange ("Half-Life 2 style prop physics")
+      // 5. Crate contact. Solve overlap and velocity without waking a whole
+      // stack on every touch. Resting contacts support careful, unsnapped stacks.
       for (let i = 0; i < this.physicsCrates.length; i++) {
         const c1 = this.physicsCrates[i];
         if (c1.isHeld) continue;
 
         for (let j = i + 1; j < this.physicsCrates.length; j++) {
           const c2 = this.physicsCrates[j];
-          if (c2.isHeld) continue;
-
-          // If BOTH crates are intact in their stacks, skip: intact stacks never self-destruct!
-          if (!c1.isCollapsed && !c2.isCollapsed) continue;
+          if (c2.isHeld || (!c1.isCollapsed && !c2.isCollapsed)) continue;
 
           const dx = c2.x - c1.x;
           const dz = c2.z - c1.z;
           const dy = (c2.y + c2.h / 2) - (c1.y + c1.h / 2);
-
           const halfW = (c1.w + c2.w) * 0.5;
           const halfD = (c1.d + c2.d) * 0.5;
           const halfH = (c1.h + c2.h) * 0.5;
-
           const overlapX = halfW - Math.abs(dx);
           const overlapZ = halfD - Math.abs(dz);
           const overlapY = halfH - Math.abs(dy);
+          if (overlapX <= 0.005 || overlapZ <= 0.005 || overlapY <= 0.005) continue;
 
-          // Require physical 2cm penetration threshold
-          if (overlapX > 0.02 && overlapZ > 0.02 && overlapY > 0.02) {
-            // Half-Life 2 style prop reaction: when a moving/thrown crate strikes an intact crate,
-            // the intact crate and its entire stack topples and absorbs the impact momentum!
-            const impactVx1 = c1.vx;
-            const impactVz1 = c1.vz;
-            const impactVx2 = c2.vx;
-            const impactVz2 = c2.vz;
+          if (overlapY < overlapX && overlapY < overlapZ) {
+            const top = dy > 0 ? c2 : c1;
+            const bottom = dy > 0 ? c1 : c2;
+            const verticalSpeed = top.vy - bottom.vy;
 
-            if (!c1.isCollapsed) this.triggerCrateStackCollapse(c1, impactVx2 * 0.8, impactVz2 * 0.8);
-            if (!c2.isCollapsed) this.triggerCrateStackCollapse(c2, impactVx1 * 0.8, impactVz1 * 0.8);
-
-            if (overlapY < overlapX && overlapY < overlapZ) {
-              // Vertical collision (landing or stacking)
-              if (dy > 0) {
-                c2.y += overlapY;
-                c2.vy = Math.max(0, c2.vy);
-                c1.vy = Math.min(0, c1.vy);
-              } else {
-                c1.y += overlapY;
-                c1.vy = Math.max(0, c1.vy);
-                c2.vy = Math.min(0, c2.vy);
-              }
+            if (dy > 0) {
+              c2.y += overlapY;
+              c2.vy = Math.max(0, c2.vy);
+              c1.vy = Math.min(0, c1.vy);
             } else {
-              // Horizontal collision (sides)
-              const distXZ = Math.hypot(dx, dz) || 0.001;
-              const nx = dx / distXZ;
-              const nz = dz / distXZ;
-              const hOverlap = Math.min(overlapX, overlapZ);
+              c1.y += overlapY;
+              c1.vy = Math.max(0, c1.vy);
+              c2.vy = Math.min(0, c2.vy);
+            }
 
-              // Separate crates along contact normal
-              c1.x -= nx * hOverlap * 0.5;
-              c1.z -= nz * hOverlap * 0.5;
-              c2.x += nx * hOverlap * 0.5;
-              c2.z += nz * hOverlap * 0.5;
+            // A hard landing can jostle the support; ordinary placement cannot.
+            if (!bottom.isCollapsed && verticalSpeed < -6.8) {
+              this.triggerCrateStackCollapse(bottom, top.vx, top.vz);
+            }
+            top.vx *= 0.82;
+            top.vz *= 0.82;
+            top.angVx *= 0.72;
+            top.angVy *= 0.72;
+            top.angVz *= 0.72;
 
-              // Compute relative velocity along collision normal
-              const relVx = c2.vx - c1.vx;
-              const relVz = c2.vz - c1.vz;
-              const normVel = relVx * nx + relVz * nz;
+            const centered = Math.abs(dx) < halfW * 0.62 && Math.abs(dz) < halfD * 0.62;
+            const settled = Math.abs(top.vy) < 0.12 &&
+              Math.hypot(top.vx, top.vz) < 0.16 &&
+              Math.hypot(top.angVx, top.angVy, top.angVz) < 0.18 &&
+              Math.hypot(top.rotX, top.rotZ) < 0.08;
+            if (centered && settled && !bottom.isCollapsed) {
+              // Resting contact, not a joint: the crate stays free to slide or be
+              // picked up, and a real impact wakes the support and its load.
+              top.isCollapsed = false;
+              top.baseY = bottom.y + bottom.h;
+              top.y = top.baseY;
+              top.vx = top.vy = top.vz = 0;
+              top.angVx = top.angVy = top.angVz = 0;
+              top.rotX = top.rotZ = 0;
+              bottom.supportedCrates = bottom.supportedCrates || [];
+              if (!bottom.supportedCrates.includes(top)) bottom.supportedCrates.push(top);
+            }
+          } else {
+            const distXZ = Math.hypot(dx, dz) || 0.001;
+            const nx = dx / distXZ;
+            const nz = dz / distXZ;
+            const hOverlap = Math.min(overlapX, overlapZ);
+            c1.x -= nx * hOverlap * 0.5;
+            c1.z -= nz * hOverlap * 0.5;
+            c2.x += nx * hOverlap * 0.5;
+            c2.z += nz * hOverlap * 0.5;
 
-              if (normVel < 0) {
-                const restitution = 0.40; // snappy plastic bounce
-                const impulse = -(1 + restitution) * normVel * 0.5;
+            let invMass1 = c1.isCollapsed ? 1 : 0;
+            let invMass2 = c2.isCollapsed ? 1 : 0;
+            let relVx = c2.vx - c1.vx;
+            let relVz = c2.vz - c1.vz;
+            let normVel = relVx * nx + relVz * nz;
 
-                c2.vx += impulse * nx;
-                c2.vz += impulse * nz;
-                c1.vx -= impulse * nx;
-                c1.vz -= impulse * nz;
+            // Strong throws may topple a support. Gentle crate placement and
+            // normal contact leave it undisturbed.
+            if (normVel < -1.8) {
+              if (!c1.isCollapsed) this.triggerCrateStackCollapse(c1, c2.vx, c2.vz);
+              if (!c2.isCollapsed) this.triggerCrateStackCollapse(c2, c1.vx, c1.vz);
+              invMass1 = c1.isCollapsed ? 1 : 0;
+              invMass2 = c2.isCollapsed ? 1 : 0;
+              relVx = c2.vx - c1.vx;
+              relVz = c2.vz - c1.vz;
+              normVel = relVx * nx + relVz * nz;
+            }
 
-                // Angular tumble impulse
-                c1.angVy -= impulse * 2.2;
-                c2.angVy += impulse * 2.2;
-                c1.angVx += (Math.random() - 0.5) * impulse * 1.8;
-                c2.angVz += (Math.random() - 0.5) * impulse * 1.8;
-
-                if (Math.abs(impulse) > 1.5) {
-                  this.audio.playCrateImpact();
-                }
-              }
+            const invMassSum = invMass1 + invMass2;
+            if (normVel < 0 && invMassSum > 0) {
+              const restitution = 0.08;
+              const impulse = -(1 + restitution) * normVel / invMassSum;
+              c1.vx -= impulse * nx * invMass1;
+              c1.vz -= impulse * nz * invMass1;
+              c2.vx += impulse * nx * invMass2;
+              c2.vz += impulse * nz * invMass2;
+              c1.angVy -= impulse * 0.08 * invMass1;
+              c2.angVy += impulse * 0.08 * invMass2;
+              if (Math.abs(impulse) > 2.2) this.audio.playCrateImpact();
             }
           }
         }
