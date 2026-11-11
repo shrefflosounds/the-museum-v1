@@ -10764,6 +10764,137 @@ window.game = this;
     }
 
     createVideoInstallationRoom(fl, y0, mats) {
+      // Matching hanging room signs at both video-room entrances. These are
+      // modeled as thin plastic plates, with through-holes, metal grommets,
+      // short chain links, and a wall nail; the mockup image itself is not used.
+      const addHangingVideoRoomSign = (x, y, z, rotationY) => {
+        const signW = 1.55;
+        const signH = 0.78;
+        const plateDepth = 0.035;
+        const cornerR = 0.10;
+        const holeR = 0.036;
+        const holeX = signW / 2 - 0.16;
+        const holeY = signH / 2 - 0.13;
+        const group = new THREE.Group();
+        group.position.set(x, y, z);
+        group.rotation.y = rotationY;
+
+        const shape = new THREE.Shape();
+        shape.moveTo(-signW / 2 + cornerR, -signH / 2);
+        shape.lineTo(signW / 2 - cornerR, -signH / 2);
+        shape.quadraticCurveTo(signW / 2, -signH / 2, signW / 2, -signH / 2 + cornerR);
+        shape.lineTo(signW / 2, signH / 2 - cornerR);
+        shape.quadraticCurveTo(signW / 2, signH / 2, signW / 2 - cornerR, signH / 2);
+        shape.lineTo(-signW / 2 + cornerR, signH / 2);
+        shape.quadraticCurveTo(-signW / 2, signH / 2, -signW / 2, signH / 2 - cornerR);
+        shape.lineTo(-signW / 2, -signH / 2 + cornerR);
+        shape.quadraticCurveTo(-signW / 2, -signH / 2, -signW / 2 + cornerR, -signH / 2);
+        [-holeX, holeX].forEach((hx) => {
+          const hole = new THREE.Path();
+          hole.absarc(hx, holeY, holeR, 0, Math.PI * 2, true);
+          shape.holes.push(hole);
+        });
+
+        const plate = new THREE.Mesh(
+          new THREE.ExtrudeGeometry(shape, { depth: plateDepth, bevelEnabled: false, curveSegments: 8 }),
+          new THREE.MeshStandardMaterial({ color: 0xe51d2a, roughness: 0.38, metalness: 0.04, side: THREE.DoubleSide })
+        );
+        group.add(plate);
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 512;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        const sx = canvas.width / signW;
+        const sy = canvas.height / signH;
+        const px = (v) => (v + signW / 2) * sx;
+        const py = (v) => (signH / 2 - v) * sy;
+        const radius = cornerR * Math.min(sx, sy);
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(0, 0, canvas.width, canvas.height, radius);
+        } else {
+          ctx.moveTo(radius, 0);
+          ctx.lineTo(canvas.width - radius, 0);
+          ctx.quadraticCurveTo(canvas.width, 0, canvas.width, radius);
+          ctx.lineTo(canvas.width, canvas.height - radius);
+          ctx.quadraticCurveTo(canvas.width, canvas.height, canvas.width - radius, canvas.height);
+          ctx.lineTo(radius, canvas.height);
+          ctx.quadraticCurveTo(0, canvas.height, 0, canvas.height - radius);
+          ctx.lineTo(0, radius);
+          ctx.quadraticCurveTo(0, 0, radius, 0);
+        }
+        const red = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
+        red.addColorStop(0, '#fb5962');
+        red.addColorStop(0.42, '#ec1827');
+        red.addColorStop(1, '#c90818');
+        ctx.fillStyle = red;
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+        ctx.lineWidth = 4;
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.16)';
+        ctx.fillRect(4, 4, canvas.width - 8, 18);
+        ctx.fillStyle = '#fffaf4';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = 'italic bold 45px Georgia, serif';
+        ctx.fillText('VIDEO ROOM', canvas.width / 2, canvas.height * 0.38);
+        ctx.font = 'italic 58px Georgia, serif';
+        ctx.fillText(String(fl + 1), canvas.width / 2, canvas.height * 0.73);
+        // Transparent centers reveal the actual holes cut through the plate.
+        ctx.globalCompositeOperation = 'destination-out';
+        [-holeX, holeX].forEach((hx) => {
+          ctx.beginPath();
+          ctx.arc(px(hx), py(holeY), holeR * sx, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        const faceTexture = new THREE.CanvasTexture(canvas);
+        const face = new THREE.Mesh(
+          new THREE.PlaneGeometry(signW, signH),
+          new THREE.MeshBasicMaterial({ map: faceTexture, transparent: true, side: THREE.DoubleSide, depthWrite: false })
+        );
+        face.position.z = plateDepth + 0.002;
+        group.add(face);
+
+        const silver = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, metalness: 0.82, roughness: 0.24 });
+        const chainLinkGeo = new THREE.TorusGeometry(0.022, 0.005, 6, 12);
+        const grommetGeo = new THREE.TorusGeometry(0.043, 0.008, 8, 20);
+        [-holeX, holeX].forEach((hx) => {
+          const grommet = new THREE.Mesh(grommetGeo, silver);
+          grommet.position.set(hx, holeY, plateDepth + 0.012);
+          group.add(grommet);
+
+          const start = new THREE.Vector3(0, 1.00, plateDepth + 0.055);
+          const end = new THREE.Vector3(hx, holeY + 0.015, plateDepth + 0.055);
+          const linkCount = 8;
+          for (let i = 0; i < linkCount; i++) {
+            const t = (i + 0.5) / linkCount;
+            const link = new THREE.Mesh(chainLinkGeo, silver);
+            link.position.copy(start).lerp(end, t);
+            if (i % 2) link.rotation.x = Math.PI / 2;
+            group.add(link);
+          }
+        });
+
+        const nailShaft = new THREE.Mesh(new THREE.CylinderGeometry(0.009, 0.012, 0.13, 8), silver);
+        nailShaft.rotation.x = Math.PI / 2;
+        nailShaft.position.set(0, 1.00, 0.045);
+        group.add(nailShaft);
+        const nailHead = new THREE.Mesh(new THREE.SphereGeometry(0.043, 12, 8), silver);
+        nailHead.scale.set(1, 1, 0.48);
+        nailHead.position.set(0, 1.075, 0.09);
+        group.add(nailHead);
+
+        this.scene.add(group);
+      };
+
+      // South entrance from the West Wing (door centered at x=-30, z=18).
+      addHangingVideoRoomSign(-30.0, y0 + 3.32, 17.80, Math.PI);
+      // East entrance from Stairwell A (door centered at x=-24, z=19.7).
+      addHangingVideoRoomSign(-23.80, y0 + 3.32, 19.7, Math.PI / 2);
+
       // 1. South Back Wall Video Projection Screen (Image 2 Red Rectangle)
       // Room bounds: x: -34..-24, z: 18..28. Back south wall is at z = 28.
       const screenW = 6.4;
