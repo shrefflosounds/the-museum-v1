@@ -12005,6 +12005,16 @@ window.game = this;
       archMesh.position.set(0, straightH, 0);
       portalGroup.add(archMesh);
 
+      // Solid semicircular infill: seals the arch opening now that leaves are rectangular
+      const infillShape = new THREE.Shape();
+      infillShape.absarc(0, 0, 1.40, 0, Math.PI, false);
+      infillShape.closePath();
+      const infillGeom = new THREE.ExtrudeGeometry(infillShape, { depth: 0.44, bevelEnabled: false, curveSegments: 36 });
+      infillGeom.translate(0, 0, -0.22);
+      const infillMesh = new THREE.Mesh(infillGeom, stoneMat);
+      infillMesh.position.set(0, straightH, 0);
+      portalGroup.add(infillMesh);
+
       // Outer Arch Moulding Ring (Outer R: 1.98m)
       const outerMouldShape = new THREE.Shape();
       outerMouldShape.absarc(0, 0, 1.98, 0, Math.PI, false);
