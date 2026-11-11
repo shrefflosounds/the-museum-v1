@@ -10859,21 +10859,31 @@ window.game = this;
         group.add(face);
 
         const silver = new THREE.MeshStandardMaterial({ color: 0xc8ccd0, metalness: 0.82, roughness: 0.24 });
-        const chainLinkGeo = new THREE.TorusGeometry(0.022, 0.005, 6, 12);
+        const chainLinkGeo = new THREE.TorusGeometry(0.025, 0.0045, 6, 12);
         const grommetGeo = new THREE.TorusGeometry(0.043, 0.008, 8, 20);
         [-holeX, holeX].forEach((hx) => {
           const grommet = new THREE.Mesh(grommetGeo, silver);
           grommet.position.set(hx, holeY, plateDepth + 0.012);
           group.add(grommet);
 
-          const start = new THREE.Vector3(0, 1.00, plateDepth + 0.055);
+          const start = new THREE.Vector3(0, 1.015, plateDepth + 0.055);
           const end = new THREE.Vector3(hx, holeY + 0.015, plateDepth + 0.055);
-          const linkCount = 8;
+          const middle = start.clone().lerp(end, 0.5);
+          middle.y -= 0.018;
+          const chainCurve = new THREE.QuadraticBezierCurve3(start, middle, end);
+          const continuousChain = new THREE.Mesh(new THREE.TubeGeometry(chainCurve, 24, 0.006, 6, false), silver);
+          group.add(continuousChain);
+
+          const linkCount = 14;
           for (let i = 0; i < linkCount; i++) {
             const t = (i + 0.5) / linkCount;
             const link = new THREE.Mesh(chainLinkGeo, silver);
-            link.position.copy(start).lerp(end, t);
-            if (i % 2) link.rotation.x = Math.PI / 2;
+            link.position.copy(chainCurve.getPoint(t));
+            const tangent = chainCurve.getTangent(t).normalize();
+            const linkNormal = i % 2
+              ? new THREE.Vector3(0, 0, 1)
+              : new THREE.Vector3(-tangent.y, tangent.x, 0).normalize();
+            link.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), linkNormal);
             group.add(link);
           }
         });
@@ -10883,8 +10893,8 @@ window.game = this;
         nailShaft.position.set(0, 1.00, 0.045);
         group.add(nailShaft);
         const nailHead = new THREE.Mesh(new THREE.SphereGeometry(0.043, 12, 8), silver);
-        nailHead.scale.set(1, 1, 0.48);
-        nailHead.position.set(0, 1.075, 0.09);
+        nailHead.scale.set(1, 0.78, 0.48);
+        nailHead.position.set(0, 1.025, 0.09);
         group.add(nailHead);
 
         this.scene.add(group);
