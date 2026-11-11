@@ -8196,6 +8196,12 @@ window.game = this;
         this.heldCrate = bestCrate;
         bestCrate.isHeld = true;
         bestCrate.isCollapsed = true;
+        // Lock a clean, upright carry orientation once. Do not chase the camera's
+        // yaw through Euler angles; angle wrapping can look like violent flipping.
+        bestCrate.heldYaw = Math.atan2(Math.sin(this.playerYaw), Math.cos(this.playerYaw));
+        bestCrate.heldQuaternion = new THREE.Quaternion().setFromEuler(
+          new THREE.Euler(0, bestCrate.heldYaw, 0, 'XYZ')
+        );
         const heldBody = bestCrate.body;
         heldBody.type = CANNON.Body.KINEMATIC;
         heldBody.mass = 0;
@@ -8473,11 +8479,13 @@ window.game = this;
         crate.x = THREE.MathUtils.lerp(crate.x, targetX, alpha);
         crate.y = THREE.MathUtils.lerp(crate.y, targetY, alpha);
         crate.z = THREE.MathUtils.lerp(crate.z, targetZ, alpha);
-        crate.rotY = THREE.MathUtils.lerp(crate.rotY, this.playerYaw, Math.min(1, delta * 16));
-        crate.rotX = THREE.MathUtils.lerp(crate.rotX, 0, Math.min(1, delta * 16));
-        crate.rotZ = THREE.MathUtils.lerp(crate.rotZ, 0, Math.min(1, delta * 16));
+        crate.rotX = 0;
+        crate.rotY = crate.heldYaw;
+        crate.rotZ = 0;
         body.position.set(crate.x, crate.y + crate.h / 2, crate.z);
-        body.quaternion.setFromEuler(crate.rotX, crate.rotY, crate.rotZ, 'XYZ');
+        body.quaternion.copy(crate.heldQuaternion);
+        crate.mesh.position.copy(body.position);
+        crate.mesh.quaternion.copy(crate.heldQuaternion);
         body.velocity.set(0, 0, 0);
         body.angularVelocity.set(0, 0, 0);
         body.aabbNeedsUpdate = true;
@@ -8547,6 +8555,16 @@ window.game = this;
       for (const crate of this.physicsCrates) {
         const body = crate.body;
         if (!body) continue;
+        if (crate.isHeld) {
+          // Held crates are hand-driven visuals, not solver output.
+          crate.x = body.position.x;
+          crate.y = body.position.y - crate.h / 2;
+          crate.z = body.position.z;
+          crate.mesh.position.copy(body.position);
+          crate.mesh.quaternion.copy(crate.heldQuaternion);
+          crate.collider.disabled = true;
+          continue;
+        }
         crate.x = body.position.x;
         crate.y = body.position.y - crate.h / 2;
         crate.z = body.position.z;
