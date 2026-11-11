@@ -8204,6 +8204,11 @@ window.game = this;
         heldBody.angularVelocity.set(0, 0, 0);
         heldBody.collisionResponse = false;
         heldBody.wakeUp();
+        // Remove carried crates from the solver entirely. A hand-following body
+        // must not participate in contact generation while it is being moved.
+        if (heldBody.world === this.cratePhysicsWorld) {
+          this.cratePhysicsWorld.removeBody(heldBody);
+        }
         // Carried crates are moved by the hand target, not by contact forces.
         bestCrate.collider.disabled = true;
         bestCrate.collider.minX = 0;
@@ -8246,6 +8251,7 @@ window.game = this;
       body.mass = crate.mass;
       body.updateMassProperties();
       body.collisionResponse = true;
+      if (body.world !== this.cratePhysicsWorld) this.cratePhysicsWorld.addBody(body);
       body.velocity.set(fwd.x * 0.08, 0, fwd.z * 0.08);
       body.angularVelocity.set(0, 0, 0);
       body.wakeUp();
@@ -8273,6 +8279,7 @@ window.game = this;
       body.mass = crate.mass;
       body.updateMassProperties();
       body.collisionResponse = true;
+      if (body.world !== this.cratePhysicsWorld) this.cratePhysicsWorld.addBody(body);
       body.velocity.set(fwd.x * 11.0, fwd.y * 11.0 + 1.0, fwd.z * 11.0);
       body.angularVelocity.set(
         (Math.random() - 0.5) * 3.0,
