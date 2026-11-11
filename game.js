@@ -11857,9 +11857,9 @@ window.game = this;
       const leftShape = new THREE.Shape();
       leftShape.moveTo(0, 0);
       leftShape.lineTo(doorW, 0);
-      leftShape.lineTo(doorW, totalH);
-      leftShape.absarc(doorW, straightH, doorW, Math.PI / 2, Math.PI, false);
-      leftShape.lineTo(0, 0);
+      leftShape.lineTo(doorW, straightH);
+      leftShape.lineTo(0, straightH);
+      leftShape.closePath();
 
       const leftGeom = new THREE.ExtrudeGeometry(leftShape, extrudeSettings);
       leftGeom.translate(0, 0, -doorDepth / 2);
@@ -11870,7 +11870,7 @@ window.game = this;
       for (let i = 0; i < leftPos.count; i++) {
         const px = leftPos.getX(i);
         const py = leftPos.getY(i);
-        leftUv.setXY(i, Math.max(0, Math.min(1, px / doorW)), Math.max(0, Math.min(1, py / totalH)));
+        leftUv.setXY(i, Math.max(0, Math.min(1, px / doorW)), Math.max(0, Math.min(1, py / straightH)));
       }
       leftUv.needsUpdate = true;
 
@@ -11884,9 +11884,9 @@ window.game = this;
       const rightShape = new THREE.Shape();
       rightShape.moveTo(0, 0);
       rightShape.lineTo(-doorW, 0);
-      rightShape.lineTo(-doorW, totalH);
-      rightShape.absarc(-doorW, straightH, doorW, Math.PI / 2, 0, true);
-      rightShape.lineTo(0, 0);
+      rightShape.lineTo(-doorW, straightH);
+      rightShape.lineTo(0, straightH);
+      rightShape.closePath();
 
       const rightGeom = new THREE.ExtrudeGeometry(rightShape, extrudeSettings);
       rightGeom.translate(0, 0, -doorDepth / 2);
@@ -11897,7 +11897,7 @@ window.game = this;
       for (let i = 0; i < rightPos.count; i++) {
         const px = rightPos.getX(i);
         const py = rightPos.getY(i);
-        rightUv.setXY(i, Math.max(0, Math.min(1, (px + doorW) / doorW)), Math.max(0, Math.min(1, py / totalH)));
+        rightUv.setXY(i, Math.max(0, Math.min(1, (px + doorW) / doorW)), Math.max(0, Math.min(1, py / straightH)));
       }
       rightUv.needsUpdate = true;
 
