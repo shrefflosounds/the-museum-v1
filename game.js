@@ -4679,7 +4679,7 @@ window.game = this;
         });
         const mural = new THREE.Mesh(new THREE.PlaneGeometry(mw, mh), muralMat);
         mural.rotation.y = Math.PI; // face north into the gallery
-        mural.position.set(12.0, y0 + 0.02 + mh / 2, -26 - t / 2 - 0.02);
+        mural.position.set(12.0, y0 + 0.005 + mh / 2, -26 - t / 2 - 0.02);
         this.scene.add(mural);
       }
 
