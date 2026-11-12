@@ -11069,12 +11069,12 @@ window.game = this;
       consoleHead.position.set(0, headY, 0);
       consoleHead.rotation.x = -tiltAngle;
 
-      // Sleek black console faceplate housing all 4 buttons seamlessly flush
+      // Sleek black console faceplate housing all 6 buttons seamlessly flush (2 rows of 3)
       const plateW = 1.86;
-      const plateH = 0.04;
+      const plateH = 0.22;
       const plateD = Math.sqrt(bD * bD + (bH_back - bH_front) * (bH_back - bH_front)) + 0.04; // Covers full sloped surface
       const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, plateD), topPlateMat);
-      consolePlate.position.set(0, 0.02, 0);
+      consolePlate.position.set(0, 0.0, 0);
       consoleHead.add(consolePlate);
 
       // Sleek metallic border trim framing the faceplate
@@ -11083,8 +11083,8 @@ window.game = this;
         roughness: 0.3,
         metalness: 0.8
       });
-      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.03, 0.025, plateD + 0.03), trimMat);
-      trimBorder.position.set(0, 0.005, 0);
+      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.03, plateH + 0.03, plateD + 0.03), trimMat);
+      trimBorder.position.set(0, 0.0, 0);
       consoleHead.add(trimBorder);
 
       // Helper to generate dynamic button textures styled after tactile colorful remote controls
@@ -11346,10 +11346,11 @@ window.game = this;
           label: b.label,
           symbol: b.symbol,
           floor: fl,
-          worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 0.99, 23.98)
+          worldPos: btnMesh.getWorldPosition(new THREE.Vector3())
         });
       });
 
+      consoleHead.updateMatrixWorld(true);
       deckGroup.add(consoleHead);
       this.scene.add(deckGroup);
 
