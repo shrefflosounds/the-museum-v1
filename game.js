@@ -10264,7 +10264,7 @@ window.game = this;
       angledDesk.rotation.x = 0.45;
       labelStandGroup.add(angledDesk);
 
-      const plaqueTex = TextureFactory.createPlaqueTexture('ROYAL SARCOPHAGUS', 'EGYPTIAN ANTIQUITIES • 1250 BCE');
+      const plaqueTex = TextureFactory.createPlaqueTexture('ROYAL TOMB', '');
       const plaqueMesh = new THREE.Mesh(
         new THREE.PlaneGeometry(0.28, 0.18),
         new THREE.MeshBasicMaterial({ map: plaqueTex, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 })
