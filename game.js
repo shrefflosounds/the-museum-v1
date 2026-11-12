@@ -11069,12 +11069,12 @@ window.game = this;
       consoleHead.position.set(0, headY, 0);
       consoleHead.rotation.x = -tiltAngle;
 
-      // Sleek black console faceplate housing all 6 buttons seamlessly flush (2 rows of 3)
+      // Sleek black console faceplate housing all 4 buttons seamlessly flush
       const plateW = 1.86;
-      const plateH = 0.22;
+      const plateH = 0.04;
       const plateD = Math.sqrt(bD * bD + (bH_back - bH_front) * (bH_back - bH_front)) + 0.04; // Covers full sloped surface
       const consolePlate = new THREE.Mesh(new THREE.BoxGeometry(plateW, plateH, plateD), topPlateMat);
-      consolePlate.position.set(0, 0.0, 0);
+      consolePlate.position.set(0, 0.02, 0);
       consoleHead.add(consolePlate);
 
       // Sleek metallic border trim framing the faceplate
@@ -11083,8 +11083,8 @@ window.game = this;
         roughness: 0.3,
         metalness: 0.8
       });
-      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.03, plateH + 0.03, plateD + 0.03), trimMat);
-      trimBorder.position.set(0, 0.0, 0);
+      const trimBorder = new THREE.Mesh(new THREE.BoxGeometry(plateW + 0.03, 0.025, plateD + 0.03), trimMat);
+      trimBorder.position.set(0, 0.005, 0);
       consoleHead.add(trimBorder);
 
       // Helper to generate dynamic button textures styled after tactile colorful remote controls
@@ -11097,39 +11097,14 @@ window.game = this;
         const ctx = can.getContext('2d');
 
         // Button face background color
-        if (colorCfg.rainbow) {
-          const rg = ctx.createLinearGradient(0, 0, 256, 256);
-          rg.addColorStop(0.0, '#ff0000');
-          rg.addColorStop(0.17, '#ff7f00');
-          rg.addColorStop(0.34, '#ffbf00');
-          rg.addColorStop(0.5, '#ffff00');
-          rg.addColorStop(0.67, '#00ff00');
-          rg.addColorStop(0.84, '#0000ff');
-          rg.addColorStop(1.0, '#4b0082');
-          ctx.fillStyle = rg;
-          ctx.fillRect(0, 0, 256, 256);
-        } else {
-          ctx.fillStyle = colorCfg.bg;
-          ctx.fillRect(0, 0, 256, 256);
-        }
+        ctx.fillStyle = colorCfg.bg;
+        ctx.fillRect(0, 0, 256, 256);
 
         // Tactile outer bevel ring
         ctx.beginPath();
         ctx.arc(128, 128, 110, 0, Math.PI * 2);
         ctx.lineWidth = 14;
-        if (colorCfg.rainbow) {
-          const rg2 = ctx.createLinearGradient(0, 0, 256, 0);
-          rg2.addColorStop(0.0, '#ff0000');
-          rg2.addColorStop(0.17, '#ff7f00');
-          rg2.addColorStop(0.34, '#ffbf00');
-          rg2.addColorStop(0.5, '#ffff00');
-          rg2.addColorStop(0.67, '#00ff00');
-          rg2.addColorStop(0.84, '#0000ff');
-          rg2.addColorStop(1.0, '#4b0082');
-          ctx.strokeStyle = rg2;
-        } else {
-          ctx.strokeStyle = colorCfg.border;
-        }
+        ctx.strokeStyle = colorCfg.border;
         ctx.stroke();
 
         // Inner bevel highlight
@@ -11267,7 +11242,7 @@ window.game = this;
           id: 'prev',
           label: 'PREV',
           symbol: '◀',
-          relX: 0.46, relY: 0.11,
+          relX: 0.68, // Leftmost from player's viewpoint
           prompt: '[E] PREVIOUS VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -11275,7 +11250,7 @@ window.game = this;
           id: 'play',
           label: 'PLAY',
           symbol: '▶❚❚',
-          relX: 0.0, relY: 0.11,
+          relX: 0.34, // Second from left
           prompt: '[E] PAUSE / PLAY',
           colorCfg: { bg: '#16a34a', border: '#4ade80', side: 0x15803d, emissive: 0x16a34a }
         },
@@ -11283,7 +11258,7 @@ window.game = this;
           id: 'next',
           label: 'NEXT',
           symbol: '▶',
-          relX: -0.46, relY: 0.11,
+          relX: 0.0, // Center
           prompt: '[E] NEXT VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -11291,7 +11266,7 @@ window.game = this;
           id: 'mute',
           label: 'MUTE',
           symbol: 'speaker',
-          relX: 0.46, relY: -0.11,
+          relX: -0.34, // Fourth from left
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
         },
@@ -11299,22 +11274,13 @@ window.game = this;
           id: 'subs',
           label: 'SUBS',
           symbol: 'cc',
-          relX: 0.0, relY: -0.11,
+          relX: -0.68, // Rightmost from player's viewpoint
           prompt: '[E] SUBTITLES ON / OFF',
           colorCfg: { bg: '#7c3aed', border: '#a78bfa', side: 0x6d28d9, emissive: 0x7c3aed }
-        },
-        {
-          id: 'skipad',
-          label: 'SKIP AD',
-          symbol: '',
-          relX: -0.46, relY: -0.11,
-          prompt: '[E] SKIP AD',
-          colorCfg: { bg: 'rainbow', border: 'rainbow', side: 'rainbow', emissive: 'rainbow', rainbow: true, textColor: '#000000' }
         }
       ];
 
       const interactiveButtons = [];
-      consoleHead.updateMatrixWorld(true);
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
@@ -11334,20 +11300,20 @@ window.game = this;
         const btnMesh = new THREE.Mesh(btnGeo, [sideMat, capMat, sideMat]);
         btnMesh.rotation.x = 0;
         // Positioned dead-center on the faceplate surface (Y=0.035 flush above faceplate, Z=0.0 centered)
-        btnMesh.position.set(b.relX, b.relY, 0.0);
+        btnMesh.position.set(b.relX, 0.035, 0.0);
         consoleHead.add(btnMesh);
 
         interactiveButtons.push({
           id: b.id,
           prompt: b.prompt,
           mesh: btnMesh,
-          origY: b.relY,
+          origY: 0.035,
           material: capMat,
           colorCfg: b.colorCfg,
           label: b.label,
           symbol: b.symbol,
           floor: fl,
-          worldPos: btnMesh.getWorldPosition(new THREE.Vector3())
+          worldPos: new THREE.Vector3(-29.0 + b.relX, y0 + 0.99, 23.98)
         });
       });
 
@@ -11561,10 +11527,6 @@ window.game = this;
               if (typeof p.playVideo === 'function') p.playVideo();
             }
           });
-          break;
-        case 'skipad':
-          // YouTube does not expose a skipAd API; this button is a no-op cue
-          // for future ad-skipping integrations. Kept as a visible control.
           break;
         case 'mute':
           if (remoteData && remoteData.muted !== undefined) {
