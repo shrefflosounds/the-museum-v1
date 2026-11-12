@@ -11097,14 +11097,39 @@ window.game = this;
         const ctx = can.getContext('2d');
 
         // Button face background color
-        ctx.fillStyle = colorCfg.bg;
-        ctx.fillRect(0, 0, 256, 256);
+        if (colorCfg.rainbow) {
+          const rg = ctx.createLinearGradient(0, 0, 256, 256);
+          rg.addColorStop(0.0, '#ff0000');
+          rg.addColorStop(0.17, '#ff7f00');
+          rg.addColorStop(0.34, '#ffbf00');
+          rg.addColorStop(0.5, '#ffff00');
+          rg.addColorStop(0.67, '#00ff00');
+          rg.addColorStop(0.84, '#0000ff');
+          rg.addColorStop(1.0, '#4b0082');
+          ctx.fillStyle = rg;
+          ctx.fillRect(0, 0, 256, 256);
+        } else {
+          ctx.fillStyle = colorCfg.bg;
+          ctx.fillRect(0, 0, 256, 256);
+        }
 
         // Tactile outer bevel ring
         ctx.beginPath();
         ctx.arc(128, 128, 110, 0, Math.PI * 2);
         ctx.lineWidth = 14;
-        ctx.strokeStyle = colorCfg.border;
+        if (colorCfg.rainbow) {
+          const rg2 = ctx.createLinearGradient(0, 0, 256, 0);
+          rg2.addColorStop(0.0, '#ff0000');
+          rg2.addColorStop(0.17, '#ff7f00');
+          rg2.addColorStop(0.34, '#ffbf00');
+          rg2.addColorStop(0.5, '#ffff00');
+          rg2.addColorStop(0.67, '#00ff00');
+          rg2.addColorStop(0.84, '#0000ff');
+          rg2.addColorStop(1.0, '#4b0082');
+          ctx.strokeStyle = rg2;
+        } else {
+          ctx.strokeStyle = colorCfg.border;
+        }
         ctx.stroke();
 
         // Inner bevel highlight
@@ -11277,6 +11302,14 @@ window.game = this;
           relX: -0.68, // Rightmost from player's viewpoint
           prompt: '[E] SUBTITLES ON / OFF',
           colorCfg: { bg: '#7c3aed', border: '#a78bfa', side: 0x6d28d9, emissive: 0x7c3aed }
+        },
+        {
+          id: 'skipad',
+          label: 'SKIP AD',
+          symbol: '⊘',
+          relX: -1.02, // Far right from player's viewpoint
+          prompt: '[E] SKIP AD',
+          colorCfg: { bg: 'rainbow', border: 'rainbow', side: 'rainbow', emissive: 'rainbow', rainbow: true }
         }
       ];
 
@@ -11527,6 +11560,10 @@ window.game = this;
               if (typeof p.playVideo === 'function') p.playVideo();
             }
           });
+          break;
+        case 'skipad':
+          // YouTube does not expose a skipAd API; this button is a no-op cue
+          // for future ad-skipping integrations. Kept as a visible control.
           break;
         case 'mute':
           if (remoteData && remoteData.muted !== undefined) {
