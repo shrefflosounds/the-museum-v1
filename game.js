@@ -11291,7 +11291,7 @@ window.game = this;
           id: 'mute',
           label: 'MUTE',
           symbol: 'speaker',
-          relX: 0.46, relY: 0.035, relZ: 0.20,
+          relX: 0.46, relY: 0.035, relZ: -0.20,
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
         },
@@ -11299,7 +11299,7 @@ window.game = this;
           id: 'subs',
           label: 'SUBS',
           symbol: 'cc',
-          relX: 0.0, relY: 0.035, relZ: 0.20,
+          relX: 0.0, relY: 0.035, relZ: -0.20,
           prompt: '[E] SUBTITLES ON / OFF',
           colorCfg: { bg: '#7c3aed', border: '#a78bfa', side: 0x6d28d9, emissive: 0x7c3aed }
         },
@@ -11307,7 +11307,7 @@ window.game = this;
           id: 'skipad',
           label: 'SKIP AD',
           symbol: '',
-          relX: -0.46, relY: 0.035, relZ: 0.20,
+          relX: -0.46, relY: 0.035, relZ: -0.20,
           prompt: '[E] SKIP AD',
           colorCfg: { bg: 'rainbow', border: 'rainbow', side: 'rainbow', emissive: 'rainbow', rainbow: true, textColor: '#000000' }
         }
@@ -11347,7 +11347,11 @@ window.game = this;
           label: b.label,
           symbol: b.symbol,
           floor: fl,
-          worldPos: btnMesh.getWorldPosition(new THREE.Vector3())
+          worldPos: new THREE.Vector3(
+            -29.0 + b.relX,
+            y0 + 0.99 + b.relY * Math.cos(tiltAngle) + b.relZ * Math.sin(tiltAngle),
+            23.98 - b.relY * Math.sin(tiltAngle) + b.relZ * Math.cos(tiltAngle)
+          )
         });
       });
 
