@@ -4668,7 +4668,7 @@ window.game = this;
       // north face of the z = -26 wall between the two doorways (x: 7.4..16.6)
       {
         const muralFile = `assets/murals/north_mural_f${fl + 1}.png`;
-        const muralAspect = [853 / 907, 967 / 1024, 521 / 1024, 1.0][fl];
+        const muralAspect = [760 / 857, 892 / 1024, 492 / 1011, 976 / 973][fl];
         const maxMW = 9.0, maxMH = 6.9;
         let mh = maxMH, mw = mh * muralAspect;
         if (mw > maxMW) { mw = maxMW; mh = mw / muralAspect; }
