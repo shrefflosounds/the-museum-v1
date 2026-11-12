@@ -11267,7 +11267,7 @@ window.game = this;
           id: 'prev',
           label: 'PREV',
           symbol: '◀',
-          relX: 0.46, relY: 0.055,
+          relX: 0.46, relY: 0.11,
           prompt: '[E] PREVIOUS VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -11275,7 +11275,7 @@ window.game = this;
           id: 'play',
           label: 'PLAY',
           symbol: '▶❚❚',
-          relX: 0.0, relY: 0.055,
+          relX: 0.0, relY: 0.11,
           prompt: '[E] PAUSE / PLAY',
           colorCfg: { bg: '#16a34a', border: '#4ade80', side: 0x15803d, emissive: 0x16a34a }
         },
@@ -11283,7 +11283,7 @@ window.game = this;
           id: 'next',
           label: 'NEXT',
           symbol: '▶',
-          relX: -0.46, relY: 0.055,
+          relX: -0.46, relY: 0.11,
           prompt: '[E] NEXT VIDEO',
           colorCfg: { bg: '#0284c7', border: '#38bdf8', side: 0x0369a1, emissive: 0x0284c7 }
         },
@@ -11291,7 +11291,7 @@ window.game = this;
           id: 'mute',
           label: 'MUTE',
           symbol: 'speaker',
-          relX: 0.46, relY: -0.055,
+          relX: 0.46, relY: -0.11,
           prompt: '[E] MUTE / UNMUTE',
           colorCfg: { bg: '#eab308', border: '#fef08a', side: 0xb45309, textColor: '#1e293b', emissive: 0xd97706 }
         },
@@ -11299,7 +11299,7 @@ window.game = this;
           id: 'subs',
           label: 'SUBS',
           symbol: 'cc',
-          relX: 0.0, relY: -0.055,
+          relX: 0.0, relY: -0.11,
           prompt: '[E] SUBTITLES ON / OFF',
           colorCfg: { bg: '#7c3aed', border: '#a78bfa', side: 0x6d28d9, emissive: 0x7c3aed }
         },
@@ -11307,7 +11307,7 @@ window.game = this;
           id: 'skipad',
           label: 'SKIP AD',
           symbol: '',
-          relX: -0.46, relY: -0.055,
+          relX: -0.46, relY: -0.11,
           prompt: '[E] SKIP AD',
           colorCfg: { bg: 'rainbow', border: 'rainbow', side: 'rainbow', emissive: 'rainbow', rainbow: true, textColor: '#000000' }
         }
