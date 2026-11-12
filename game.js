@@ -11314,6 +11314,7 @@ window.game = this;
       ];
 
       const interactiveButtons = [];
+      consoleHead.updateMatrixWorld(true);
 
       btnDefs.forEach(b => {
         const btnGeo = new THREE.CylinderGeometry(0.12, 0.13, 0.05, 32);
@@ -11350,7 +11351,6 @@ window.game = this;
         });
       });
 
-      consoleHead.updateMatrixWorld(true);
       deckGroup.add(consoleHead);
       this.scene.add(deckGroup);
 
