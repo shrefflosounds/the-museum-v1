@@ -4843,17 +4843,17 @@ window.game = this;
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
         // Solid South Landing box at Floor fl (x: -3.80..3.80, z: -16.80..-14.20 strictly inside stairwell shaft)
         const landBox = new THREE.Mesh(new THREE.BoxGeometry(7.60, 0.32, 2.60), mats.stairStone);
-        landBox.position.set(0, y0 - 0.16, -15.50);
+        landBox.position.set(0, y0 - 0.14, -15.50);
         this.scene.add(landBox);
 
         // Doorway floor fill strips for Stairwell B doors (no overlap with any wall):
         // West doorway into Main Gallery (x: -4.00..-3.80, z: -16.80..-14.00)
         const doorWestN = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.80), mats.stairStone);
-        doorWestN.position.set(-3.90, y0 - 0.16, -15.40);
+        doorWestN.position.set(-3.90, y0 - 0.14, -15.40);
         this.scene.add(doorWestN);
         // East doorway into East Main Hall (x: 3.80..4.00, z: -16.80..-14.00)
         const doorEastN = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.32, 2.80), mats.stairStone);
-        doorEastN.position.set(3.90, y0 - 0.16, -15.40);
+        doorEastN.position.set(3.90, y0 - 0.14, -15.40);
         this.scene.add(doorEastN);
 
         this.createCeiling(0, y0 + ceilH, -15.50, 7.60, 2.60, mats.ceiling);
@@ -4916,17 +4916,17 @@ window.game = this;
         const y0 = fl * CONFIG.FLOOR_HEIGHT;
         // Solid continuous North Landing box at Floor fl (x: -23.80..-16.20, z: 18.20..20.80 strictly inside stairwell shaft)
         const landBoxSW = new THREE.Mesh(new THREE.BoxGeometry(7.60, 0.32, 2.60), mats.stairStone);
-        landBoxSW.position.set(-20, y0 - 0.16, 19.50);
+        landBoxSW.position.set(-20, y0 - 0.14, 19.50);
         this.scene.add(landBoxSW);
 
         // Doorway floor fill strips for the 3 stairwell doors (no overlap with any wall):
         // North doorway into West Wing (x: -21.5..-18.5, z: 17.80..18.20)
         const doorNorthSW = new THREE.Mesh(new THREE.BoxGeometry(3.00, 0.32, 0.40), mats.stairStone);
-        doorNorthSW.position.set(-20.0, y0 - 0.16, 18.00);
+        doorNorthSW.position.set(-20.0, y0 - 0.14, 18.00);
         this.scene.add(doorNorthSW);
         // West doorway into West Office (x: -24.20..-23.80, z: 18.60..20.80)
         const doorWestSW = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.32, 2.20), mats.stairStone);
-        doorWestSW.position.set(-24.00, y0 - 0.16, 19.70);
+        doorWestSW.position.set(-24.00, y0 - 0.14, 19.70);
         this.scene.add(doorWestSW);
         // East doorway into Main Gallery (x: -16.20..-15.80, z: 18.60..20.80)
         const doorEastSW = new THREE.Mesh(new THREE.BoxGeometry(0.40, 0.32, 2.20), mats.stairStone);
