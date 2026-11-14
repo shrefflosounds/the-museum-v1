@@ -4245,7 +4245,6 @@
         hud: document.getElementById('hud'),
         startScreen: document.getElementById('start-screen'),
         startBtn: document.getElementById('start-btn'),
-        museumModeBtn: document.getElementById('museum-mode-btn'),
         startQuitBtn: document.getElementById('start-quit-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
@@ -14820,10 +14819,12 @@ window.game = this;
         this.requestNativeOrBrowserLock();
       });
 
-      if (this.dom.museumModeBtn) {
-        this.dom.museumModeBtn.addEventListener('click', (e) => {
+      // Options hint click in main menu
+      const optionsHint = document.querySelector('.menu-options-hint');
+      if (optionsHint) {
+        optionsHint.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.startMuseumMode();
+          this.openOptionsModal();
         });
       }
 
