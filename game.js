@@ -16727,8 +16727,8 @@ window.game = this;
 
       console.log('[INTRO] Starting intro cutscene playback...');
 
-      if (!videoEl.src || !videoEl.src.includes('THE-MUSEUM-intro.mp4')) {
-        videoEl.src = 'assets/THE-MUSEUM-intro.mp4';
+      if (!videoEl.src || !videoEl.src.includes('Museum-Intro.mp4')) {
+        videoEl.src = 'assets/Museum-Intro.mp4';
       }
       videoEl.preload = 'auto';
       videoEl.load();
