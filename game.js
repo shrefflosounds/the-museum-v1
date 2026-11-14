@@ -4417,10 +4417,10 @@ window.game = this;
       }, false);
 
       // Atmospheric museum ambient illumination + subtle hemisphere bounce (balanced so artwork never washes out)
-      this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.50);
+      this.ambientLight = new THREE.AmbientLight(0x2d3648, 0.58);
       this.scene.add(this.ambientLight);
 
-      this.hemiLight = new THREE.HemisphereLight(0x4a5a78, 0x1a1612, 0.30);
+      this.hemiLight = new THREE.HemisphereLight(0x4a5a78, 0x1a1612, 0.36);
       this.scene.add(this.hemiLight);
 
       // Warm directional sunlight used when daytime mode (Smitty: OFF) is active
@@ -4493,9 +4493,30 @@ window.game = this;
       mats.ceiling.shininess = 16;
       mats.ceiling.specular = new THREE.Color(0x222222);
 
-      // Build all 4 floors of the Museum
+      // Build all 4 floors of the Museum into dedicated per-floor groups so only the active floor(s) are rendered
+      this.floorGroups = [];
+      const rootSceneAdd = this.scene.add.bind(this.scene);
+      this._rootSceneAdd = rootSceneAdd;
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
-        this.buildSingleFloor(fl, mats);
+        const floorGroup = new THREE.Group();
+        floorGroup.name = `FloorGroup_${fl}`;
+        rootSceneAdd(floorGroup);
+        this.floorGroups.push(floorGroup);
+        this.scene.add = (...objs) => {
+          for (const obj of objs) {
+            if (obj && obj.isLight) {
+              rootSceneAdd(obj);
+            } else if (obj) {
+              floorGroup.add(obj);
+            }
+          }
+          return this.scene;
+        };
+        try {
+          this.buildSingleFloor(fl, mats);
+        } finally {
+          this.scene.add = rootSceneAdd;
+        }
       }
 
       // Build the two continuous 4-story U-stairwells (Stairwell N and Stairwell SW)
@@ -4503,6 +4524,23 @@ window.game = this;
 
       // Populate all 136 curated gallery artworks across the 4 floors
       this.populateCuratedArtworks(mats);
+    }
+
+    updateFloorGroupVisibility() {
+      if (!this.floorGroups || this.floorGroups.length === 0) return;
+      if (this.isSpectatorMode) {
+        for (let f = 0; f < this.floorGroups.length; f++) {
+          if (this.floorGroups[f]) this.floorGroups[f].visible = true;
+        }
+        return;
+      }
+      const nearStair = (this.isInStairwell && this.isInStairwell(this.playerPos)) ||
+                        (this.isNearStairwell && this.isNearStairwell(this.playerPos)) ||
+                        (this.playerStairState && this.playerStairState.active !== null);
+      for (let f = 0; f < this.floorGroups.length; f++) {
+        if (!this.floorGroups[f]) continue;
+        this.floorGroups[f].visible = (f === this.playerFloor) || (nearStair && Math.abs(f - this.playerFloor) <= 1);
+      }
     }
 
     buildSingleFloor(fl, mats) {
@@ -4780,7 +4818,7 @@ window.game = this;
 
       // Cohesive Warm Gallery Ceiling Lamps & Spotlights (Uniform across all floors - no color shift)
       const lightColor = 0xfff6eb;
-      const lightInt = 0.58;
+      const lightInt = 0.68;
       const roomLightCoords = [
         [-26, -1],  // West Wing North
         [-26, 13],  // West Wing South
@@ -4798,15 +4836,26 @@ window.game = this;
         [26, 13],   // Arts & Music Office
         [16, 23]    // South-East Media Wing
       ];
-      roomLightCoords.forEach(([lx, lz], idx) => {
+      roomLightCoords.forEach(([lx, lz]) => {
         const fix = new THREE.Mesh(
           new THREE.CylinderGeometry(0.35, 0.35, 0.08, 12),
           new THREE.MeshBasicMaterial({ color: lightColor })
         );
         fix.position.set(lx, y0 + ceilH - 0.04, lz);
         this.scene.add(fix);
+      });
 
-        const pl = new THREE.PointLight(lightColor, fl === this.playerFloor ? lightInt : 0, 24.0, 1.25);
+      // Exactly 6 high-coverage PointLights per floor (1 per major wing) so fragment shader cost stays minimal and constant
+      const activeWingLightCoords = [
+        [-26, 6],   // West Wing
+        [-10, -6],  // Main Gallery North
+        [-10, 14],  // Main Gallery South
+        [12, -33],  // North Gallery
+        [16, -8],   // East Main Hall
+        [18, 22]    // South-East / Rotunda
+      ];
+      activeWingLightCoords.forEach(([lx, lz]) => {
+        const pl = new THREE.PointLight(lightColor, fl === this.playerFloor ? lightInt : 0, 32.0, 1.15);
         pl._origIntensity = lightInt;
         pl.position.set(lx, y0 + ceilH - 0.45, lz);
         this.scene.add(pl);
@@ -5428,19 +5477,12 @@ window.game = this;
 
       // Overhead Rotunda Flush Ceiling Light (matching the rest of the museum's gallery lights)
       const chanColor = 0xfffae6;
-      const chanInt = fl === 3 ? 0.45 : 0.60;
       const rotundaFix = new THREE.Mesh(
         new THREE.CylinderGeometry(0.35, 0.35, 0.08, 12),
         new THREE.MeshBasicMaterial({ color: chanColor })
       );
       rotundaFix.position.set(cx, y0 + ceilH - 0.04, 30.5);
       this.scene.add(rotundaFix);
-
-      const chanLight = new THREE.PointLight(chanColor, fl === this.playerFloor ? chanInt : 0, 14.0);
-      chanLight._origIntensity = chanInt;
-      chanLight.position.set(cx, y0 + ceilH - 0.45, 30.5);
-      this.scene.add(chanLight);
-      if (this.floorLights[fl]) this.floorLights[fl].push(chanLight);
     }
 
     createClassicalBeauxArtsArchitecture(fl, y0, mats, ceilH, wallH) {
@@ -5603,13 +5645,6 @@ window.game = this;
           skylightGroup.add(bar);
         }
 
-        // Soft ambient daylight glow radiating down from the laylight
-        const skyLight = new THREE.PointLight(0xdff0fc, fl === this.playerFloor ? 0.40 : 0, 20.0, 1.3);
-        skyLight._origIntensity = 0.40;
-        skyLight.position.set(0, -0.75, 0);
-        skylightGroup.add(skyLight);
-        if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(skyLight);
-
         this.scene.add(skylightGroup);
       };
 
@@ -5735,26 +5770,14 @@ window.game = this;
       rFloor.position.set(0, y0 + 0.025, -10.0);
       this.scene.add(rFloor);
 
-      // 2. CEILING RECESSED LIGHTS & GLOWING FIXTURES
-      // Men's ceiling light (z = -12.0)
-      const mLight = new THREE.PointLight(0xfffaed, fl === this.playerFloor ? 0.75 : 0, 9.0);
-      mLight._origIntensity = 0.75;
-      mLight.position.set(0, y0 + 3.8, -12.0);
-      this.scene.add(mLight);
+      // 2. CEILING RECESSED GLOWING FIXTURES
       const mFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
       mFix.position.set(0, y0 + 5.10, -12.0);
       this.scene.add(mFix);
 
-      // Women's ceiling light (z = -8.0)
-      const wLight = new THREE.PointLight(0xfffaed, fl === this.playerFloor ? 0.75 : 0, 9.0);
-      wLight._origIntensity = 0.75;
-      wLight.position.set(0, y0 + 3.8, -8.0);
-      this.scene.add(wLight);
       const wFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
       wFix.position.set(0, y0 + 5.10, -8.0);
       this.scene.add(wFix);
-
-      if (this.floorLights[fl]) this.floorLights[fl].push(mLight, wLight);
 
       // 3. CERAMIC WAINSCOTING PANELS ON PERIMETER WALLS (height 2.2m)
       const wainscotBack = new THREE.Mesh(new THREE.BoxGeometry(0.04, 2.2, 7.96), wainscotMat);
@@ -6745,12 +6768,6 @@ window.game = this;
         const chainBead = new THREE.Mesh(new THREE.SphereGeometry(0.0065, 8, 8), polishedBrassMat);
         chainBead.position.set(0.03, 0.155, 0.10);
         lampGroup.add(chainBead);
-
-        if (addLight) {
-          const lampLight = new THREE.PointLight(0xffea9f, 0.45, 2.4, 1.8);
-          lampLight.position.set(0, 0.24, 0.12);
-          lampGroup.add(lampLight);
-        }
 
         return lampGroup;
       };
@@ -7916,7 +7933,11 @@ window.game = this;
 
         const mesh = this.buildMilkCrateMesh(colorHex, crateW, crateH, crateD);
         mesh.position.set(cx, cy + crateH / 2, cz);
-        this.scene.add(mesh);
+        if (this._rootSceneAdd) {
+          this._rootSceneAdd(mesh);
+        } else {
+          this.scene.add(mesh);
+        }
 
         const col = {
           type: 'box',
@@ -9079,7 +9100,7 @@ window.game = this;
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 512;
+      const rtSize = 256;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -9123,6 +9144,7 @@ window.game = this;
       const q = new THREE.Vector4();
       const virtualCamera = new THREE.PerspectiveCamera();
       const clipBias = 0.003;
+      let mirrorFrameTick = 0;
 
       glass.onBeforeRender = (renderer, scene, camera) => {
         // Recursion guard: never render mirrors inside other mirrors
@@ -9131,9 +9153,13 @@ window.game = this;
         reflectorWorldPosition.setFromMatrixPosition(glass.matrixWorld);
         cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
 
-        // Only update when viewer is on the same floor and within visible corridor range
+        // Only update when viewer is on the same floor and within close visible corridor range (8.5m)
         if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 12.5) return;
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 8.5) return;
+
+        // Throttle reflection render target updates to every 2nd frame for 2x mirror GPU savings
+        mirrorFrameTick = (mirrorFrameTick + 1) & 1;
+        if (mirrorFrameTick !== 0) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
@@ -9155,9 +9181,12 @@ window.game = this;
         virtualCamera.position.copy(view);
         virtualCamera.up.set(0, 1, 0).applyMatrix4(rotationMatrix).reflect(normal);
         virtualCamera.lookAt(target);
-        virtualCamera.far = camera.far;
+        virtualCamera.near = camera.near;
+        virtualCamera.far = 22.0;
+        virtualCamera.fov = camera.fov;
+        virtualCamera.aspect = camera.aspect;
         virtualCamera.updateMatrixWorld();
-        virtualCamera.projectionMatrix.copy(camera.projectionMatrix);
+        virtualCamera.updateProjectionMatrix();
 
         textureMatrix.set(0.5, 0.0, 0.0, 0.5, 0.0, 0.5, 0.0, 0.5, 0.0, 0.0, 0.5, 0.5, 0.0, 0.0, 0.0, 1.0);
         textureMatrix.multiply(virtualCamera.projectionMatrix);
@@ -9591,13 +9620,6 @@ window.game = this;
       const blueLightBar = new THREE.Mesh(new THREE.BoxGeometry(1.40, 0.02, 0.14), blueBarMat);
       blueLightBar.position.set(0, 0.72 + 0.69, 0);
       group.add(blueLightBar);
-
-      // Downward aquatic blue glow radiating from the lid down through the water and tank
-      const aquaBlueLight = new THREE.PointLight(0x38bdf8, fl === this.playerFloor ? 0.95 : 0, 4.2, 1.2);
-      aquaBlueLight._origIntensity = 0.95;
-      aquaBlueLight.position.set(0, 0.72 + 0.65, 0);
-      group.add(aquaBlueLight);
-      if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(aquaBlueLight);
 
       this.scene.add(group);
 
@@ -10994,11 +11016,7 @@ window.game = this;
       screenMesh.renderOrder = -1; // Render before foreground objects
       screenGroup.add(screenMesh);
 
-      // Subtle projector ambient glow directed back into room
-      const screenLight = new THREE.PointLight(0x7dd3fc, 0.45, 12.0, 1.6);
-      screenLight.position.set(0, 0, -1.2);
-      screenGroup.add(screenLight);
-
+      const screenLight = null;
       this.scene.add(screenGroup);
 
       // 2. Control Console Deck (Replacing brown center box at x: -29, z: 24)
@@ -12115,11 +12133,6 @@ window.game = this;
       const porchStep2 = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.12, 1.4), stoneAccentMat);
       porchStep2.position.set(0, -0.18, 1.9);
       group.add(porchStep2);
-
-      // Subtle atmospheric exterior warm lantern glow outside the exit doors
-      const exitLantern = new THREE.PointLight(0xffecd0, 0.65, 8.5);
-      exitLantern.position.set(0, 3.6, 1.2);
-      group.add(exitLantern);
 
       this.scene.add(group);
 
@@ -13779,10 +13792,10 @@ window.game = this;
           }
         }
       }
-      // Light Culling: Only render point lights for the current active floor!
-      // Because every floor has EXACTLY 8 point lights, the active light count is constant.
-      // Three.js shader light count NEVER changes, so ZERO shader recompilations occur!
-      // And the GPU only processes 8 lights per fragment instead of 55, maintaining locked 60 FPS!
+      // Floor Group Visibility Culling: Only render architecture & furniture on the current floor (and adjacent floor when in stairwell)
+      this.updateFloorGroupVisibility();
+      // Light Culling: Only illuminate point lights for the current active floor!
+      // Keep l.visible = true on all floorLights and toggle intensity to 0 on inactive floors so Three.js NUM_POINT_LIGHTS never changes or triggers shader recompilation!
       if (this.floorLights) {
         for (let f = 0; f < 4; f++) {
           const isCurFloor = (f === this.playerFloor);
@@ -13820,12 +13833,6 @@ window.game = this;
         placeholder.position.y = 0.12;
         group.add(placeholder);
 
-        // Radioactive shaky green tactical glow kept directly in scene with constant visibility so Three.js shader light count never changes
-        const glow = new THREE.PointLight(0x22ff55, (loc.floor === this.playerFloor) ? 0.80 : 0, 3.8);
-        glow._origIntensity = 0.80;
-        glow.position.set(loc.x, loc.baseY + 0.22, loc.z);
-        this.scene.add(glow);
-
         group.visible = (loc.floor === this.playerFloor);
         this.scene.add(group);
 
@@ -13836,7 +13843,7 @@ window.game = this;
           y: loc.baseY,
           z: loc.z,
           mesh: group,
-          glowLight: glow,
+          glowLight: null,
           active: true,
           respawnTimer: 0
         };
@@ -15165,10 +15172,10 @@ window.game = this;
         } else {
           // Survival Horror Mode: Dark atmospheric lighting
           this.ambientLight.color.setHex(0x2d3648);
-          this.ambientLight.intensity = 0.50;
+          this.ambientLight.intensity = 0.58;
           this.hemiLight.color.setHex(0x4a5a78);
           this.hemiLight.groundColor.setHex(0x1a1612);
-          this.hemiLight.intensity = 0.30;
+          this.hemiLight.intensity = 0.36;
           if (this.daytimeSunLight) this.daytimeSunLight.visible = false;
           this.renderer.toneMappingExposure = 1.0;
 
@@ -16241,7 +16248,11 @@ window.game = this;
       }
 
       this.trackCurrentRoom();
-      this.updateInteractionPrompt();
+      this._interactPromptTimer = (this._interactPromptTimer || 0) - delta;
+      if (this._interactPromptTimer <= 0) {
+        this._interactPromptTimer = 0.05;
+        this.updateInteractionPrompt();
+      }
 
       if (this.exitUnlocked && this.playerFloor === 0 && this.playerPos.z > 27.8 && Math.abs(this.playerPos.x + 10.0) < 1.6) {
         this.triggerVictory();
@@ -17827,7 +17838,12 @@ window.game = this;
         return;
       }
 
-      const canSeePlayer = !this.isSpectatorMode && (this.graceTimer <= 0) && this.checkSmittyVision();
+      this._smittyVisionTimer = (this._smittyVisionTimer || 0) - delta;
+      if (this._smittyVisionTimer <= 0) {
+        this._smittyVisionTimer = 0.06;
+        this._cachedSmittyCanSeePlayer = !this.isSpectatorMode && (this.graceTimer <= 0) && this.checkSmittyVision();
+      }
+      const canSeePlayer = !!this._cachedSmittyCanSeePlayer;
 
       if (canSeePlayer) {
         this.lastKnownPlayerPos.copy(this.playerPos);
@@ -18313,7 +18329,10 @@ window.game = this;
 
           const time = performance.now() * 0.002;
 
-          // Dynamic distance culling for paintings: generous render distance on current floor (or all floors in spectator mode)
+          // Keep floor group visibility in sync as player enters/exits stairwells or changes floors
+          this.updateFloorGroupVisibility();
+
+          // Dynamic distance culling for paintings on current floor (or all floors in spectator mode)
           if (this.paintings) {
             const px = this.playerPos.x;
             const pz = this.playerPos.z;
@@ -18322,7 +18341,7 @@ window.game = this;
                 if (p.mesh.visible) p.mesh.visible = false;
               } else {
                 const dSq = (p.x - px) ** 2 + (p.z - pz) ** 2;
-                p.mesh.visible = (dSq < 9604); // 98m * 98m (broad museum-wide corridor visibility)
+                p.mesh.visible = (dSq < 2304); // 48m * 48m
               }
             }
           }
@@ -18594,7 +18613,11 @@ window.game = this;
           }
         );
 
-        this.scene.add(group);
+        if (this._rootSceneAdd) {
+          this._rootSceneAdd(group);
+        } else {
+          this.scene.add(group);
+        }
         this.statues.push(statueObj);
       });
     }

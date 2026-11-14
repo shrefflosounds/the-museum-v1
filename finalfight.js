@@ -543,7 +543,13 @@
 
       // ---------------- priorities: Curator > Statue in the way > spontaneous roam/escort
       const isCoopClient = g.mp && !g.mp.isHost && g.mp.client && g.mp.client.connected;
-      const curator = isCoopClient ? null : this._curatorThreat();
+      this.threatScanTimer = (this.threatScanTimer || 0) - delta;
+      if (this.threatScanTimer <= 0 || this.mode === 'HUNT' || this.mode === 'FIGHT') {
+        this.threatScanTimer = (this.mode === 'HUNT' || this.mode === 'FIGHT') ? 0 : 0.08;
+        this._cachedCurator = isCoopClient ? null : this._curatorThreat();
+        this._cachedStatue = (isCoopClient || this._cachedCurator) ? null : this._statueThreat();
+      }
+      const curator = this._cachedCurator;
       if (curator) {
         this.mode = 'HUNT';
         const d = this._dist2D(this.pos, curator);
@@ -558,7 +564,7 @@
         return;
       }
 
-      const statue = isCoopClient ? null : this._statueThreat();
+      const statue = this._cachedStatue;
       if (statue && this.mode !== 'ON_PLATFORM') {
         this.mode = 'FIGHT';
         const d = Math.hypot(statue.x - this.pos.x, statue.z - this.pos.z);
