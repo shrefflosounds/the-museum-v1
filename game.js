@@ -11115,7 +11115,25 @@ window.game = this;
                 }
               },
               onError: (err) => {
-                console.warn('YouTube Player Event:', err);
+                console.warn('YouTube Player Event/Error:', err && err.data !== undefined ? err.data : err);
+                // Error codes:
+                // 2: Invalid parameter
+                // 5: HTML5 player error
+                // 100: Video requested not found (removed or marked private)
+                // 101 / 150: The owner of the requested video does not allow it to be played in embedded players
+                const errCode = (err && typeof err.data === 'number') ? err.data : (typeof err === 'number' ? err : null);
+                if (errCode === 100 || errCode === 101 || errCode === 150 || errCode === 5 || errCode === 2) {
+                  console.warn(`YouTube video unavailable or embed restricted (code ${errCode}). Automatically skipping to next video...`);
+                  if (this.ytPlayer && typeof this.ytPlayer.nextVideo === 'function') {
+                    setTimeout(() => {
+                      try {
+                        if (this.ytPlayer && typeof this.ytPlayer.nextVideo === 'function') {
+                          this.ytPlayer.nextVideo();
+                        }
+                      } catch (e) {}
+                    }, 300);
+                  }
+                }
               }
             }
           });
@@ -11597,8 +11615,8 @@ window.game = this;
           ctx.roundRect ? ctx.roundRect(-bW / 2, -bH / 2 - 12, bW, bH, 8) : ctx.rect(-bW / 2, -bH / 2 - 12, bW, bH);
           ctx.stroke();
 
-          // CC text inside badge
-          ctx.font = '900 36px Caryn';
+          // CC text inside badge (sans-serif styled font)
+          ctx.font = '900 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -11611,19 +11629,29 @@ window.game = this;
             ctx.arc(0, 20, 5, 0, Math.PI * 2);
             ctx.fill();
           }
-        } else {
+        } else if (symbol) {
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.font = 'bold 92px Caryn';
+          ctx.font = 'bold 92px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
           ctx.fillText(symbol, 0, -12);
         }
 
-        ctx.font = 'bold 24px Caryn';
-        ctx.fillStyle = colorCfg.textColor || '#ffffff';
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, 0, 64);
+        // Button label: sans-serif styled font, centered dead in the middle for buttons without icons (SKIP AD)
+        if (!symbol) {
+          // SKIP AD: Large, bold, perfectly centered on the button face
+          ctx.font = 'bold 36px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+          ctx.fillStyle = colorCfg.textColor || '#000000';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, 0, 0);
+        } else {
+          ctx.font = 'bold 24px -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif';
+          ctx.fillStyle = colorCfg.textColor || '#ffffff';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, 0, 64);
+        }
         ctx.restore();
 
         const tex = new THREE.CanvasTexture(can);
