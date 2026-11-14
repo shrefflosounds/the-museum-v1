@@ -4564,10 +4564,10 @@ window.game = this;
 
       const floorMat = fl === 0 ? mats.floorMarble
                      : fl === 1 ? mats.floorParquet
-                     : fl === 2 ? mats.floorDarkWood
+                     : (fl === 2 || fl === 3) ? mats.floorDirt
                      : mats.floorDirt;
 
-      const officeFloorMat = fl === 3 ? mats.floorDirt : mats.floorDarkWood;
+      const officeFloorMat = (fl === 2 || fl === 3) ? mats.floorDirt : mats.floorDarkWood;
 
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
                         : fl === 1 ? mats.wallPlasterWarm
@@ -5866,7 +5866,7 @@ window.game = this;
       });
 
       // 1. DEDICATED CERAMIC TILE FLOOR SLAB (covering wood floor across x: -3.8..3.8, z: -14.0..-6.0)
-      if (fl !== 3) {
+      if (fl !== 2 && fl !== 3) {
         const rFloor = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.05, 8.0), floorTileMat);
         rFloor.position.set(0, y0 + 0.025, -10.0);
         this.scene.add(rFloor);
@@ -7941,8 +7941,7 @@ window.game = this;
           });
         });
       } else if (fl === 2) {
-        // Floor 2 Stacks: Soft seafoam runner rug and central gallery bench
-        this.createGalleryRunnerRug(15.0, y0, -9.0, 3.2, 22.0, 0x53aa93, 0xc6bc99);
+        // Floor 2 Stacks: Central gallery bench (rug removed for earthen dirt floor)
         this.createMuseumBench(15.0, y0, -13.0);
       } else {
         // =========================================================================
@@ -10863,9 +10862,7 @@ window.game = this;
         // =========================================================================
         // FLOOR 2 ("3RD FLOOR"): SURREALISM SALON & RENAISSANCE ARMORY
         // =========================================================================
-        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x53aa93, 0xc6bc99);
-        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
-        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x53aa93, 0xc6bc99);
+        // Runner rugs removed so realistic earthen dirt floor and dead grass are fully exposed
 
         // (Floor 2 Main Gallery sculptures removed per curator request)
 
@@ -10876,8 +10873,7 @@ window.game = this;
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // West Wing (Knight statue removed per request)
-        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x53aa93, 0xc6bc99);
+        // West Wing (Knight statue removed per request; rug removed for dirt ground)
 
         this.createVitrineTable(-31.0, y0,  0.0, 'chalice', fl);
         this.createVitrineTable(-21.0, y0,  0.0, 'jewelry', fl);
@@ -10898,6 +10894,9 @@ window.game = this;
 
         // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
         this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
+
+        // Natural dead grass tufts scattered across the earthen ground
+        this.createFloorThreeDeadGrass(y0, fl);
 
       } else {
         // =========================================================================
