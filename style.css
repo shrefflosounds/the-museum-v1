@@ -245,57 +245,7 @@ body.game-playing #game-container {
   50% { opacity: 1; transform: translateX(-50%) scale(1.02); }
 }
 
-/* Museum Mode Autonomous Tour HUD */
-#museum-mode-banner {
-  position: fixed;
-  bottom: 32px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: rgba(10, 15, 25, 0.82);
-  border: 1px solid rgba(56, 189, 248, 0.35);
-  border-radius: 12px;
-  padding: 14px 28px;
-  text-align: center;
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.85), 0 0 20px rgba(56, 189, 248, 0.15);
-  z-index: 60;
-  pointer-events: none;
-  transition: opacity 0.4s ease;
-}
 
-#museum-mode-banner.hidden {
-  display: none !important;
-}
-
-.museum-tour-badge {
-  font-family: 'Caryn';
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  text-transform: uppercase;
-  color: #38bdf8;
-  margin-bottom: 4px;
-}
-
-.museum-tour-title {
-  font-family: 'Caryn';
-  font-size: 19px;
-  font-weight: 600;
-  letter-spacing: 1px;
-  color: #ffffff;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
-}
-
-.museum-tour-skip-hint {
-  font-family: 'Caryn';
-  font-size: 10px;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-  text-transform: uppercase;
-  color: #94a3b8;
-  margin-top: 6px;
-}
 
 @keyframes flash-shake {
   0% { transform: translate(0, 0) scale(1); filter: brightness(2) contrast(2); }

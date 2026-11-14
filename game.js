@@ -4246,8 +4246,6 @@
         startScreen: document.getElementById('start-screen'),
         startBtn: document.getElementById('start-btn'),
         museumModeBtn: document.getElementById('museum-mode-btn'),
-        museumModeBanner: document.getElementById('museum-mode-banner'),
-        museumModeArtInfo: document.getElementById('museum-mode-art-info'),
         startQuitBtn: document.getElementById('start-quit-btn'),
         pauseModal: document.getElementById('pause-modal'),
         resumeBtn: document.getElementById('resume-btn'),
@@ -15883,7 +15881,6 @@ window.game = this;
       if (this.leftArmRig) this.leftArmRig.visible = true;
       if (this.dom.interactPrompt) this.dom.interactPrompt.classList.add('hidden');
       if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
-      if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.remove('hidden');
 
       // Play soft gallery ambient sound
       this.audio.init();
@@ -15900,7 +15897,8 @@ window.game = this;
       this.museumTourPauseTimer = 0;
       const startWp = this.museumTourWaypoints[0];
       this.playerFloor = startWp.floor;
-      this.playerPos.set(startWp.x, startWp.floor * CONFIG.FLOOR_HEIGHT + 1.82, startWp.z);
+      this.playerPos.set(startWp.x, startWp.y + CONFIG.PLAYER.CAMERA_HEIGHT, startWp.z);
+      this._lastValidPlayerPos = { x: this.playerPos.x, z: this.playerPos.z };
       this.playerYaw = startWp.yaw !== undefined ? startWp.yaw : 0;
       this.playerPitch = 0.0;
       this.camera.position.set(this.playerPos.x, this.playerPos.y, this.playerPos.z);
@@ -15908,7 +15906,6 @@ window.game = this;
       this.camera.rotation.y = this.playerYaw;
       this.camera.rotation.x = this.playerPitch;
 
-      this.updateMuseumModeBannerText(startWp);
       this.updateRelicFloorVisibility();
     }
 
@@ -15920,31 +15917,39 @@ window.game = this;
       //  - Ascends through each level to Floor 4 (Floor 3) until all 14 relics are obtained
       //  - Unseals the exit doors (bypassing the relic cutscene)
       //  - Smoothly descends back down to the 1st floor and walks out the front entrance doors to complete the demo!
-      const waypoints = [];
+      const rawWaypoints = [];
 
       // Verify navigation graph is built
       if (!this.navNodes || this.navNodes.length === 0) {
         this.buildNavGraph();
       }
 
+      const startNode = this.navNodes[this.findNearestNavNode({ x: -10.0, z: 22.0 }, 0)];
+      rawWaypoints.push({
+        x: startNode.x,
+        y: startNode.y,
+        z: startNode.z,
+        floor: 0,
+        yaw: 0
+      });
+
       const routeStops = [
-        { x: -10.0, z: 22.0, label: 'GRAND PROMENADE', pause: 0 },
-        { x: -12.5, z: -2.0, label: 'NORTH WEST SALON PORTAL', pause: 0 },
-        { x: -26.0, z: -3.5, label: 'WEST SALON EXHIBIT', pause: 0.8, lookYaw: -Math.PI / 2 },
-        { x: -26.0, z: 15.5, label: 'WEST CONTEMPORARY GALLERY', pause: 0.8, lookYaw: -Math.PI / 2 },
-        { x: -29.0, z: 21.0, label: 'VIDEO INSTALLATION THEATER', pause: 3.5, isVideoStop: true, lookYaw: Math.PI },
-        { x: 26.0, z: 10.5, label: 'EAST CURATORIAL DESK', pause: 0.8, lookYaw: Math.PI / 2 },
-        { x: 19.0, z: 28.5, label: 'BEAUX-ARTS ROTUNDA DAIS', pause: 0.8, lookYaw: Math.PI },
-        { x: 7.0, z: -39.0, label: 'NORTH ANTIQUITIES PAVILION', pause: 0.8, lookYaw: 0 },
-        { x: 0.0, z: -15.4, label: 'NORTH STAIRWELL LANDING', pause: 0 }
+        { x: -10.0, z: 22.0, pause: 0 },
+        { x: -12.5, z: -2.0, pause: 0 },
+        { x: -26.0, z: -3.5, pause: 0.6, lookYaw: -Math.PI / 2 },
+        { x: -20.5, z:  6.0, pause: 0 },
+        { x: -26.0, z: 15.5, pause: 0.6, lookYaw: -Math.PI / 2 },
+        { x: -29.0, z: 21.0, pause: 3.5, isVideoStop: true, lookYaw: Math.PI },
+        { x: 26.0, z: 10.5, pause: 0.6, lookYaw: Math.PI / 2 },
+        { x: 19.0, z: 28.5, pause: 0.6, lookYaw: Math.PI },
+        { x: 12.0, z: -35.0, pause: 0.6, lookYaw: 0 },
+        { x: 0.0, z: -15.4, pause: 0 }
       ];
 
       let currentPos = { x: -10.0, z: 22.0 };
       let currentFloor = 0;
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
-        const floorName = (fl === 0 ? "1ST FLOOR" : fl === 1 ? "2ND FLOOR" : fl === 2 ? "3RD FLOOR" : "4TH FLOOR");
-
         for (let si = 0; si < routeStops.length; si++) {
           const stop = routeStops[si];
           if (fl > 0 && si === 0) continue; // Start directly at landing on upper floors
@@ -15955,18 +15960,18 @@ window.game = this;
 
           for (let pi = 1; pi < path.length; pi++) {
             const node = path[pi];
-            waypoints.push({
+            rawWaypoints.push({
               x: node.x,
+              y: node.y,
               z: node.z,
-              floor: node.floor,
-              label: `${floorName} • ${stop.label}`
+              floor: node.floor
             });
             currentPos = { x: node.x, z: node.z };
             currentFloor = node.floor;
           }
 
-          if (stop.pause > 0 && waypoints.length > 0) {
-            const lastWp = waypoints[waypoints.length - 1];
+          if (stop.pause > 0 && rawWaypoints.length > 0) {
+            const lastWp = rawWaypoints[rawWaypoints.length - 1];
             lastWp.pauseDuration = stop.pause;
             lastWp.yaw = stop.lookYaw;
             if (stop.isVideoStop) lastWp.isVideoStop = true;
@@ -15981,11 +15986,11 @@ window.game = this;
 
           for (let pi = 1; pi < stairPath.length; pi++) {
             const node = stairPath[pi];
-            waypoints.push({
+            rawWaypoints.push({
               x: node.x,
+              y: node.y,
               z: node.z,
-              floor: node.floor,
-              label: `ASCENDING STAIRS TO ${fl + 2}${fl === 0 ? 'ND' : fl === 1 ? 'RD' : 'TH'} FLOOR...`
+              floor: node.floor
             });
             currentPos = { x: node.x, z: node.z };
             currentFloor = node.floor;
@@ -16000,11 +16005,11 @@ window.game = this;
 
       for (let pi = 1; pi < descPath.length; pi++) {
         const node = descPath[pi];
-        waypoints.push({
+        rawWaypoints.push({
           x: node.x,
+          y: node.y,
           z: node.z,
-          floor: node.floor,
-          label: 'ALL RELICS ACQUIRED • RETURNING TO GROUND FLOOR'
+          floor: node.floor
         });
         currentPos = { x: node.x, z: node.z };
         currentFloor = node.floor;
@@ -16016,33 +16021,50 @@ window.game = this;
 
       for (let pi = 1; pi < exitPath.length; pi++) {
         const node = exitPath[pi];
-        waypoints.push({
+        rawWaypoints.push({
           x: node.x,
+          y: 0,
           z: node.z,
-          floor: 0,
-          label: 'LOCKDOWN DISENGAGED • PROCEEDING TO FRONT EXIT'
+          floor: 0
         });
       }
 
       // Step out through the grand entrance doors onto the front porch
-      waypoints.push({
+      rawWaypoints.push({
         x: -10.0,
+        y: 0,
         z: 29.5,
         floor: 0,
-        label: 'EXITING SHREFFLO MUSEUM',
         isExitDoorway: true
       });
 
-      this.museumTourWaypoints = waypoints;
-    }
-
-    updateMuseumModeBannerText(wp) {
-      if (!this.dom.museumModeArtInfo) return;
-      if (!wp) {
-        this.dom.museumModeArtInfo.textContent = "EXHIBITION TOUR CONCLUDED";
-        return;
+      // Subdivide waypoints into close, fine-grained 0.70m steps for ultra-smooth natural movement
+      const fineWaypoints = [];
+      if (rawWaypoints.length > 0) {
+        fineWaypoints.push(rawWaypoints[0]);
+        for (let i = 0; i < rawWaypoints.length - 1; i++) {
+          const a = rawWaypoints[i];
+          const b = rawWaypoints[i + 1];
+          const dist = Math.hypot(b.x - a.x, b.y - a.y, b.z - a.z);
+          const steps = Math.max(1, Math.ceil(dist / 0.70));
+          for (let s = 1; s <= steps; s++) {
+            const t = s / steps;
+            fineWaypoints.push({
+              x: a.x + (b.x - a.x) * t,
+              y: a.y + (b.y - a.y) * t,
+              z: a.z + (b.z - a.z) * t,
+              floor: (t < 0.5) ? a.floor : b.floor,
+              pauseDuration: (s === steps && b.pauseDuration) ? b.pauseDuration : 0,
+              yaw: (s === steps && b.yaw !== undefined) ? b.yaw : undefined,
+              pitch: (s === steps && b.pitch !== undefined) ? b.pitch : undefined,
+              isVideoStop: (s === steps && b.isVideoStop) ? true : false,
+              isExitDoorway: (s === steps && b.isExitDoorway) ? true : false
+            });
+          }
+        }
       }
-      this.dom.museumModeArtInfo.innerHTML = `<strong>${wp.label || "MUSEUM EXHIBITION"}</strong>`;
+
+      this.museumTourWaypoints = fineWaypoints;
     }
 
     updateMuseumModeTour(delta) {
@@ -16061,7 +16083,7 @@ window.game = this;
         for (let relic of this.relics) {
           if (relic.collected || relic.floor !== this.playerFloor) continue;
           const distToRelic = Math.hypot(this.playerPos.x - relic.x, this.playerPos.z - relic.z);
-          if (distToRelic < 3.8) {
+          if (distToRelic < 4.5) {
             relic.collected = true;
             if (relic.mesh) relic.mesh.visible = false;
             if (relic.glowLight) relic.glowLight.intensity = 0;
@@ -16111,8 +16133,6 @@ window.game = this;
             this.exitMuseumModeToMenu();
             return;
           }
-          const nextWp = this.museumTourWaypoints[this.museumTourLegIndex];
-          this.updateMuseumModeBannerText(nextWp);
         }
         return;
       }
@@ -16122,7 +16142,7 @@ window.game = this;
       const dx = targetWp.x - this.playerPos.x;
       const dz = targetWp.z - this.playerPos.z;
       const dist2D = Math.hypot(dx, dz);
-      const targetY = targetWp.floor * CONFIG.FLOOR_HEIGHT + 1.82;
+      const targetY = targetWp.y + CONFIG.PLAYER.CAMERA_HEIGHT;
 
       // Handle floor transitions
       if (this.playerFloor !== targetWp.floor) {
@@ -16130,7 +16150,7 @@ window.game = this;
         this.updateRelicFloorVisibility();
       }
 
-      if (dist2D < 0.40) {
+      if (dist2D < 0.45) {
         // Arrived at waypoint
         if (targetWp.pauseDuration && targetWp.pauseDuration > 0) {
           this.museumTourPauseTimer = targetWp.pauseDuration;
@@ -16158,18 +16178,27 @@ window.game = this;
           this.exitMuseumModeToMenu();
           return;
         }
-        const nextWp = this.museumTourWaypoints[this.museumTourLegIndex];
-        this.updateMuseumModeBannerText(nextWp);
       } else {
         const step = Math.min(dist2D, walkSpeed * delta);
         const moveRatio = step / dist2D;
         this.playerPos.x += dx * moveRatio;
         this.playerPos.z += dz * moveRatio;
-        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetY, Math.min(1.0, delta * 6.0));
+        this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetY, Math.min(1.0, delta * 7.5));
+
+        // Always resolve physical colliders (benches, plinths, walls) so player NEVER clips
+        const currentFootY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
+        this.resolveCollisions(this.playerPos, 0.35, this.playerFloor, currentFootY, CONFIG.PLAYER.CAMERA_HEIGHT);
+
+        // Keep last valid player position updated so recovery logic never teleports to outdated positions
+        if (!this._lastValidPlayerPos) this._lastValidPlayerPos = { x: this.playerPos.x, z: this.playerPos.z };
+        else {
+          this._lastValidPlayerPos.x = this.playerPos.x;
+          this._lastValidPlayerPos.z = this.playerPos.z;
+        }
 
         // Smooth camera heading towards walking direction
         const walkYaw = Math.atan2(-dx, -dz);
-        this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 4.5));
+        this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 5.0));
         this.playerPitch = THREE.MathUtils.lerp(this.playerPitch, 0.0, Math.min(1.0, delta * 4.0));
       }
 
@@ -16197,9 +16226,6 @@ window.game = this;
       this.isPaused = false;
       this.isVictory = false;
       this.isGameOver = false;
-
-      // Hide tour banner
-      if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.add('hidden');
 
       // Clean reload back to main menu
       this.releaseNativeOrBrowserLock();
