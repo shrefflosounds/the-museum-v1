@@ -645,8 +645,15 @@
       fctx.fillRect(0, 0, 64, 64);
       const flashTex = new THREE.CanvasTexture(flashCanvas);
       const muzzleSprite = new THREE.Sprite(
-        new THREE.SpriteMaterial({ map: flashTex, transparent: true, opacity: 0, blending: THREE.AdditiveBlending })
+        new THREE.SpriteMaterial({
+          map: flashTex,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
       );
+      muzzleSprite.visible = false;
       muzzleSprite.scale.set(0.65, 0.65, 0.65);
       muzzleSprite.position.set(0.18, 1.35, -0.6);
       group.add(muzzleSprite);
@@ -859,10 +866,14 @@
           }, 60);
         }
         if (p.muzzleSprite) {
+          p.muzzleSprite.visible = true;
           p.muzzleSprite.material.opacity = 0.95;
           p.muzzleSprite.material.rotation = Math.random() * Math.PI * 2;
           setTimeout(() => {
-            if (p.muzzleSprite) p.muzzleSprite.material.opacity = 0;
+            if (p.muzzleSprite) {
+              p.muzzleSprite.material.opacity = 0;
+              p.muzzleSprite.visible = false;
+            }
           }, 50);
         }
       }

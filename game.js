@@ -13290,8 +13290,15 @@ window.game = this;
       const flashTex = new THREE.CanvasTexture(canvas);
       this.muzzleFlash = new THREE.Mesh(
         new THREE.PlaneGeometry(0.24, 0.24),
-        new THREE.MeshBasicMaterial({ map: flashTex, transparent: true, opacity: 0 })
+        new THREE.MeshBasicMaterial({
+          map: flashTex,
+          transparent: true,
+          opacity: 0,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
       );
+      this.muzzleFlash.visible = false;
       this.muzzleFlash.position.set(0.035, 0.22, -0.11);
       this.weaponRig.add(this.muzzleFlash);
 
@@ -17085,11 +17092,13 @@ window.game = this;
         }, 60);
       }
 
+      this.muzzleFlash.visible = true;
       this.muzzleFlash.material.opacity = 0.95;
       this.muzzleFlash.rotation.z = Math.random() * Math.PI;
       this.muzzleLight.intensity = 4.0;
       setTimeout(() => {
         this.muzzleFlash.material.opacity = 0;
+        this.muzzleFlash.visible = false;
         this.muzzleLight.intensity = 0;
       }, 45);
 
