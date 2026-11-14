@@ -4885,6 +4885,37 @@ window.game = this;
         this.scene.add(slab);
       };
 
+      // --- CONTINUOUS 4-STORY STAIRWELL SHAFT COLLIDERS (floor: 'all') ---
+      // Guarantees the outer stairwell walls and non-door shaft boundaries can NEVER be clipped through
+      // at any elevation (including mid-landings, flights, jumps, or floor transitions).
+      const addShaftCollider = (minX, maxX, minZ, maxZ) => {
+        this.colliders.push({
+          type: 'box',
+          floor: 'all',
+          minX,
+          maxX,
+          minZ,
+          maxZ,
+          minY: -2.0,
+          maxY: totalH + 6.0,
+          isWall: true
+        });
+      };
+      // Stairwell N shaft walls (x: -4..4, z: -26..-14; doorways are at x = ±4, z: -16.8..-14.0)
+      addShaftCollider(-4.20, -3.80, -26.20, -16.80); // West shaft wall
+      addShaftCollider( 3.80,  4.20, -26.20, -16.80); // East shaft wall
+      addShaftCollider(-4.20,  4.20, -26.20, -25.80); // North shaft wall
+      addShaftCollider(-4.20,  4.20, -14.20, -13.80); // South shaft wall
+
+      // Stairwell SW shaft walls (x: -24..-16, z: 18..28; doorways at z=18 x:-21.5..-18.5 and x=-24/-16 z:18.6..20.8)
+      addShaftCollider(-24.20, -23.80, 20.80, 28.20); // West shaft wall (south of door)
+      addShaftCollider(-24.20, -23.80, 18.00, 18.60); // West shaft wall (north jamb)
+      addShaftCollider(-16.20, -15.80, 20.80, 28.20); // East shaft wall (south of door)
+      addShaftCollider(-16.20, -15.80, 15.50, 18.60); // East shaft wall (north jamb)
+      addShaftCollider(-24.20, -15.80, 27.80, 28.20); // South shaft wall
+      addShaftCollider(-28.50, -21.50, 17.80, 18.20); // North shaft wall (west of door)
+      addShaftCollider(-18.50, -15.80, 17.80, 18.20); // North shaft wall (east of door)
+
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
       // Stop the divider short of both landings so the player can turn between flights.
       this.createWall(0, midY, -20.0, 0.34, totalH, 6.40, mats.wallConcrete, true, 'all');
@@ -5409,8 +5440,8 @@ window.game = this;
           maxX: x + w / 2,
           minZ: z - d / 2,
           maxZ: z + d / 2,
-          minY: y - h / 2,
-          maxY: y + h / 2,
+          minY: y - h / 2 - 0.15,
+          maxY: y + h / 2 + 0.25,
           isWall: true
         });
       }
@@ -5463,6 +5494,8 @@ window.game = this;
           maxX: Math.max(x1, x2) + 0.25,
           minZ: Math.min(z1, z2) - 0.25,
           maxZ: Math.max(z1, z2) + 0.25,
+          minY: y0 - 0.15,
+          maxY: y0 + wallH + 0.25,
           isWall: true
         });
       }
@@ -10793,12 +10826,12 @@ window.game = this;
     }
 
     createTopFloorFogLayers(y0) {
-      // Custom GLSL flowing, curvy, domain-warped FBM fog shader evaluated in continuous world space.
-      // Zero tiled grid repetition, zero doorway seams, continuous organic billowing & curling motion!
+      // Custom GLSL flowing, curvy, domain-warped Simplex + Gyroid curl fog shader evaluated in continuous world space.
+      // Uses a triangular Simplex lattice + rotational curl waves so there is ZERO rectangular/square grid pattern!
       this.topFloorFogUniforms = {
         uTime: { value: 0.0 },
-        uColorLow: { value: new THREE.Color(0x9fb4cc) },
-        uColorHigh: { value: new THREE.Color(0xdbe8f6) }
+        uColorLow: { value: new THREE.Color(0x93a8c2) },
+        uColorHigh: { value: new THREE.Color(0xdce8f7) }
       };
 
       const fogVertexShader = `
@@ -10819,75 +10852,91 @@ window.game = this;
         varying vec3 vWorldPos;
         varying vec2 vUv;
 
-        // Smooth 2D value noise with cubic Hermite interpolation
-        float hash21(vec2 p) {
-          p = fract(p * vec2(123.34, 456.21));
-          p += dot(p, p + 45.32);
-          return fract(p.x * p.y);
+        // Ashima 2D Simplex Noise (triangular grid — zero square lattice lines!)
+        vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+        vec3 permute(vec3 x) { return mod289(((x * 34.0) + 1.0) * x); }
+
+        float snoise(vec2 v) {
+          const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+          vec2 i  = floor(v + dot(v, C.yy));
+          vec2 x0 = v - i + dot(i, C.xx);
+          vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+          vec4 x12 = x0.xyxy + C.xxzz;
+          x12.xy -= i1;
+          i = mod289(i);
+          vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0)) + i.x + vec3(0.0, i1.x, 1.0));
+          vec3 m = max(0.5 - vec3(dot(x0, x0), dot(x12.xy, x12.xy), dot(x12.zw, x12.zw)), 0.0);
+          m = m * m;
+          m = m * m;
+          vec3 x = 2.0 * fract(p * C.www) - 1.0;
+          vec3 h = abs(x) - 0.5;
+          vec3 ox = floor(x + 0.5);
+          vec3 a0 = x - ox;
+          m *= 1.79284291400159 - 0.85373472095314 * (a0 * a0 + h * h);
+          vec3 g;
+          g.x  = a0.x  * x0.x  + h.x  * x0.y;
+          g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+          return 0.5 + 0.5 * (130.0 * dot(m, g));
         }
 
-        float vnoise(vec2 p) {
-          vec2 i = floor(p);
-          vec2 f = fract(p);
-          vec2 u = f * f * (3.0 - 2.0 * f);
-          float a = hash21(i);
-          float b = hash21(i + vec2(1.0, 0.0));
-          float c = hash21(i + vec2(0.0, 1.0));
-          float d = hash21(i + vec2(1.0, 1.0));
-          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
-        }
-
-        // Rotated 4-octave FBM to eliminate axis-aligned grid artifacts
-        const mat2 rotM = mat2(0.80, -0.60, 0.60, 0.80);
+        // Smooth incommensurate-angle FBM + gyroid curl waves for completely organic, non-grid clouds
+        const mat2 rotM = mat2(0.7660444, -0.6427876, 0.6427876, 0.7660444);
         float fbm(vec2 p) {
           float v = 0.0;
-          float amp = 0.5;
+          float amp = 0.52;
           for (int i = 0; i < 4; i++) {
-            v += amp * vnoise(p);
-            p = rotM * p * 2.03 + vec2(17.1, 31.7);
-            amp *= 0.5;
+            v += amp * snoise(p);
+            p = rotM * p * 1.97 + vec2(13.7, 29.3);
+            amp *= 0.50;
           }
           return v;
         }
 
         void main() {
-          float t = uTime * 0.28 + ${layerSeed.toFixed(2)};
+          float t = uTime * 0.26 + ${layerSeed.toFixed(2)};
           ${isStairSlope ? `
-          // Downward cascading trickle flow along the upper staircase slope (vUv.y: 0 = top, 1 = bottom)
-          vec2 p = vWorldPos.xz * 0.22 + vec2(0.0, -uTime * 0.55);
-          p.y -= vUv.y * 2.4;
+          // Directional cascading flow strictly along the staircase (vUv.x across width, vUv.y = 0 at top -> 1 at bottom)
+          vec2 p = vec2((vUv.x - 0.5) * 2.4, vUv.y * 3.8 - uTime * 0.62) + vWorldPos.xz * 0.09;
           ` : `
-          vec2 p = vWorldPos.xz * 0.135;
+          vec2 p = vWorldPos.xz * 0.115;
+          // Subtle non-periodic gyroid curl warp so large fog banks never align with X/Z walls or floor tiles
+          p += 0.35 * vec2(
+            sin(p.y * 1.3 + t * 0.5) + cos(p.x * 0.9 - t * 0.4),
+            cos(p.x * 1.2 - t * 0.45) - sin(p.y * 1.1 + t * 0.55)
+          );
           `}
 
           // Domain warping 1: large-scale curvy eddies
           vec2 q = vec2(
-            fbm(p + vec2(t * 0.65, -t * 0.42)),
-            fbm(p + vec2(-t * 0.48, t * 0.58) + vec2(5.2, 1.3))
+            fbm(p + vec2(t * 0.55, -t * 0.38)),
+            fbm(p + vec2(-t * 0.42, t * 0.52) + vec2(5.2, 1.3))
           );
 
           // Domain warping 2: secondary swirling tendrils
           vec2 r = vec2(
-            fbm(p + 2.35 * q + vec2(1.7, 9.2) + vec2(t * 0.85, t * 0.35)),
-            fbm(p + 2.35 * q + vec2(8.3, 2.8) + vec2(-t * 0.55, t * 0.75))
+            fbm(p + 2.25 * q + vec2(1.7, 9.2) + vec2(t * 0.72, t * 0.31)),
+            fbm(p + 2.25 * q + vec2(8.3, 2.8) + vec2(-t * 0.48, t * 0.68))
           );
 
-          float f = fbm(p + 2.6 * r);
-          // Smooth billowy wisps with soft valleys and curly crests
-          float wisp = smoothstep(0.24, 0.78, f);
-          float tendrils = smoothstep(0.38, 0.72, length(r));
-          float density = mix(wisp, tendrils, 0.42);
+          float f = fbm(p + 2.4 * r);
+          // Creamy, soft billowy fog banks with zero sharp edges or grid lines
+          float wisp = smoothstep(0.18, 0.82, f);
+          float tendrils = smoothstep(0.32, 0.76, length(r));
+          float density = mix(wisp, tendrils, 0.38);
 
           ${isStairSlope ? `
-          // Fade softly at side walls and trickle out down the stair flight
-          float sideFade = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
-          float trickleFade = smoothstep(0.0, 0.12, vUv.y) * pow(clamp(1.0 - vUv.y, 0.0, 1.0), 1.35);
-          float alpha = density * ${layerOpacity.toFixed(3)} * sideFade * trickleFade;
+          // Fade softly at side walls and pour continuously down the stair slope
+          float sideFade = smoothstep(0.0, 0.16, vUv.x) * smoothstep(1.0, 0.84, vUv.x);
+          float topEntry = smoothstep(0.0, 0.10, vUv.y);
+          float bottomTail = pow(clamp(1.0 - vUv.y * 0.92, 0.0, 1.0), 1.20);
+          float alpha = (0.28 + 0.72 * density) * ${layerOpacity.toFixed(3)} * sideFade * topEntry * bottomTail;
           ` : `
           // Soft outer perimeter fade around building bounds [-36..33, -42..36]
           float edgeX = smoothstep(-36.5, -34.0, vWorldPos.x) * smoothstep(33.5, 31.0, vWorldPos.x);
           float edgeZ = smoothstep(-42.5, -39.5, vWorldPos.z) * smoothstep(36.5, 33.5, vWorldPos.z);
-          float alpha = density * ${layerOpacity.toFixed(3)} * edgeX * edgeZ;
+          // Maintain a soft baseline mist haze so high-contrast floor tiles underneath are smoothly diffused
+          float alpha = (0.34 + 0.66 * density) * ${layerOpacity.toFixed(3)} * edgeX * edgeZ;
           `}
 
           if (alpha < 0.004) discard;
@@ -10897,11 +10946,12 @@ window.game = this;
       `;
 
       // 1. Continuous full-floor horizontal fog strata across the entire 4th floor (Floor 3)
-      // Covers every gallery, doorway, hallway, alcove, office, and landing with zero gaps!
+      // 4 stratified heights with a rich low ground-blanket layer (0.14m) that diffuses the stone floor tiles
       const layerSpecs = [
-        { height: 0.28, opacity: 0.30, seed: 0.0 },
-        { height: 0.78, opacity: 0.22, seed: 11.7 },
-        { height: 1.34, opacity: 0.15, seed: 27.4 }
+        { height: 0.14, opacity: 0.44, seed: 0.0 },
+        { height: 0.46, opacity: 0.32, seed: 11.7 },
+        { height: 0.88, opacity: 0.24, seed: 27.4 },
+        { height: 1.38, opacity: 0.16, seed: 43.9 }
       ];
       this.topFloorFogGroup = new THREE.Group();
       this.topFloorFogGroup.name = 'TopFloorFogStrata';
@@ -10935,25 +10985,31 @@ window.game = this;
         this.scene.add(this.topFloorStairFogGroup);
       }
 
-      const halfH = CONFIG.FLOOR_HEIGHT / 2; // 3.75m
+      const halfH = CONFIG.FLOOR_HEIGHT / 2;
+      // Direct 3D world-space vertex construction along the exact staircase vector from (x, yTop, zTop) -> (x, yBot, zBot).
+      // Guarantees the fog ribbon hugs the stair steps at the exact slope angle regardless of whether the flight goes +Z or -Z!
       const addSlopedFogRibbon = (x, yTop, zTop, yBot, zBot, width, heightOffset, opacity, seed) => {
-        const dz = zBot - zTop;
-        const dy = yBot - yTop;
-        const len = Math.hypot(dz, dy);
-        // PlaneGeometry default lies in XY with UV.y=1 at +Y and UV.y=0 at -Y; flip UV.y so 0=top, 1=bottom
-        const geom = new THREE.PlaneGeometry(width, len, 1, 16);
-        const uvAttr = geom.attributes.uv;
-        for (let i = 0; i < uvAttr.count; i++) {
-          uvAttr.setY(i, 1.0 - uvAttr.getY(i));
-        }
-        // Subtle vertical wave curvature along the ribbon vertices so it drapes organically over steps
+        const segsX = 8;
+        const segsY = 24;
+        const geom = new THREE.PlaneGeometry(1, 1, segsX, segsY);
         const posAttr = geom.attributes.position;
+        const uvAttr = geom.attributes.uv;
         for (let i = 0; i < posAttr.count; i++) {
-          const v = uvAttr.getY(i);
-          const wave = Math.sin(v * Math.PI * 3.0 + seed) * 0.08;
-          posAttr.setZ(i, posAttr.getZ(i) + wave);
+          const u = uvAttr.getX(i); // 0..1 across width
+          // PlaneGeometry has uv.y = 1 at top row, 0 at bottom row; invert so v = 0 at top of stairs (yTop, zTop) and v = 1 at bottom (yBot, zBot)
+          const v = 1.0 - uvAttr.getY(i);
+          uvAttr.setY(i, v);
+
+          const vx = x + (u - 0.5) * width;
+          // Gentle organic billowing contour over the steps + slight center trough
+          const stepRipple = Math.sin(v * Math.PI * 5.0 + seed) * 0.045;
+          const crossCurve = Math.sin(u * Math.PI) * 0.06;
+          const vy = yTop + (yBot - yTop) * v + heightOffset + stepRipple + crossCurve;
+          const vz = zTop + (zBot - zTop) * v;
+          posAttr.setXYZ(i, vx, vy, vz);
         }
         geom.computeVertexNormals();
+        geom.computeBoundingSphere();
 
         const mat = new THREE.ShaderMaterial({
           uniforms: this.topFloorFogUniforms,
@@ -10964,10 +11020,6 @@ window.game = this;
           side: THREE.DoubleSide
         });
         const mesh = new THREE.Mesh(geom, mat);
-        mesh.position.set(x, (yTop + yBot) * 0.5 + heightOffset, (zTop + zBot) * 0.5);
-        // Orient plane along the stair slope from (zTop, yTop) down to (zBot, yBot)
-        const pitch = Math.atan2(dz, -dy);
-        mesh.rotation.x = -Math.PI / 2 + pitch;
         mesh.renderOrder = 2;
         this.topFloorStairFogGroup.add(mesh);
       };
@@ -10990,26 +11042,28 @@ window.game = this;
       };
 
       // --- Stairwell N (North-Central U-Stairwell, x: -4..4, z: -26..-14) ---
-      // Upper East Flight descends from Floor 3 landing (z = -16.6, y = y0) to North Mid-Landing (z = -23.6, y = y0 - halfH)
-      addSlopedFogRibbon(2.05, y0, -16.4, y0 - halfH, -23.8, 3.7, 0.24, 0.34, 3.1);
-      addSlopedFogRibbon(2.05, y0, -16.4, y0 - halfH, -23.8, 3.6, 0.62, 0.24, 9.4);
-      // North Mid-Landing pool (y = y0 - halfH)
-      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.6, 2.7, 0.22, 0.26, 14.2);
-      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.4, 2.6, 0.54, 0.18, 19.8);
-      // Trickle continuing halfway down the West Flight from North Mid-Landing (z = -23.4, y = y0 - halfH) toward Floor 2 (z = -17.2, y = y0 - H + 0.6)
-      addSlopedFogRibbon(-2.05, y0 - halfH, -23.4, y0 - CONFIG.FLOOR_HEIGHT + 0.5, -17.2, 3.7, 0.20, 0.28, 25.6);
-      addSlopedFogRibbon(-2.05, y0 - halfH, -23.4, y0 - CONFIG.FLOOR_HEIGHT + 0.5, -17.2, 3.5, 0.52, 0.19, 31.3);
+      // Upper East Flight descends Northward (-Z) from Floor 3 South Landing (z = -16.6, y = y0) down to North Mid-Landing (z = -23.4, y = y0 - halfH)
+      addSlopedFogRibbon(2.05, y0, -16.5, y0 - halfH, -23.5, 3.72, 0.16, 0.42, 3.1);
+      addSlopedFogRibbon(2.05, y0, -16.5, y0 - halfH, -23.5, 3.60, 0.46, 0.30, 9.4);
+      addSlopedFogRibbon(2.05, y0, -16.5, y0 - halfH, -23.5, 3.45, 0.82, 0.20, 15.2);
+      // North Mid-Landing swirling pool (y = y0 - halfH, z: -26.0..-23.2)
+      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.6, 2.75, 0.16, 0.36, 14.2);
+      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.4, 2.65, 0.46, 0.24, 19.8);
+      // Lower West Flight trickle descending Southward (+Z) from North Mid-Landing (z = -23.3, y = y0 - halfH) down toward Floor 2 Landing (z = -16.9, y = y0 - H)
+      addSlopedFogRibbon(-2.05, y0 - halfH, -23.3, y0 - CONFIG.FLOOR_HEIGHT + 0.15, -17.0, 3.72, 0.15, 0.34, 25.6);
+      addSlopedFogRibbon(-2.05, y0 - halfH, -23.3, y0 - CONFIG.FLOOR_HEIGHT + 0.15, -17.0, 3.55, 0.42, 0.22, 31.3);
 
       // --- Stairwell SW (South-West Grand U-Stairwell, x: -24..-16, z: 18..28) ---
-      // Upper East Flight descends from Floor 3 landing (z = 20.6, y = y0) to South Mid-Landing (z = 25.8, y = y0 - halfH)
-      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 26.0, 3.7, 0.24, 0.34, 41.2);
-      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 26.0, 3.6, 0.62, 0.24, 47.9);
-      // South Mid-Landing pool (y = y0 - halfH)
-      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.6, 2.3, 0.22, 0.26, 53.5);
-      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.4, 2.2, 0.54, 0.18, 59.1);
-      // Trickle continuing down the West Flight from South Mid-Landing (z = 25.6, y = y0 - halfH) toward Floor 2 (z = 21.0, y = y0 - H + 0.5)
-      addSlopedFogRibbon(-21.95, y0 - halfH, 25.6, y0 - CONFIG.FLOOR_HEIGHT + 0.5, 21.0, 3.7, 0.20, 0.28, 64.8);
-      addSlopedFogRibbon(-21.95, y0 - halfH, 25.6, y0 - CONFIG.FLOOR_HEIGHT + 0.5, 21.0, 3.5, 0.52, 0.19, 71.0);
+      // Upper East Flight descends Southward (+Z) from Floor 3 North Landing (z = 20.6, y = y0) down to South Mid-Landing (z = 25.8, y = y0 - halfH)
+      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 25.8, 3.72, 0.16, 0.42, 41.2);
+      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 25.8, 3.60, 0.46, 0.30, 47.9);
+      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 25.8, 3.45, 0.82, 0.20, 51.4);
+      // South Mid-Landing swirling pool (y = y0 - halfH, z: 25.6..28.0)
+      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.6, 2.35, 0.16, 0.36, 53.5);
+      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.4, 2.25, 0.46, 0.24, 59.1);
+      // Lower West Flight trickle descending Northward (-Z) from South Mid-Landing (z = 25.7, y = y0 - halfH) down toward Floor 2 Landing (z = 20.9, y = y0 - H)
+      addSlopedFogRibbon(-21.95, y0 - halfH, 25.7, y0 - CONFIG.FLOOR_HEIGHT + 0.15, 20.9, 3.72, 0.15, 0.34, 64.8);
+      addSlopedFogRibbon(-21.95, y0 - halfH, 25.7, y0 - CONFIG.FLOOR_HEIGHT + 0.15, 20.9, 3.55, 0.42, 0.22, 71.0);
     }
 
     initYouTubeAPI() {
@@ -13006,23 +13060,123 @@ window.game = this;
       }
     }
 
-    getCollidersForFloor(floorIdx) {
+    getCollidersForFloor(floorIdx, includeAdjacent = false) {
       if (!this._collidersByFloor || this._collidersByFloorLen !== this.colliders.length) {
         this._collidersByFloor = [[], [], [], []];
+        this._collidersWithAdjByFloor = [[], [], [], []];
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
           if (c.floor === 'all') {
-            this._collidersByFloor[0].push(c);
-            this._collidersByFloor[1].push(c);
-            this._collidersByFloor[2].push(c);
-            this._collidersByFloor[3].push(c);
+            for (let f = 0; f < 4; f++) {
+              this._collidersByFloor[f].push(c);
+              this._collidersWithAdjByFloor[f].push(c);
+            }
           } else if (typeof c.floor === 'number' && this._collidersByFloor[c.floor]) {
             this._collidersByFloor[c.floor].push(c);
+            for (let f = 0; f < 4; f++) {
+              if (Math.abs(f - c.floor) <= 1) {
+                this._collidersWithAdjByFloor[f].push(c);
+              }
+            }
           }
         }
         this._collidersByFloorLen = this.colliders.length;
       }
+      if (includeAdjacent) {
+        return this._collidersWithAdjByFloor[floorIdx] || this.colliders;
+      }
       return this._collidersByFloor[floorIdx] || this.colliders;
+    }
+
+    isPointInsideWalkableFootprint(x, z, floorIdx = 0) {
+      // Exact union of interior walkable rooms, doorways, and stairwells across the Museum
+      // 1. West Wing Exhibition Gallery (-35.46..-15.80, -5.46..18.00)
+      if (x >= -35.46 && x <= -15.80 && z >= -5.46 && z <= 18.00) return true;
+      // 2. West Office (-33.46..-23.80, 17.80..27.46)
+      if (x >= -33.46 && x <= -23.80 && z >= 17.80 && z <= 27.46) return true;
+      // 3. Stairwell SW (-24.20..-15.80, 17.80..27.46)
+      if (x >= -24.20 && x <= -15.80 && z >= 17.80 && z <= 27.46) return true;
+      // 4. Main Gallery & North Magazine Alcove (-16.20..-3.80, -17.46..27.46)
+      if (x >= -16.20 && x <= -3.80 && z >= -17.46 && z <= 27.46) return true;
+      // 4b. Exit Portal on Ground Floor (-12.20..-7.80, 27.40..28.80)
+      if (floorIdx === 0 && x >= -12.20 && x <= -7.80 && z >= 27.40 && z <= 28.80) return true;
+      // 5. Stairwell N (-4.20..4.20, -25.46..-13.80)
+      if (x >= -4.20 && x <= 4.20 && z >= -25.46 && z <= -13.80) return true;
+      // 6. Central Core: Restrooms, Study, Cross-Passages (-4.20..4.20, -13.80..7.50 and 18.20..27.46)
+      if (x >= -4.20 && x <= 4.20 && ((z >= -13.80 && z <= 7.50) || (z >= 18.20 && z <= 27.46))) return true;
+      // 7. North Gallery (-3.46..27.46, -39.46..-25.80) + North Bay (6.54..17.46, -41.46..-39.00)
+      if (x >= -3.46 && x <= 27.46 && z >= -39.46 && z <= -25.80) return true;
+      if (x >= 6.54 && x <= 17.46 && z >= -41.46 && z <= -39.00) return true;
+      // 8. East Main Hall & South-East Wing (3.80..27.46, -26.20..27.46)
+      if (x >= 3.80 && x <= 27.46 && z >= -26.20 && z <= 27.46) return true;
+      // 9. East Bays & Arts/Music Office (27.00..32.46)
+      if (x >= 27.00 && x <= 32.46) {
+        if ((z >= -21.46 && z <= -14.54) || (z >= -7.46 && z <= -0.54) || (z >= 8.54 && z <= 17.46)) return true;
+      }
+      // 10. South Beaux-Arts Rotunda Apse (center (19, 28), inner radius 6.46m, z >= 27.0)
+      if (z >= 27.0 && z <= 34.46 && x >= 12.54 && x <= 25.46) {
+        const dx = x - 19.0;
+        const dz = z - 28.0;
+        if (dx * dx + dz * dz <= 6.46 * 6.46) return true;
+      }
+      return false;
+    }
+
+    keepPlayerInsideMuseumBounds(pos, floorIdx, lastValidPos) {
+      if (this.isNoClipMode || this.isSpectatorMode) return;
+      if (this.isPointInsideWalkableFootprint(pos.x, pos.z, floorIdx)) {
+        if (lastValidPos) {
+          lastValidPos.x = pos.x;
+          lastValidPos.z = pos.z;
+        }
+        return;
+      }
+      // 1. If we have a recent valid position within 3.5m, snap back to it and resolve collisions
+      if (lastValidPos && this.isPointInsideWalkableFootprint(lastValidPos.x, lastValidPos.z, floorIdx)) {
+        const dist = Math.hypot(pos.x - lastValidPos.x, pos.z - lastValidPos.z);
+        if (dist < 3.5) {
+          pos.x = lastValidPos.x;
+          pos.z = lastValidPos.z;
+          return;
+        }
+      }
+      // 2. Otherwise (e.g. if player was already stuck outside a wall), radial search for nearest valid interior point
+      let bestX = pos.x;
+      let bestZ = pos.z;
+      let found = false;
+      for (let r = 0.25; r <= 8.0 && !found; r += 0.25) {
+        let minD = Infinity;
+        for (let a = 0; a < 24; a++) {
+          const ang = (a / 24) * Math.PI * 2;
+          const cx = pos.x + Math.cos(ang) * r;
+          const cz = pos.z + Math.sin(ang) * r;
+          if (this.isPointInsideWalkableFootprint(cx, cz, floorIdx)) {
+            const d = (cx - pos.x) * (cx - pos.x) + (cz - pos.z) * (cz - pos.z);
+            if (d < minD) {
+              minD = d;
+              bestX = cx;
+              bestZ = cz;
+              found = true;
+            }
+          }
+        }
+      }
+      if (found) {
+        pos.x = bestX;
+        pos.z = bestZ;
+      } else {
+        // Fallback to nearest navNode on current floor
+        const nid = this.findNearestNavNode(pos, floorIdx);
+        const node = this.navNodes[nid];
+        if (node) {
+          pos.x = node.x;
+          pos.z = node.z;
+        }
+      }
+      if (lastValidPos) {
+        lastValidPos.x = pos.x;
+        lastValidPos.z = pos.z;
+      }
     }
 
     isInStairwell(pos) {
@@ -16438,10 +16592,14 @@ window.game = this;
       const oldPx = this.playerPos.x;
       const oldPz = this.playerPos.z;
 
+      if (!this._lastValidPlayerPos) {
+        this._lastValidPlayerPos = { x: this.playerPos.x, z: this.playerPos.z };
+      }
+
       if (isMoving) {
         _tempMoveDir.normalize();
 
-        const subSteps = 2;
+        const subSteps = this.isSprinting ? 4 : 3;
         const stepDt = delta / subSteps;
         for (let s = 0; s < subSteps; s++) {
           this.playerPos.x += _tempMoveDir.x * moveSpeed * stepDt;
@@ -16515,6 +16673,10 @@ window.game = this;
       } else if (elev.floor === this.playerFloor) {
         this.playerFloor = elev.floor;
       }
+
+      // Re-resolve collisions on the updated floor and enforce strict outer building footprint containment
+      this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, elev.y + this.jumpOffset, this.currentCamHeight);
+      this.keepPlayerInsideMuseumBounds(this.playerPos, this.playerFloor, this._lastValidPlayerPos);
 
       // Check platform standing surface (benches, plinths, desks, crates)
       const platformSurfaceY = this.getPlatformSurfaceY(
@@ -16663,14 +16825,21 @@ window.game = this;
     }
 
     resolveCollisions(pos, radius, floorIdx, footElevation = -999, bodyHeight = 2.4) {
-      const floorColliders = this.getCollidersForFloor(floorIdx);
+      const floorColliders = this.getCollidersForFloor(floorIdx, true);
       for (let iter = 0; iter < 3; iter++) {
         for (let i = 0; i < floorColliders.length; i++) {
           const c = floorColliders[i];
           if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
 
-          if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
-              (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) continue;
+          // Architectural walls on the active floor always block horizontally (even if jumping on furniture/stairs)
+          if (c.isWall && c.floor === floorIdx) {
+            // Always active on floorIdx
+          } else if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
+              (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) {
+            continue;
+          } else if (c.floor !== 'all' && c.floor !== floorIdx && (footElevation === -999 || c.minY === undefined || c.maxY === undefined)) {
+            continue;
+          }
 
           // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
           if (!c.isWall && c.maxY !== undefined && footElevation >= (c.maxY - 0.12)) continue;
