@@ -4480,6 +4480,7 @@ window.game = this;
         floorParquet: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_parquet.jpg', 20, 20, 0xc8a882),
         floorDarkWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_floor_dark.jpg', 18, 18, 0x8c7258),
         floorVaultStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 8, 8, 0x626870),
+        floorDirt: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/floor_dirt.jpg', 16, 16, 0x543c28),
         wallPlasterWarm: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xd8d2c7),
         wallPlasterCool: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xb8c4d4),
         wallPlasterSlate: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0x8e9bae),
@@ -4564,7 +4565,9 @@ window.game = this;
       const floorMat = fl === 0 ? mats.floorMarble
                      : fl === 1 ? mats.floorParquet
                      : fl === 2 ? mats.floorDarkWood
-                     : mats.floorVaultStone;
+                     : mats.floorDirt;
+
+      const officeFloorMat = fl === 3 ? mats.floorDirt : mats.floorDarkWood;
 
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
                         : fl === 1 ? mats.wallPlasterWarm
@@ -4580,9 +4583,9 @@ window.game = this;
       this.createFloor(-30.0, y0, 17.90, 3.0, 0.20, floorMat);
       this.createCeiling(-30.0, y0 + ceilH, 17.90, 3.0, 0.20, mats.ceiling);
       // 2. West Office Slab (x: -34.0..-24.20, z: 18.20..27.80 strictly inside the mahogany walls)
-      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, mats.floorDarkWood, mats.ceiling, ceilH);
+      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, officeFloorMat, mats.ceiling, ceilH);
       // 2b. West Office North doorway floor strip (x: -31.5..-28.5, z: 18.00..18.20)
-      this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, mats.floorDarkWood);
+      this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, officeFloorMat);
       this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, mats.ceiling);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -15.80..-4.00, z: -18..28 stopping flush at the east face of the x = -16.0 wall)
       this.createSlab(-9.90, y0, 5, 11.80, 46.0, floorMat, mats.ceiling, ceilH);
@@ -4603,7 +4606,7 @@ window.game = this;
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(30.5, y0, -18, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(30.5, y0, -4, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(30.5, y0, 13, 5.0, 10.0, mats.floorDarkWood, mats.ceiling, ceilH);
+      this.createSlab(30.5, y0, 13, 5.0, 10.0, officeFloorMat, mats.ceiling, ceilH);
       // 7. South-East Media Wing Slab (x: 4..28, z: 18..28) + South Beaux-Arts Rotunda (x: 12..26, z: 28..36)
       this.createSlab(16, y0, 23, 24.0, 10.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(19, y0, 32, 14.0, 8.0, floorMat, mats.ceiling, ceilH);
@@ -5863,9 +5866,11 @@ window.game = this;
       });
 
       // 1. DEDICATED CERAMIC TILE FLOOR SLAB (covering wood floor across x: -3.8..3.8, z: -14.0..-6.0)
-      const rFloor = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.05, 8.0), floorTileMat);
-      rFloor.position.set(0, y0 + 0.025, -10.0);
-      this.scene.add(rFloor);
+      if (fl !== 3) {
+        const rFloor = new THREE.Mesh(new THREE.BoxGeometry(7.6, 0.05, 8.0), floorTileMat);
+        rFloor.position.set(0, y0 + 0.025, -10.0);
+        this.scene.add(rFloor);
+      }
 
       // 2. CEILING RECESSED GLOWING FIXTURES
       const mFix = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.04, 1.4), new THREE.MeshBasicMaterial({ color: 0xfffaed }));
@@ -10908,8 +10913,108 @@ window.game = this;
         // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
         this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
 
+        // Natural dead grass tufts scattered across the earthen ground
+        this.createFloorThreeDeadGrass(y0, fl);
+
         // Low-to-mid level atmospheric mist layers on the top floor (Floor 3 / 4th Floor)
         this.createTopFloorFogLayers(y0);
+      }
+    }
+
+    createFloorThreeDeadGrass(y0, fl) {
+      // Crossed alpha-tested billboard geometry for volumetric grass tufts
+      const grassTex = this.texLoader.load('assets/textures/dead_grass.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+
+      const grassMat = new THREE.MeshStandardMaterial({
+        map: grassTex,
+        transparent: true,
+        alphaTest: 0.15,
+        roughness: 0.85,
+        metalness: 0.05,
+        side: THREE.DoubleSide
+      });
+
+      // Construct a single 3-plane star/cross cluster for a dense, natural 3D tuft
+      const w = 0.52;
+      const h = 0.44;
+      const p1 = new THREE.PlaneGeometry(w, h);
+      p1.translate(0, h / 2, 0);
+
+      const p2 = p1.clone();
+      p2.rotateY(Math.PI / 3);
+
+      const p3 = p1.clone();
+      p3.rotateY((Math.PI * 2) / 3);
+
+      const tuftGeo = mergeBufferGeometries([p1, p2, p3]);
+
+      // Seeded pseudorandom placement across all rooms on Floor 3
+      let seed = 42891;
+      const rnd = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      const rooms = [
+        // [minX, maxX, minZ, maxZ, count]
+        [-34.5, -16.8,  -5.0,  17.0, 36], // West Wing Exhibition
+        [-33.0, -25.0,  18.5,  26.8, 18], // West Office
+        [-15.0,  -4.8, -16.5,  26.5, 34], // Main Gallery & North Alcove
+        [ -3.5,   3.5, -12.5,   6.5, 12], // Central Core South
+        [ -3.5,   3.5,  18.5,  26.5,  8], // South Cross Passage
+        [ -2.5,  26.5, -39.0, -27.0, 38], // North Gallery
+        [  7.0,  17.0, -41.5, -39.5,  8], // North Bay
+        [  4.8,  26.8, -25.0,  17.0, 48], // East Main Hall
+        [ 28.5,  32.0, -21.0, -15.0, 10], // East Bay 1
+        [ 28.5,  32.0,  -7.0,  -1.0, 10], // East Bay 2
+        [ 28.5,  32.0,   9.0,  16.5, 12], // East Office Bay
+        [  4.8,  26.8,  18.5,  26.8, 24], // South-East Wing
+        [ 13.5,  24.5,  28.0,  34.0, 16]  // Rotunda Apse
+      ];
+
+      const instances = [];
+      const tempObj = new THREE.Object3D();
+
+      for (let r = 0; r < rooms.length; r++) {
+        const [minX, maxX, minZ, maxZ, count] = rooms[r];
+        for (let i = 0; i < count; i++) {
+          const gx = minX + rnd() * (maxX - minX);
+          const gz = minZ + rnd() * (maxZ - minZ);
+
+          // Verify point is inside walkable room bounds and strictly outside stairwells
+          if (!this.isPointInsideWalkableFootprint(gx, gz, fl)) continue;
+          if (this.isInStairwell({ x: gx, z: gz })) continue;
+
+          // Avoid placing directly on pallet racks or aquarium
+          if (Math.abs(gx - 8.5) < 1.2 && Math.abs(gz - 27.4) < 1.0) continue;
+          if ((Math.abs(gx - 10.0) < 1.5 || Math.abs(gx - 20.0) < 1.5) &&
+              (Math.abs(gz - (-21.0)) < 1.2 || Math.abs(gz - 1.0) < 1.2)) continue;
+          // Avoid central dais in Rotunda
+          if (Math.hypot(gx - 19.0, gz - 30.5) < 3.2) continue;
+
+          const scale = 0.70 + rnd() * 0.55;
+          const rotY = rnd() * Math.PI * 2;
+          const leanX = (rnd() - 0.5) * 0.16;
+          const leanZ = (rnd() - 0.5) * 0.16;
+
+          tempObj.position.set(gx, y0, gz);
+          tempObj.rotation.set(leanX, rotY, leanZ);
+          tempObj.scale.set(scale, scale * (0.85 + rnd() * 0.35), scale);
+          tempObj.updateMatrix();
+
+          instances.push(tempObj.matrix.clone());
+        }
+      }
+
+      if (instances.length > 0) {
+        const instancedGrass = new THREE.InstancedMesh(tuftGeo, grassMat, instances.length);
+        for (let m = 0; m < instances.length; m++) {
+          instancedGrass.setMatrixAt(m, instances[m]);
+        }
+        instancedGrass.instanceMatrix.needsUpdate = true;
+        this.scene.add(instancedGrass);
       }
     }
 
