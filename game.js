@@ -4480,7 +4480,7 @@ window.game = this;
         floorParquet: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_parquet.jpg', 20, 20, 0xc8a882),
         floorDarkWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_floor_dark.jpg', 18, 18, 0x8c7258),
         floorVaultStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 8, 8, 0x626870),
-        floorDirt: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/floor_dirt.jpg', 16, 16, 0x543c28),
+        floorDirt: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/floor_dirt.jpg', 1, 1, 0x94826b),
         wallPlasterWarm: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xd8d2c7),
         wallPlasterCool: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xb8c4d4),
         wallPlasterSlate: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0x8e9bae),
@@ -4490,6 +4490,8 @@ window.game = this;
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 12, 12, 0xf6f3eb),
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8)
       };
+
+      mats.floorDirt.userData = { isDirt: true };
 
       mats.ceiling.emissive = new THREE.Color(0x322f28);
       mats.ceiling.shininess = 16;
@@ -5337,7 +5339,27 @@ window.game = this;
 
     createFloor(x, y, z, w, d, mat) {
       if (mat) mat.side = THREE.DoubleSide;
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), mat);
+      const geom = new THREE.PlaneGeometry(w, d);
+      
+      // If this is the dirt/earth floor, align UV coordinates to world space coordinates
+      // so adjacent rooms and slabs seamlessly share continuous gravel/dirt texturing with zero pattern repetition or seams
+      const isDirtFloor = (mat && (
+        (mat.userData && mat.userData.isDirt) ||
+        (mat.map && mat.map.image && typeof mat.map.image.src === 'string' && mat.map.image.src.includes('floor_dirt'))
+      ));
+      if (isDirtFloor) {
+        const uvs = geom.getAttribute('uv');
+        const pos = geom.getAttribute('position');
+        const tileSize = 6.0; // 6-meter natural world space seamless repetition
+        for (let i = 0; i < pos.count; i++) {
+          const worldX = x + pos.getX(i);
+          const worldZ = z - pos.getY(i);
+          uvs.setXY(i, worldX / tileSize, worldZ / tileSize);
+        }
+        uvs.needsUpdate = true;
+      }
+
+      const mesh = new THREE.Mesh(geom, mat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
@@ -10921,7 +10943,7 @@ window.game = this;
     }
 
     createFloorThreeDeadGrass(y0, fl) {
-      // Crossed alpha-tested billboard geometry for volumetric grass tufts
+      // Natural loose dead grass stalks (individual thin blades and sparse wild wisps)
       const grassTex = this.texLoader.load('assets/textures/dead_grass.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
@@ -10930,24 +10952,49 @@ window.game = this;
         map: grassTex,
         transparent: true,
         alphaTest: 0.15,
-        roughness: 0.85,
-        metalness: 0.05,
+        roughness: 0.90,
+        metalness: 0.02,
         side: THREE.DoubleSide
       });
 
-      // Construct a single 3-plane star/cross cluster for a dense, natural 3D tuft
-      const w = 0.52;
-      const h = 0.44;
-      const p1 = new THREE.PlaneGeometry(w, h);
-      p1.translate(0, h / 2, 0);
+      // Construct 3 distinct natural geometry variants with custom UV regions mapping to individual stalks:
+      // Variant 0: Single solitary wisp (UV: 0.00..0.33)
+      // Variant 1: Twin loose stalks (UV: 0.33..0.66)
+      // Variant 2: Delicate wild dried stem (UV: 0.66..1.00)
+      function makeStalkGeometry(uMin, uMax, width, height, leanAngle = 0) {
+        const geom = new THREE.PlaneGeometry(width, height);
+        geom.translate(0, height / 2, 0);
+        if (leanAngle !== 0) geom.rotateZ(leanAngle);
 
-      const p2 = p1.clone();
-      p2.rotateY(Math.PI / 3);
+        const uvs = geom.getAttribute('uv');
+        // PlaneGeometry UV indices: [0: (0,1), 1: (1,1), 2: (0,0), 3: (1,0)]
+        uvs.setXY(0, uMin, 1);
+        uvs.setXY(1, uMax, 1);
+        uvs.setXY(2, uMin, 0);
+        uvs.setXY(3, uMax, 0);
+        uvs.needsUpdate = true;
+        return geom;
+      }
 
-      const p3 = p1.clone();
-      p3.rotateY((Math.PI * 2) / 3);
+      // Single blade wisp (one crossed plane to keep natural 3D silhouette without dense bushy clumping)
+      const s0a = makeStalkGeometry(0.00, 0.33, 0.22, 0.46, 0.06);
+      const s0b = makeStalkGeometry(0.00, 0.33, 0.22, 0.46, -0.06);
+      s0b.rotateY(Math.PI / 2.2);
+      const geoVariant0 = mergeBufferGeometries([s0a, s0b]);
 
-      const tuftGeo = mergeBufferGeometries([p1, p2, p3]);
+      // Twin loose stalks
+      const s1a = makeStalkGeometry(0.33, 0.66, 0.24, 0.50, -0.08);
+      const s1b = makeStalkGeometry(0.33, 0.66, 0.24, 0.50, 0.08);
+      s1b.rotateY(Math.PI / 2.5);
+      const geoVariant1 = mergeBufferGeometries([s1a, s1b]);
+
+      // Wild dry stalk
+      const s2a = makeStalkGeometry(0.66, 1.00, 0.20, 0.48, 0.10);
+      const s2b = makeStalkGeometry(0.66, 1.00, 0.20, 0.48, -0.10);
+      s2b.rotateY(Math.PI / 1.8);
+      const geoVariant2 = mergeBufferGeometries([s2a, s2b]);
+
+      const variants = [geoVariant0, geoVariant1, geoVariant2];
 
       // Seeded pseudorandom placement across all rooms on Floor 3
       let seed = 42891;
@@ -10973,7 +11020,7 @@ window.game = this;
         [ 13.5,  24.5,  28.0,  34.0, 16]  // Rotunda Apse
       ];
 
-      const instances = [];
+      const instanceLists = [[], [], []];
       const tempObj = new THREE.Object3D();
 
       for (let r = 0; r < rooms.length; r++) {
@@ -10993,27 +11040,31 @@ window.game = this;
           // Avoid central dais in Rotunda
           if (Math.hypot(gx - 19.0, gz - 30.5) < 3.2) continue;
 
-          const scale = 0.70 + rnd() * 0.55;
+          const variantIdx = Math.floor(rnd() * 3);
+          const scale = 0.65 + rnd() * 0.70;
           const rotY = rnd() * Math.PI * 2;
-          const leanX = (rnd() - 0.5) * 0.16;
-          const leanZ = (rnd() - 0.5) * 0.16;
+          const leanX = (rnd() - 0.5) * 0.22;
+          const leanZ = (rnd() - 0.5) * 0.22;
 
           tempObj.position.set(gx, y0, gz);
           tempObj.rotation.set(leanX, rotY, leanZ);
-          tempObj.scale.set(scale, scale * (0.85 + rnd() * 0.35), scale);
+          tempObj.scale.set(scale, scale * (0.80 + rnd() * 0.45), scale);
           tempObj.updateMatrix();
 
-          instances.push(tempObj.matrix.clone());
+          instanceLists[variantIdx].push(tempObj.matrix.clone());
         }
       }
 
-      if (instances.length > 0) {
-        const instancedGrass = new THREE.InstancedMesh(tuftGeo, grassMat, instances.length);
-        for (let m = 0; m < instances.length; m++) {
-          instancedGrass.setMatrixAt(m, instances[m]);
+      for (let v = 0; v < 3; v++) {
+        const list = instanceLists[v];
+        if (list.length > 0) {
+          const instancedGrass = new THREE.InstancedMesh(variants[v], grassMat, list.length);
+          for (let m = 0; m < list.length; m++) {
+            instancedGrass.setMatrixAt(m, list[m]);
+          }
+          instancedGrass.instanceMatrix.needsUpdate = true;
+          this.scene.add(instancedGrass);
         }
-        instancedGrass.instanceMatrix.needsUpdate = true;
-        this.scene.add(instancedGrass);
       }
     }
 
