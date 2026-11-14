@@ -9079,7 +9079,7 @@ window.game = this;
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = Math.round(1024 * Math.min(window.devicePixelRatio || 1, 2));
+      const rtSize = 512;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -9133,7 +9133,7 @@ window.game = this;
 
         // Only update when viewer is on the same floor and within visible corridor range
         if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 15.0) return;
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 12.5) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
@@ -13841,73 +13841,73 @@ window.game = this;
           respawnTimer: 0
         };
         this.ammoPickups.push(pickupEntry);
+      });
 
-        // Load cushioning.glb as the 3D ammo pickup model
-        const ammoCacheKey = window._ASSET_VERSION || Date.now();
-        this.gltfLoader.load(
-          `assets/cushioning.glb?v=${ammoCacheKey}`,
-          (gltf) => {
+      // Cache parsed cushioning.glb prototype so we only fetch & parse it once instead of 4 times
+      const ammoCacheKey = window._ASSET_VERSION || Date.now();
+      this.gltfLoader.load(
+        `assets/cushioning.glb?v=${ammoCacheKey}`,
+        (gltf) => {
+          const baseModel = gltf.scene;
+          baseModel.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(baseModel);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          const center = new THREE.Vector3();
+          box.getCenter(center);
+          const maxAxis = Math.max(size.x, size.y, size.z) || 1.0;
+          const targetDim = 0.52;
+          const scale = targetDim / maxAxis;
+
+          baseModel.traverse((child) => {
+            if (child.isMesh) {
+              child.frustumCulled = true;
+              if (child.geometry) child.geometry.computeBoundingSphere();
+              const oldMat = child.material;
+              if (oldMat) {
+                const optMat = new THREE.MeshPhongMaterial({
+                  map: oldMat.map || null,
+                  color: oldMat.color || 0xffffff,
+                  emissive: 0x00cc44,
+                  emissiveIntensity: 0.22,
+                  specular: 0x44aa44,
+                  shininess: 35,
+                  side: THREE.FrontSide
+                });
+                if (optMat.map) {
+                  optMat.map.generateMipmaps = true;
+                  optMat.map.minFilter = THREE.LinearMipmapLinearFilter;
+                  optMat.map.magFilter = THREE.LinearFilter;
+                }
+                child.material = optMat;
+              }
+            }
+          });
+
+          this.ammoPickups.forEach((pickupEntry) => {
             if (!pickupEntry.active) return;
-            const model = gltf.scene;
-            model.updateMatrixWorld(true);
-
-            // Compute exact bounding box and center
-            const box = new THREE.Box3().setFromObject(model);
-            const size = new THREE.Vector3();
-            box.getSize(size);
-            const center = new THREE.Vector3();
-            box.getCenter(center);
-
-            const maxAxis = Math.max(size.x, size.y, size.z) || 1.0;
-            const targetDim = 0.52; // 52cm uniform scale for comfortable world visibility
-            const scale = targetDim / maxAxis;
+            const model = baseModel.clone(true);
             model.scale.set(scale, scale, scale);
-
-            // Center horizontally and vertically around local origin
             model.position.set(-center.x * scale, -center.y * scale + 0.12, -center.z * scale);
-
             model.traverse((child) => {
               if (child.isMesh) {
-                child.frustumCulled = true;
-                if (child.geometry) {
-                  child.geometry.computeBoundingSphere();
-                }
-                const oldMat = child.material;
-                if (oldMat) {
-                  const optMat = new THREE.MeshPhongMaterial({
-                    map: oldMat.map || null,
-                    color: oldMat.color || 0xffffff,
-                    emissive: 0x00cc44,
-                    emissiveIntensity: 0.22,
-                    specular: 0x44aa44,
-                    shininess: 35,
-                    side: THREE.FrontSide
-                  });
-                  if (optMat.map) {
-                    optMat.map.generateMipmaps = true;
-                    optMat.map.minFilter = THREE.LinearMipmapLinearFilter;
-                    optMat.map.magFilter = THREE.LinearFilter;
-                  }
-                  child.material = optMat;
-                }
                 child.matrixAutoUpdate = false;
                 child.updateMatrix();
               }
             });
             model.matrixAutoUpdate = false;
             model.updateMatrix();
-
-            if (placeholder.parent) {
-              group.remove(placeholder);
+            while (pickupEntry.mesh.children.length > 0) {
+              pickupEntry.mesh.remove(pickupEntry.mesh.children[0]);
             }
-            group.add(model);
-          },
-          undefined,
-          (err) => {
-            console.warn('Could not load cushioning.glb for ammo pickup', err);
-          }
-        );
-      });
+            pickupEntry.mesh.add(model);
+          });
+        },
+        undefined,
+        (err) => {
+          console.warn('Could not load cushioning.glb for ammo pickup', err);
+        }
+      );
     }
 
     updateAmmoPickups(delta) {
@@ -18705,6 +18705,16 @@ window.game = this;
       const now = performance.now() / 1000;
 
       this.statues.forEach(s => {
+        if (s.group) {
+          if (!this.statuesEnabled) {
+            s.group.visible = false;
+            return;
+          }
+          const nearStair = this.isInStairwell(s) || this.isNearStairwell(s) ||
+                            this.isInStairwell(this.playerPos) || this.isNearStairwell(this.playerPos);
+          s.group.visible = this.isSpectatorMode || s.floor === this.playerFloor ||
+                            (nearStair && Math.abs(s.floor - this.playerFloor) <= 1);
+        }
         if (s.hitRecoil) {
           s.hitRecoil.timer -= delta;
           if (s.hitRecoil.timer <= 0) {
