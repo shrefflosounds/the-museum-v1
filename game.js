@@ -4953,6 +4953,21 @@ window.game = this;
       }
       // Guardrail on Floor 0 East Flight of Stairwell B (stops safely below Floor 1 landing and flight)
       this.createWall(2.0, 1.22, -16.85, 3.96, 2.4, 0.35, mats.mahogany, true, 0);
+      // Floor-to-ceiling wooden barricade on Floor 3 West Flight of Stairwell B (Stairwell N)
+      const blockNW = new THREE.Mesh(new THREE.BoxGeometry(3.84, ceilH, 0.30), mats.mahogany);
+      blockNW.position.set(-2.09, 3 * CONFIG.FLOOR_HEIGHT + ceilH / 2, -16.95);
+      this.scene.add(blockNW);
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: -4.0,
+        maxX: 0.18,
+        minZ: -17.20,
+        maxZ: -16.65,
+        minY: 3 * CONFIG.FLOOR_HEIGHT - 0.5,
+        maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
+        isWall: true
+      });
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
       this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
       // Leave turning clearance at south mid-landing (z: 25.6..28.0), but extend to z = 20.80 to seamlessly abut the north landing box with zero shaft gap!
@@ -5039,12 +5054,12 @@ window.game = this;
       this.scene.add(blockSWW);
       this.colliders.push({
         type: 'box',
-        floor: 3,
+        floor: 'all',
         minX: -24.0,
         maxX: -19.82,
-        minZ: 20.75,
-        maxZ: 21.15,
-        minY: 3 * CONFIG.FLOOR_HEIGHT,
+        minZ: 20.65,
+        maxZ: 21.20,
+        minY: 3 * CONFIG.FLOOR_HEIGHT - 0.5,
         maxY: 3 * CONFIG.FLOOR_HEIGHT + ceilH,
         isWall: true
       });
@@ -5066,6 +5081,10 @@ window.game = this;
           ? stairState.baseFloor
           : null
       );
+      const resolveFlightFloor = (elevY, fallbackFloor) => {
+        const nearestFl = Math.max(0, Math.min(numFloors - 1, Math.round(elevY / H)));
+        return Math.abs(elevY - nearestFl * H) < 1.25 ? nearestFl : fallbackFloor;
+      };
 
       // 1. Check North-Central Stairwell Interior Shaft (interior x: -3.85..3.85, z: -25.8..-14.2)
       if (pos.x >= -3.85 && pos.x <= 3.85 && pos.z >= -25.8 && pos.z <= -14.2) {
@@ -5101,13 +5120,21 @@ window.game = this;
           }
           stairState.active = 'N';
           stairState.baseFloor = bestL;
-          return { y: bestL * H + halfH, floor: currentFloor };
+          const elevY = bestL * H + halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         }
 
         // C) Active Flights (z: -23.2..-16.8, length = 6.4)
         const t = Math.max(0, Math.min(1, (-16.8 - pos.z) / 6.4));
 
         if (pos.x < 0) {
+          // Top floor has no West flight going up; prevent dropping onto Floor 2 West flight below
+          if (footRef >= (numFloors - 1) * H - 1.5) {
+            const topFl = numFloors - 1;
+            stairState.active = null;
+            stairState.baseFloor = topFl;
+            return { y: topFl * H, floor: topFl };
+          }
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
           let bestL = getLockedStairFloor('N');
           if (bestL === null || Math.abs(footRef - (bestL * H + t * halfH)) > halfH * 0.85) {
@@ -5124,7 +5151,8 @@ window.game = this;
           }
           stairState.active = 'N';
           stairState.baseFloor = bestL;
-          return { y: bestL * H + t * halfH, floor: currentFloor };
+          const elevY = bestL * H + t * halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         } else {
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
           let bestL = getLockedStairFloor('N');
@@ -5148,7 +5176,8 @@ window.game = this;
           }
           stairState.active = 'N';
           stairState.baseFloor = bestL;
-          return { y: (bestL + 1) * H - t * halfH, floor: currentFloor };
+          const elevY = (bestL + 1) * H - t * halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         }
       }
 
@@ -5186,13 +5215,21 @@ window.game = this;
           }
           stairState.active = 'SW';
           stairState.baseFloor = bestL;
-          return { y: bestL * H + halfH, floor: currentFloor };
+          const elevY = bestL * H + halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         }
 
         // C) Active Flights (z: 20.8..25.6, length = 4.8)
         const t = Math.max(0, Math.min(1, (pos.z - 20.8) / 4.8));
 
         if (pos.x < -20.0) {
+          // Top floor has no West flight going up; prevent dropping onto Floor 2 West flight below
+          if (footRef >= (numFloors - 1) * H - 1.5) {
+            const topFl = numFloors - 1;
+            stairState.active = null;
+            stairState.baseFloor = topFl;
+            return { y: topFl * H, floor: topFl };
+          }
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
           let bestL = getLockedStairFloor('SW');
           if (bestL === null || Math.abs(footRef - (bestL * H + t * halfH)) > halfH * 0.85) {
@@ -5209,7 +5246,8 @@ window.game = this;
           }
           stairState.active = 'SW';
           stairState.baseFloor = bestL;
-          return { y: bestL * H + t * halfH, floor: currentFloor };
+          const elevY = bestL * H + t * halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         } else {
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
           let bestL = getLockedStairFloor('SW');
@@ -5232,11 +5270,16 @@ window.game = this;
           }
           stairState.active = 'SW';
           stairState.baseFloor = bestL;
-          return { y: (bestL + 1) * H - t * halfH, floor: currentFloor };
+          const elevY = (bestL + 1) * H - t * halfH;
+          return { y: elevY, floor: resolveFlightFloor(elevY, currentFloor) };
         }
       }
 
-      // OUTSIDE STAIRWELLS: Strictly lock to current floor. Zero floor-jumping glitches!
+      // OUTSIDE STAIRWELLS: Reconcile floor if physical foot elevation matches an adjacent floor (e.g. stepping out of a stairwell doorway)
+      const actualFloor = Math.max(0, Math.min(numFloors - 1, Math.round(footRef / H)));
+      if (actualFloor !== currentFloor && Math.abs(footRef - actualFloor * H) < 1.6) {
+        currentFloor = actualFloor;
+      }
       stairState.active = null;
       stairState.baseFloor = currentFloor;
       return { y: currentFloor * H, floor: currentFloor };
@@ -5346,7 +5389,13 @@ window.game = this;
       this.applyContinuousWallUVs(geometry, w >= d ? 'x' : 'z', w >= d ? x : z, y - h / 2);
       const mesh = new THREE.Mesh(geometry, mats6);
       mesh.position.set(x, y, z);
-      this.scene.add(mesh);
+      // Keep full-height stairwell shaft perimeter walls (h === CONFIG.FLOOR_HEIGHT) in root scene
+      // so the 4-story stairwell shaft walls never disappear when looking across floors.
+      if (this._rootSceneAdd && Math.abs(h - CONFIG.FLOOR_HEIGHT) < 0.02) {
+        this._rootSceneAdd(mesh);
+      } else {
+        this.scene.add(mesh);
+      }
 
       if (collide) {
         this.colliders.push({
