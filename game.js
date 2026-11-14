@@ -9332,8 +9332,7 @@ window.game = this;
           minX: MX - W / 2 - 0.15, maxX: MX + W / 2 + 0.15,
           // Cover the whole stand footprint, including the frontward splayed feet.
           minZ: MZ - 0.48, maxZ: MZ + 0.28,
-          minY: y0, maxY: y0 + bottom + H + 0.2,
-          isWall: true
+          minY: y0, maxY: y0 + bottom + H + 0.2
         });
       }
     }
@@ -16730,16 +16729,16 @@ window.game = this;
       }
 
       // Re-resolve collisions on the updated floor and enforce strict outer building footprint containment
-      this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, elev.y + this.jumpOffset, this.currentCamHeight);
+      this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation, this.currentCamHeight);
       this.keepPlayerInsideMuseumBounds(this.playerPos, this.playerFloor, this._lastValidPlayerPos);
 
-      // Check platform standing surface (benches, plinths, desks, crates)
+      // Check platform standing surface (benches, plinths, desks, crates, consoles, stands)
       const platformSurfaceY = this.getPlatformSurfaceY(
         this.playerPos.x,
         this.playerPos.z,
         this.playerFloor,
         currentFootElevation,
-        this.isGrounded ? 0.85 : 0.18
+        this.isGrounded ? 0.85 : 0.45
       );
       let groundY = Math.max(elev.y, platformSurfaceY);
 
@@ -16824,7 +16823,7 @@ window.game = this;
       this.updateHud();
     }
 
-    getPlatformSurfaceY(x, z, floorIdx, footElevation = Infinity, maxStepUp = 0.18) {
+    getPlatformSurfaceY(x, z, floorIdx, footElevation = Infinity, maxStepUp = 0.45) {
       const floorBaseY = floorIdx * CONFIG.FLOOR_HEIGHT;
       // Stacked floors and overhead platforms must not count as jump landing surfaces.
       const floorCeilingY = floorBaseY + CONFIG.FLOOR_HEIGHT - 0.06;
@@ -16858,6 +16857,23 @@ window.game = this;
       }
 
       let maxSurfaceY = floorBaseY;
+      // Allow standing on the circular Beaux-Arts Rotunda dais tiers (19.0, 30.5)
+      const rotundaDx = x - 19.0;
+      const rotundaDz = z - 30.5;
+      const rotundaDistSq = rotundaDx * rotundaDx + rotundaDz * rotundaDz;
+      if (rotundaDistSq <= 2.65 * 2.65) {
+        const tier1Y = floorBaseY + 0.152;
+        if (tier1Y <= footElevation + maxStepUp && tier1Y > maxSurfaceY) {
+          maxSurfaceY = tier1Y;
+        }
+      }
+      if (rotundaDistSq <= 1.85 * 1.85) {
+        const tier2Y = floorBaseY + 0.296;
+        if (tier2Y <= footElevation + maxStepUp && tier2Y > maxSurfaceY) {
+          maxSurfaceY = tier2Y;
+        }
+      }
+
       const floorColliders = this.getCollidersForFloor(floorIdx);
       for (let i = 0; i < floorColliders.length; i++) {
         const c = floorColliders[i];
@@ -16890,14 +16906,15 @@ window.game = this;
           if (c.isWall && c.floor === floorIdx) {
             // Always active on floorIdx
           } else if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
-              (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) {
+              (footElevation >= (c.maxY - 0.20) || footElevation + bodyHeight <= c.minY)) {
+            // Player's feet are at or above the platform top surface (or wholly below the obstacle ceiling)
             continue;
           } else if (c.floor !== 'all' && c.floor !== floorIdx && (footElevation === -999 || c.minY === undefined || c.maxY === undefined)) {
             continue;
           }
 
-          // If this collider is a low obstacle/platform (bench, plinth, crate, desk) and feet are high enough to stand on top, allow passing over top
-          if (!c.isWall && c.maxY !== undefined && footElevation >= (c.maxY - 0.12)) continue;
+          // If this collider is a platform or furniture (bench, plinth, crate, console, desk, stand) and feet are within stepping/landing distance of the top, allow walking or standing freely on top
+          if (!c.isWall && c.maxY !== undefined && footElevation >= (c.maxY - 0.20)) continue;
 
           // Dynamic physics crates are pushed realistically by player contact in updatePhysicsCrates
           if (c.isCrate && c.crate) continue;
