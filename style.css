@@ -57,7 +57,13 @@ body.pointer-locked *,
 body.pointer-locked #game-canvas,
 body.pointer-locked #game-container,
 body.game-playing #game-canvas,
-body.game-playing #game-container {
+body.game-playing #game-container,
+body.cutscene-playing,
+body.cutscene-playing *,
+#intro-cutscene,
+#intro-cutscene *,
+#all-relics-cutscene,
+#all-relics-cutscene * {
   cursor: none !important;
 }
 

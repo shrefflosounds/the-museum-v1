@@ -14894,7 +14894,7 @@ window.game = this;
     }
 
     requestNativeOrBrowserLock() {
-      if (!this.gameStarted || this.isExaminingArt || this.isPaused || this.isGameOver || this.isVictory) return;
+      if ((!this.gameStarted && !this.isPlayingCutscene) || this.isExaminingArt || this.isPaused || this.isGameOver || this.isVictory) return;
       document.documentElement.classList.add('game-playing');
       document.body.classList.add('game-playing');
       try {
@@ -15006,6 +15006,9 @@ window.game = this;
 
       this.dom.startBtn.addEventListener('click', (e) => {
         e.stopPropagation();
+        // Immediately lock pointer upon user interaction so cursor doesn't stay visible
+        this.requestNativeOrBrowserLock();
+
         if (this.smittyEnabled) {
           // Hide start screen and play intro cutscene if Curator mode is enabled
           this.dom.startScreen.classList.add('hidden');
@@ -16841,8 +16844,9 @@ window.game = this;
       this.keys = {};
       this.isSprinting = false;
 
-      // Temporarily release pointer lock for clean video presentation
-      this.releaseNativeOrBrowserLock();
+      // Lock cursor and pointer immediately so it doesn't stay visible
+      document.body.classList.add('cutscene-playing');
+      this.requestNativeOrBrowserLock();
 
       cutsceneOverlay.classList.remove('hidden');
       cutsceneOverlay.style.opacity = '1';
@@ -16875,6 +16879,7 @@ window.game = this;
           cutsceneOverlay.classList.add('hidden');
           if (skipPrompt) skipPrompt.classList.add('hidden');
           if (unmutePrompt) unmutePrompt.classList.add('hidden');
+          document.body.classList.remove('cutscene-playing');
           this.isPlayingCutscene = false;
           if (typeof onComplete === 'function') {
             onComplete();
