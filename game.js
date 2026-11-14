@@ -4476,10 +4476,10 @@ window.game = this;
     buildMuseum() {
       // Load photorealistic internet-sourced textures from assets/textures/
       const mats = {
-        floorMarble: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/marble_floor.jpg', 18, 18, 0xd8dce2),
-        floorParquet: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_parquet.jpg', 20, 20, 0xc8a882),
-        floorDarkWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_floor_dark.jpg', 18, 18, 0x8c7258),
-        floorVaultStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 8, 8, 0x626870),
+        floorMarble: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/marble_floor.jpg', 1, 1, 0xd8dce2),
+        floorParquet: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_parquet.jpg', 1, 1, 0xc8a882),
+        floorDarkWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/wood_floor_dark.jpg', 1, 1, 0x8c7258),
+        floorVaultStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 1, 1, 0x626870),
         floorDirt: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/floor_dirt.jpg', 1, 1, 0x94826b),
         wallPlasterWarm: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xd8d2c7),
         wallPlasterCool: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 10, 2, 0xb8c4d4),
@@ -4487,11 +4487,12 @@ window.game = this;
         wallBrick: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/basement_brick.jpg', 10, 2, 0x8c685c),
         wallConcrete: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 10, 2, 0x888e96),
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
-        ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 12, 12, 0xf6f3eb),
+        ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8)
       };
 
       mats.floorDirt.userData = { isDirt: true };
+      mats.ceiling.userData = { isCeiling: true };
 
       mats.ceiling.emissive = new THREE.Color(0x322f28);
       mats.ceiling.shininess = 16;
@@ -5341,23 +5342,30 @@ window.game = this;
       if (mat) mat.side = THREE.DoubleSide;
       const geom = new THREE.PlaneGeometry(w, d);
       
-      // If this is the dirt/earth floor, align UV coordinates to world space coordinates
-      // so adjacent rooms and slabs seamlessly share continuous gravel/dirt texturing with zero pattern repetition or seams
-      const isDirtFloor = (mat && (
-        (mat.userData && mat.userData.isDirt) ||
-        (mat.map && mat.map.image && typeof mat.map.image.src === 'string' && mat.map.image.src.includes('floor_dirt'))
-      ));
-      if (isDirtFloor) {
-        const uvs = geom.getAttribute('uv');
-        const pos = geom.getAttribute('position');
-        const tileSize = 6.0; // 6-meter natural world space seamless repetition
-        for (let i = 0; i < pos.count; i++) {
-          const worldX = x + pos.getX(i);
-          const worldZ = z - pos.getY(i);
-          uvs.setXY(i, worldX / tileSize, worldZ / tileSize);
+      // Calculate tile size for continuous world-space mapping
+      // Default to 4.0m architectural repeat; dirt uses 6.0m
+      let tileSize = 4.0;
+      if (mat) {
+        if (mat.userData && mat.userData.isDirt) {
+          tileSize = 6.0;
+        } else if (mat.map && mat.map.image && typeof mat.map.image.src === 'string') {
+          if (mat.map.image.src.includes('floor_dirt')) tileSize = 6.0;
+          else if (mat.map.image.src.includes('wood_parquet')) tileSize = 3.6;
+          else if (mat.map.image.src.includes('wood_floor_dark')) tileSize = 3.8;
+          else if (mat.map.image.src.includes('marble_floor')) tileSize = 4.2;
+          else if (mat.map.image.src.includes('vault_concrete')) tileSize = 4.0;
         }
-        uvs.needsUpdate = true;
       }
+
+      // World-space UV mapping: every floor slab shares identical continuous coordinate space
+      const uvs = geom.getAttribute('uv');
+      const pos = geom.getAttribute('position');
+      for (let i = 0; i < pos.count; i++) {
+        const worldX = x + pos.getX(i);
+        const worldZ = z - pos.getY(i);
+        uvs.setXY(i, worldX / tileSize, worldZ / tileSize);
+      }
+      uvs.needsUpdate = true;
 
       const mesh = new THREE.Mesh(geom, mat);
       mesh.rotation.x = -Math.PI / 2;
@@ -5368,7 +5376,20 @@ window.game = this;
     createCeiling(x, y, z, w, d, mat) {
       const ceilMat = mat ? mat.clone() : undefined;
       if (ceilMat) ceilMat.side = THREE.FrontSide;
-      const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, d), ceilMat || mat);
+      const geom = new THREE.PlaneGeometry(w, d);
+
+      // Continuous world-space UV mapping for all ceilings across every room, doorway, and hall
+      const tileSize = 5.0; // 5.0-meter natural world-space repeat for plaster ceiling
+      const uvs = geom.getAttribute('uv');
+      const pos = geom.getAttribute('position');
+      for (let i = 0; i < pos.count; i++) {
+        const worldX = x + pos.getX(i);
+        const worldZ = z + pos.getY(i);
+        uvs.setXY(i, worldX / tileSize, worldZ / tileSize);
+      }
+      uvs.needsUpdate = true;
+
+      const mesh = new THREE.Mesh(geom, ceilMat || mat);
       mesh.rotation.x = Math.PI / 2;
       mesh.position.set(x, y, z);
       this.scene.add(mesh);
