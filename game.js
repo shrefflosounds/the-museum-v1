@@ -9149,7 +9149,8 @@ window.game = this;
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const rtSize = 256;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const rtSize = Math.round(1024 * dpr);
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -9193,7 +9194,6 @@ window.game = this;
       const q = new THREE.Vector4();
       const virtualCamera = new THREE.PerspectiveCamera();
       const clipBias = 0.003;
-      let mirrorFrameTick = 0;
 
       glass.onBeforeRender = (renderer, scene, camera) => {
         // Recursion guard: never render mirrors inside other mirrors
@@ -9202,13 +9202,9 @@ window.game = this;
         reflectorWorldPosition.setFromMatrixPosition(glass.matrixWorld);
         cameraWorldPosition.setFromMatrixPosition(camera.matrixWorld);
 
-        // Only update when viewer is on the same floor and within close visible corridor range (8.5m)
+        // Only update when viewer is on the same floor and within visible corridor range
         if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 8.5) return;
-
-        // Throttle reflection render target updates to every 2nd frame for 2x mirror GPU savings
-        mirrorFrameTick = (mirrorFrameTick + 1) & 1;
-        if (mirrorFrameTick !== 0) return;
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 12.0) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
@@ -9669,6 +9665,13 @@ window.game = this;
       const blueLightBar = new THREE.Mesh(new THREE.BoxGeometry(1.40, 0.02, 0.14), blueBarMat);
       blueLightBar.position.set(0, 0.72 + 0.69, 0);
       group.add(blueLightBar);
+
+      // Downward aquatic blue glow radiating from the lid down through the water and tank
+      const aquaBlueLight = new THREE.PointLight(0x38bdf8, fl === this.playerFloor ? 1.15 : 0, 5.2, 1.15);
+      aquaBlueLight._origIntensity = 1.15;
+      aquaBlueLight.position.set(0, 0.72 + 0.65, 0);
+      group.add(aquaBlueLight);
+      if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(aquaBlueLight);
 
       this.scene.add(group);
 
@@ -10773,6 +10776,83 @@ window.game = this;
 
         // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
         this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
+
+        // Low-to-mid level atmospheric mist layers on the top floor (Floor 3 / 4th Floor)
+        this.createTopFloorFogLayers(y0);
+      }
+    }
+
+    createTopFloorFogLayers(y0) {
+      if (!this._topFloorFogTex) {
+        const canvas = document.createElement('canvas');
+        canvas.width = 256;
+        canvas.height = 256;
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, 256, 256);
+        const blobs = [
+          [72, 68, 64, 0.28], [188, 76, 70, 0.25], [128, 134, 82, 0.32],
+          [60, 192, 68, 0.26], [196, 194, 72, 0.27], [132, 44, 54, 0.22],
+          [44, 128, 56, 0.22], [212, 132, 56, 0.22], [128, 214, 58, 0.24]
+        ];
+        for (const [bx, by, br, alpha] of blobs) {
+          for (const ox of [-256, 0, 256]) {
+            for (const oy of [-256, 0, 256]) {
+              const g = ctx.createRadialGradient(bx + ox, by + oy, 0, bx + ox, by + oy, br);
+              g.addColorStop(0, `rgba(186, 200, 218, ${alpha})`);
+              g.addColorStop(0.55, `rgba(148, 166, 188, ${alpha * 0.52})`);
+              g.addColorStop(1, 'rgba(120, 138, 162, 0)');
+              ctx.fillStyle = g;
+              ctx.fillRect(0, 0, 256, 256);
+            }
+          }
+        }
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(5, 5);
+        this._topFloorFogTex = tex;
+      }
+
+      const fogZones = [
+        [-26.0, 6.0, 19.6, 23.6],   // West Wing
+        [-29.1, 23.0, 9.6, 9.4],    // West Office
+        [-10.0, 5.0, 11.6, 45.6],   // Main Gallery
+        [0.0, 7.1, 7.6, 41.4],      // Central Core
+        [12.0, -33.0, 31.6, 13.6],  // North Gallery
+        [16.0, -4.0, 23.6, 43.6],   // East Main Hall
+        [16.0, 23.0, 23.6, 9.6],    // South-East Wing
+        [19.0, 32.0, 13.6, 7.6]     // Rotunda
+      ];
+      // 3 stratified low-to-mid elevation mist layers (ankle 0.32m, knee/thigh 0.82m, waist/mid 1.38m)
+      const layerSpecs = [
+        { height: 0.32, opacity: 0.22, speedX:  0.032, speedZ:  0.021, scaleRepeat: 4.5 },
+        { height: 0.82, opacity: 0.16, speedX: -0.024, speedZ:  0.028, scaleRepeat: 3.8 },
+        { height: 1.38, opacity: 0.11, speedX:  0.018, speedZ: -0.022, scaleRepeat: 3.2 }
+      ];
+      this.topFloorFogMaterials = [];
+      for (let li = 0; li < layerSpecs.length; li++) {
+        const spec = layerSpecs[li];
+        const texClone = this._topFloorFogTex.clone();
+        texClone.needsUpdate = true;
+        texClone.wrapS = THREE.RepeatWrapping;
+        texClone.wrapT = THREE.RepeatWrapping;
+        texClone.repeat.set(spec.scaleRepeat, spec.scaleRepeat);
+        const fogMat = new THREE.MeshBasicMaterial({
+          map: texClone,
+          color: 0xc8d6e8,
+          transparent: true,
+          opacity: spec.opacity,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        this.topFloorFogMaterials.push({ mat: fogMat, tex: texClone, speedX: spec.speedX, speedZ: spec.speedZ });
+        for (const [fx, fz, fw, fd] of fogZones) {
+          const plane = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd), fogMat);
+          plane.rotation.x = -Math.PI / 2;
+          plane.position.set(fx, y0 + spec.height, fz);
+          plane.renderOrder = 2;
+          this.scene.add(plane);
+        }
       }
     }
 
@@ -13828,8 +13908,9 @@ window.game = this;
           p.mesh.visible = show;
         }
         if (p.glowLight) {
-          p.glowLight.visible = show;
-          p.glowLight.intensity = show ? 0.80 : 0;
+          // Keep glowLight.visible = true so Three.js NUM_POINT_LIGHTS never changes; toggle intensity instead
+          p.glowLight.visible = true;
+          p.glowLight.intensity = show ? 0.95 : 0;
         }
       }
       // Major Performance Optimization: cull all paintings on inactive floors
@@ -13850,7 +13931,7 @@ window.game = this;
           const isCurFloor = (f === this.playerFloor);
           if (this.floorLights[f]) {
             for (let l of this.floorLights[f]) {
-              l.visible = isCurFloor;
+              l.visible = true;
               l.intensity = isCurFloor ? (l._origIntensity ?? 0.5) : 0;
             }
           }
@@ -13882,6 +13963,12 @@ window.game = this;
         placeholder.position.y = 0.12;
         group.add(placeholder);
 
+        // Radioactive shaky green tactical glow kept directly in scene with constant visibility so Three.js shader light count never changes
+        const glow = new THREE.PointLight(0x22ff55, (loc.floor === this.playerFloor) ? 0.95 : 0, 4.2);
+        glow._origIntensity = 0.95;
+        glow.position.set(loc.x, loc.baseY + 0.22, loc.z);
+        this.scene.add(glow);
+
         group.visible = (loc.floor === this.playerFloor);
         this.scene.add(group);
 
@@ -13892,7 +13979,7 @@ window.game = this;
           y: loc.baseY,
           z: loc.z,
           mesh: group,
-          glowLight: null,
+          glowLight: glow,
           active: true,
           respawnTimer: 0
         };
@@ -13924,9 +14011,9 @@ window.game = this;
                 const optMat = new THREE.MeshPhongMaterial({
                   map: oldMat.map || null,
                   color: oldMat.color || 0xffffff,
-                  emissive: 0x00cc44,
-                  emissiveIntensity: 0.22,
-                  specular: 0x44aa44,
+                  emissive: 0x18ee55,
+                  emissiveIntensity: 0.36,
+                  specular: 0x44cc55,
                   shininess: 35,
                   side: THREE.FrontSide
                 });
@@ -13977,11 +14064,11 @@ window.game = this;
           const sameFloor = (p.floor === this.playerFloor);
           p.mesh.visible = sameFloor;
           if (p.glowLight) {
-            p.glowLight.visible = sameFloor;
+            p.glowLight.visible = true;
             if (sameFloor) {
               const shake = (Math.random() - 0.5) * 0.24;
               const flicker = Math.sin(time * 36.0 + p.id * 7.3) * 0.16 + Math.cos(time * 54.0 + p.id * 3.1) * 0.10;
-              p.glowLight.intensity = Math.max(0.25, 0.80 + flicker + shake);
+              p.glowLight.intensity = Math.max(0.35, 0.95 + flicker + shake);
               p.glowLight.position.x = p.x + (Math.random() - 0.5) * 0.06;
               p.glowLight.position.z = p.z + (Math.random() - 0.5) * 0.06;
               p.glowLight.position.y = (p.mesh.position.y + 0.22) + (Math.random() - 0.5) * 0.04;
@@ -13992,7 +14079,7 @@ window.game = this;
         } else {
           if (p.glowLight) {
             p.glowLight.intensity = 0;
-            p.glowLight.visible = false;
+            p.glowLight.visible = true;
           }
           // 3-minute respawn countdown (180s)
           p.respawnTimer -= delta;
@@ -14001,8 +14088,8 @@ window.game = this;
             const sameFloor = (p.floor === this.playerFloor);
             p.mesh.visible = sameFloor;
             if (p.glowLight) {
-              p.glowLight.visible = sameFloor;
-              p.glowLight.intensity = sameFloor ? 0.80 : 0;
+              p.glowLight.visible = true;
+              p.glowLight.intensity = sameFloor ? 0.95 : 0;
             }
           }
         }
@@ -14015,7 +14102,7 @@ window.game = this;
       pickup.mesh.visible = false;
       if (pickup.glowLight) {
         pickup.glowLight.intensity = 0;
-        pickup.glowLight.visible = false;
+        pickup.glowLight.visible = true;
       }
       if (this.mp) {
         const pIndex = this.ammoPickups.indexOf(pickup);
@@ -18381,6 +18468,19 @@ window.game = this;
           // Keep floor group visibility in sync as player enters/exits stairwells or changes floors
           this.updateFloorGroupVisibility();
 
+          // Animate top-floor low-to-mid level fog drift and denser top-floor distance fog
+          if (this.scene && this.scene.fog) {
+            const targetFogDensity = (this.playerFloor === 3 && !this.isSpectatorMode) ? 0.048 : 0.032;
+            this.scene.fog.density += (targetFogDensity - this.scene.fog.density) * Math.min(1, delta * 3.5);
+          }
+          if (this.playerFloor === 3 && this.topFloorFogMaterials) {
+            for (let fi = 0; fi < this.topFloorFogMaterials.length; fi++) {
+              const fm = this.topFloorFogMaterials[fi];
+              fm.tex.offset.x = (fm.tex.offset.x + fm.speedX * delta) % 1;
+              fm.tex.offset.y = (fm.tex.offset.y + fm.speedZ * delta) % 1;
+            }
+          }
+
           // Dynamic distance culling for paintings on current floor (or all floors in spectator mode)
           if (this.paintings) {
             const px = this.playerPos.x;
@@ -19275,7 +19375,7 @@ window.game = this;
         if (p.mesh) p.mesh.visible = false;
         if (p.glowLight) {
           p.glowLight.intensity = 0;
-          p.glowLight.visible = false;
+          p.glowLight.visible = true;
         }
       }
     }
