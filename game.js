@@ -4488,11 +4488,13 @@ window.game = this;
         wallConcrete: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 10, 2, 0x888e96),
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
-        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8)
+        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8),
+        carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24)
       };
 
       mats.floorDirt.userData = { isDirt: true };
       mats.ceiling.userData = { isCeiling: true };
+      mats.carpetMaroon.userData = { isCarpet: true };
 
       mats.ceiling.emissive = new THREE.Color(0x322f28);
       mats.ceiling.shininess = 16;
@@ -4570,7 +4572,9 @@ window.game = this;
                      : (fl === 2 || fl === 3) ? mats.floorDirt
                      : mats.floorDirt;
 
-      const officeFloorMat = (fl === 2 || fl === 3) ? mats.floorDirt : mats.floorDarkWood;
+      // The West Office / Media Room is the Video Installation Room across all floors (fl: 0, 1, 2, 3)
+      const videoRoomFloorMat = mats.carpetMaroon;
+      const eastOfficeFloorMat = (fl === 2 || fl === 3) ? mats.floorDirt : mats.floorDarkWood;
 
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
                         : fl === 1 ? mats.wallPlasterWarm
@@ -4585,10 +4589,10 @@ window.game = this;
       // 1b. West Wing to West Office doorway floor strip (x: -31.5..-28.5, z: 17.80..18.00)
       this.createFloor(-30.0, y0, 17.90, 3.0, 0.20, floorMat);
       this.createCeiling(-30.0, y0 + ceilH, 17.90, 3.0, 0.20, mats.ceiling);
-      // 2. West Office Slab (x: -34.0..-24.20, z: 18.20..27.80 strictly inside the mahogany walls)
-      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, officeFloorMat, mats.ceiling, ceilH);
+      // 2. West Office / Video Room Slab (x: -34.0..-24.20, z: 18.20..27.80 strictly inside the room walls)
+      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, videoRoomFloorMat, mats.ceiling, ceilH);
       // 2b. West Office North doorway floor strip (x: -31.5..-28.5, z: 18.00..18.20)
-      this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, officeFloorMat);
+      this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, videoRoomFloorMat);
       this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, mats.ceiling);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -15.80..-4.00, z: -18..28 stopping flush at the east face of the x = -16.0 wall)
       this.createSlab(-9.90, y0, 5, 11.80, 46.0, floorMat, mats.ceiling, ceilH);
@@ -4609,7 +4613,7 @@ window.game = this;
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(30.5, y0, -18, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(30.5, y0, -4, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(30.5, y0, 13, 5.0, 10.0, officeFloorMat, mats.ceiling, ceilH);
+      this.createSlab(30.5, y0, 13, 5.0, 10.0, eastOfficeFloorMat, mats.ceiling, ceilH);
       // 7. South-East Media Wing Slab (x: 4..28, z: 18..28) + South Beaux-Arts Rotunda (x: 12..26, z: 28..36)
       this.createSlab(16, y0, 23, 24.0, 10.0, floorMat, mats.ceiling, ceilH);
       this.createSlab(19, y0, 32, 14.0, 8.0, floorMat, mats.ceiling, ceilH);
@@ -5348,8 +5352,11 @@ window.game = this;
       if (mat) {
         if (mat.userData && mat.userData.isDirt) {
           tileSize = 6.0;
+        } else if (mat.userData && mat.userData.isCarpet) {
+          tileSize = 3.5;
         } else if (mat.map && mat.map.image && typeof mat.map.image.src === 'string') {
           if (mat.map.image.src.includes('floor_dirt')) tileSize = 6.0;
+          else if (mat.map.image.src.includes('carpet_maroon')) tileSize = 3.5;
           else if (mat.map.image.src.includes('wood_parquet')) tileSize = 3.6;
           else if (mat.map.image.src.includes('wood_floor_dark')) tileSize = 3.8;
           else if (mat.map.image.src.includes('marble_floor')) tileSize = 4.2;
@@ -12025,7 +12032,8 @@ window.game = this;
         maxY: y0 + 1.25
       });
 
-      // Register video installation room metadata
+      // Register video installation room metadata (West Office room bounds: x: -34.0..-24.2, z: 18.2..27.8)
+      // Set strict interior thresholds so the video only begins playing when the player is fully inside the room
       const roomMeta = {
         floor: fl,
         playlistId: this.videoPlaylists[fl],
@@ -12036,10 +12044,10 @@ window.game = this;
         screenMesh: screenMesh,
         screenLight: screenLight,
         buttons: interactiveButtons,
-        minX: -34.5,
-        maxX: -23.5,
-        minZ: 16.5,
-        maxZ: 28.8
+        minX: -33.8,
+        maxX: -24.4,
+        minZ: 18.3,
+        maxZ: 27.6
       };
 
       this.videoInstallationRooms.push(roomMeta);
