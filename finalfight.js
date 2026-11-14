@@ -14,7 +14,7 @@
   const RADIUS = 0.44;
   const WALK_SPEED = 3.8;
   const RUN_SPEED = 10.2;
-  const TALL_MULTIPLIER = 1.38;                   // noticeably taller than The Curator (~3.8m)
+  const TALL_MULTIPLIER = 1.68;                   // towering protector (~4.6m tall)
 
   const rand = (a, b) => a + Math.random() * (b - a);
   const angDiff = (a, b) => {

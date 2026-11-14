@@ -16177,25 +16177,8 @@ window.game = this;
       if (elev.floor !== this.playerFloor && Math.abs(currentFootElevation - targetFloorBaseY) < 1.4) {
         this.playerFloor = elev.floor;
         this.showFloorNotification(this.playerFloor);
-        this.updateRelicFloorVisibility();
       } else if (elev.floor === this.playerFloor) {
         this.playerFloor = elev.floor;
-      }
-
-      // When inside a stairwell, keep adjacent floor lights warm so upper/lower flights never go pitch black
-      if (this.floorLights) {
-        const inStair = !!this.playerStairState.active || this.isInStairwell(this.playerPos);
-        const stairBase = this.playerStairState.baseFloor;
-        for (let f = 0; f < 4; f++) {
-          const active = (f === this.playerFloor) ||
-            (inStair && (f === stairBase || f === stairBase + 1 || Math.abs(currentFootElevation - f * CONFIG.FLOOR_HEIGHT) < CONFIG.FLOOR_HEIGHT * 0.95));
-          if (this.floorLights[f]) {
-            for (let l of this.floorLights[f]) {
-              l.visible = active;
-              l.intensity = active ? (l._origIntensity ?? 0.5) : 0;
-            }
-          }
-        }
       }
 
       // Check platform standing surface (benches, plinths, desks, crates)
