@@ -4532,6 +4532,7 @@ window.game = this;
         for (let f = 0; f < this.floorGroups.length; f++) {
           if (this.floorGroups[f]) this.floorGroups[f].visible = true;
         }
+        if (this.topFloorFogGroup) this.topFloorFogGroup.visible = true;
         if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = true;
         return;
       }
@@ -4541,6 +4542,9 @@ window.game = this;
       for (let f = 0; f < this.floorGroups.length; f++) {
         if (!this.floorGroups[f]) continue;
         this.floorGroups[f].visible = (f === this.playerFloor) || (nearStair && Math.abs(f - this.playerFloor) <= 1);
+      }
+      if (this.topFloorFogGroup) {
+        this.topFloorFogGroup.visible = (this.playerFloor === 3) || (nearStair && this.playerFloor >= 2);
       }
       if (this.topFloorStairFogGroup) {
         this.topFloorStairFogGroup.visible = (this.playerFloor >= 2) || (nearStair && this.playerFloor >= 1);
@@ -10834,13 +10838,13 @@ window.game = this;
     createTopFloorFogLayers(y0) {
       // Custom GLSL atmospheric mist shader evaluated in continuous world space:
       // - Zero square/rectangular grid (pure Simplex noise + soft curvy cloud billows)
-      // - Zero flat "pancake layer" stripes on walls or plinths (analytic SDF wall & pedestal feathering + gentle 3D wave undulation)
+      // - Zero flat "pancake layer" stripes on walls or plinths (gentle 3D vertex wave + smooth vertical strata blending)
       // - Zero floating fog ceiling over the open stairwell shafts when looking up from Floor 3
       // - Seamless connection between the top-floor mist and the arched cascading mist pouring down the upper staircase flights
       this.topFloorFogUniforms = {
         uTime: { value: 0.0 },
-        uColorLow: { value: new THREE.Color(0xa6bad2) },
-        uColorHigh: { value: new THREE.Color(0xe6f0fc) }
+        uColorLow: { value: new THREE.Color(0xaabed8) },
+        uColorHigh: { value: new THREE.Color(0xeef5ff) }
       };
 
       const fogVertexShader = `
@@ -10852,8 +10856,8 @@ window.game = this;
           vec4 worldPosition = modelMatrix * vec4(position, 1.0);
           // Subtle 3D vertical billowing wave on horizontal mist cushions so the mist never forms a flat laser-plane
           if (abs(normal.z) > 0.9) {
-            float wave = sin(worldPosition.x * 0.23 + uTime * 0.45) * cos(worldPosition.z * 0.19 - uTime * 0.38) * 0.06
-                       + sin((worldPosition.x + worldPosition.z) * 0.14 - uTime * 0.32) * 0.045;
+            float wave = sin(worldPosition.x * 0.23 + uTime * 0.45) * cos(worldPosition.z * 0.19 - uTime * 0.38) * 0.065
+                       + sin((worldPosition.x + worldPosition.z) * 0.14 - uTime * 0.32) * 0.05;
             worldPosition.y += wave;
           }
           vWorldPos = worldPosition.xyz;
@@ -10908,92 +10912,6 @@ window.game = this;
           return v;
         }
 
-        ${!isStairSlope ? `
-        // Analytic distance to wall faces, pedestals, and open stairwell shafts on Floor 4:
-        // Feathers mist to 0 within 12cm of actual wall faces (preventing hard horizontal wall bands)
-        // while keeping every room, corridor, and stairwell landing richly filled with fog!
-        float wallProximityMask(vec2 xz) {
-          // Wall thickness is 0.40m (half-thickness 0.20m), so subtract 0.19m from centerline distance
-          // to get the true distance to the visible wall surface!
-          float d = 10.0;
-          // X-aligned walls (with doorway openings preserved so fog flows continuously through doors & landings)
-          if (xz.z >= -6.2 && xz.z <= 18.2) d = min(d, abs(xz.x - (-36.0)));
-          if (xz.z >= 18.2 && xz.z <= 28.2) d = min(d, abs(xz.x - (-34.0)));
-          if (xz.z >= 20.8 && xz.z <= 28.2) d = min(d, abs(xz.x - (-24.0)));
-          if ((xz.z >= -18.2 && xz.z <= -3.4) || (xz.z >= -0.6 && xz.z <= 4.6) || (xz.z >= 7.4 && xz.z <= 12.6) || (xz.z >= 15.4 && xz.z <= 18.6) || (xz.z >= 20.8 && xz.z <= 28.2)) {
-            d = min(d, abs(xz.x - (-16.0)));
-          }
-          if ((xz.z >= -40.2 && xz.z <= -16.8) || (xz.z >= -14.0 && xz.z <= 2.6) || (xz.z >= 7.4 && xz.z <= 20.1) || (xz.z >= 23.9 && xz.z <= 28.2)) {
-            d = min(d, abs(xz.x - (-4.0)));
-          }
-          if ((xz.z >= -26.0 && xz.z <= -16.8) || (xz.z >= -13.1 && xz.z <= -3.4) || (xz.z >= -0.6 && xz.z <= 2.6) || (xz.z >= 7.4 && xz.z <= 18.2)) {
-            d = min(d, abs(xz.x - 4.0));
-          }
-          if ((xz.z >= 7.8 && xz.z <= 11.6) || (xz.z >= 14.4 && xz.z <= 18.2)) {
-            d = min(d, abs(xz.x - 19.0));
-          }
-          if ((xz.z >= -40.2 && xz.z <= -21.8) || (xz.z >= -14.2 && xz.z <= -7.8) || (xz.z >= -0.2 && xz.z <= 7.8) || (xz.z >= 18.2 && xz.z <= 28.2)) {
-            d = min(d, abs(xz.x - 28.0));
-          }
-          if (xz.z >= -22.2 && xz.z <= 18.2 && xz.x > 28.0) {
-            d = min(d, abs(xz.x - 33.0));
-          }
-
-          // Z-aligned walls
-          if (xz.x >= 5.8 && xz.x <= 18.2) d = min(d, abs(xz.z - (-42.0)));
-          if ((xz.x >= -4.0 && xz.x <= 6.0) || (xz.x >= 18.0 && xz.x <= 28.0)) d = min(d, abs(xz.z - (-40.0)));
-          if ((xz.x >= -4.0 && xz.x <= 4.6) || (xz.x >= 7.4 && xz.x <= 16.6) || (xz.x >= 19.8 && xz.x <= 28.0)) {
-            d = min(d, abs(xz.z - (-26.0)));
-          }
-          if (xz.x >= -16.0 && xz.x <= -4.0) d = min(d, abs(xz.z - (-18.0)));
-          if (xz.x >= -3.8 && xz.x <= 3.8) {
-            d = min(d, abs(xz.z - (-14.0)));
-            d = min(d, abs(xz.z - (-10.0)));
-            d = min(d, abs(xz.z - (-6.0)));
-            d = min(d, abs(xz.z - 2.0));
-            d = min(d, abs(xz.z - 8.0));
-            d = min(d, abs(xz.z - 14.0));
-            d = min(d, abs(xz.z - 18.0));
-          }
-          if ((xz.x >= -36.0 && xz.x <= -16.0) || (xz.x >= -16.0 && xz.x <= -13.6) || (xz.x >= -6.4 && xz.x <= -4.0)) {
-            d = min(d, abs(xz.z - (-6.0)));
-          }
-          if (xz.x >= 19.0 && xz.x <= 33.0) d = min(d, abs(xz.z - 8.0));
-          if ((xz.x >= -36.0 && xz.x <= -31.4) || (xz.x >= -28.6 && xz.x <= -21.4) || (xz.x >= -18.6 && xz.x <= -16.0) || (xz.x >= 19.0 && xz.x <= 21.6) || (xz.x >= 24.4 && xz.x <= 33.0)) {
-            d = min(d, abs(xz.z - 18.0));
-          }
-          if ((xz.x >= -34.0 && xz.x <= -23.8) || (xz.x >= -16.0 && xz.x <= 12.2) || (xz.x >= 25.8 && xz.x <= 28.0)) {
-            d = min(d, abs(xz.z - 28.0));
-          }
-
-          // Rotunda semi-circular apse & central partition
-          if (xz.z >= 28.0 && xz.x >= 11.5 && xz.x <= 26.5) {
-            float rRot = length(xz - vec2(19.0, 28.0));
-            d = min(d, abs(7.0 - rRot));
-            if (xz.x >= 16.4 && xz.x <= 21.6) d = min(d, abs(xz.z - 33.9));
-          }
-
-          // Feather over just the last 14cm before the wall face (d = 0.20 is the wall surface)
-          float wallMask = smoothstep(0.19, 0.34, d);
-
-          // Feather cleanly around the Rotunda stepped dais (19.0, 30.5, r=2.70)
-          float dDais = length(xz - vec2(19.0, 30.5));
-          float daisMask = smoothstep(2.55, 2.95, dDais);
-
-          // Cut out ONLY the open stairwell drop shafts (z < -16.95 in Stairwell N, z > 20.95 in Stairwell SW)
-          // so the Floor 4 stairwell landings remain completely filled with mist right up to the top step!
-          vec2 dStairN = abs(xz - vec2(0.0, -21.55)) - vec2(3.75, 4.35);
-          float distStairN = length(max(dStairN, 0.0)) + min(max(dStairN.x, dStairN.y), 0.0);
-          float stairMaskN = smoothstep(-0.05, 0.30, distStairN);
-
-          vec2 dStairSW = abs(xz - vec2(-20.0, 24.55)) - vec2(3.75, 3.35);
-          float distStairSW = length(max(dStairSW, 0.0)) + min(max(dStairSW.x, dStairSW.y), 0.0);
-          float stairMaskSW = smoothstep(-0.05, 0.30, distStairSW);
-
-          return wallMask * daisMask * stairMaskN * stairMaskSW;
-        }
-        ` : ''}
-
         void main() {
           float t = uTime * 0.24 + ${layerSeed.toFixed(2)};
           ${isStairSlope ? `
@@ -11015,20 +10933,34 @@ window.game = this;
           );
 
           float f = fbm(p + 1.55 * q + vec2(t * 0.28, -t * 0.21));
-          float density = smoothstep(0.18, 0.78, f);
+          float density = smoothstep(0.16, 0.78, f);
 
           ${isStairSlope ? `
           // Soft arch fade across stairwell width and smooth entry/exit fade at both ends of the stair flight
           float sideFade = pow(sin(clamp(vUv.x, 0.0, 1.0) * 3.14159265), 1.55);
           float topEntry = smoothstep(0.0, 0.22, vUv.y);
-          float bottomTail = smoothstep(1.0, 0.16, vUv.y);
+          float bottomTail = 1.0 - smoothstep(0.16, 1.0, vUv.y);
           float alpha = (0.24 + 0.76 * density) * ${layerOpacity.toFixed(3)} * sideFade * topEntry * bottomTail;
           ` : `
-          // Soft outer perimeter fade around building bounds [-36..33, -42..36] + tight wall/stairwell SDF mask
-          float edgeX = smoothstep(-36.2, -35.2, vWorldPos.x) * smoothstep(33.2, 32.2, vWorldPos.x);
-          float edgeZ = smoothstep(-42.2, -41.2, vWorldPos.z) * smoothstep(36.2, 35.2, vWorldPos.z);
-          float geomMask = wallProximityMask(vWorldPos.xz);
-          float alpha = (0.32 + 0.68 * density) * ${layerOpacity.toFixed(3)} * edgeX * edgeZ * geomMask;
+          // Strictly ascending smoothstep(edge0, edge1, x) with edge0 < edge1 for 100% GLSL ES 1.00 compliance
+          float edgeX = smoothstep(-36.2, -34.8, vWorldPos.x) * (1.0 - smoothstep(31.8, 33.2, vWorldPos.x));
+          float edgeZ = smoothstep(-42.2, -40.8, vWorldPos.z) * (1.0 - smoothstep(34.8, 36.2, vWorldPos.z));
+
+          // Cut out ONLY the two open stairwell drop shafts (z < -16.95 in Stairwell N, z > 20.95 in Stairwell SW)
+          // so looking up from Floor 3 never shows a flat ceiling of fog over the stairwell shaft,
+          // and feather around the Rotunda circular dais (19.0, 30.5) so there is zero Z-fighting!
+          vec2 dStairN = abs(vWorldPos.xz - vec2(0.0, -21.55)) - vec2(3.75, 4.35);
+          float distStairN = length(max(dStairN, vec2(0.0, 0.0))) + min(max(dStairN.x, dStairN.y), 0.0);
+          float stairMaskN = smoothstep(-0.05, 0.28, distStairN);
+
+          vec2 dStairSW = abs(vWorldPos.xz - vec2(-20.0, 24.55)) - vec2(3.75, 3.35);
+          float distStairSW = length(max(dStairSW, vec2(0.0, 0.0))) + min(max(dStairSW.x, dStairSW.y), 0.0);
+          float stairMaskSW = smoothstep(-0.05, 0.28, distStairSW);
+
+          float dDais = length(vWorldPos.xz - vec2(19.0, 30.5));
+          float daisMask = smoothstep(2.55, 2.95, dDais);
+
+          float alpha = (0.34 + 0.66 * density) * ${layerOpacity.toFixed(3)} * edgeX * edgeZ * stairMaskN * stairMaskSW * daisMask;
           `}
 
           if (alpha < 0.003) discard;
@@ -11037,17 +10969,17 @@ window.game = this;
         }
       `;
 
-      // 1. Rich, undulating low-to-mid level ground mist cushions across the entire 4th floor (Floor 3)
-      // 3 softly undulating strata (0.22m, 0.54m, 0.92m) feathered 14cm before walls so there are ZERO wall stripes
-      // while filling all rooms, hallways, and landings with thick, creepy, curvy ground fog!
+      // 1. Rich, undulating low-to-mid level ground mist across the entire 4th floor (Floor 3)
+      // Added directly to root scene (managed by updateFloorGroupVisibility) so it renders reliably across the whole floor!
       const layerSpecs = [
-        { height: 0.22, opacity: 0.36, seed: 0.0 },
-        { height: 0.54, opacity: 0.26, seed: 19.3 },
-        { height: 0.92, opacity: 0.18, seed: 37.8 }
+        { height: 0.18, opacity: 0.42, seed: 0.0 },
+        { height: 0.46, opacity: 0.32, seed: 19.3 },
+        { height: 0.78, opacity: 0.22, seed: 37.8 },
+        { height: 1.14, opacity: 0.14, seed: 53.6 }
       ];
       this.topFloorFogGroup = new THREE.Group();
       this.topFloorFogGroup.name = 'TopFloorFogStrata';
-      const fullPlaneGeom = new THREE.PlaneGeometry(70.0, 79.0, 48, 54);
+      const fullPlaneGeom = new THREE.PlaneGeometry(70.0, 79.0, 56, 64);
       for (let li = 0; li < layerSpecs.length; li++) {
         const spec = layerSpecs[li];
         const mat = new THREE.ShaderMaterial({
@@ -11064,7 +10996,11 @@ window.game = this;
         mesh.renderOrder = 2;
         this.topFloorFogGroup.add(mesh);
       }
-      this.scene.add(this.topFloorFogGroup);
+      if (this._rootSceneAdd) {
+        this._rootSceneAdd(this.topFloorFogGroup);
+      } else {
+        this.scene.add(this.topFloorFogGroup);
+      }
 
       // 2. Cascading / trickling fog down the highest staircase sets (Floor 3 -> Floor 2)
       // Arched 3D vapor streams that float clear above the stone step nosings (zero step-slicing stripes!)
@@ -18941,7 +18877,7 @@ window.game = this;
 
           // Animate top-floor low-to-mid level curvy fog shader & upper staircase trickle
           if (this.scene && this.scene.fog) {
-            const targetFogDensity = (this.playerFloor === 3 && !this.isSpectatorMode) ? 0.054 : 0.032;
+            const targetFogDensity = (this.playerFloor === 3 && !this.isSpectatorMode) ? 0.036 : 0.032;
             this.scene.fog.density += (targetFogDensity - this.scene.fog.density) * Math.min(1, delta * 3.5);
           }
           if (this.topFloorFogUniforms && (this.playerFloor >= 2 || this.isSpectatorMode)) {
