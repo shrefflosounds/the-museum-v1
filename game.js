@@ -5022,19 +5022,13 @@ window.game = this;
       if (pos.x >= -3.85 && pos.x <= 3.85 && pos.z >= -25.8 && pos.z <= -14.2) {
         // A) South Main Landing (z: -16.8..-14.2)
         if (pos.z >= -16.8) {
-          let landingFloor;
-          const lockedFloor = getLockedStairFloor('N');
-          if (lockedFloor !== null) {
-            landingFloor = pos.x < 0 ? lockedFloor : lockedFloor + 1;
-          } else {
-            landingFloor = currentFloor;
-            let bestDist = Infinity;
-            for (let fl = 0; fl < numFloors; fl++) {
-              const d = Math.abs(footRef - fl * H);
-              if (d < bestDist) {
-                bestDist = d;
-                landingFloor = fl;
-              }
+          let landingFloor = currentFloor;
+          let bestDist = Infinity;
+          for (let fl = 0; fl < numFloors; fl++) {
+            const d = Math.abs(footRef - fl * H);
+            if (d < bestDist) {
+              bestDist = d;
+              landingFloor = fl;
             }
           }
           stairState.active = null;
@@ -5045,7 +5039,7 @@ window.game = this;
         // B) North Mid-Landing (z <= -23.2)
         if (pos.z <= -23.2) {
           let bestL = getLockedStairFloor('N');
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - (bestL * H + halfH)) > halfH * 0.85) {
             bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
             let bestDist = Infinity;
             for (let l = 0; l < numFloors - 1; l++) {
@@ -5067,7 +5061,7 @@ window.game = this;
         if (pos.x < 0) {
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
           let bestL = getLockedStairFloor('N');
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - (bestL * H + t * halfH)) > halfH * 0.85) {
             bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
             let bestDist = Infinity;
             for (let l = 0; l < numFloors - 1; l++) {
@@ -5086,7 +5080,7 @@ window.game = this;
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
           let bestL = getLockedStairFloor('N');
           let bestDist = Infinity;
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - ((bestL + 1) * H - t * halfH)) > halfH * 0.85) {
             bestL = 0;
             for (let l = 0; l < numFloors - 1; l++) {
               const candY = (l + 1) * H - t * halfH;
@@ -5098,7 +5092,7 @@ window.game = this;
             }
           }
           // If player is on ground floor below the first East flight
-          if (getLockedStairFloor('N') === null && footRef < 1.85 && Math.abs(footRef) < bestDist) {
+          if (footRef < 1.85 && Math.abs(footRef) < Math.abs(footRef - ((bestL + 1) * H - t * halfH))) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
@@ -5113,19 +5107,13 @@ window.game = this;
       if (pos.x >= -23.85 && pos.x <= -16.15 && pos.z >= 18.2 && pos.z <= 27.8) {
         // A) North Main Landing (z: 18.2..20.8)
         if (pos.z <= 20.8) {
-          let landingFloor;
-          const lockedFloor = getLockedStairFloor('SW');
-          if (lockedFloor !== null) {
-            landingFloor = pos.x < -20.0 ? lockedFloor : lockedFloor + 1;
-          } else {
-            landingFloor = currentFloor;
-            let bestDist = Infinity;
-            for (let fl = 0; fl < numFloors; fl++) {
-              const d = Math.abs(footRef - fl * H);
-              if (d < bestDist) {
-                bestDist = d;
-                landingFloor = fl;
-              }
+          let landingFloor = currentFloor;
+          let bestDist = Infinity;
+          for (let fl = 0; fl < numFloors; fl++) {
+            const d = Math.abs(footRef - fl * H);
+            if (d < bestDist) {
+              bestDist = d;
+              landingFloor = fl;
             }
           }
           stairState.active = null;
@@ -5136,7 +5124,7 @@ window.game = this;
         // B) South Mid-Landing (z >= 25.6)
         if (pos.z >= 25.6) {
           let bestL = getLockedStairFloor('SW');
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - (bestL * H + halfH)) > halfH * 0.85) {
             bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
             let bestDist = Infinity;
             for (let l = 0; l < numFloors - 1; l++) {
@@ -5158,7 +5146,7 @@ window.game = this;
         if (pos.x < -20.0) {
           // West Flight: connects Main Landing (y = L * H at t = 0) to Mid-Landing (y = L * H + halfH at t = 1)
           let bestL = getLockedStairFloor('SW');
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - (bestL * H + t * halfH)) > halfH * 0.85) {
             bestL = Math.max(0, Math.min(numFloors - 2, currentFloor));
             let bestDist = Infinity;
             for (let l = 0; l < numFloors - 1; l++) {
@@ -5177,7 +5165,7 @@ window.game = this;
           // East Flight: connects Mid-Landing (y = L * H + halfH at t = 1) to Upper Main Landing (y = (L + 1) * H at t = 0)
           let bestL = getLockedStairFloor('SW');
           let bestDist = Infinity;
-          if (bestL === null) {
+          if (bestL === null || Math.abs(footRef - ((bestL + 1) * H - t * halfH)) > halfH * 0.85) {
             bestL = 0;
             for (let l = 0; l < numFloors - 1; l++) {
               const candY = (l + 1) * H - t * halfH;
@@ -5188,7 +5176,7 @@ window.game = this;
               }
             }
           }
-          if (getLockedStairFloor('SW') === null && footRef < 1.85 && Math.abs(footRef) < bestDist) {
+          if (footRef < 1.85 && Math.abs(footRef) < Math.abs(footRef - ((bestL + 1) * H - t * halfH))) {
             stairState.active = null;
             stairState.baseFloor = 0;
             return { y: 0, floor: 0 };
@@ -16189,8 +16177,25 @@ window.game = this;
       if (elev.floor !== this.playerFloor && Math.abs(currentFootElevation - targetFloorBaseY) < 1.4) {
         this.playerFloor = elev.floor;
         this.showFloorNotification(this.playerFloor);
+        this.updateRelicFloorVisibility();
       } else if (elev.floor === this.playerFloor) {
         this.playerFloor = elev.floor;
+      }
+
+      // When inside a stairwell, keep adjacent floor lights warm so upper/lower flights never go pitch black
+      if (this.floorLights) {
+        const inStair = !!this.playerStairState.active || this.isInStairwell(this.playerPos);
+        const stairBase = this.playerStairState.baseFloor;
+        for (let f = 0; f < 4; f++) {
+          const active = (f === this.playerFloor) ||
+            (inStair && (f === stairBase || f === stairBase + 1 || Math.abs(currentFootElevation - f * CONFIG.FLOOR_HEIGHT) < CONFIG.FLOOR_HEIGHT * 0.95));
+          if (this.floorLights[f]) {
+            for (let l of this.floorLights[f]) {
+              l.visible = active;
+              l.intensity = active ? (l._origIntensity ?? 0.5) : 0;
+            }
+          }
+        }
       }
 
       // Check platform standing surface (benches, plinths, desks, crates)
@@ -16339,7 +16344,11 @@ window.game = this;
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
           if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
-          if (c.floor !== 'all' && c.floor !== floorIdx) continue;
+          if (c.floor !== 'all' && c.floor !== floorIdx) {
+            // In multi-floor stairwells, currentFloor can lag behind physical footElevation by a floor
+            if (footElevation === -999 || c.minY === undefined || c.maxY === undefined ||
+                footElevation >= c.maxY || footElevation + bodyHeight <= c.minY) continue;
+          }
 
           if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
               (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) continue;
@@ -17511,7 +17520,7 @@ window.game = this;
       if (directLOS && goalFloor === this.smittyFloor) {
         if (!this.navGrid) this.buildObstacleGrid();
         const closeIn = Math.hypot(this.smittyPos.x - goalPos.x, this.smittyPos.z - goalPos.z) < 1.6;
-        if (!closeIn && !this.gridLOS(this.smittyFloor, this.smittyPos, goalPos)) directLOS = false;
+        if (!directLOS && !closeIn && !this.isInStairwell(this.smittyPos) && !this.gridLOS(this.smittyFloor, this.smittyPos, goalPos)) directLOS = false;
       }
 
       if (!directLOS || goalFloor !== this.smittyFloor) {
@@ -17526,7 +17535,7 @@ window.game = this;
           this.smittyPath = this.refineNavPath(this.findShortestPath(startId, goalId), this.smittyPos, this.smittyFloor);
           this.smittyPathGoalId = goalId;
           this.smittyPathIndex = 0;
-          if (this.smittyPath.length > 1) {
+          if (this.smittyPath.length > 1 && !this.isInStairwell(this.smittyPos) && !this.isInStairwell(this.smittyPath[0])) {
             const dFirst = Math.hypot(this.smittyPos.x - this.smittyPath[0].x, this.smittyPos.z - this.smittyPath[0].z);
             if (dFirst < 1.1 || (this.smittyPath[0].floor === this.smittyPath[1].floor && this.hasClearNavPath(this.smittyPos, this.smittyPath[1], this.smittyFloor, 0.44))) {
               this.smittyPathIndex = 1;
@@ -17536,7 +17545,8 @@ window.game = this;
 
         let targetNode = this.smittyPath[this.smittyPathIndex] || goalPos;
         const distToTarget = Math.hypot(this.smittyPos.x - targetNode.x, this.smittyPos.z - targetNode.z);
-        if (distToTarget < (targetNode.refined ? 0.6 : 1.1)) {
+        const reachRadius = this.isInStairwell(targetNode) ? 0.65 : (targetNode.refined ? 0.6 : 1.1);
+        if (distToTarget < reachRadius) {
           if (this.smittyPathIndex < this.smittyPath.length - 1) {
             this.smittyPathIndex++;
             targetNode = this.smittyPath[this.smittyPathIndex];
@@ -17686,6 +17696,7 @@ window.game = this;
             : { x: 12, z: -30, floor: chosenFloor };
 
           this.smittyFloor = chosenFloor;
+          this.smittyStairState = { active: null, baseFloor: chosenFloor };
           this.smittyPos.set(spawnNode.x, chosenFloor * CONFIG.FLOOR_HEIGHT, spawnNode.z);
           this.smittyMesh.position.copy(this.smittyPos);
           this.smittyMesh.position.y += 0.05;
