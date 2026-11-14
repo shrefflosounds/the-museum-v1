@@ -14297,7 +14297,7 @@ window.game = this;
 
     updateRelicFloorVisibility() {
       for (let r of this.relics) {
-        const show = (!this.isMuseumMode && !r.collected && r.floor === this.playerFloor);
+        const show = (!r.collected && r.floor === this.playerFloor);
         if (r.mesh) {
           r.mesh.visible = show;
         }
@@ -15879,10 +15879,10 @@ window.game = this;
       }
       this.renderer.toneMappingExposure = 1.0;
 
-      // Clean presentation UI: hide player hud, viewmodel weapons and arms
-      if (this.dom.hud) this.dom.hud.classList.add('hud-hidden');
+      // Clean presentation UI: show hand model for relic interactions, hide weapon viewmodels
+      if (this.dom.hud) this.dom.hud.classList.remove('hud-hidden');
       if (this.weaponRig) this.weaponRig.visible = false;
-      if (this.leftArmRig) this.leftArmRig.visible = false;
+      if (this.leftArmRig) this.leftArmRig.visible = true;
       if (this.dom.interactPrompt) this.dom.interactPrompt.classList.add('hidden');
       if (this.dom.startScreen) this.dom.startScreen.classList.add('hidden');
       if (this.dom.museumModeBanner) this.dom.museumModeBanner.classList.remove('hidden');
@@ -15915,94 +15915,125 @@ window.game = this;
     }
 
     buildMuseumTourItinerary() {
-      // Constructs a simple, natural, obstacle-free architectural tour across all 4 floors:
-      //  1. Strolls the Grand Promenade down the Main Gallery
-      //  2. Turns cleanly through the West Wing archway into the West Salon
-      //  3. Enters the Video Installation Theater, plays the video, and pauses for 10 seconds facing the screen
-      //  4. Exits smoothly via the south cross-passage into the Central Transept & East Wing
-      //  5. Visits the Southeast Hall and majestic Rotunda
-      //  6. Walks the spacious East Grand Aisle into the North Egyptian Pavilion
-      //  7. Steps into the central North Stairwell to ascend naturally to the next floor
-      //  8. Concludes seamlessly after Floor 4 and returns to main menu
+      // Constructs an authentic, natural, obstacle-free autonomous showcase tour across all 4 floors:
+      //  - Dynamically routes through all 4 floors visiting all relic pedestals & exhibition highlights
+      //  - Interacts with and collects all 14 relics with left-hand grab animations & chime notifications
+      //  - Pauses to preview video installations and admire artwork
+      //  - Ascends through each level to Floor 4 (Floor 3) until all 14 relics are obtained
+      //  - Unseals the exit doors (bypassing the relic cutscene)
+      //  - Smoothly descends back down to the 1st floor and walks out the front entrance doors to complete the demo!
       const waypoints = [];
+
+      // Verify navigation graph is built
+      if (!this.navNodes || this.navNodes.length === 0) {
+        this.buildNavGraph();
+      }
+
+      const routeStops = [
+        { x: -10.0, z: 22.0, label: 'GRAND PROMENADE', pause: 0 },
+        { x: -12.5, z: -2.0, label: 'NORTH WEST SALON PORTAL', pause: 0 },
+        { x: -26.0, z: -3.5, label: 'WEST SALON EXHIBIT', pause: 0.8, lookYaw: -Math.PI / 2 },
+        { x: -26.0, z: 15.5, label: 'WEST CONTEMPORARY GALLERY', pause: 0.8, lookYaw: -Math.PI / 2 },
+        { x: -29.0, z: 21.0, label: 'VIDEO INSTALLATION THEATER', pause: 3.5, isVideoStop: true, lookYaw: Math.PI },
+        { x: 26.0, z: 10.5, label: 'EAST CURATORIAL DESK', pause: 0.8, lookYaw: Math.PI / 2 },
+        { x: 19.0, z: 28.5, label: 'BEAUX-ARTS ROTUNDA DAIS', pause: 0.8, lookYaw: Math.PI },
+        { x: 7.0, z: -39.0, label: 'NORTH ANTIQUITIES PAVILION', pause: 0.8, lookYaw: 0 },
+        { x: 0.0, z: -15.4, label: 'NORTH STAIRWELL LANDING', pause: 0 }
+      ];
+
+      let currentPos = { x: -10.0, z: 22.0 };
+      let currentFloor = 0;
 
       for (let fl = 0; fl < CONFIG.NUM_FLOORS; fl++) {
         const floorName = (fl === 0 ? "1ST FLOOR" : fl === 1 ? "2ND FLOOR" : fl === 2 ? "3RD FLOOR" : "4TH FLOOR");
 
-        // 1. Grand Promenade (Main Gallery Spine)
-        waypoints.push({ x: -10.0, z: 22.0, floor: fl, label: `${floorName} • GRAND PROMENADE`, yaw: 0 });
-        waypoints.push({ x: -10.0, z: 12.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
-        waypoints.push({ x: -10.0, z: 6.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+        for (let si = 0; si < routeStops.length; si++) {
+          const stop = routeStops[si];
+          if (fl > 0 && si === 0) continue; // Start directly at landing on upper floors
 
-        // 2. West Wing Archway & Salon (wide, clear central aisle)
-        waypoints.push({ x: -12.5, z: 6.0, floor: fl, label: `${floorName} • WEST WING ARCHWAY`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -19.5, z: 6.0, floor: fl, label: `${floorName} • WEST SALON`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -26.0, z: 6.0, floor: fl, label: `${floorName} • WEST EXHIBITION HALL`, yaw: Math.PI });
-        waypoints.push({ x: -26.0, z: 15.5, floor: fl, label: `${floorName} • WEST CONTEMPORARY GALLERY`, yaw: Math.PI });
+          const sId = this.findNearestNavNode(currentPos, currentFloor);
+          const gId = this.findNearestNavNode(stop, fl);
+          const path = this.findShortestPath(sId, gId);
 
-        // 3. Video Installation Theater (Doorway at x: -30, z: 18)
-        waypoints.push({ x: -30.0, z: 16.0, floor: fl, label: `${floorName} • THEATER PASSAGE`, yaw: Math.PI });
-        waypoints.push({ x: -30.0, z: 18.0, floor: fl, label: `${floorName} • VIDEO THEATER ENTRY`, yaw: Math.PI });
-        waypoints.push({
-          x: -29.0,
-          z: 21.5,
-          floor: fl,
-          label: `${floorName} • VIDEO INSTALLATION THEATER`,
-          yaw: Math.PI,
-          pitch: 0.05,
-          isVideoStop: true,
-          pauseDuration: 10.0 // Pause for 10 seconds to watch the video
-        });
+          for (let pi = 1; pi < path.length; pi++) {
+            const node = path[pi];
+            waypoints.push({
+              x: node.x,
+              z: node.z,
+              floor: node.floor,
+              label: `${floorName} • ${stop.label}`
+            });
+            currentPos = { x: node.x, z: node.z };
+            currentFloor = node.floor;
+          }
 
-        // 4. Smooth Exit from Video Theater via SW Corridor
-        waypoints.push({ x: -26.0, z: 19.7, floor: fl, label: `${floorName} • THEATER CORRIDOR`, yaw: Math.PI / 2 });
-        waypoints.push({ x: -20.0, z: 19.7, floor: fl, label: `${floorName} • CORRIDOR PASSAGE`, yaw: Math.PI / 2 });
-        waypoints.push({ x: -16.0, z: 19.7, floor: fl, label: `${floorName} • MAIN ARCHWAY`, yaw: Math.PI / 2 });
-        waypoints.push({ x: -13.5, z: 19.7, floor: fl, label: `${floorName} • MAIN CROSSWAY`, yaw: -Math.PI / 2 });
-        waypoints.push({ x: -10.0, z: 18.0, floor: fl, label: `${floorName} • MAIN GALLERY`, yaw: 0 });
+          if (stop.pause > 0 && waypoints.length > 0) {
+            const lastWp = waypoints[waypoints.length - 1];
+            lastWp.pauseDuration = stop.pause;
+            lastWp.yaw = stop.lookYaw;
+            if (stop.isVideoStop) lastWp.isVideoStop = true;
+          }
+        }
 
-        // 5. Cross Central Transept into East Wing
-        waypoints.push({ x: -10.0, z: 6.0, floor: fl, label: `${floorName} • CENTRAL TRANSEPT ARCH`, yaw: 0 });
-        waypoints.push({ x: -6.5, z: 5.0, floor: fl, label: `${floorName} • TRANSEPT WEST`, yaw: Math.PI / 2 });
-        waypoints.push({ x: 0.0, z: 5.0, floor: fl, label: `${floorName} • CENTRAL ROTUNDA CROSS`, yaw: Math.PI / 2 });
-        waypoints.push({ x: 6.5, z: 5.0, floor: fl, label: `${floorName} • EAST WING PROMENADE`, yaw: Math.PI / 2 });
-
-        // 6. East Wing & Southeast Rotunda
-        waypoints.push({ x: 6.5, z: 12.0, floor: fl, label: `${floorName} • EAST SCULPTURE SALON`, yaw: Math.PI });
-        waypoints.push({ x: 12.0, z: 20.0, floor: fl, label: `${floorName} • SOUTHEAST GALLERY`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA PORTAL`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 31.0, floor: fl, label: `${floorName} • ROTUNDA DOME`, yaw: Math.PI });
-        waypoints.push({ x: 19.0, z: 26.5, floor: fl, label: `${floorName} • ROTUNDA PORTAL`, yaw: 0 });
-        waypoints.push({ x: 12.0, z: 20.0, floor: fl, label: `${floorName} • SOUTHEAST GALLERY`, yaw: -Math.PI / 2 });
-
-        // 7. Northward along East Grand Aisle to North Antiquities Pavilion
-        waypoints.push({ x: 6.5, z: 10.0, floor: fl, label: `${floorName} • EAST LONG GALLERY`, yaw: 0 });
-        waypoints.push({ x: 6.5, z: -2.5, floor: fl, label: `${floorName} • EAST GRAND AISLE`, yaw: 0 });
-        waypoints.push({ x: 6.5, z: -15.4, floor: fl, label: `${floorName} • EAST FOYER`, yaw: 0 });
-        waypoints.push({ x: 6.5, z: -23.0, floor: fl, label: `${floorName} • NORTH PAVILION APPROACH`, yaw: 0 });
-        waypoints.push({ x: 6.0, z: -26.0, floor: fl, label: `${floorName} • NORTH ARCHWAY`, yaw: 0 });
-        waypoints.push({ x: 12.0, z: -32.0, floor: fl, label: `${floorName} • NORTH ANTIQUITIES PAVILION`, yaw: 0 });
-        waypoints.push({ x: 6.0, z: -26.0, floor: fl, label: `${floorName} • NORTH ARCHWAY`, yaw: Math.PI });
-        waypoints.push({ x: 6.5, z: -23.0, floor: fl, label: `${floorName} • EAST AISLE FOYER`, yaw: Math.PI });
-        waypoints.push({ x: 6.5, z: -15.4, floor: fl, label: `${floorName} • STAIR FOYER`, yaw: -Math.PI / 2 });
-
-        // 8. North Stairwell to ascend to next floor
+        // Ascend through the central North Stairwell to the next floor
         if (fl < CONFIG.NUM_FLOORS - 1) {
-          waypoints.push({ x: 4.0, z: -15.4, floor: fl, label: `${floorName} • STAIRWELL PORTAL`, yaw: -Math.PI / 2 });
-          waypoints.push({ x: 0.0, z: -15.4, floor: fl, label: `${floorName} • NORTH STAIRWELL LANDING`, yaw: 0 });
+          const sLanding = this.findNearestNavNode({ x: 0.0, z: -15.4 }, fl);
+          const nextLanding = this.findNearestNavNode({ x: 0.0, z: -15.4 }, fl + 1);
+          const stairPath = this.findShortestPath(sLanding, nextLanding);
 
-          // Smooth architectural stair ascent
-          waypoints.push({ x: -2.0, z: -15.4, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
-          waypoints.push({ x: -2.0, z: -24.0, floor: fl, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: 0 });
-          waypoints.push({ x: 2.0, z: -24.0, floor: fl + 1, label: `ASCENDING STAIRS TO ${fl + 2}ND FLOOR...`, yaw: Math.PI });
-          waypoints.push({ x: 2.0, z: -15.4, floor: fl + 1, label: `ENTERING ${fl + 2}ND FLOOR`, yaw: Math.PI });
-          waypoints.push({ x: 0.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • STAIRWELL FOYER`, yaw: -Math.PI / 2 });
-          waypoints.push({ x: -4.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GALLERY PORTAL`, yaw: -Math.PI / 2 });
-          waypoints.push({ x: -7.0, z: -15.4, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND GALLERY NORTH`, yaw: -Math.PI / 2 });
-          waypoints.push({ x: -10.0, z: -16.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE NORTH`, yaw: Math.PI });
-          waypoints.push({ x: -10.0, z: 0.0, floor: fl + 1, label: `${(fl === 0 ? "2ND" : fl === 1 ? "3RD" : "4TH")} FLOOR • GRAND PROMENADE`, yaw: Math.PI });
+          for (let pi = 1; pi < stairPath.length; pi++) {
+            const node = stairPath[pi];
+            waypoints.push({
+              x: node.x,
+              z: node.z,
+              floor: node.floor,
+              label: `ASCENDING STAIRS TO ${fl + 2}${fl === 0 ? 'ND' : fl === 1 ? 'RD' : 'TH'} FLOOR...`
+            });
+            currentPos = { x: node.x, z: node.z };
+            currentFloor = node.floor;
+          }
         }
       }
+
+      // After completing all 4 floors and obtaining all relics, descend smoothly back down to Ground Floor
+      const topLanding = this.findNearestNavNode({ x: 0.0, z: -15.4 }, CONFIG.NUM_FLOORS - 1);
+      const groundLanding = this.findNearestNavNode({ x: 0.0, z: -15.4 }, 0);
+      const descPath = this.findShortestPath(topLanding, groundLanding);
+
+      for (let pi = 1; pi < descPath.length; pi++) {
+        const node = descPath[pi];
+        waypoints.push({
+          x: node.x,
+          z: node.z,
+          floor: node.floor,
+          label: 'ALL RELICS ACQUIRED • RETURNING TO GROUND FLOOR'
+        });
+        currentPos = { x: node.x, z: node.z };
+        currentFloor = node.floor;
+      }
+
+      // On Ground Floor, navigate obstacle-free down Grand Promenade toward Front Doors
+      const groundExitNode = this.findNearestNavNode({ x: -10.0, z: 26.0 }, 0);
+      const exitPath = this.findShortestPath(groundLanding, groundExitNode);
+
+      for (let pi = 1; pi < exitPath.length; pi++) {
+        const node = exitPath[pi];
+        waypoints.push({
+          x: node.x,
+          z: node.z,
+          floor: 0,
+          label: 'LOCKDOWN DISENGAGED • PROCEEDING TO FRONT EXIT'
+        });
+      }
+
+      // Step out through the grand entrance doors onto the front porch
+      waypoints.push({
+        x: -10.0,
+        z: 29.5,
+        floor: 0,
+        label: 'EXITING SHREFFLO MUSEUM',
+        isExitDoorway: true
+      });
 
       this.museumTourWaypoints = waypoints;
     }
@@ -16023,14 +16054,51 @@ window.game = this;
       }
 
       if (this.museumTourLegIndex >= this.museumTourWaypoints.length) {
-        // Tour completed all floors! Return to main menu
         this.exitMuseumModeToMenu();
+        return;
+      }
+
+      // Autonomous relic collection: automatically pick up nearby uncollected relics on current floor
+      if (this.relics) {
+        for (let relic of this.relics) {
+          if (relic.collected || relic.floor !== this.playerFloor) continue;
+          const distToRelic = Math.hypot(this.playerPos.x - relic.x, this.playerPos.z - relic.z);
+          if (distToRelic < 3.8) {
+            relic.collected = true;
+            if (relic.mesh) relic.mesh.visible = false;
+            if (relic.glowLight) relic.glowLight.intensity = 0;
+            this.relicsCollected++;
+            if (this.mp) {
+              this.mp.notifyRelicCollected(relic.id);
+            }
+            this.triggerLeftHandGrab();
+            this.audio.playRelicChime();
+            this.showRelicNotification();
+
+            const itemEl = document.getElementById(`relic-item-${relic.id}`);
+            if (itemEl) {
+              itemEl.classList.add('completed');
+              itemEl.innerHTML = `<span class="relic-num">${relic.id}.</span> <span class="relic-name">${relic.name}</span>`;
+            }
+
+            if (this.relicsCollected >= CONFIG.TOTAL_RELICS) {
+              this.unsealExitDoors();
+            }
+            this.updateHud();
+            break;
+          }
+        }
+      }
+
+      // Check if walking through front exit doors on 1st floor (completes demo with Victory screen)
+      if (this.playerFloor === 0 && this.playerPos.z > 27.8 && Math.abs(this.playerPos.x + 10.0) < 1.8) {
+        this.triggerVictory();
         return;
       }
 
       const targetWp = this.museumTourWaypoints[this.museumTourLegIndex];
 
-      // If pausing (e.g. video installation screen or featured wing showcase)
+      // If pausing (e.g. video installation screen or featured exhibit)
       if (this.museumTourPauseTimer > 0) {
         this.museumTourPauseTimer -= delta;
 
@@ -16051,8 +16119,8 @@ window.game = this;
         return;
       }
 
-      // Smooth strolling speed: ~2.1 meters per second (relaxing, presentation-ready gallery walk)
-      const walkSpeed = 3.2;
+      // Smooth strolling speed: ~3.3 m/s (natural, brisk museum showcase pace)
+      const walkSpeed = 3.3;
       const dx = targetWp.x - this.playerPos.x;
       const dz = targetWp.z - this.playerPos.z;
       const dist2D = Math.hypot(dx, dz);
@@ -16064,7 +16132,7 @@ window.game = this;
         this.updateRelicFloorVisibility();
       }
 
-      if (dist2D < 0.35) {
+      if (dist2D < 0.40) {
         // Arrived at waypoint
         if (targetWp.pauseDuration && targetWp.pauseDuration > 0) {
           this.museumTourPauseTimer = targetWp.pauseDuration;
@@ -16072,13 +16140,18 @@ window.game = this;
           if (targetWp.pitch !== undefined) this.playerPitch = targetWp.pitch;
 
           if (targetWp.isVideoStop) {
-            // Force activate video installation playback for this floor
+            // Activate video installation playback for this floor
             this.loadPlaylistForFloor(targetWp.floor);
             this.sendYouTubeCommand(p => {
               if (typeof p.unMute === "function") p.unMute();
               if (typeof p.playVideo === "function") p.playVideo();
             });
           }
+          return;
+        }
+
+        if (targetWp.isExitDoorway) {
+          this.triggerVictory();
           return;
         }
 
@@ -16101,6 +16174,9 @@ window.game = this;
         this.playerYaw = this.lerpAngle(this.playerYaw, walkYaw, Math.min(1.0, delta * 4.5));
         this.playerPitch = THREE.MathUtils.lerp(this.playerPitch, 0.0, Math.min(1.0, delta * 4.0));
       }
+
+      // Update left hand viewmodel and bobbing animation
+      this.updateLeftHandViewmodel(delta, true);
 
       // Gentle walking bob
       const walkBob = Math.sin(performance.now() * 0.006) * 0.028;
@@ -16282,7 +16358,10 @@ window.game = this;
       }
       this.showSystemNotification('LOCKDOWN DISENGAGED', 5000);
 
-      this.playAllRelicsFoundCutscene(true);
+      // In Autonomous Mode, bypass relic cutscene so player seamlessly walks out front exit doors!
+      if (!this.isMuseumMode) {
+        this.playAllRelicsFoundCutscene(true);
+      }
     }
 
     playAllRelicsFoundCutscene(broadcast = true) {
