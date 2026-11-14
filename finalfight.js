@@ -361,8 +361,9 @@
       const g = this.g;
       if (g.isInStairwell(this.pos)) return null;
       const base = this.floor * CONFIG_FH();
+      const floorColliders = g.getCollidersForFloor ? g.getCollidersForFloor(this.floor) : g.colliders;
       let best = null, bestScore = Infinity;
-      for (const c of g.colliders) {
+      for (const c of floorColliders) {
         if (c.type !== 'box' || c.disabled || c.isCrate || c.floor !== this.floor) continue;
         if (c.maxY === undefined || c.minY === undefined) continue;
         const h = c.maxY - base;
@@ -375,7 +376,7 @@
         if (dSelf > 14 || dPlayer > 24 || dSelf < 1.0) continue;
         // Skip covered vitrines / tall stacks
         let covered = false;
-        for (const o of g.colliders) {
+        for (const o of floorColliders) {
           if (o === c || o.type !== 'box' || o.floor !== this.floor || o.minY === undefined) continue;
           if (o.minY > c.maxY - 0.05 && o.minY < c.maxY + 2.4 &&
               o.minX < cx + 0.3 && o.maxX > cx - 0.3 && o.minZ < cz + 0.3 && o.maxZ > cz - 0.3) { covered = true; break; }

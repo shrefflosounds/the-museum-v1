@@ -4532,6 +4532,7 @@ window.game = this;
         for (let f = 0; f < this.floorGroups.length; f++) {
           if (this.floorGroups[f]) this.floorGroups[f].visible = true;
         }
+        if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = true;
         return;
       }
       const nearStair = (this.isInStairwell && this.isInStairwell(this.playerPos)) ||
@@ -4540,6 +4541,9 @@ window.game = this;
       for (let f = 0; f < this.floorGroups.length; f++) {
         if (!this.floorGroups[f]) continue;
         this.floorGroups[f].visible = (f === this.playerFloor) || (nearStair && Math.abs(f - this.playerFloor) <= 1);
+      }
+      if (this.topFloorStairFogGroup) {
+        this.topFloorStairFogGroup.visible = (this.playerFloor >= 2) || (nearStair && this.playerFloor >= 1);
       }
     }
 
@@ -9149,8 +9153,8 @@ window.game = this;
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      const rtSize = Math.round(1024 * dpr);
+      // Balanced high-clarity resolution (768px) that renders reflections crisply without 5.3M-pixel Retina frame freezes
+      const rtSize = 768;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
         minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
       });
@@ -9204,7 +9208,7 @@ window.game = this;
 
         // Only update when viewer is on the same floor and within visible corridor range
         if (Math.abs(cameraWorldPosition.y - reflectorWorldPosition.y) > 3.0 ||
-            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 12.0) return;
+            cameraWorldPosition.distanceTo(reflectorWorldPosition) > 10.5) return;
 
         rotationMatrix.extractRotation(glass.matrixWorld);
         normal.set(0, 0, 1).applyMatrix4(rotationMatrix);
@@ -9214,7 +9218,7 @@ window.game = this;
         rotationMatrix.extractRotation(camera.matrixWorld);
         lookAtPosition.set(0, 0, -1).applyMatrix4(rotationMatrix);
         // Skip full scene render if camera is looking away from the mirror
-        if (view.dot(lookAtPosition) < -1.5) return;
+        if (view.dot(lookAtPosition) < -0.5) return;
         lookAtPosition.add(cameraWorldPosition);
 
         view.reflect(normal).negate();
@@ -9255,6 +9259,10 @@ window.game = this;
 
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
         glass.visible = false;
+        const prevFogVis = this.topFloorFogGroup ? this.topFloorFogGroup.visible : false;
+        const prevStairFogVis = this.topFloorStairFogGroup ? this.topFloorStairFogGroup.visible : false;
+        if (this.topFloorFogGroup) this.topFloorFogGroup.visible = false;
+        if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = false;
         this._isRenderingMirrorReflection = true;
         const currentRenderTarget = renderer.getRenderTarget();
         try {
@@ -9266,6 +9274,8 @@ window.game = this;
           renderer.setRenderTarget(currentRenderTarget);
           this._isRenderingMirrorReflection = false;
           glass.visible = true;
+          if (this.topFloorFogGroup) this.topFloorFogGroup.visible = prevFogVis;
+          if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = prevStairFogVis;
         }
         const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
@@ -10783,77 +10793,223 @@ window.game = this;
     }
 
     createTopFloorFogLayers(y0) {
-      if (!this._topFloorFogTex) {
-        const canvas = document.createElement('canvas');
-        canvas.width = 256;
-        canvas.height = 256;
-        const ctx = canvas.getContext('2d');
-        ctx.clearRect(0, 0, 256, 256);
-        const blobs = [
-          [72, 68, 64, 0.28], [188, 76, 70, 0.25], [128, 134, 82, 0.32],
-          [60, 192, 68, 0.26], [196, 194, 72, 0.27], [132, 44, 54, 0.22],
-          [44, 128, 56, 0.22], [212, 132, 56, 0.22], [128, 214, 58, 0.24]
-        ];
-        for (const [bx, by, br, alpha] of blobs) {
-          for (const ox of [-256, 0, 256]) {
-            for (const oy of [-256, 0, 256]) {
-              const g = ctx.createRadialGradient(bx + ox, by + oy, 0, bx + ox, by + oy, br);
-              g.addColorStop(0, `rgba(186, 200, 218, ${alpha})`);
-              g.addColorStop(0.55, `rgba(148, 166, 188, ${alpha * 0.52})`);
-              g.addColorStop(1, 'rgba(120, 138, 162, 0)');
-              ctx.fillStyle = g;
-              ctx.fillRect(0, 0, 256, 256);
-            }
-          }
-        }
-        const tex = new THREE.CanvasTexture(canvas);
-        tex.wrapS = THREE.RepeatWrapping;
-        tex.wrapT = THREE.RepeatWrapping;
-        tex.repeat.set(5, 5);
-        this._topFloorFogTex = tex;
-      }
+      // Custom GLSL flowing, curvy, domain-warped FBM fog shader evaluated in continuous world space.
+      // Zero tiled grid repetition, zero doorway seams, continuous organic billowing & curling motion!
+      this.topFloorFogUniforms = {
+        uTime: { value: 0.0 },
+        uColorLow: { value: new THREE.Color(0x9fb4cc) },
+        uColorHigh: { value: new THREE.Color(0xdbe8f6) }
+      };
 
-      const fogZones = [
-        [-26.0, 6.0, 19.6, 23.6],   // West Wing
-        [-29.1, 23.0, 9.6, 9.4],    // West Office
-        [-10.0, 5.0, 11.6, 45.6],   // Main Gallery
-        [0.0, 7.1, 7.6, 41.4],      // Central Core
-        [12.0, -33.0, 31.6, 13.6],  // North Gallery
-        [16.0, -4.0, 23.6, 43.6],   // East Main Hall
-        [16.0, 23.0, 23.6, 9.6],    // South-East Wing
-        [19.0, 32.0, 13.6, 7.6]     // Rotunda
-      ];
-      // 3 stratified low-to-mid elevation mist layers (ankle 0.32m, knee/thigh 0.82m, waist/mid 1.38m)
+      const fogVertexShader = `
+        varying vec3 vWorldPos;
+        varying vec2 vUv;
+        void main() {
+          vUv = uv;
+          vec4 worldPosition = modelMatrix * vec4(position, 1.0);
+          vWorldPos = worldPosition.xyz;
+          gl_Position = projectionMatrix * viewMatrix * worldPosition;
+        }
+      `;
+
+      const buildFogFragmentShader = (layerOpacity, layerSeed, isStairSlope) => `
+        uniform float uTime;
+        uniform vec3 uColorLow;
+        uniform vec3 uColorHigh;
+        varying vec3 vWorldPos;
+        varying vec2 vUv;
+
+        // Smooth 2D value noise with cubic Hermite interpolation
+        float hash21(vec2 p) {
+          p = fract(p * vec2(123.34, 456.21));
+          p += dot(p, p + 45.32);
+          return fract(p.x * p.y);
+        }
+
+        float vnoise(vec2 p) {
+          vec2 i = floor(p);
+          vec2 f = fract(p);
+          vec2 u = f * f * (3.0 - 2.0 * f);
+          float a = hash21(i);
+          float b = hash21(i + vec2(1.0, 0.0));
+          float c = hash21(i + vec2(0.0, 1.0));
+          float d = hash21(i + vec2(1.0, 1.0));
+          return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+        }
+
+        // Rotated 4-octave FBM to eliminate axis-aligned grid artifacts
+        const mat2 rotM = mat2(0.80, -0.60, 0.60, 0.80);
+        float fbm(vec2 p) {
+          float v = 0.0;
+          float amp = 0.5;
+          for (int i = 0; i < 4; i++) {
+            v += amp * vnoise(p);
+            p = rotM * p * 2.03 + vec2(17.1, 31.7);
+            amp *= 0.5;
+          }
+          return v;
+        }
+
+        void main() {
+          float t = uTime * 0.28 + ${layerSeed.toFixed(2)};
+          ${isStairSlope ? `
+          // Downward cascading trickle flow along the upper staircase slope (vUv.y: 0 = top, 1 = bottom)
+          vec2 p = vWorldPos.xz * 0.22 + vec2(0.0, -uTime * 0.55);
+          p.y -= vUv.y * 2.4;
+          ` : `
+          vec2 p = vWorldPos.xz * 0.135;
+          `}
+
+          // Domain warping 1: large-scale curvy eddies
+          vec2 q = vec2(
+            fbm(p + vec2(t * 0.65, -t * 0.42)),
+            fbm(p + vec2(-t * 0.48, t * 0.58) + vec2(5.2, 1.3))
+          );
+
+          // Domain warping 2: secondary swirling tendrils
+          vec2 r = vec2(
+            fbm(p + 2.35 * q + vec2(1.7, 9.2) + vec2(t * 0.85, t * 0.35)),
+            fbm(p + 2.35 * q + vec2(8.3, 2.8) + vec2(-t * 0.55, t * 0.75))
+          );
+
+          float f = fbm(p + 2.6 * r);
+          // Smooth billowy wisps with soft valleys and curly crests
+          float wisp = smoothstep(0.24, 0.78, f);
+          float tendrils = smoothstep(0.38, 0.72, length(r));
+          float density = mix(wisp, tendrils, 0.42);
+
+          ${isStairSlope ? `
+          // Fade softly at side walls and trickle out down the stair flight
+          float sideFade = smoothstep(0.0, 0.18, vUv.x) * smoothstep(1.0, 0.82, vUv.x);
+          float trickleFade = smoothstep(0.0, 0.12, vUv.y) * pow(clamp(1.0 - vUv.y, 0.0, 1.0), 1.35);
+          float alpha = density * ${layerOpacity.toFixed(3)} * sideFade * trickleFade;
+          ` : `
+          // Soft outer perimeter fade around building bounds [-36..33, -42..36]
+          float edgeX = smoothstep(-36.5, -34.0, vWorldPos.x) * smoothstep(33.5, 31.0, vWorldPos.x);
+          float edgeZ = smoothstep(-42.5, -39.5, vWorldPos.z) * smoothstep(36.5, 33.5, vWorldPos.z);
+          float alpha = density * ${layerOpacity.toFixed(3)} * edgeX * edgeZ;
+          `}
+
+          if (alpha < 0.004) discard;
+          vec3 col = mix(uColorLow, uColorHigh, clamp(f * 1.15, 0.0, 1.0));
+          gl_FragColor = vec4(col, alpha);
+        }
+      `;
+
+      // 1. Continuous full-floor horizontal fog strata across the entire 4th floor (Floor 3)
+      // Covers every gallery, doorway, hallway, alcove, office, and landing with zero gaps!
       const layerSpecs = [
-        { height: 0.32, opacity: 0.22, speedX:  0.032, speedZ:  0.021, scaleRepeat: 4.5 },
-        { height: 0.82, opacity: 0.16, speedX: -0.024, speedZ:  0.028, scaleRepeat: 3.8 },
-        { height: 1.38, opacity: 0.11, speedX:  0.018, speedZ: -0.022, scaleRepeat: 3.2 }
+        { height: 0.28, opacity: 0.30, seed: 0.0 },
+        { height: 0.78, opacity: 0.22, seed: 11.7 },
+        { height: 1.34, opacity: 0.15, seed: 27.4 }
       ];
-      this.topFloorFogMaterials = [];
+      this.topFloorFogGroup = new THREE.Group();
+      this.topFloorFogGroup.name = 'TopFloorFogStrata';
+      const fullPlaneGeom = new THREE.PlaneGeometry(70.0, 79.0);
       for (let li = 0; li < layerSpecs.length; li++) {
         const spec = layerSpecs[li];
-        const texClone = this._topFloorFogTex.clone();
-        texClone.needsUpdate = true;
-        texClone.wrapS = THREE.RepeatWrapping;
-        texClone.wrapT = THREE.RepeatWrapping;
-        texClone.repeat.set(spec.scaleRepeat, spec.scaleRepeat);
-        const fogMat = new THREE.MeshBasicMaterial({
-          map: texClone,
-          color: 0xc8d6e8,
+        const mat = new THREE.ShaderMaterial({
+          uniforms: this.topFloorFogUniforms,
+          vertexShader: fogVertexShader,
+          fragmentShader: buildFogFragmentShader(spec.opacity, spec.seed, false),
           transparent: true,
-          opacity: spec.opacity,
           depthWrite: false,
           side: THREE.DoubleSide
         });
-        this.topFloorFogMaterials.push({ mat: fogMat, tex: texClone, speedX: spec.speedX, speedZ: spec.speedZ });
-        for (const [fx, fz, fw, fd] of fogZones) {
-          const plane = new THREE.Mesh(new THREE.PlaneGeometry(fw, fd), fogMat);
-          plane.rotation.x = -Math.PI / 2;
-          plane.position.set(fx, y0 + spec.height, fz);
-          plane.renderOrder = 2;
-          this.scene.add(plane);
-        }
+        const mesh = new THREE.Mesh(fullPlaneGeom, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(-1.5, y0 + spec.height, -3.0);
+        mesh.renderOrder = 2;
+        this.topFloorFogGroup.add(mesh);
       }
+      this.scene.add(this.topFloorFogGroup);
+
+      // 2. Cascading / trickling fog down the highest staircase sets (Floor 3 -> Floor 2)
+      // Added to root scene so players on Floor 2 (3rd floor) approaching or climbing the stairs
+      // see creepy tendrils of fog spilling down from the top floor above!
+      this.topFloorStairFogGroup = new THREE.Group();
+      this.topFloorStairFogGroup.name = 'TopFloorStairTrickleFog';
+      if (this._rootSceneAdd) {
+        this._rootSceneAdd(this.topFloorStairFogGroup);
+      } else {
+        this.scene.add(this.topFloorStairFogGroup);
+      }
+
+      const halfH = CONFIG.FLOOR_HEIGHT / 2; // 3.75m
+      const addSlopedFogRibbon = (x, yTop, zTop, yBot, zBot, width, heightOffset, opacity, seed) => {
+        const dz = zBot - zTop;
+        const dy = yBot - yTop;
+        const len = Math.hypot(dz, dy);
+        // PlaneGeometry default lies in XY with UV.y=1 at +Y and UV.y=0 at -Y; flip UV.y so 0=top, 1=bottom
+        const geom = new THREE.PlaneGeometry(width, len, 1, 16);
+        const uvAttr = geom.attributes.uv;
+        for (let i = 0; i < uvAttr.count; i++) {
+          uvAttr.setY(i, 1.0 - uvAttr.getY(i));
+        }
+        // Subtle vertical wave curvature along the ribbon vertices so it drapes organically over steps
+        const posAttr = geom.attributes.position;
+        for (let i = 0; i < posAttr.count; i++) {
+          const v = uvAttr.getY(i);
+          const wave = Math.sin(v * Math.PI * 3.0 + seed) * 0.08;
+          posAttr.setZ(i, posAttr.getZ(i) + wave);
+        }
+        geom.computeVertexNormals();
+
+        const mat = new THREE.ShaderMaterial({
+          uniforms: this.topFloorFogUniforms,
+          vertexShader: fogVertexShader,
+          fragmentShader: buildFogFragmentShader(opacity, seed, true),
+          transparent: true,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.position.set(x, (yTop + yBot) * 0.5 + heightOffset, (zTop + zBot) * 0.5);
+        // Orient plane along the stair slope from (zTop, yTop) down to (zBot, yBot)
+        const pitch = Math.atan2(dz, -dy);
+        mesh.rotation.x = -Math.PI / 2 + pitch;
+        mesh.renderOrder = 2;
+        this.topFloorStairFogGroup.add(mesh);
+      };
+
+      const addMidLandingFogPad = (x, yMid, z, w, d, heightOffset, opacity, seed) => {
+        const geom = new THREE.PlaneGeometry(w, d);
+        const mat = new THREE.ShaderMaterial({
+          uniforms: this.topFloorFogUniforms,
+          vertexShader: fogVertexShader,
+          fragmentShader: buildFogFragmentShader(opacity, seed, false),
+          transparent: true,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(geom, mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.position.set(x, yMid + heightOffset, z);
+        mesh.renderOrder = 2;
+        this.topFloorStairFogGroup.add(mesh);
+      };
+
+      // --- Stairwell N (North-Central U-Stairwell, x: -4..4, z: -26..-14) ---
+      // Upper East Flight descends from Floor 3 landing (z = -16.6, y = y0) to North Mid-Landing (z = -23.6, y = y0 - halfH)
+      addSlopedFogRibbon(2.05, y0, -16.4, y0 - halfH, -23.8, 3.7, 0.24, 0.34, 3.1);
+      addSlopedFogRibbon(2.05, y0, -16.4, y0 - halfH, -23.8, 3.6, 0.62, 0.24, 9.4);
+      // North Mid-Landing pool (y = y0 - halfH)
+      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.6, 2.7, 0.22, 0.26, 14.2);
+      addMidLandingFogPad(0.0, y0 - halfH, -24.6, 7.4, 2.6, 0.54, 0.18, 19.8);
+      // Trickle continuing halfway down the West Flight from North Mid-Landing (z = -23.4, y = y0 - halfH) toward Floor 2 (z = -17.2, y = y0 - H + 0.6)
+      addSlopedFogRibbon(-2.05, y0 - halfH, -23.4, y0 - CONFIG.FLOOR_HEIGHT + 0.5, -17.2, 3.7, 0.20, 0.28, 25.6);
+      addSlopedFogRibbon(-2.05, y0 - halfH, -23.4, y0 - CONFIG.FLOOR_HEIGHT + 0.5, -17.2, 3.5, 0.52, 0.19, 31.3);
+
+      // --- Stairwell SW (South-West Grand U-Stairwell, x: -24..-16, z: 18..28) ---
+      // Upper East Flight descends from Floor 3 landing (z = 20.6, y = y0) to South Mid-Landing (z = 25.8, y = y0 - halfH)
+      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 26.0, 3.7, 0.24, 0.34, 41.2);
+      addSlopedFogRibbon(-18.05, y0, 20.6, y0 - halfH, 26.0, 3.6, 0.62, 0.24, 47.9);
+      // South Mid-Landing pool (y = y0 - halfH)
+      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.6, 2.3, 0.22, 0.26, 53.5);
+      addMidLandingFogPad(-20.0, y0 - halfH, 26.8, 7.4, 2.2, 0.54, 0.18, 59.1);
+      // Trickle continuing down the West Flight from South Mid-Landing (z = 25.6, y = y0 - halfH) toward Floor 2 (z = 21.0, y = y0 - H + 0.5)
+      addSlopedFogRibbon(-21.95, y0 - halfH, 25.6, y0 - CONFIG.FLOOR_HEIGHT + 0.5, 21.0, 3.7, 0.20, 0.28, 64.8);
+      addSlopedFogRibbon(-21.95, y0 - halfH, 25.6, y0 - CONFIG.FLOOR_HEIGHT + 0.5, 21.0, 3.5, 0.52, 0.19, 71.0);
     }
 
     initYouTubeAPI() {
@@ -12839,6 +12995,34 @@ window.game = this;
         connect(swEastMid, swEastBase);
         connect(swEastBase, floorNodes[fl + 1].stairSWLand);
       }
+
+      // Pre-partition navNodes by floor for O(1) floor lookup in findNearestNavNode
+      this.navNodesByFloor = [[], [], [], []];
+      for (let i = 0; i < this.navNodes.length; i++) {
+        const n = this.navNodes[i];
+        if (this.navNodesByFloor[n.floor]) {
+          this.navNodesByFloor[n.floor].push(n);
+        }
+      }
+    }
+
+    getCollidersForFloor(floorIdx) {
+      if (!this._collidersByFloor || this._collidersByFloorLen !== this.colliders.length) {
+        this._collidersByFloor = [[], [], [], []];
+        for (let i = 0; i < this.colliders.length; i++) {
+          const c = this.colliders[i];
+          if (c.floor === 'all') {
+            this._collidersByFloor[0].push(c);
+            this._collidersByFloor[1].push(c);
+            this._collidersByFloor[2].push(c);
+            this._collidersByFloor[3].push(c);
+          } else if (typeof c.floor === 'number' && this._collidersByFloor[c.floor]) {
+            this._collidersByFloor[c.floor].push(c);
+          }
+        }
+        this._collidersByFloorLen = this.colliders.length;
+      }
+      return this._collidersByFloor[floorIdx] || this.colliders;
     }
 
     isInStairwell(pos) {
@@ -12856,45 +13040,41 @@ window.game = this;
     }
 
     findNearestNavNode(pos, floor) {
+      if (!this.navGrid) this.buildObstacleGrid();
+      const candidates = (this.navNodesByFloor && this.navNodesByFloor[floor]) ? this.navNodesByFloor[floor] : this.navNodes;
       let bestId = -1;
       let bestDist = Infinity;
       let fallbackId = -1;
       let fallbackDist = Infinity;
 
-      // 1. Direct clear path with standard corridor clearance (0.12m margin)
-      for (let i = 0; i < this.navNodes.length; i++) {
-        const n = this.navNodes[i];
-        if (n.floor !== floor) continue;
-        const d = Math.hypot(pos.x - n.x, pos.z - n.z);
-        if (d < bestDist && this.hasClearNavPath(pos, n, floor, 0.12)) {
-          bestDist = d;
-          bestId = i;
-        }
-      }
-      if (bestId !== -1) return bestId;
-
-      // 2. Direct line of sight without box expansion (margin = 0) so Smitty near a wall finds nodes in his room
-      for (let i = 0; i < this.navNodes.length; i++) {
-        const n = this.navNodes[i];
-        if (n.floor !== floor) continue;
-        const d = Math.hypot(pos.x - n.x, pos.z - n.z);
-        if (d < bestDist && this.hasClearNavPath(pos, n, floor, 0.0)) {
-          bestDist = d;
-          bestId = i;
-        }
-      }
-      if (bestId !== -1) return bestId;
-
-      // 3. Fallback to closest node on same floor
-      for (let i = 0; i < this.navNodes.length; i++) {
-        const n = this.navNodes[i];
+      // 1. Fast O(1)-step grid LOS check across only this floor's nodes (avoids ~24,000 collider tests!)
+      for (let k = 0; k < candidates.length; k++) {
+        const n = candidates[k];
         if (n.floor !== floor) continue;
         const d = Math.hypot(pos.x - n.x, pos.z - n.z);
         if (d < fallbackDist) {
           fallbackDist = d;
-          fallbackId = i;
+          fallbackId = n.id;
+        }
+        if (d < bestDist && this.gridLOS(floor, pos, n)) {
+          bestDist = d;
+          bestId = n.id;
         }
       }
+      if (bestId !== -1) return bestId;
+
+      // 2. If agent is standing right against a wall/furniture cell, check exact unexpanded wall LOS to the closest few nodes
+      for (let k = 0; k < candidates.length; k++) {
+        const n = candidates[k];
+        if (n.floor !== floor) continue;
+        const d = Math.hypot(pos.x - n.x, pos.z - n.z);
+        if (d < bestDist && d < 16.0 && this.hasClearNavPath(pos, n, floor, 0.0)) {
+          bestDist = d;
+          bestId = n.id;
+        }
+      }
+      if (bestId !== -1) return bestId;
+
       return fallbackId !== -1 ? fallbackId : 0;
     }
 
@@ -13118,7 +13298,7 @@ window.game = this;
       push(startIdx, hfn(s.i, s.j));
       const DIRS = [[1,0,1],[-1,0,1],[0,1,1],[0,-1,1],[1,1,Math.SQRT2],[1,-1,Math.SQRT2],[-1,1,Math.SQRT2],[-1,-1,Math.SQRT2]];
       let found = false, expansions = 0;
-      const maxExpansions = Math.min(N, 1800); // Prevent catastrophic main thread freeze on unreachable goals
+      const maxExpansions = Math.min(N, 650); // Fast bounded local search prevents any main-thread frame hitch
       while (heapIdx.length > 0 && expansions < maxExpansions) {
         const cur = pop();
         if (B.closed[cur] === gen) continue;
@@ -13196,18 +13376,22 @@ window.game = this;
     refineNavPath(nodes, startPos, startFloor) {
       if (!nodes || nodes.length === 0) return nodes;
       if (!this.navGrid) this.buildObstacleGrid();
+      const G = this.navGrid;
       const out = [];
       let prev = { x: startPos.x, z: startPos.z, floor: startFloor };
       for (let k = 0; k < nodes.length; k++) {
         const n = nodes[k];
         if (n.floor === prev.floor && !this.isInStairwell(prev) && !this.isInStairwell(n)) {
           let seg;
-          const key = (prev.id !== undefined) ? (prev.id + '_' + n.id) : null;
-          if (key && this.navSegCache.has(key)) {
+          const key = (prev.id !== undefined)
+            ? (prev.id + '_' + n.id)
+            : (`c_${n.floor}_${Math.round((prev.x - G.minX) / G.CELL)}_${Math.round((prev.z - G.minZ) / G.CELL)}_${n.id}`);
+          if (this.navSegCache.has(key)) {
             seg = this.navSegCache.get(key);
           } else {
             seg = this.gridSegment(n.floor, prev, n);
-            if (key) this.navSegCache.set(key, seg);
+            if (this.navSegCache.size > 2500) this.navSegCache.clear();
+            this.navSegCache.set(key, seg);
           }
           for (const p of seg) out.push(p);
         } else {
@@ -13223,10 +13407,11 @@ window.game = this;
       const z0 = fromPos.z;
       const x1 = toPos.x;
       const z1 = toPos.z;
+      const floorColliders = this.getCollidersForFloor(floor);
 
-      for (let i = 0; i < this.colliders.length; i++) {
-        const c = this.colliders[i];
-        if (c.floor !== 'all' && c.floor !== floor) continue;
+      for (let i = 0; i < floorColliders.length; i++) {
+        const c = floorColliders[i];
+        if (c.disabled) continue;
         if (c.type === 'box') {
           const bMinX = c.minX - margin;
           const bMaxX = c.maxX + margin;
@@ -16456,9 +16641,10 @@ window.game = this;
       }
 
       let maxSurfaceY = floorBaseY;
-      for (let i = 0; i < this.colliders.length; i++) {
-        const c = this.colliders[i];
-        if (c.isWall || (c.floor !== 'all' && c.floor !== floorIdx)) continue;
+      const floorColliders = this.getCollidersForFloor(floorIdx);
+      for (let i = 0; i < floorColliders.length; i++) {
+        const c = floorColliders[i];
+        if (c.isWall || c.disabled) continue;
         if (c.maxY === undefined || c.maxY < floorBaseY || c.maxY >= floorCeilingY ||
             c.maxY > footElevation + maxStepUp) continue;
         if (c.type === 'box') {
@@ -16477,15 +16663,11 @@ window.game = this;
     }
 
     resolveCollisions(pos, radius, floorIdx, footElevation = -999, bodyHeight = 2.4) {
+      const floorColliders = this.getCollidersForFloor(floorIdx);
       for (let iter = 0; iter < 3; iter++) {
-        for (let i = 0; i < this.colliders.length; i++) {
-          const c = this.colliders[i];
+        for (let i = 0; i < floorColliders.length; i++) {
+          const c = floorColliders[i];
           if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
-          if (c.floor !== 'all' && c.floor !== floorIdx) {
-            // In multi-floor stairwells, currentFloor can lag behind physical footElevation by a floor
-            if (footElevation === -999 || c.minY === undefined || c.maxY === undefined ||
-                footElevation >= c.maxY || footElevation + bodyHeight <= c.minY) continue;
-          }
 
           if (footElevation !== -999 && c.minY !== undefined && c.maxY !== undefined &&
               (footElevation >= c.maxY || footElevation + bodyHeight <= c.minY)) continue;
@@ -17239,6 +17421,7 @@ window.game = this;
         this.scene.remove(oldest.mesh);
       }
 
+      const puddleFloor = Math.max(0, Math.min((CONFIG.NUM_FLOORS || 4) - 1, Math.floor((floorY + 0.35) / CONFIG.FLOOR_HEIGHT)));
       const puddleGeom = new THREE.CircleGeometry(1, 24);
       const puddleMat = this.bloodPuddleMat.clone();
       const mesh = new THREE.Mesh(puddleGeom, puddleMat);
@@ -17246,6 +17429,7 @@ window.game = this;
       mesh.rotation.z = Math.random() * Math.PI * 2;
       mesh.position.set(x, floorY + 0.008 + Math.random() * 0.004, z);
       mesh.scale.set(0.05, 0.05, 1);
+      mesh.visible = this.isSpectatorMode || (puddleFloor === this.playerFloor);
       this.scene.add(mesh);
 
       this.bloodPuddles.push({
@@ -17253,6 +17437,7 @@ window.game = this;
         x,
         z,
         floorY,
+        floor: puddleFloor,
         currentRadius: 0.05,
         targetRadius,
         age: 0,
@@ -17312,6 +17497,8 @@ window.game = this;
         );
 
         mesh.scale.set(radius, radius, radius * 2.4);
+        const dropFloor = Math.max(0, Math.min((CONFIG.NUM_FLOORS || 4) - 1, Math.floor((bloodFloorY + 0.35) / CONFIG.FLOOR_HEIGHT)));
+        mesh.visible = this.isSpectatorMode || (dropFloor === this.playerFloor);
         this.scene.add(mesh);
 
         this.bloodDroplets.push({
@@ -17319,6 +17506,7 @@ window.game = this;
           vel,
           radius,
           floorY: bloodFloorY,
+          floor: dropFloor,
           life: 2.2
         });
       }
@@ -17343,8 +17531,11 @@ window.game = this;
         if (this.isInStairwell(d.mesh.position)) {
           const approxFl = Math.max(0, Math.min(3, Math.floor((d.mesh.position.y + 0.35) / H)));
           const st = { active: null, baseFloor: approxFl };
-          d.floorY = this.updateStairwellElevation(d.mesh.position, st, approxFl, d.mesh.position.y).y;
+          const elev = this.updateStairwellElevation(d.mesh.position, st, approxFl, d.mesh.position.y);
+          d.floorY = elev.y;
+          d.floor = elev.floor;
         }
+        d.mesh.visible = this.isSpectatorMode || (d.floor === this.playerFloor);
 
         // Orient and elongate droplet along velocity vector for continuous liquid stream physics
         const speed = d.vel.length();
@@ -17370,6 +17561,9 @@ window.game = this;
       for (let i = this.bloodPuddles.length - 1; i >= 0; i--) {
         const p = this.bloodPuddles[i];
         p.age = (p.age || 0) + delta;
+        if (p.mesh) {
+          p.mesh.visible = this.isSpectatorMode || (p.floor === this.playerFloor);
+        }
 
         if (Math.abs(p.currentRadius - p.targetRadius) > 0.002) {
           p.currentRadius = THREE.MathUtils.lerp(p.currentRadius, p.targetRadius, Math.min(1, delta * 5.5));
@@ -17575,9 +17769,12 @@ window.game = this;
       const x1 = this.playerPos.x - dirX * 0.02;
       const z1 = this.playerPos.z - dirZ * 0.02;
 
-      for (let i = 0; i < this.colliders.length; i++) {
-        const c = this.colliders[i];
-        if (c.floor !== 'all' && c.floor !== this.smittyFloor && c.floor !== this.playerFloor) continue;
+      const floorColliders = (this.smittyFloor === this.playerFloor)
+        ? this.getCollidersForFloor(this.smittyFloor)
+        : this.colliders;
+      for (let i = 0; i < floorColliders.length; i++) {
+        const c = floorColliders[i];
+        if (c.disabled || (c.floor !== 'all' && c.floor !== this.smittyFloor && c.floor !== this.playerFloor)) continue;
         if (c.type === 'box') {
           // Low obstacles (benches with height <= 0.75m) do not block sight when player is standing
           if (c.maxY !== undefined) {
@@ -17683,49 +17880,72 @@ window.game = this;
     moveSmittyAlongGraph(goalPos, goalFloor, speed, delta, directLOS = false) {
       let tx = goalPos.x;
       let tz = goalPos.z;
+      this.smittyReplanCooldown = Math.max(0, (this.smittyReplanCooldown || 0) - delta);
 
       // Only rush straight at the goal if the obstacle grid confirms no furniture is in the way
       if (directLOS && goalFloor === this.smittyFloor) {
         if (!this.navGrid) this.buildObstacleGrid();
         const closeIn = Math.hypot(this.smittyPos.x - goalPos.x, this.smittyPos.z - goalPos.z) < 1.6;
-        if (!directLOS && !closeIn && !this.isInStairwell(this.smittyPos) && !this.gridLOS(this.smittyFloor, this.smittyPos, goalPos)) directLOS = false;
+        if (!closeIn && !this.isInStairwell(this.smittyPos) && !this.gridLOS(this.smittyFloor, this.smittyPos, goalPos)) {
+          directLOS = false;
+        }
       }
 
       if (!directLOS || goalFloor !== this.smittyFloor) {
         const goalId = this.findNearestNavNode(goalPos, goalFloor);
-        if (
+        const needNewPath = (
           !this.smittyPath ||
           this.smittyPath.length === 0 ||
           this.smittyPathGoalId !== goalId ||
           this.smittyPathIndex >= this.smittyPath.length
-        ) {
+        );
+        if (needNewPath && (this.smittyReplanCooldown <= 0 || !this.smittyPath || this.smittyPath.length === 0)) {
+          this.smittyReplanCooldown = 0.35;
           const startId = this.findNearestNavNode(this.smittyPos, this.smittyFloor);
-          this.smittyPath = this.refineNavPath(this.findShortestPath(startId, goalId), this.smittyPos, this.smittyFloor);
+          if (startId === goalId && goalFloor === this.smittyFloor && !this.isInStairwell(this.smittyPos)) {
+            // Same nav-node zone as the goal: route directly around local room obstacles to goalPos
+            this.smittyPath = this.gridSegment(this.smittyFloor, this.smittyPos, {
+              x: goalPos.x,
+              y: goalPos.y,
+              z: goalPos.z,
+              floor: goalFloor
+            });
+          } else {
+            this.smittyPath = this.refineNavPath(this.findShortestPath(startId, goalId), this.smittyPos, this.smittyFloor);
+          }
           this.smittyPathGoalId = goalId;
           this.smittyPathIndex = 0;
           if (this.smittyPath.length > 1 && !this.isInStairwell(this.smittyPos) && !this.isInStairwell(this.smittyPath[0])) {
             const dFirst = Math.hypot(this.smittyPos.x - this.smittyPath[0].x, this.smittyPos.z - this.smittyPath[0].z);
-            if (dFirst < 1.1 || (this.smittyPath[0].floor === this.smittyPath[1].floor && this.hasClearNavPath(this.smittyPos, this.smittyPath[1], this.smittyFloor, 0.44))) {
+            if (dFirst < 1.1 || (this.smittyPath[0].floor === this.smittyPath[1].floor && this.gridLOS(this.smittyFloor, this.smittyPos, this.smittyPath[1]))) {
               this.smittyPathIndex = 1;
             }
           }
         }
 
-        let targetNode = this.smittyPath[this.smittyPathIndex] || goalPos;
+        let targetNode = (this.smittyPath && this.smittyPath[this.smittyPathIndex]) || goalPos;
         const distToTarget = Math.hypot(this.smittyPos.x - targetNode.x, this.smittyPos.z - targetNode.z);
         const reachRadius = this.isInStairwell(targetNode) ? 0.65 : (targetNode.refined ? 0.6 : 1.1);
         if (distToTarget < reachRadius) {
-          if (this.smittyPathIndex < this.smittyPath.length - 1) {
+          if (this.smittyPath && this.smittyPathIndex < this.smittyPath.length - 1) {
             this.smittyPathIndex++;
             targetNode = this.smittyPath[this.smittyPathIndex];
           } else {
             // Reached last waypoint. If within striking range of player (even on a bench/platform) or path is clear, close in directly
             const distToGoal = Math.hypot(this.smittyPos.x - goalPos.x, this.smittyPos.z - goalPos.z);
-            if (goalFloor === this.smittyFloor && (distToGoal <= CONFIG.SMITTY.ATTACK_RANGE + 0.35 || this.hasClearNavPath(this.smittyPos, goalPos, this.smittyFloor, 0.48))) {
+            if (goalFloor === this.smittyFloor && (distToGoal <= CONFIG.SMITTY.ATTACK_RANGE + 0.35 || this.gridLOS(this.smittyFloor, this.smittyPos, goalPos))) {
               targetNode = goalPos;
-            } else {
-              // Goal is behind a corner; replan next frame
-              this.smittyPath = [];
+            } else if (goalFloor === this.smittyFloor && this.smittyReplanCooldown <= 0) {
+              // Goal is behind a local corner on the same floor: compute local grid segment around the obstacle
+              this.smittyReplanCooldown = 0.40;
+              this.smittyPath = this.gridSegment(this.smittyFloor, this.smittyPos, {
+                x: goalPos.x,
+                y: goalPos.y,
+                z: goalPos.z,
+                floor: goalFloor
+              });
+              this.smittyPathIndex = 0;
+              targetNode = this.smittyPath[0] || goalPos;
             }
           }
         }
@@ -17806,6 +18026,12 @@ window.game = this;
         this.audio.setHeartbeatBpm(45);
         this.smittyDeadTimer += delta;
 
+        // Strictly hide The Curator's corpse when the player is on a different floor so his body
+        // is never seen protruding through the ceiling of the floor below!
+        this.smittyMesh.visible = this.isSmittyXray
+          ? true
+          : (this.smittyFloor === this.playerFloor);
+
         // Accelerating backward fall onto the floor
         if (this.smittyFallAngle < Math.PI / 2) {
           const fallSpeed = 2.4 + this.smittyFallAngle * 3.8;
@@ -17813,8 +18039,8 @@ window.game = this;
           this.smittyMesh.rotation.order = 'YXZ';
           this.smittyMesh.rotation.x = -this.smittyFallAngle;
         }
-        // Body lies flat on the ground
-        this.smittyMesh.position.y = this.smittyPos.y + 0.12;
+        // Keep fallen body slightly elevated above the floor slab so coat/hat geometry never clips below floorY
+        this.smittyMesh.position.y = this.smittyPos.y + 0.24;
 
         // Lock arms outstretched wide in cross/T-pose
         if (this.smittyBones) {
@@ -18469,25 +18695,26 @@ window.game = this;
           this.updateLiquidBlood(delta);
           this.updateAmmoPickups(delta);
           this.updateVideoInstallation(delta);
-          if (this.smittyMixer && this.smittyState !== 'DEAD') this.smittyMixer.update(delta);
-          this.updateSmittyHeadBone(delta);
+          // Only evaluate Smitty's skeletal bone animations when he is alive and visible
+          if (this.smittyMixer && this.smittyState !== 'DEAD' && this.smittyMesh && this.smittyMesh.visible) {
+            this.smittyMixer.update(delta);
+          }
+          if (this.smittyMesh && this.smittyMesh.visible) {
+            this.updateSmittyHeadBone(delta);
+          }
 
           const time = performance.now() * 0.002;
 
           // Keep floor group visibility in sync as player enters/exits stairwells or changes floors
           this.updateFloorGroupVisibility();
 
-          // Animate top-floor low-to-mid level fog drift and denser top-floor distance fog
+          // Animate top-floor low-to-mid level curvy fog shader & upper staircase trickle
           if (this.scene && this.scene.fog) {
             const targetFogDensity = (this.playerFloor === 3 && !this.isSpectatorMode) ? 0.048 : 0.032;
             this.scene.fog.density += (targetFogDensity - this.scene.fog.density) * Math.min(1, delta * 3.5);
           }
-          if (this.playerFloor === 3 && this.topFloorFogMaterials) {
-            for (let fi = 0; fi < this.topFloorFogMaterials.length; fi++) {
-              const fm = this.topFloorFogMaterials[fi];
-              fm.tex.offset.x = (fm.tex.offset.x + fm.speedX * delta) % 1;
-              fm.tex.offset.y = (fm.tex.offset.y + fm.speedZ * delta) % 1;
-            }
+          if (this.topFloorFogUniforms && (this.playerFloor >= 2 || this.isSpectatorMode)) {
+            this.topFloorFogUniforms.uTime.value += delta;
           }
 
           // Dynamic distance culling for paintings on current floor (or all floors in spectator mode)
@@ -18832,6 +19059,7 @@ window.game = this;
         if (s.collider) {
           s.collider.x = s.x; s.collider.z = s.z; s.collider.floor = s.floor;
           s.collider.minY = s.y; s.collider.maxY = s.y + 2.35;
+          this._collidersByFloorLen = -1;
         }
       };
 
@@ -18961,7 +19189,17 @@ window.game = this;
         }
 
         // 2. NOT PLAYING AUDIO: Independent Minecraft-Pig Living AI (never locks onto player before interaction)
-        s.aiTimer -= delta;
+        // Throttle background wandering AI & collision solver to 10Hz for statues on other floors
+        let effDelta = delta;
+        if (s.floor !== this.playerFloor && !this.isSpectatorMode) {
+          s._offFloorAccum = (s._offFloorAccum || 0) + delta;
+          if (s._offFloorAccum < 0.10) return;
+          effDelta = s._offFloorAccum;
+          s._offFloorAccum = 0;
+        } else {
+          s._offFloorAccum = 0;
+        }
+        s.aiTimer -= effDelta;
 
         if (s.aiState === "IDLE") {
           s.statueRoot.scale.set(1, 1, 1);
@@ -18969,7 +19207,7 @@ window.game = this;
           s.statueRoot.rotation.set(0, 0, 0);
 
           // Completely independent idle look direction — ignores player position until interacted with
-          s.yaw = this.lerpStatueAngle(s.yaw, s.idleLookYaw, Math.min(1, delta * 4.5));
+          s.yaw = this.lerpStatueAngle(s.yaw, s.idleLookYaw, Math.min(1, effDelta * 4.5));
           s.group.rotation.y = s.yaw;
 
           if (s.aiTimer <= 0) {
@@ -18996,7 +19234,7 @@ window.game = this;
           } else {
             // Stand facing the mirror. Mirrors are typically on the East wall (x=4.0) or West.
             // Restroom centers are around x=2.0. So face East.
-            s.yaw = THREE.MathUtils.lerp(s.yaw, Math.PI / 2, 8.0 * delta);
+            s.yaw = THREE.MathUtils.lerp(s.yaw, Math.PI / 2, Math.min(1, 8.0 * effDelta));
             s.model.rotation.y = s.yaw + s.cfg.faceOffset;
           }
         } else if (s.aiState === "WANDER") {
@@ -19026,8 +19264,8 @@ window.game = this;
           }
 
           const speed = s.cfg.walkSpeed || 1.50;
-          let stepX = (dx / dist) * speed * delta;
-          let stepZ = (dz / dist) * speed * delta;
+          let stepX = (dx / dist) * speed * effDelta;
+          let stepZ = (dz / dist) * speed * effDelta;
 
           // Sidestep around the player if on the same floor without locking onto the player
           if (s.floor === this.playerFloor) {
@@ -19059,7 +19297,7 @@ window.game = this;
           const intended = Math.hypot(stepX, stepZ);
           const actual = Math.hypot(tempPos.x - s.x, tempPos.z - s.z);
           if (intended > 0.001 && actual < intended * 0.25) {
-            s.stuckTimer = (s.stuckTimer || 0) + delta;
+            s.stuckTimer = (s.stuckTimer || 0) + effDelta;
             if (s.stuckTimer > 0.7) {
               s.stuckTimer = 0;
               const np = this.pickStatueWanderPath(s);
@@ -19074,9 +19312,13 @@ window.game = this;
           s.z = tempPos.z;
 
           // Update elevation & floor if walking up/down stairwells
+          const prevFloor = s.floor;
           const elev = this.updateStairwellElevation(s, s.stairState, s.floor, s.y);
           s.y = elev.y;
           s.floor = elev.floor;
+          if (s.floor !== prevFloor) {
+            this._collidersByFloorLen = -1; // Invalidate per-floor collider bucket cache
+          }
 
           s.group.position.set(s.x, s.y, s.z);
 
@@ -19091,12 +19333,12 @@ window.game = this;
 
           // Smoothly face movement direction
           const moveYaw = Math.atan2(dx, dz);
-          s.yaw = this.lerpStatueAngle(s.yaw, moveYaw, Math.min(1, delta * 8.0));
+          s.yaw = this.lerpStatueAngle(s.yaw, moveYaw, Math.min(1, effDelta * 8.0));
           s.group.rotation.y = s.yaw;
 
           // Cute subtle waddle while walking (except Silver Smitty who glides smoothly)
-          if (!s.cfg.noAnimation) {
-            s.walkPhase += delta * 9.5;
+          if (!s.cfg.noAnimation && s.group.visible) {
+            s.walkPhase += effDelta * 9.5;
             s.statueRoot.position.y = s.baseY + Math.abs(Math.sin(s.walkPhase)) * 0.055;
             s.statueRoot.rotation.z = Math.sin(s.walkPhase) * 0.035;
           }
