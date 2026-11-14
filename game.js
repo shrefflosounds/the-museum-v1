@@ -9587,10 +9587,13 @@ window.game = this;
           bubble: new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75 }),
           tetraFish: new THREE.MeshStandardMaterial({
             map: tetraTex,
+            color: 0x93c5fd,
+            emissive: 0x0284c7,
+            emissiveIntensity: 0.28,
             transparent: true,
             alphaTest: 0.02,
-            roughness: 0.32,
-            metalness: 0.15,
+            roughness: 0.28,
+            metalness: 0.25,
             side: THREE.DoubleSide
           })
         };
@@ -9751,7 +9754,7 @@ window.game = this;
       // 8. Dynamic Living Fish (Clownfish, Neon Tetra [Custom PNG Texture with Flexing Spine], Golden Angelfish)
       const fishProfiles = [
         { species: 'clownfish', scale: 0.18, speed: 0.52, bodyColor: 0xea580c, finColor: 0xf97316, yOffset: 0.22, zLane: -0.12, dir: 1 },
-        { species: 'tetra', scale: 0.15, speed: 0.68, isPng: true, yOffset: 0.33, zLane: 0.12, dir: -1 },
+        { species: 'tetra', scale: 0.15, speed: 0.36, isPng: true, yOffset: 0.33, zLane: 0.12, dir: -1 },
         { species: 'angelfish', scale: 0.20, speed: 0.42, bodyColor: 0xfacc15, finColor: 0xfef9c3, yOffset: 0.44, zLane: 0.02, dir: 1 }
       ];
 
@@ -9925,7 +9928,8 @@ window.game = this;
         const fish = this.aquariumFish[i];
         if (fish.floor !== this.playerFloor) continue;
 
-        fish.phase += delta * 9.5;
+        const swimFreq = fish.isPng ? 5.5 : 9.5;
+        fish.phase += delta * swimFreq;
 
         if (fish.isPng && fish.rippleMesh && fish.baseGeoPositions) {
           // Dynamic traveling sine wave deformation across the fish spine and caudal fin
@@ -9937,8 +9941,8 @@ window.game = this;
           for (let v = 0; v < vertexCount; v++) {
             const bx = baseArray[v * 3];
             const by = baseArray[v * 3 + 1];
-            // Head is at +bx, tail is at -bx. Normalized tail progression (0 at snout, 1 at tail):
-            const tailProgress = Math.max(0, Math.min(1, (0.15 - bx) / 0.28));
+            // Head is at -bx, tail is at +bx. Normalized tail progression (0 at snout, 1 at tail):
+            const tailProgress = Math.max(0, Math.min(1, (bx + 0.15) / 0.28));
             const flex = tailProgress * tailProgress; // progressive natural spine flexing
             const lateralOffset = Math.sin(fish.phase * 1.05 - tailProgress * 4.2) * (0.024 * flex);
 
