@@ -4358,6 +4358,9 @@ window.game = this;
       this.spawnAmmoPickups();
       this.updateRelicFloorVisibility();
       this.loadSmittyModel();
+      if (window.FinalFightCompanion) {
+        this.finalFight = new window.FinalFightCompanion(this);
+      }
 
       if (window.CharacterSelectUI) {
         this.charSelectUI = new window.CharacterSelectUI(this);
@@ -15859,6 +15862,9 @@ window.game = this;
               }
 
               this.isPlayingCutscene = false;
+              if (this.finalFight) {
+                this.finalFight.spawn();
+              }
 
               if (this.audio && !this.isGameOver && !this.isVictory && !this.isPaused) {
                 this.audio.resumeGameplayAudio();
@@ -18232,6 +18238,9 @@ window.game = this;
             this.buildObstacleGrid();
           }
           this.updateSmitty(delta);
+          if (this.finalFight) {
+            this.finalFight.update(delta);
+          }
           // In multiplayer, Host simulates wandering statue AI and syncs to clients; in solo, simulate locally
           const isClientInCoop = (this.mp && !this.mp.isHost && this.mp.client && this.mp.client.connected);
           if (!isClientInCoop) {
