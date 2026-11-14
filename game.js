@@ -804,14 +804,14 @@
       ctx.strokeRect(6, 6, 500, 116);
 
       ctx.fillStyle = '#e8d09c';
-      ctx.font = 'bold 28px Georgia, serif';
+      ctx.font = 'bold 28px Caryn';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillText(title.toUpperCase(), 256, subtitle ? 48 : 64);
 
       if (subtitle) {
         ctx.fillStyle = '#b4975a';
-        ctx.font = '18px sans-serif';
+        ctx.font = '18px Caryn';
         ctx.fillText(subtitle.toUpperCase(), 256, 86);
       }
 
@@ -832,13 +832,13 @@
       ctx.strokeRect(3, 3, 250, 58);
 
       ctx.fillStyle = '#1a1409';
-      ctx.font = 'bold 14px sans-serif';
+      ctx.font = 'bold 14px Caryn';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const clean = title.length > 24 ? title.substring(0, 22) + '...' : title;
       ctx.fillText(clean.toUpperCase(), 128, 25);
 
-      ctx.font = '10px sans-serif';
+      ctx.font = '10px Caryn';
       ctx.fillStyle = '#3a2e15';
       const subText = subtitle ? subtitle.toUpperCase() : T('plaque.subtitle', 'SHREFFLO MUSEUM ARCHIVE');
       ctx.fillText(subText, 128, 44);
@@ -10850,9 +10850,9 @@ window.game = this;
         ctx.fillStyle = '#fffaf4';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.font = 'italic bold 45px Georgia, serif';
+        ctx.font = 'italic bold 45px Caryn';
         ctx.fillText('VIDEO ROOM', canvas.width / 2, canvas.height * 0.38);
-        ctx.font = 'italic 58px Georgia, serif';
+        ctx.font = 'italic 58px Caryn';
         ctx.fillText(String(fl + 1), canvas.width / 2, canvas.height * 0.73);
         // Transparent centers reveal the actual holes cut through the plate.
         ctx.globalCompositeOperation = 'destination-out';
@@ -11214,7 +11214,7 @@ window.game = this;
           ctx.stroke();
 
           // CC text inside badge
-          ctx.font = '900 36px sans-serif';
+          ctx.font = '900 36px Caryn';
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -11231,11 +11231,11 @@ window.game = this;
           ctx.fillStyle = '#ffffff';
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
-          ctx.font = 'bold 92px sans-serif';
+          ctx.font = 'bold 92px Caryn';
           ctx.fillText(symbol, 0, -12);
         }
 
-        ctx.font = 'bold 24px sans-serif';
+        ctx.font = 'bold 24px Caryn';
         ctx.fillStyle = colorCfg.textColor || '#ffffff';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
@@ -15001,7 +15001,7 @@ window.game = this;
 
       // Floor badge
       ctx.fillStyle = '#e2e8f0';
-      ctx.font = 'bold 11px sans-serif';
+      ctx.font = 'bold 11px Caryn';
       ctx.textAlign = 'left';
       ctx.fillText(T('map.current_level', 'CURRENT LEVEL: FLOOR {number} OF 4', { number: this.playerFloor + 1 }), 14, 22);
     }
@@ -17015,11 +17015,11 @@ window.game = this;
               target: rPos,
               hitPoint,
               hit: () => {
-                // Spawn blood locally immediately
-                this.spawnLiquidBlood(hitPoint, raycaster.ray.direction, 28, rPos.y);
-                // Notify the hit player and everyone in room
+                // Notify the hit player and everyone in room (broadcast also spawns the blood on all clients so it isn't spawned twice locally)
                 if (typeof this.mp.notifyPlayerHit === 'function') {
                   this.mp.notifyPlayerHit(remoteId, hitPoint, raycaster.ray.direction, 25);
+                } else {
+                  this.spawnLiquidBlood(hitPoint, raycaster.ray.direction, 28, rPos.y);
                 }
               }
             });
@@ -17107,9 +17107,30 @@ window.game = this;
     spawnLiquidBlood(hitPoint, shotDir, count = 38, floorY = null) {
       if (!this.bloodDropGeom || !this.bloodDropMat) return;
 
-      const bloodFloorY = floorY === null
-        ? (this.smittyPos ? this.smittyPos.y : (this.playerFloor * CONFIG.FLOOR_HEIGHT))
+      const resolveBloodGroundY = (x, y, z) => {
+        const H = CONFIG.FLOOR_HEIGHT;
+        const numFloors = CONFIG.NUM_FLOORS || 4;
+        const approxFloor = Math.max(0, Math.min(numFloors - 1, Math.floor((y + 0.35) / H)));
+        const st = { active: null, baseFloor: approxFloor };
+        const elev = this.updateStairwellElevation({ x, z }, st, approxFloor, y);
+        return elev.y;
+      };
+
+      let bloodFloorY = floorY === null
+        ? resolveBloodGroundY(hitPoint.x, hitPoint.y, hitPoint.z)
         : floorY;
+      // Guard against mid-air impact heights (e.g. multiplayer bullet/crate hitPoint.y passed as floorY)
+      if (hitPoint && Math.abs(bloodFloorY - hitPoint.y) < 0.25 && (bloodFloorY % CONFIG.FLOOR_HEIGHT) > 0.25 && !this.isInStairwell(hitPoint)) {
+        bloodFloorY = resolveBloodGroundY(hitPoint.x, hitPoint.y, hitPoint.z);
+      }
+
+      // Cap total live droplets so rapid multiplayer fire never stalls physics
+      const maxDroplets = 160;
+      while (this.bloodDroplets.length + count > maxDroplets && this.bloodDroplets.length > 0) {
+        const old = this.bloodDroplets.shift();
+        if (old && old.mesh) this.scene.remove(old.mesh);
+      }
+
       const dir = shotDir ? shotDir.clone().normalize() : new THREE.Vector3(0, 0, 1);
 
       for (let i = 0; i < count; i++) {
@@ -17148,6 +17169,7 @@ window.game = this;
     }
 
     updateLiquidBlood(delta) {
+      const H = CONFIG.FLOOR_HEIGHT;
       for (let i = this.bloodDroplets.length - 1; i >= 0; i--) {
         const d = this.bloodDroplets[i];
         d.life -= delta;
@@ -17161,6 +17183,13 @@ window.game = this;
         d.mesh.position.y += d.vel.y * delta;
         d.mesh.position.z += d.vel.z * delta;
 
+        // Dynamically track stairwell/floor ground beneath the falling droplet so it never lands mid-air
+        if (this.isInStairwell(d.mesh.position)) {
+          const approxFl = Math.max(0, Math.min(3, Math.floor((d.mesh.position.y + 0.35) / H)));
+          const st = { active: null, baseFloor: approxFl };
+          d.floorY = this.updateStairwellElevation(d.mesh.position, st, approxFl, d.mesh.position.y).y;
+        }
+
         // Orient and elongate droplet along velocity vector for continuous liquid stream physics
         const speed = d.vel.length();
         const stretch = Math.max(1.2, Math.min(4.8, 1.0 + speed * 0.42));
@@ -17169,7 +17198,7 @@ window.game = this;
         d.mesh.scale.set(d.radius, d.radius, d.radius * stretch);
 
         if (d.mesh.position.y <= d.floorY + 0.015 || d.life <= 0) {
-          if (d.mesh.position.y <= d.floorY + 0.05) {
+          if (d.mesh.position.y <= d.floorY + 0.08) {
             this.spawnBloodPuddle(
               d.mesh.position.x,
               d.floorY,
@@ -18403,6 +18432,11 @@ window.game = this;
         this.mp.update(delta);
       }
 
+      // Keep existing blood droplets falling even if local player is paused/downed in multiplayer so drops never freeze mid-air
+      if (this.bloodDroplets && this.bloodDroplets.length > 0 && (this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt)) {
+        this.updateLiquidBlood(delta);
+      }
+
       // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
 
       try {
@@ -19178,8 +19212,8 @@ window.game = this;
       if (!data) return;
       const hitPt = new THREE.Vector3(data.x, data.y, data.z);
       const shotDir = new THREE.Vector3(data.dirX, data.dirY, data.dirZ);
-      // Spawn liquid blood spray & floor puddle from the impact
-      this.spawnLiquidBlood(hitPt, shotDir, data.knockback ? 14 : 28, data.y);
+      // Spawn liquid blood spray & floor puddle from the impact (null floorY resolves actual floor/stair surface below hitPt)
+      this.spawnLiquidBlood(hitPt, shotDir, data.knockback ? 14 : 28, null);
 
       // If local player was the target hit by a bullet or thrown crate:
       if (this.mp && data.targetId === this.mp.clientId) {
