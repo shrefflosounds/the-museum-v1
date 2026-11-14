@@ -9537,6 +9537,10 @@ window.game = this;
 
     getAquariumMaterials() {
       if (!this._aquaMats) {
+        const tetraTex = this.texLoader.load('assets/neon_tetra.png', (tx) => {
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
+
         this._aquaMats = {
           cabinet: new THREE.MeshStandardMaterial({
             color: 0x18181b,
@@ -9561,26 +9565,34 @@ window.game = this;
           water: new THREE.MeshStandardMaterial({
             color: 0x0284c7,
             transparent: true,
-            opacity: 0.32,
+            opacity: 0.26,
             roughness: 0.08,
             metalness: 0.05,
             emissive: 0x0284c7,
-            emissiveIntensity: 0.22,
+            emissiveIntensity: 0.20,
             depthWrite: false,
             side: THREE.DoubleSide
           }),
           waterSurface: new THREE.MeshStandardMaterial({
             color: 0x38bdf8,
             transparent: true,
-            opacity: 0.55,
+            opacity: 0.50,
             roughness: 0.05,
             metalness: 0.20,
             emissive: 0x38bdf8,
-            emissiveIntensity: 0.35,
+            emissiveIntensity: 0.32,
             depthWrite: false,
             side: THREE.DoubleSide
           }),
-          bubble: new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75 })
+          bubble: new THREE.MeshBasicMaterial({ color: 0xe0f2fe, transparent: true, opacity: 0.75 }),
+          tetraFish: new THREE.MeshStandardMaterial({
+            map: tetraTex,
+            transparent: true,
+            alphaTest: 0.02,
+            roughness: 0.32,
+            metalness: 0.15,
+            side: THREE.DoubleSide
+          })
         };
       }
       return this._aquaMats;
@@ -9588,35 +9600,43 @@ window.game = this;
 
     getAquariumGeometries() {
       if (!this._aquaGeoms) {
-        const tW = 1.54, tH = 0.70, tD = 0.70;
-        const edgeThick = 0.024;
-        const tankCenterY = 0.72 + tH / 2;
+        // Tank outer bounding envelope: tW = 1.54, tH = 0.67, tD = 0.68
+        const tW = 1.54, tH = 0.67, tD = 0.68;
+        const edgeThick = 0.028;
+        const tankBottomY = 0.72;
+        const tankCenterY = tankBottomY + tH / 2;
 
         const frameParts = [];
-        [[-tW/2, -tD/2], [tW/2, -tD/2], [-tW/2, tD/2], [tW/2, tD/2]].forEach(([ex, ez]) => {
+        // 4 Vertical Corner Structural Posts
+        [[-tW/2 + edgeThick/2, -tD/2 + edgeThick/2],
+         [ tW/2 - edgeThick/2, -tD/2 + edgeThick/2],
+         [-tW/2 + edgeThick/2,  tD/2 - edgeThick/2],
+         [ tW/2 - edgeThick/2,  tD/2 - edgeThick/2]].forEach(([ex, ez]) => {
           const post = new THREE.BoxGeometry(edgeThick, tH, edgeThick);
           post.translate(ex, tankCenterY, ez);
           frameParts.push(post);
         });
-        const topRim = new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02);
-        topRim.translate(0, 0.72 + tH, 0);
-        frameParts.push(topRim);
-        const botRim = new THREE.BoxGeometry(tW + 0.02, 0.03, tD + 0.02);
-        botRim.translate(0, 0.72, 0);
+        // Bottom Base Rim (sits cleanly between y=0.72 and y=0.75)
+        const botRim = new THREE.BoxGeometry(tW + 0.016, 0.03, tD + 0.016);
+        botRim.translate(0, tankBottomY + 0.015, 0);
         frameParts.push(botRim);
-        const sBase = new THREE.BoxGeometry(1.54, 0.06, 0.69);
-        sBase.translate(0, 0.03, 0);
-        frameParts.push(sBase);
+        // Top Rim (sits cleanly from y=1.36 to y=1.39)
+        const topRim = new THREE.BoxGeometry(tW + 0.016, 0.03, tD + 0.016);
+        topRim.translate(0, tankBottomY + tH - 0.015, 0);
+        frameParts.push(topRim);
 
-        const glassThick = 0.012;
+        // Glass Panes (inset by 4mm from outer frame boundaries, avoiding coplanar intersection)
+        const glassThick = 0.008;
         const glassParts = [];
-        [-tD / 2 + glassThick / 2, tD / 2 - glassThick / 2].forEach(pz => {
-          const pane = new THREE.BoxGeometry(tW, tH, glassThick);
+        const innerW = tW - edgeThick * 2;
+        const innerD = tD - edgeThick * 2;
+        [-tD / 2 + edgeThick / 2, tD / 2 - edgeThick / 2].forEach(pz => {
+          const pane = new THREE.BoxGeometry(innerW, tH - 0.04, glassThick);
           pane.translate(0, tankCenterY, pz);
           glassParts.push(pane);
         });
-        [-tW / 2 + glassThick / 2, tW / 2 - glassThick / 2].forEach(px => {
-          const pane = new THREE.BoxGeometry(glassThick, tH, tD - glassThick * 2);
+        [-tW / 2 + edgeThick / 2, tW / 2 - edgeThick / 2].forEach(px => {
+          const pane = new THREE.BoxGeometry(glassThick, tH - 0.04, innerD);
           pane.translate(px, tankCenterY, 0);
           glassParts.push(pane);
         });
@@ -9624,25 +9644,25 @@ window.game = this;
         const decorParts = [];
         [[-0.45, -0.12, 0.09], [0.42, 0.15, 0.10], [-0.08, 0.05, 0.07], [0.12, -0.18, 0.06], [-0.25, 0.18, 0.05]].forEach(([rx, rz, rad]) => {
           const rock = new THREE.DodecahedronGeometry(rad, 1);
-          rock.translate(rx, 0.76 + rad * 0.7, rz);
+          rock.translate(rx, tankBottomY + 0.07 + rad * 0.7, rz);
           decorParts.push(rock);
         });
-        const woodBranch = new THREE.CylinderGeometry(0.03, 0.05, 0.65, 8);
+        const woodBranch = new THREE.CylinderGeometry(0.026, 0.044, 0.62, 8);
         const bRot = new THREE.Euler(0.4, 0.8, 1.1);
         const bMat = new THREE.Matrix4().makeRotationFromEuler(bRot);
-        bMat.setPosition(0.15, 0.88, -0.05);
+        bMat.setPosition(0.15, tankBottomY + 0.16, -0.05);
         woodBranch.applyMatrix4(bMat);
         decorParts.push(woodBranch);
 
         this._aquaGeoms = {
-          stand: new THREE.BoxGeometry(1.60, 0.72, 0.75),
-          canopy: new THREE.BoxGeometry(1.56, 0.05, 0.72),
+          stand: new THREE.BoxGeometry(1.58, 0.718, 0.72),
+          canopy: new THREE.BoxGeometry(1.56, 0.05, 0.70),
           frame: mergeBufferGeometries(frameParts),
           glass: mergeBufferGeometries(glassParts),
-          sand: new THREE.BoxGeometry(1.48, 0.08, 0.64),
+          sand: new THREE.BoxGeometry(1.46, 0.06, 0.62),
           seabed: mergeBufferGeometries(decorParts),
-          water: new THREE.BoxGeometry(1.48, 0.60, 0.64),
-          waterSurface: new THREE.PlaneGeometry(1.48, 0.64, 4, 4)
+          water: new THREE.BoxGeometry(1.44, 0.54, 0.60),
+          waterSurface: new THREE.PlaneGeometry(1.44, 0.60, 4, 4)
         };
       }
       return this._aquaGeoms;
@@ -9656,22 +9676,22 @@ window.game = this;
       const mats = this.getAquariumMaterials();
       const geoms = this.getAquariumGeometries();
 
-      // 1. Sleek museum gallery stand
+      // 1. Sleek museum gallery stand (elevated 0.001m to prevent floor z-fighting)
       const stand = new THREE.Mesh(geoms.stand, mats.cabinet);
-      stand.position.y = 0.36;
+      stand.position.y = 0.360;
       group.add(stand);
 
-      // 2. Merged metal frame & stand base (1 draw call)
+      // 2. Merged metal frame & corner posts (1 draw call, non-overlapping)
       const frameMesh = new THREE.Mesh(geoms.frame, mats.frame);
       group.add(frameMesh);
 
-      // 3. Merged crystal glass tank panels (1 draw call)
+      // 3. Merged crystal glass tank panels (1 draw call, inset from frame)
       const glassMesh = new THREE.Mesh(geoms.glass, mats.glass);
       group.add(glassMesh);
 
-      // 4. Sandy riverbed & decorative seabed rocks
+      // 4. Sandy riverbed (y: 0.72..0.78) & decorative seabed rocks
       const sand = new THREE.Mesh(geoms.sand, mats.sand);
-      sand.position.y = 0.72 + 0.04;
+      sand.position.y = 0.72 + 0.03;
       group.add(sand);
 
       const seabed = new THREE.Mesh(geoms.seabed, mats.pebble);
@@ -9680,59 +9700,59 @@ window.game = this;
       // 5. Swaying underwater plants (3 lush blades)
       const kelpBlades = [];
       [-0.45, -0.05, 0.40].forEach((kx, ki) => {
-        const h = 0.42 + (ki % 2) * 0.10;
+        const h = 0.40 + (ki % 2) * 0.09;
         const blade = new THREE.Mesh(new THREE.PlaneGeometry(0.065, h, 1, 3), mats.kelp);
-        blade.position.set(kx, 0.76 + h / 2, (ki % 2 === 0 ? -0.15 : 0.15));
+        blade.position.set(kx, 0.75 + h / 2, (ki % 2 === 0 ? -0.15 : 0.15));
         blade.rotation.y = ki * 0.85;
         group.add(blade);
-        kelpBlades.push({ mesh: blade, phase: ki * 1.4, baseY: 0.76 + h / 2 });
+        kelpBlades.push({ mesh: blade, phase: ki * 1.4, baseY: 0.75 + h / 2 });
       });
 
-      // 6. Transparent Water Volume & Shimmering Surface
+      // 6. Transparent Water Volume (y: 0.78..1.32) & Shimmering Surface (y: 1.321)
       const water = new THREE.Mesh(geoms.water, mats.water);
-      water.position.y = 0.76 + 0.30;
+      water.position.y = 0.78 + 0.27;
       group.add(water);
 
       const waterSurface = new THREE.Mesh(geoms.waterSurface, mats.waterSurface);
       waterSurface.rotation.x = -Math.PI / 2;
-      waterSurface.position.y = 0.76 + 0.59;
+      waterSurface.position.y = 1.321;
       group.add(waterSurface);
 
       // 7. Rising Bubbler Column (3 streamlined bubbles)
       const bubbles = [];
       for (let b = 0; b < 3; b++) {
         const bMesh = new THREE.Mesh(new THREE.SphereGeometry(0.015, 6, 6), mats.bubble);
-        const bY = 0.78 + b * 0.18;
+        const bY = 0.78 + b * 0.17;
         bMesh.position.set(-0.45 + (b % 2) * 0.03, bY, 0.10);
         group.add(bMesh);
         bubbles.push({ mesh: bMesh, speed: 0.28 + b * 0.06, startX: -0.45, startZ: 0.10 });
       }
 
-      // Top sleek aquarium canopy with integrated LED gallery strip and downward blue glow
+      // Top sleek aquarium canopy (sits cleanly above top rim from y=1.39 to y=1.44)
       const canopy = new THREE.Mesh(geoms.canopy, mats.cabinet);
-      canopy.position.y = 0.72 + 0.70;
+      canopy.position.y = 1.39 + 0.025;
       group.add(canopy);
 
-      // Luminous blue LED fixture bar mounted inside lid
+      // Luminous blue LED fixture bar mounted on canopy underside (y: 1.378..1.390)
       const blueBarMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8 });
-      const blueLightBar = new THREE.Mesh(new THREE.BoxGeometry(1.40, 0.02, 0.14), blueBarMat);
-      blueLightBar.position.set(0, 0.72 + 0.69, 0);
+      const blueLightBar = new THREE.Mesh(new THREE.BoxGeometry(1.36, 0.012, 0.12), blueBarMat);
+      blueLightBar.position.set(0, 1.384, 0);
       group.add(blueLightBar);
 
       // Downward aquatic blue glow radiating from the lid down through the water and tank
       const aquaBlueLight = new THREE.PointLight(0x38bdf8, fl === this.playerFloor ? 1.15 : 0, 5.2, 1.15);
       aquaBlueLight._origIntensity = 1.15;
-      aquaBlueLight.position.set(0, 0.72 + 0.65, 0);
+      aquaBlueLight.position.set(0, 1.37, 0);
       group.add(aquaBlueLight);
       if (this.floorLights && this.floorLights[fl]) this.floorLights[fl].push(aquaBlueLight);
 
       this.scene.add(group);
 
-      // 8. Dynamic Living Fish (Clownfish, Neon Tetra, Golden Angelfish)
+      // 8. Dynamic Living Fish (Clownfish, Neon Tetra [Custom PNG Texture with Flexing Spine], Golden Angelfish)
       const fishProfiles = [
         { species: 'clownfish', scale: 0.18, speed: 0.52, bodyColor: 0xea580c, finColor: 0xf97316, yOffset: 0.22, zLane: -0.12, dir: 1 },
-        { species: 'tetra', scale: 0.15, speed: 0.68, bodyColor: 0x0284c7, finColor: 0xbae6fd, yOffset: 0.35, zLane: 0.14, dir: -1 },
-        { species: 'angelfish', scale: 0.20, speed: 0.42, bodyColor: 0xfacc15, finColor: 0xfef9c3, yOffset: 0.46, zLane: 0.02, dir: 1 }
+        { species: 'tetra', scale: 0.15, speed: 0.68, isPng: true, yOffset: 0.33, zLane: 0.12, dir: -1 },
+        { species: 'angelfish', scale: 0.20, speed: 0.42, bodyColor: 0xfacc15, finColor: 0xfef9c3, yOffset: 0.44, zLane: 0.02, dir: 1 }
       ];
 
       if (!this.aquariumFish) this.aquariumFish = [];
@@ -9741,63 +9761,84 @@ window.game = this;
         const fishRoot = new THREE.Group();
         const s = fp.scale;
 
-        const bodyMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.28, metalness: 0.18 });
-        const finMat = new THREE.MeshStandardMaterial({ color: fp.finColor, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
-        const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
+        let tailPivot = null;
+        let pecLeft = null;
+        let pecRight = null;
+        let rippleMesh = null;
+        let baseGeoPositions = null;
 
-        // Tapered Streamlined Fish Body & Head
-        const bodyGeom = new THREE.ConeGeometry(s * 0.38, s * 1.15, 10);
-        bodyGeom.rotateZ(-Math.PI / 2);
-        const headGeom = new THREE.SphereGeometry(s * 0.36, 10, 8);
-        headGeom.scale(1.2, 0.95, 0.75);
-        headGeom.translate(s * 0.52, 0, 0);
-        const fullFishBodyGeom = mergeBufferGeometries([bodyGeom, headGeom]);
-        fishRoot.add(new THREE.Mesh(fullFishBodyGeom, bodyMat));
+        if (fp.isPng) {
+          // PNG image-based fish with swimming spine undulation and rippling wave motion
+          const fishW = 0.28;
+          const fishH = 0.143;
+          const segX = 12;
+          const tetraGeo = new THREE.PlaneGeometry(fishW, fishH, segX, 1);
+          tetraGeo.translate(0.015, 0, 0); // center center of mass
+          const posAttr = tetraGeo.attributes.position;
+          baseGeoPositions = new Float32Array(posAttr.array);
 
-        // Eyes
-        [-s * 0.20, s * 0.20].forEach(ez => {
-          const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.05, 6, 6), eyeMat);
-          pupil.position.set(s * 0.66, s * 0.08, ez);
-          fishRoot.add(pupil);
-        });
+          rippleMesh = new THREE.Mesh(tetraGeo, mats.tetraFish);
+          fishRoot.add(rippleMesh);
+        } else {
+          // 3D procedural fish model
+          const bodyMat = new THREE.MeshStandardMaterial({ color: fp.bodyColor, roughness: 0.28, metalness: 0.18 });
+          const finMat = new THREE.MeshStandardMaterial({ color: fp.finColor, transparent: true, opacity: 0.85, side: THREE.DoubleSide });
+          const eyeMat = new THREE.MeshBasicMaterial({ color: 0x09090b });
 
-        // Top Dorsal Fin
-        const dorsalShape = new THREE.Shape();
-        dorsalShape.moveTo(-s * 0.30, 0);
-        dorsalShape.lineTo(s * 0.05, s * 0.55);
-        dorsalShape.lineTo(s * 0.35, 0);
-        dorsalShape.closePath();
-        const dorsal = new THREE.Mesh(new THREE.ShapeGeometry(dorsalShape), finMat);
-        dorsal.position.set(0, s * 0.25, 0);
-        fishRoot.add(dorsal);
+          // Tapered Streamlined Fish Body & Head
+          const bodyGeom = new THREE.ConeGeometry(s * 0.38, s * 1.15, 10);
+          bodyGeom.rotateZ(-Math.PI / 2);
+          const headGeom = new THREE.SphereGeometry(s * 0.36, 10, 8);
+          headGeom.scale(1.2, 0.95, 0.75);
+          headGeom.translate(s * 0.52, 0, 0);
+          const fullFishBodyGeom = mergeBufferGeometries([bodyGeom, headGeom]);
+          fishRoot.add(new THREE.Mesh(fullFishBodyGeom, bodyMat));
 
-        // Fluttering Pectoral Side Fins
-        const pecLeft = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
-        pecLeft.position.set(s * 0.30, -s * 0.05, s * 0.24);
-        pecLeft.rotation.set(0.4, -0.6, 0.2);
-        fishRoot.add(pecLeft);
+          // Eyes
+          [-s * 0.20, s * 0.20].forEach(ez => {
+            const pupil = new THREE.Mesh(new THREE.SphereGeometry(s * 0.05, 6, 6), eyeMat);
+            pupil.position.set(s * 0.66, s * 0.08, ez);
+            fishRoot.add(pupil);
+          });
 
-        const pecRight = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
-        pecRight.position.set(s * 0.30, -s * 0.05, -s * 0.24);
-        pecRight.rotation.set(-0.4, 0.6, -0.2);
-        fishRoot.add(pecRight);
+          // Top Dorsal Fin
+          const dorsalShape = new THREE.Shape();
+          dorsalShape.moveTo(-s * 0.30, 0);
+          dorsalShape.lineTo(s * 0.05, s * 0.55);
+          dorsalShape.lineTo(s * 0.35, 0);
+          dorsalShape.closePath();
+          const dorsal = new THREE.Mesh(new THREE.ShapeGeometry(dorsalShape), finMat);
+          dorsal.position.set(0, s * 0.25, 0);
+          fishRoot.add(dorsal);
 
-        // Dynamic Swishing Caudal Tail with Articulated Pivot
-        const tailPivot = new THREE.Group();
-        tailPivot.position.x = -s * 0.55;
+          // Fluttering Pectoral Side Fins
+          pecLeft = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
+          pecLeft.position.set(s * 0.30, -s * 0.05, s * 0.24);
+          pecLeft.rotation.set(0.4, -0.6, 0.2);
+          fishRoot.add(pecLeft);
 
-        const tailShape = new THREE.Shape();
-        tailShape.moveTo(0, 0);
-        tailShape.lineTo(-s * 0.65, s * 0.45);
-        tailShape.lineTo(-s * 0.45, 0);
-        tailShape.lineTo(-s * 0.65, -s * 0.45);
-        tailShape.closePath();
-        const tailFin = new THREE.Mesh(new THREE.ShapeGeometry(tailShape), finMat);
-        tailPivot.add(tailFin);
-        fishRoot.add(tailPivot);
+          pecRight = new THREE.Mesh(new THREE.PlaneGeometry(s * 0.30, s * 0.16), finMat);
+          pecRight.position.set(s * 0.30, -s * 0.05, -s * 0.24);
+          pecRight.rotation.set(-0.4, 0.6, -0.2);
+          fishRoot.add(pecRight);
+
+          // Dynamic Swishing Caudal Tail with Articulated Pivot
+          tailPivot = new THREE.Group();
+          tailPivot.position.x = -s * 0.55;
+
+          const tailShape = new THREE.Shape();
+          tailShape.moveTo(0, 0);
+          tailShape.lineTo(-s * 0.65, s * 0.45);
+          tailShape.lineTo(-s * 0.45, 0);
+          tailShape.lineTo(-s * 0.65, -s * 0.45);
+          tailShape.closePath();
+          const tailFin = new THREE.Mesh(new THREE.ShapeGeometry(tailShape), finMat);
+          tailPivot.add(tailFin);
+          fishRoot.add(tailPivot);
+        }
 
         const startX = (idx - 1) * 0.36;
-        const startY = 0.76 + fp.yOffset;
+        const startY = 0.75 + fp.yOffset;
         const startZ = fp.zLane;
         fishRoot.position.set(startX, startY, startZ);
         group.add(fishRoot);
@@ -9807,6 +9848,9 @@ window.game = this;
           tailPivot: tailPivot,
           pecLeft: pecLeft,
           pecRight: pecRight,
+          rippleMesh: rippleMesh,
+          baseGeoPositions: baseGeoPositions,
+          isPng: !!fp.isPng,
           floor: fl,
           localX: startX,
           localY: startY,
@@ -9838,8 +9882,8 @@ window.game = this;
         floor: fl,
         minX: x - halfW,
         maxX: x + halfW,
-        minZ: z - halfD,
-        maxZ: z + halfD,
+        minZ: Math.min(z - halfD, 27.0),
+        maxZ: Math.min(z + halfD, 27.78),
         minY: y0,
         maxY: y0 + 1.48
       });
@@ -9882,9 +9926,39 @@ window.game = this;
         if (fish.floor !== this.playerFloor) continue;
 
         fish.phase += delta * 9.5;
-        fish.tailPivot.rotation.y = Math.sin(fish.phase) * 0.65;
-        fish.pecLeft.rotation.z = Math.sin(fish.phase * 1.2) * 0.40;
-        fish.pecRight.rotation.z = -Math.sin(fish.phase * 1.2) * 0.40;
+
+        if (fish.isPng && fish.rippleMesh && fish.baseGeoPositions) {
+          // Dynamic traveling sine wave deformation across the fish spine and caudal fin
+          const posAttr = fish.rippleMesh.geometry.attributes.position;
+          const posArray = posAttr.array;
+          const baseArray = fish.baseGeoPositions;
+          const vertexCount = posAttr.count;
+
+          for (let v = 0; v < vertexCount; v++) {
+            const bx = baseArray[v * 3];
+            const by = baseArray[v * 3 + 1];
+            // Head is at +bx, tail is at -bx. Normalized tail progression (0 at snout, 1 at tail):
+            const tailProgress = Math.max(0, Math.min(1, (0.15 - bx) / 0.28));
+            const flex = tailProgress * tailProgress; // progressive natural spine flexing
+            const lateralOffset = Math.sin(fish.phase * 1.05 - tailProgress * 4.2) * (0.024 * flex);
+
+            posArray[v * 3] = bx;
+            posArray[v * 3 + 1] = by;
+            posArray[v * 3 + 2] = lateralOffset;
+          }
+          posAttr.needsUpdate = true;
+          fish.rippleMesh.geometry.computeVertexNormals();
+        } else {
+          if (fish.tailPivot) {
+            fish.tailPivot.rotation.y = Math.sin(fish.phase) * 0.65;
+          }
+          if (fish.pecLeft) {
+            fish.pecLeft.rotation.z = Math.sin(fish.phase * 1.2) * 0.40;
+          }
+          if (fish.pecRight) {
+            fish.pecRight.rotation.z = -Math.sin(fish.phase * 1.2) * 0.40;
+          }
+        }
 
         fish.localX += fish.speed * fish.heading * delta;
         if (fish.localX > fish.maxX) {
