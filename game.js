@@ -4148,6 +4148,8 @@
       this.physicsCrates = [];
       this.aquariumFish = [];
       this.aquariumFX = [];
+      this.pettingZooAnimals = [];
+      this.burningBookMountain = null;
       this.heldCrate = null;
       this.lastAnnouncedFloor = null;
       this.floorIndicatorTimeout = null;
@@ -4700,7 +4702,10 @@ window.game = this;
       this.createWall(4, yc, 12.85, t, wallH, 10.7, accentWallMat, true, fl);     // 7.5..18.2 (Mechanical Core East)
 
       // Elevator & Mechanical Core Block (x: -3.8..3.8, z: 8..18)
-      this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
+      // North wall with arched portal opening (x: -1.5..1.5, doorH = 3.10)
+      this.createWall(-2.65, yc, 8.0, 2.3, wallH, t, accentWallMat, true, fl);    // -3.8..-1.5
+      this.createWall(2.65, yc, 8.0, 2.3, wallH, t, accentWallMat, true, fl);     // 1.5..3.8
+      this.createArchedLintel(0.0, y0, 8.0, 3.0, t, ceilH, accentWallMat, 3.10, 'x', true); // Arched doorway portal (x: -1.5..1.5)
       this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
@@ -4814,6 +4819,11 @@ window.game = this;
 
       // Period Study & Research Library (Central Core z: -6..2)
       this.createRealisticStudyRoom(fl, y0, mats);
+
+      // Central Mahogany Core Room (x: -3.8..3.8, z: 8..14)
+      // Floor 0: Petting Zoo with living livestock & short wooden fence
+      // Floor 1 (Library Floor): Burning Mountain of Books that damages Player, Curator, and Statues
+      this.createBrownBoxRoom(fl, y0, mats);
 
       // Main Gallery Benches (x: -10, z: 0 and z: 14)
       this.createMuseumBench(-10, y0, 0);
@@ -7659,6 +7669,769 @@ window.game = this;
           { type: 'box', floor: fl, minX: -3.3, maxX: -2.3, minZ: -3.8, maxZ: -0.3, minY: y0, maxY: y0 + 1.35 },
           { type: 'box', floor: fl, minX: -0.7, maxX: 1.9, minZ: -2.8, maxZ: -1.2, minY: y0, maxY: y0 + 0.82 }
         );
+      }
+    }
+
+    createBrownBoxRoom(fl, y0, mats) {
+      if (fl === 0) {
+        // =========================================================================
+        // FLOOR 0: INDOOR PETTING ZOO (Short Wooden Fence, Straw Bedding, Live Animals)
+        // Located in the Central Core Room (x: -3.8..3.8, z: 8.2..13.8)
+        // STRICT: ZERO TEXT / SIGN SLOP
+        // =========================================================================
+        const rusticWoodMat = new THREE.MeshStandardMaterial({
+          color: 0x8a6240,
+          roughness: 0.88,
+          metalness: 0.05
+        });
+        const rusticDarkWoodMat = new THREE.MeshStandardMaterial({
+          color: 0x5a3e26,
+          roughness: 0.92,
+          metalness: 0.04
+        });
+
+        // 1. Straw & Hay Bedding Floor Covering (x: -3.75..3.75, z: 8.2..13.8)
+        const strawTex = this.texLoader.load('assets/textures/petting_zoo/straw_bedding.jpg', (tx) => {
+          tx.wrapS = THREE.RepeatWrapping;
+          tx.wrapT = THREE.RepeatWrapping;
+          tx.repeat.set(4, 3);
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
+        const strawFloorMat = new THREE.MeshStandardMaterial({
+          map: strawTex,
+          roughness: 0.95,
+          metalness: 0.02,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1
+        });
+        const strawBedding = new THREE.Mesh(
+          new THREE.PlaneGeometry(7.5, 5.6),
+          strawFloorMat
+        );
+        strawBedding.rotation.x = -Math.PI / 2;
+        strawBedding.position.set(0, y0 + 0.006, 11.0);
+        this.scene.add(strawBedding);
+
+        // Scattered organic hay mounds for bedding texture
+        const hayMoundMat = new THREE.MeshLambertMaterial({ color: 0xcca658 });
+        const moundPositions = [
+          [-2.2, 9.5], [2.1, 9.8], [-2.3, 12.8], [2.0, 12.6], [-0.2, 13.0]
+        ];
+        moundPositions.forEach(([hx, hz]) => {
+          const hayMound = new THREE.Mesh(
+            new THREE.CylinderGeometry(0.55, 0.95, 0.16, 10),
+            hayMoundMat
+          );
+          hayMound.position.set(hx, y0 + 0.08, hz);
+          hayMound.scale.set(1.0 + Math.random() * 0.3, 1.0, 1.0 + Math.random() * 0.3);
+          this.scene.add(hayMound);
+        });
+
+        // Rustic wooden livestock water trough
+        const troughGroup = new THREE.Group();
+        troughGroup.position.set(-2.6, y0, 11.2);
+        const troughOuter = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.48, 1.8), rusticDarkWoodMat);
+        troughOuter.position.y = 0.24;
+        troughGroup.add(troughOuter);
+        const waterMesh = new THREE.Mesh(
+          new THREE.PlaneGeometry(0.66, 1.66),
+          new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.7 })
+        );
+        waterMesh.rotation.x = -Math.PI / 2;
+        waterMesh.position.y = 0.45;
+        troughGroup.add(waterMesh);
+        this.scene.add(troughGroup);
+        this.colliders.push({
+          type: 'box',
+          floor: fl,
+          minX: -3.1,
+          maxX: -2.1,
+          minZ: 10.2,
+          maxZ: 12.2,
+          minY: y0,
+          maxY: y0 + 0.55
+        });
+
+        // 2. Short Wooden Ranch Fence Enclosure Across North Archway (z = 8.0, x: -1.5..1.5)
+        // Wings at x: -1.5..-0.55 and x: 0.55..1.5, leaving an open gate passageway at x: -0.55..0.55
+        const fenceGroup = new THREE.Group();
+        const fenceH = 1.05;
+        const postH = 1.15;
+        const postW = 0.11;
+
+        const buildFencePost = (px, pz) => {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(postW, postH, postW), rusticDarkWoodMat);
+          post.position.set(px, postH / 2, pz);
+          const cap = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.08, 4), rusticDarkWoodMat);
+          cap.position.set(px, postH + 0.04, pz);
+          cap.rotation.y = Math.PI / 4;
+          fenceGroup.add(post);
+          fenceGroup.add(cap);
+        };
+
+        const buildFenceSection = (x1, z1, x2, z2) => {
+          const dx = x2 - x1;
+          const dz = z2 - z1;
+          const len = Math.hypot(dx, dz);
+          const midX = (x1 + x2) / 2;
+          const midZ = (z1 + z2) / 2;
+          const ang = Math.atan2(dx, dz);
+
+          // Top and bottom horizontal rails
+          [0.32, 0.88].forEach((ry) => {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, len), rusticWoodMat);
+            rail.position.set(midX, ry, midZ);
+            rail.rotation.y = ang;
+            fenceGroup.add(rail);
+          });
+
+          // Vertical pickets
+          const picketCount = Math.max(2, Math.floor(len / 0.22));
+          for (let p = 1; p < picketCount; p++) {
+            const frac = p / picketCount;
+            const px = x1 + dx * frac;
+            const pz = z1 + dz * frac;
+            const picket = new THREE.Mesh(new THREE.BoxGeometry(0.04, fenceH, 0.08), rusticWoodMat);
+            picket.position.set(px, fenceH / 2, pz);
+            picket.rotation.y = ang;
+            fenceGroup.add(picket);
+          }
+        };
+
+        // Left fence wing: x = -1.50 to x = -0.55 at z = 8.0
+        buildFencePost(-1.50, 8.0);
+        buildFencePost(-0.55, 8.0);
+        buildFenceSection(-1.50, 8.0, -0.55, 8.0);
+
+        // Right fence wing: x = 0.55 to x = 1.50 at z = 8.0
+        buildFencePost(0.55, 8.0);
+        buildFencePost(1.50, 8.0);
+        buildFenceSection(0.55, 8.0, 1.50, 8.0);
+
+        fenceGroup.position.y = y0;
+        this.scene.add(fenceGroup);
+
+        // Colliders for fence wings (leave x: -0.55..0.55 open for player access)
+        this.colliders.push(
+          { type: 'box', floor: fl, minX: -1.55, maxX: -0.50, minZ: 7.88, maxZ: 8.12, minY: y0, maxY: y0 + fenceH, isWall: true },
+          { type: 'box', floor: fl, minX:  0.50, maxX:  1.55, minZ: 7.88, maxZ: 8.12, minY: y0, maxY: y0 + fenceH, isWall: true }
+        );
+
+        // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Goats)
+        const animalSpecies = [
+          { type: 'llama', file: 'assets/textures/petting_zoo/llama.png', w: 1.45, h: 1.55, startX:  0.0, startZ: 11.8, speed: 0.55 },
+          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 1.05, h: 1.18, startX: -1.6, startZ: 10.2, speed: 0.68 },
+          { type: 'sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 1.35, h: 0.95, startX:  1.5, startZ: 11.5, speed: 0.45 },
+          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 0.88, h: 0.98, startX:  1.2, startZ:  9.5, speed: 0.62 }
+        ];
+
+        if (!this.pettingZooAnimals) this.pettingZooAnimals = [];
+
+        animalSpecies.forEach((spec) => {
+          const aTex = this.texLoader.load(spec.file, (tx) => {
+            tx.colorSpace = THREE.SRGBColorSpace;
+          });
+          const aMat = new THREE.MeshLambertMaterial({
+            map: aTex,
+            transparent: true,
+            alphaTest: 0.15,
+            side: THREE.DoubleSide
+          });
+          const aMesh = new THREE.Mesh(new THREE.PlaneGeometry(spec.w, spec.h), aMat);
+          aMesh.position.y = spec.h / 2;
+
+          const shadowGeo = new THREE.PlaneGeometry(spec.w * 0.7, spec.w * 0.4);
+          const shadowMat = new THREE.MeshBasicMaterial({
+            color: 0x110c06,
+            transparent: true,
+            opacity: 0.35,
+            depthWrite: false
+          });
+          const shadow = new THREE.Mesh(shadowGeo, shadowMat);
+          shadow.rotation.x = -Math.PI / 2;
+          shadow.position.y = 0.01;
+
+          const rootGroup = new THREE.Group();
+          rootGroup.position.set(spec.startX, y0, spec.startZ);
+          rootGroup.add(aMesh);
+          rootGroup.add(shadow);
+          this.scene.add(rootGroup);
+
+          this.pettingZooAnimals.push({
+            floor: fl,
+            type: spec.type,
+            root: rootGroup,
+            mesh: aMesh,
+            shadow: shadow,
+            width: spec.w,
+            height: spec.h,
+            speed: spec.speed,
+            pos: new THREE.Vector2(spec.startX, spec.startZ),
+            target: new THREE.Vector2(
+              -2.6 + Math.random() * 5.2,
+               8.8 + Math.random() * 4.4
+            ),
+            state: 'walk',
+            stateTimer: 2.0 + Math.random() * 4.0,
+            walkTime: Math.random() * 100,
+            headingX: 1
+          });
+        });
+
+      } else if (fl === 1) {
+        // =========================================================================
+        // FLOOR 1 (THE GREAT LIBRARY & CARTOGRAPHY LEVEL): BURNING MOUNTAIN OF BOOKS
+        // Located in the Central Core Room (x: -3.8..3.8, z: 8.2..13.8)
+        // Realistic fire, animated flames, embers, smoke, dynamic fire lights,
+        // and contact/proximity hazard that damages Player, Curator (Smitty), & Statues
+        // STRICT: ZERO TEXT SLOP
+        // =========================================================================
+        const charredWoodTex = this.texLoader.load('assets/textures/fire/charred_wood.jpg', (tx) => {
+          tx.wrapS = THREE.RepeatWrapping;
+          tx.wrapT = THREE.RepeatWrapping;
+          tx.repeat.set(3, 3);
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        const flameTex = this.texLoader.load('assets/textures/fire/flame_particle.png', (tx) => {
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
+        const smokeTex = this.texLoader.load('assets/textures/fire/smoke_particle.png', (tx) => {
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
+
+        const emberAshMat = new THREE.MeshStandardMaterial({
+          map: charredWoodTex,
+          color: 0x221510,
+          roughness: 0.95,
+          metalness: 0.1,
+          emissive: 0xff3300,
+          emissiveIntensity: 0.35,
+          polygonOffset: true,
+          polygonOffsetFactor: -1,
+          polygonOffsetUnits: -1
+        });
+
+        // 1. Scorch and ash floor overlay across the room (x: -3.75..3.75, z: 8.2..13.8)
+        const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 5.6), emberAshMat);
+        ashFloor.rotation.x = -Math.PI / 2;
+        ashFloor.position.set(0, y0 + 0.007, 11.0);
+        this.scene.add(ashFloor);
+
+        // Wall soot marks on the inner core walls
+        const sootMat = new THREE.MeshBasicMaterial({ color: 0x080605, transparent: true, opacity: 0.65 });
+        [-3.78, 3.78].forEach((wx) => {
+          const sootWall = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 3.8), sootMat);
+          sootWall.position.set(wx, y0 + 2.0, 11.0);
+          sootWall.rotation.y = wx < 0 ? Math.PI / 2 : -Math.PI / 2;
+          this.scene.add(sootWall);
+        });
+
+        // 2. Mountain of Books Geometry (Tiered Pyre with tumbling burning tomes)
+        const mountainGroup = new THREE.Group();
+        mountainGroup.position.set(0.0, y0, 11.0);
+
+        const bookCoverColors = [0x1a0f0a, 0x2a140d, 0x180b06, 0x3d1a0d, 0x140e0b, 0x4a1808];
+        const burnBookMats = bookCoverColors.map(c => new THREE.MeshStandardMaterial({
+          color: c,
+          roughness: 0.85,
+          metalness: 0.15,
+          emissive: 0xe63900,
+          emissiveIntensity: 0.28
+        }));
+        const charredPageMat = new THREE.MeshStandardMaterial({
+          color: 0x3a2818,
+          roughness: 0.92,
+          emissive: 0xff4500,
+          emissiveIntensity: 0.32
+        });
+
+        // Massive central mound core geometry (stepped rugged mountain slope)
+        const coreTiers = [
+          { rTop: 2.1, rBot: 2.7, h: 0.65, y: 0.325 },
+          { rTop: 1.4, rBot: 2.15, h: 0.75, y: 1.025 },
+          { rTop: 0.80, rBot: 1.45, h: 0.85, y: 1.825 },
+          { rTop: 0.20, rBot: 0.85, h: 0.90, y: 2.70 }
+        ];
+
+        coreTiers.forEach(t => {
+          const coreTier = new THREE.Mesh(
+            new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 12, 1),
+            emberAshMat
+          );
+          coreTier.position.y = t.y;
+          mountainGroup.add(coreTier);
+        });
+
+        // Clustered book volumes tumbling down all sides of the mountain
+        const bookGeom = new THREE.BoxGeometry(0.55, 0.12, 0.40);
+        const thickBookGeom = new THREE.BoxGeometry(0.70, 0.22, 0.48);
+
+        const bookCount = 95;
+        for (let b = 0; b < bookCount; b++) {
+          const angle = (b * 2.39996);
+          const radiusNorm = Math.pow((b + 1) / bookCount, 0.65);
+          const radius = 0.35 + radiusNorm * 2.35;
+          const height = (1.0 - radiusNorm) * 2.85 + (Math.sin(b * 5.1) * 0.18);
+          const bx = Math.cos(angle) * radius;
+          const bz = Math.sin(angle) * radius;
+
+          const chosenMat = burnBookMats[b % burnBookMats.length];
+          const bMesh = new THREE.Mesh(b % 3 === 0 ? thickBookGeom : bookGeom, chosenMat);
+          bMesh.position.set(bx, Math.max(0.06, height), bz);
+
+          bMesh.rotation.set(
+            (Math.sin(b * 3.3) * 0.45) + (bz / 3.0),
+            angle + Math.sin(b * 1.7),
+            (Math.cos(b * 4.1) * 0.45) - (bx / 3.0)
+          );
+          mountainGroup.add(bMesh);
+
+          if (b % 4 === 0) {
+            const pageFan = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.36), charredPageMat);
+            pageFan.position.set(bx * 0.98, height + 0.04, bz * 0.98);
+            pageFan.rotation.copy(bMesh.rotation);
+            pageFan.rotation.y += 0.25;
+            mountainGroup.add(pageFan);
+          }
+        }
+        this.scene.add(mountainGroup);
+
+        // 3. Dynamic Flickering Fire Point Lights
+        const fireLights = [];
+        const lightColors = [0xff6b1a, 0xff4d00, 0xff9933];
+        const lightOffsets = [
+          [0.0, 1.8, 0.0, 6.5, 7.5],
+          [-1.2, 0.9, -0.8, 4.5, 5.0],
+          [1.1, 1.1, 0.6, 4.5, 5.0],
+          [-0.2, 2.7, 0.3, 5.5, 6.0]
+        ];
+
+        lightOffsets.forEach(([lx, ly, lz, dist, inten], i) => {
+          const flp = new THREE.PointLight(lightColors[i % lightColors.length], inten, dist, 1.8);
+          flp.position.set(lx, y0 + ly, 11.0 + lz);
+          this.scene.add(flp);
+          fireLights.push({
+            light: flp,
+            baseIntensity: inten,
+            phase: Math.random() * Math.PI * 2,
+            baseX: lx,
+            baseY: y0 + ly,
+            baseZ: 11.0 + lz
+          });
+        });
+
+        // 4. Realistic Animated Fire Particles System
+        const flameParticleCount = 45;
+        const flameParticles = [];
+        const flameMat = new THREE.MeshBasicMaterial({
+          map: flameTex,
+          transparent: true,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+
+        const flameGeo = new THREE.PlaneGeometry(0.95, 1.35);
+
+        for (let p = 0; p < flameParticleCount; p++) {
+          const mesh = new THREE.Mesh(flameGeo, flameMat.clone());
+          mesh.material.opacity = 0.85;
+          const theta = Math.random() * Math.PI * 2;
+          const r = Math.pow(Math.random(), 0.7) * 2.1;
+          const pY = (1.0 - r / 2.4) * 2.4 + Math.random() * 0.4;
+          const x = Math.cos(theta) * r;
+          const z = 11.0 + Math.sin(theta) * r;
+
+          mesh.position.set(x, y0 + pY, z);
+          this.scene.add(mesh);
+
+          flameParticles.push({
+            mesh: mesh,
+            baseX: x,
+            baseZ: z,
+            startY: y0 + pY,
+            currentY: y0 + pY,
+            riseSpeed: 1.2 + Math.random() * 1.6,
+            maxHeight: y0 + pY + 1.2 + Math.random() * 1.5,
+            scaleBase: 0.65 + Math.random() * 0.70,
+            phase: Math.random() * Math.PI * 2,
+            flickerSpeed: 7.0 + Math.random() * 9.0
+          });
+        }
+
+        // Rising embers & sparks (golden fiery motes)
+        const emberCount = 60;
+        const emberGeo = new THREE.BufferGeometry();
+        const emberPos = new Float32Array(emberCount * 3);
+        const emberVel = [];
+
+        for (let e = 0; e < emberCount; e++) {
+          const theta = Math.random() * Math.PI * 2;
+          const r = Math.random() * 2.1;
+          const ex = Math.cos(theta) * r;
+          const ey = y0 + 0.4 + Math.random() * 2.8;
+          const ez = 11.0 + Math.sin(theta) * r;
+
+          emberPos[e * 3] = ex;
+          emberPos[e * 3 + 1] = ey;
+          emberPos[e * 3 + 2] = ez;
+
+          emberVel.push({
+            vx: (Math.random() - 0.5) * 0.45,
+            vy: 1.4 + Math.random() * 1.8,
+            vz: (Math.random() - 0.5) * 0.45,
+            baseX: ex,
+            baseZ: ez,
+            life: Math.random(),
+            maxLife: 1.2 + Math.random() * 1.5
+          });
+        }
+
+        emberGeo.setAttribute('position', new THREE.BufferAttribute(emberPos, 3));
+        const emberMat = new THREE.PointsMaterial({
+          color: 0xffaa22,
+          size: 0.08,
+          transparent: true,
+          opacity: 0.9,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const emberPoints = new THREE.Points(emberGeo, emberMat);
+        this.scene.add(emberPoints);
+
+        // Billowing rolling smoke plumes above the mountain
+        const smokeParticleCount = 20;
+        const smokeParticles = [];
+        const smokeMat = new THREE.MeshBasicMaterial({
+          map: smokeTex,
+          transparent: true,
+          opacity: 0.40,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const smokeGeo = new THREE.PlaneGeometry(1.6, 1.6);
+
+        for (let s = 0; s < smokeParticleCount; s++) {
+          const mesh = new THREE.Mesh(smokeGeo, smokeMat.clone());
+          const theta = Math.random() * Math.PI * 2;
+          const r = Math.random() * 1.4;
+          const sy = y0 + 2.0 + Math.random() * 2.5;
+          mesh.position.set(Math.cos(theta) * r, sy, 11.0 + Math.sin(theta) * r);
+          this.scene.add(mesh);
+          smokeParticles.push({
+            mesh: mesh,
+            baseX: Math.cos(theta) * r,
+            baseZ: 11.0 + Math.sin(theta) * r,
+            startY: y0 + 2.0,
+            currentY: sy,
+            riseSpeed: 0.65 + Math.random() * 0.85,
+            maxHeight: y0 + 4.9,
+            scaleBase: 1.2 + Math.random() * 1.2,
+            rotSpeed: (Math.random() - 0.5) * 0.8
+          });
+        }
+
+        // Store Burning Book Mountain structure for dynamic updates and collision/damage checking
+        this.burningBookMountain = {
+          floor: fl,
+          centerX: 0.0,
+          centerY: y0,
+          centerZ: 11.0,
+          radius: 2.70,
+          dangerRadius: 3.10,
+          mountainHeight: 3.40,
+          fireLights: fireLights,
+          flameParticles: flameParticles,
+          emberPoints: emberPoints,
+          emberVel: emberVel,
+          smokeParticles: smokeParticles,
+          damageCooldown: 0,
+          curatorDamageCooldown: 0,
+          damageInterval: 0.45,
+          damageAmount: 18
+        };
+
+        // Static cylinder collider for the mountain
+        this.colliders.push({
+          type: 'cylinder',
+          floor: fl,
+          x: 0.0,
+          z: 11.0,
+          radius: 2.25,
+          minY: y0,
+          maxY: y0 + 3.0,
+          isWall: false
+        });
+      }
+    }
+
+    updatePettingZoo(delta) {
+      if (!this.pettingZooAnimals || this.pettingZooAnimals.length === 0) return;
+      if (this.playerFloor !== 0) return;
+
+      const cam = this.camera;
+      const minX = -3.2, maxX = 3.2;
+      const minZ = 8.5, maxZ = 13.5;
+
+      for (let i = 0; i < this.pettingZooAnimals.length; i++) {
+        const animal = this.pettingZooAnimals[i];
+        animal.stateTimer -= delta;
+
+        if (animal.stateTimer <= 0) {
+          if (animal.state === 'walk') {
+            animal.state = 'idle';
+            animal.stateTimer = 1.5 + Math.random() * 3.5;
+          } else {
+            animal.state = 'walk';
+            animal.stateTimer = 3.0 + Math.random() * 5.0;
+            animal.target.set(
+              minX + Math.random() * (maxX - minX),
+              minZ + Math.random() * (maxZ - minZ)
+            );
+          }
+        }
+
+        if (animal.state === 'walk') {
+          animal.walkTime += delta * 6.2;
+          const dx = animal.target.x - animal.pos.x;
+          const dz = animal.target.y - animal.pos.y;
+          const dist = Math.hypot(dx, dz);
+
+          if (dist > 0.15) {
+            const step = Math.min(dist, animal.speed * delta);
+            animal.pos.x += (dx / dist) * step;
+            animal.pos.y += (dz / dist) * step;
+
+            if (Math.abs(dx) > 0.02) {
+              animal.headingX = dx > 0 ? 1 : -1;
+            }
+          } else {
+            animal.state = 'idle';
+            animal.stateTimer = 1.0 + Math.random() * 2.5;
+          }
+        }
+
+        // Clamp inside petting zoo enclosure bounds
+        animal.pos.x = Math.max(minX, Math.min(maxX, animal.pos.x));
+        animal.pos.y = Math.max(minZ, Math.min(maxZ, animal.pos.y));
+
+        // Gentle walking bob
+        const bob = animal.state === 'walk' ? Math.abs(Math.sin(animal.walkTime)) * 0.06 : 0;
+        animal.root.position.set(animal.pos.x, (animal.floor * CONFIG.FLOOR_HEIGHT) + bob, animal.pos.y);
+
+        // Billboard facing camera
+        if (cam) {
+          const camAngle = Math.atan2(cam.position.x - animal.pos.x, cam.position.z - animal.pos.y);
+          animal.mesh.rotation.y = camAngle;
+          animal.mesh.scale.x = animal.headingX;
+        }
+      }
+    }
+
+    updateBurningMountain(delta) {
+      const bm = this.burningBookMountain;
+      if (!bm) return;
+
+      const cam = this.camera;
+      const now = performance.now() / 1000;
+
+      // 1. Dynamic Flame Particle Simulation
+      if (bm.flameParticles) {
+        for (let i = 0; i < bm.flameParticles.length; i++) {
+          const fp = bm.flameParticles[i];
+          fp.phase += delta * fp.flickerSpeed;
+          fp.currentY += delta * fp.riseSpeed;
+
+          if (fp.currentY > fp.maxHeight) {
+            fp.currentY = fp.startY;
+            fp.phase = Math.random() * Math.PI * 2;
+          }
+
+          const flickerX = Math.sin(fp.phase) * 0.08;
+          const flickerZ = Math.cos(fp.phase * 1.3) * 0.08;
+          fp.mesh.position.set(fp.baseX + flickerX, fp.currentY, fp.baseZ + flickerZ);
+
+          const lifeProgress = (fp.currentY - fp.startY) / Math.max(0.1, (fp.maxHeight - fp.startY));
+          const scale = fp.scaleBase * (1.0 + Math.sin(fp.phase) * 0.22) * (1.0 - lifeProgress * 0.45);
+          fp.mesh.scale.set(scale, scale * 1.35, 1);
+          fp.mesh.material.opacity = Math.max(0.1, (1.0 - lifeProgress * 0.75) * (0.75 + Math.sin(fp.phase * 1.8) * 0.25));
+
+          if (cam) {
+            fp.mesh.quaternion.copy(cam.quaternion);
+          }
+        }
+      }
+
+      // 2. Rising Golden Embers & Fiery Sparks
+      if (bm.emberPoints && bm.emberVel) {
+        const posAttr = bm.emberPoints.geometry.attributes.position;
+        const posArray = posAttr.array;
+        const count = bm.emberVel.length;
+
+        for (let e = 0; e < count; e++) {
+          const ev = bm.emberVel[e];
+          ev.life += delta;
+
+          posArray[e * 3]     += ev.vx * delta + Math.sin(now * 3.0 + e) * 0.005;
+          posArray[e * 3 + 1] += ev.vy * delta;
+          posArray[e * 3 + 2] += ev.vz * delta + Math.cos(now * 3.0 + e) * 0.005;
+
+          if (ev.life > ev.maxLife || posArray[e * 3 + 1] > bm.centerY + 4.8) {
+            ev.life = 0;
+            const theta = Math.random() * Math.PI * 2;
+            const r = Math.random() * 2.1;
+            posArray[e * 3]     = Math.cos(theta) * r;
+            posArray[e * 3 + 1] = bm.centerY + 0.35 + Math.random() * 0.6;
+            posArray[e * 3 + 2] = bm.centerZ + Math.sin(theta) * r;
+          }
+        }
+        posAttr.needsUpdate = true;
+      }
+
+      // 3. Billowing Smoke Plumes
+      if (bm.smokeParticles) {
+        for (let s = 0; s < bm.smokeParticles.length; s++) {
+          const sp = bm.smokeParticles[s];
+          sp.currentY += delta * sp.riseSpeed;
+          sp.mesh.rotation.z += delta * sp.rotSpeed;
+
+          if (sp.currentY > sp.maxHeight) {
+            sp.currentY = sp.startY;
+          }
+
+          const progress = (sp.currentY - sp.startY) / Math.max(0.1, sp.maxHeight - sp.startY);
+          const sScale = sp.scaleBase * (1.0 + progress * 1.8);
+          sp.mesh.position.set(sp.baseX + Math.sin(now * 0.8 + s) * 0.25, sp.currentY, sp.baseZ);
+          sp.mesh.scale.set(sScale, sScale, 1);
+          sp.mesh.material.opacity = Math.max(0.02, (1.0 - progress) * 0.40);
+
+          if (cam) {
+            sp.mesh.quaternion.copy(cam.quaternion);
+          }
+        }
+      }
+
+      // 4. Dynamic Fire Light Flicker
+      if (bm.fireLights) {
+        for (let l = 0; l < bm.fireLights.length; l++) {
+          const flp = bm.fireLights[l];
+          flp.phase += delta * (8.5 + l * 2.0);
+          const flicker = Math.sin(flp.phase) * 0.28 + Math.cos(flp.phase * 2.7) * 0.16;
+          flp.light.intensity = Math.max(0.8, flp.baseIntensity * (1.0 + flicker));
+          flp.light.position.x = flp.baseX + Math.sin(flp.phase * 0.7) * 0.08;
+          flp.light.position.z = flp.baseZ + Math.cos(flp.phase * 0.9) * 0.08;
+        }
+      }
+
+      // 5. Fire Proximity & Contact Damage to Player
+      if (bm.damageCooldown > 0) {
+        bm.damageCooldown -= delta;
+      }
+
+      if (this.playerFloor === bm.floor && !this.isSpectatorMode && !this.isGameOver && !this.isVictory) {
+        const playerPos = this.camera ? this.camera.position : null;
+        if (playerPos) {
+          const pDist = Math.hypot(playerPos.x - bm.centerX, playerPos.z - bm.centerZ);
+          const heightDiff = playerPos.y - bm.centerY;
+
+          if (pDist < bm.dangerRadius && heightDiff >= -0.2 && heightDiff <= bm.mountainHeight + 0.8) {
+            if (bm.damageCooldown <= 0) {
+              bm.damageCooldown = bm.damageInterval;
+
+              const burnFactor = Math.max(0.4, 1.0 - (pDist / bm.dangerRadius));
+              const burnDamage = Math.round(bm.damageAmount * burnFactor + 6);
+
+              this.health = Math.max(0, this.health - burnDamage);
+              this.updateHud();
+
+              if (this.dom.damageOverlay) {
+                this.dom.damageOverlay.style.background = 'radial-gradient(ellipse at center, rgba(255, 120, 20, 0.45) 0%, rgba(220, 38, 38, 0.90) 80%)';
+                this.dom.damageOverlay.style.opacity = '1';
+                setTimeout(() => {
+                  if (this.dom.damageOverlay) {
+                    this.dom.damageOverlay.style.opacity = '0';
+                    this.dom.damageOverlay.style.background = 'radial-gradient(ellipse at center, transparent 0%, rgba(220, 38, 38, 0.85) 75%)';
+                  }
+                }, 320);
+              }
+
+              if (pDist > 0.05 && this.playerCrateKnockback) {
+                const nx = (playerPos.x - bm.centerX) / pDist;
+                const nz = (playerPos.z - bm.centerZ) / pDist;
+                this.playerCrateKnockback.x += nx * 4.5;
+                this.playerCrateKnockback.z += nz * 4.5;
+              }
+
+              if (this.audio && this.audio.playPlayerHurt) {
+                this.audio.playPlayerHurt();
+              }
+
+              if (this.health <= 0) {
+                this.triggerGameOver();
+              }
+            }
+          }
+        }
+      }
+
+      // 6. Fire Proximity & Contact Damage to The Curator (Smitty)
+      if (bm.curatorDamageCooldown > 0) {
+        bm.curatorDamageCooldown -= delta;
+      }
+      if (this.smittyFloor === bm.floor && this.smittyEnabled && this.smittyState !== 'DEAD' && this.smittyPos) {
+        const cDist = Math.hypot(this.smittyPos.x - bm.centerX, this.smittyPos.z - bm.centerZ);
+        if (cDist < bm.dangerRadius) {
+          if (bm.curatorDamageCooldown <= 0) {
+            bm.curatorDamageCooldown = 0.50;
+            const burnDmg = 25;
+            const hitPoint = new THREE.Vector3(this.smittyPos.x, this.smittyPos.y + 1.2, this.smittyPos.z);
+            const shotDir = new THREE.Vector3(
+              (this.smittyPos.x - bm.centerX) / Math.max(0.1, cDist),
+              0.2,
+              (this.smittyPos.z - bm.centerZ) / Math.max(0.1, cDist)
+            );
+            this.damageSmitty(burnDmg, hitPoint, shotDir);
+
+            if (cDist > 0.05) {
+              const nx = (this.smittyPos.x - bm.centerX) / cDist;
+              const nz = (this.smittyPos.z - bm.centerZ) / cDist;
+              this.smittyPos.x += nx * 0.65;
+              this.smittyPos.z += nz * 0.65;
+            }
+          }
+        }
+      }
+
+      // 7. Fire Proximity & Contact Damage to Statues
+      if (this.statues && this.statuesEnabled) {
+        for (let s = 0; s < this.statues.length; s++) {
+          const statue = this.statues[s];
+          if (!statue.group || !statue.group.visible || statue.floor !== bm.floor) continue;
+
+          statue.fireDamageCooldown = (statue.fireDamageCooldown || 0) - delta;
+          const sDist = Math.hypot(statue.x - bm.centerX, statue.z - bm.centerZ);
+
+          if (sDist < bm.dangerRadius) {
+            if (statue.fireDamageCooldown <= 0) {
+              statue.fireDamageCooldown = 0.60;
+              const hitPoint = new THREE.Vector3(statue.x, statue.y + 1.1, statue.z);
+              const pushDir = new THREE.Vector3(
+                (statue.x - bm.centerX) / Math.max(0.1, sDist),
+                0,
+                (statue.z - bm.centerZ) / Math.max(0.1, sDist)
+              );
+              this.hitStatue(statue, hitPoint, pushDir);
+
+              statue.x += pushDir.x * 0.75;
+              statue.z += pushDir.z * 0.75;
+              if (statue.group) {
+                statue.group.position.set(statue.x, statue.y, statue.z);
+              }
+            }
+          }
+        }
       }
     }
 
@@ -13132,6 +13905,15 @@ window.game = this;
         connect(fn.cross_w_mid, fn.cross_center);
         connect(fn.cross_center, fn.cross_e_mid);
         connect(fn.cross_e_mid, fn.cross_e_east);
+
+        // North doorway opening into Central Core Room (z = 8.0, x = 0.0)
+        fn.brownBox_door = addNode(0.0, y, 8.0, fl, 'brownBox_door');
+        connect(fn.cross_center, fn.brownBox_door);
+        if (fl === 0) {
+          // Floor 0 Petting Zoo inside node
+          fn.brownBox_in = addNode(0.0, y, 10.5, fl, 'brownBox_in');
+          connect(fn.brownBox_door, fn.brownBox_in);
+        }
 
         // 7. SOUTH CROSS-PASSAGE (x: -4..4, z: 22.0)
         fn.crossS_w_gal = addNode(-6.5, y, 22.0, fl, 'crossS_w_gal');
@@ -19422,6 +20204,8 @@ window.game = this;
         try {
           this.updatePhysicsCrates(delta);
           this.updateAquariumFish(delta);
+          this.updatePettingZoo(delta);
+          this.updateBurningMountain(delta);
           if (!this.navGrid && this.navNodes && this.navNodes.length > 0) {
             this.buildObstacleGrid();
           }
