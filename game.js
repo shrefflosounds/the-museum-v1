@@ -10968,13 +10968,11 @@ window.game = this;
         }
       `;
 
-      // 1. Rich, undulating low-to-mid level ground mist across the entire 4th floor (Floor 3)
+      // 1. Undulating low ground mist across the entire 4th floor (Floor 3) - 2 levels
       // Added directly to root scene (managed by updateFloorGroupVisibility) so it renders reliably across the whole floor!
       const layerSpecs = [
-        { height: 0.18, opacity: 0.42, seed: 0.0 },
-        { height: 0.46, opacity: 0.32, seed: 19.3 },
-        { height: 0.78, opacity: 0.22, seed: 37.8 },
-        { height: 1.14, opacity: 0.14, seed: 53.6 }
+        { height: 0.20, opacity: 0.40, seed: 0.0 },
+        { height: 0.55, opacity: 0.28, seed: 23.4 }
       ];
       this.topFloorFogGroup = new THREE.Group();
       this.topFloorFogGroup.name = 'TopFloorFogStrata';
