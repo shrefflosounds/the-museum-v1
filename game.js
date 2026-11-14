@@ -11075,10 +11075,10 @@ window.game = this;
 
       // Direct playlist video IDs pre-fetched to guarantee instant, reliable playback even when YouTube restricts playlist embeds
       this.playlistVideoLists = {
-        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld': ['GqlqqltHMWA', 'DUR8mqLN4xo', 'Y87IJ4-Rw-c', 'WjPahNtjWow', 'WR1mQH6xRYM', '8pLBon9Jj6Y', '5e6Y1-aXEdk', 'gG8DHNAtMjM', 'cCzdboextGQ', 'JOhycC18sSg', 'vLOpwkQ7u4E', 'nwPuzZr5s94', 'pNmC2Gdd1Uo', 'AboYWYwDqDw', 'IR0OFd3mhmQ', 'bSm4g_pAOm0', '0ZwbwweF_WQ', 'S4Sl0Jo1A7Q', 'waT26XY_rpI', 'zADnswZzgfA', 'NoQDtZU3Uto', 'MBOl_d_sSys', 'ySrP-FcZFhg', 'wD0Co-ASgOg', 'EPmNiXGVNNc', 'z63485VqPrc', 'SlfJ1vaFFoQ', '_a7fLcAYJL8', '3Sbt1CTTPhw', '5YiYQBrEsbQ', 'wnc59px0HJU', 'eSdbzElYB_8', '_ypeIdkXzdI', 'Gtj0yaq9b_M', 'CuG9rQmUwBY', 'pEtRtRxhwHA', 'bCjPP7liZCA', 'Hx-Qsra5s90', 'Ap3okMygbqY', 'HOTViYcQiTU', 'LXDfgGI9P-g', 'zjlIpvewWuE', '0KTNriX6WhY', 'WCdDuPKg1u4', 'XsK1S5y0ZFU', '-sWBPg9Z068', 'CRSdpY_vI1s', 'c6nZ4GB9gu0', '2n8W6CBxc64', 'KcN-exDsEuI', 'Cy0JT455gEA'],
-        'PL6HPvbUV3y90GTk3elKRPsG8zTlm5t7kv': ['r9PeYPHdpNo', '8ncUVddkK3Q', '9FqwhW0B3tY', 'jLdO9MBI7eQ', 'L0mxKh6CEss', 'F08fZFRB8fk', 'k_GTIL7AECQ', 'q3ZUGrNsZLM', 'GUF-dSv701w', 'ZuVcOwXLnyQ', 'HL-DFiwaJjs', 'iM6LSUpanmg'],
-        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp': ['nxtyESAsoK8', 'jHYqMZGgjIg', 'tnXi1jKD7As', 'cN2PEsgwHKU', 'QNsWZsdADv8', 'DvLyHOknKAw', 'GFTTMmjSdXQ', '7XvUCC9-y50', 'P2EMQdhrhVk', 'NOudIoCjiC4', 'K09vhqIVZGw', 'r2xKnDIo2uo', 'AodBQ2ElXxs', 'gQu_LCo8J-E', 'od2WTLxpvXY', 'c9MvPEFHGTU', 'cOloBIIa8eA', 'Iw8TmXdZLf4', 'qvdV-ne3y8Y', '7B2Kq-R4giA', 'GM4XknKJS_s', 'SUYy27ltV1s', 'JHfO3iu0-bs', 'VccPksP_kHM', 'rS1pisGuVZI', 'bkPCW_sGynU', 'qmnjOm4PUiU', '1EM8nTWWzwM', 'WRMgvVgu79M', 'MF294hwWKsU', 'Dvo0tUERf8s', 'SEuiN9ja6PU', 'qLcmbqC5t_s', 'Y_Zpr2pm1xg', 'yaYD7_v7z5U', 'FPqbqr-CXKM', '-G9wra5H7Jk', 'DCt8Cqv7Lv8', 'PEebrN5rO9c', 'HBksPFaKy3U', 'guW4DpcNFu4', 'nxp2ryEgLpU', 'I3gJAO5KlMs', 'GsUjlC1cgMA', 'm26mwh_GFvg', 'rwwN6KRD8OI', 'uZtjBnCmB6w', 'rzLIUgnKY40', 'KkEIdDhSh4k', 'U4RI6UrHj_o', 'omhi786xEgA', 'mQaDHXSLff8', '95JIdlCyWaQ', 'rGCROSqWZ7I', 'E7tbk4Mmblg', 'M5rPSdG2sSU', 'vnzrYNVbuyU', 'BecjBIdsaxA', 'l8Yvm-FygrM', 'RxmB3DKA4g8', 'DdLnKKnf87w', 'j8AgQN_bZ-U', 'o5pY3AJabxs', '1QoWjpt0pE4', 'GE1HFYv6a0I', '0XKNEEqDHPk', 'nQEjEp4irxI', 'aLo-fibyMW0', 'TjP-ReTD5I0', 'F6bioQy_nBY', 'Yg17_y4vO-A', '-iF03XMJgiw', 'xtrxortfV0E', 'N_lyUJHqXm8', 'tT55pvSe9R4', 'iPU4xVPqbCk', 'cAgs1lU3-cA', 'x3NhDbzD_zw', 'xVgofqWKUwc', 'lmNfYXheO54', 'uuImrvSVOpc', '34XtASwCfkw', '5UwweFXRRdE', 'zkxA_GoLOz8', '1q6OpWW_dw0', 'AT0bAsQ05uk', 'Ysse8t_y_ik', 'S9bGVMBMXY0', 'R0btD4cpEVU', '51w6TCKb48I', 'DMaeJzCaiIs', 'wnDgTd5mYpM', 'PTdxPliBdZs', 'l_eE56rPuVE', 'M-MX6nCGmGw', 'j-GNkcQkv2k', '4tXLLAMletc', 'iR1JZwNhJIw', 'wSbsloQpuDo', 'YzP4IYHoK9c'],
-        'PLqPry1bfNMgnYIhDUxlMWalX7IW-1JA_I': ['ZN5PoW7_kdA', 'l7F5nIA8xmw', 'xjdBCeUdAmI', 'fOxg8hT30r0', 'Q9jE33s51yY', 'ltlsfOOkBqg', 'cL_qGMfbtAk', 'WCNRGrHMY8c', 'H6IeASZZf1c', 'InhbSdcNBZw', 'E4GhMYxE2Lc', 'VEH3u2Qz4fc', '1JO0-WCEOw4', 'U_ety9JGwRI', 'vMxwPgzF4ME', 'qOTNdxOKZiQ', 'IcRguMhpQPQ', '3Z66-cl3ghw', '1J5hZWQs-vI', 'u9D8Z4SfrXM', 'dkHJKakHMpo', '8UaZ9gHr0UQ', '4VInSCDVnP0', 'wkfDAnW8ZbA', 'BE-KFNO6pE0', 'HFZtOk42ets', '0rQ6d6xnJow', 'dr9QmTl5v48', 'DYnz_06hcUI', '0EiM8Pa91SQ', 'bp_qq22rpng', '3xon1c9a1Ms', 'D7IXiXxENEA', 'l3WPKznFvfk', 'C41IBSKGF4w', 'QTiFml51wWI', 'jvnKybI7fzU', 'sGJK5xFqm7Q', 'yfoaszc0H_0', 'pRvTCu9Ej-8', '6Cad53S2LkQ', 'g_h9isVGcE8', 'ont3Mq0DARE', 'nk-A7xPciyQ', 'qVdh0wel-Yo', 'ud4YnLT1vWk', 'fJAbH4UdciM', 'sL80m2yvwrY', 'gFn1cLZ3m7E', 'hiOfQ8dRKbE', 'pezdRcVe04c', 'OKI-5MHUkKY', '9ITTyIjYJvs', 'k8ZRrhXoXtQ', 'pEAoPswuorU', 'WLStid2uW0Q', '87UVT_jhUPE', 'LAmKx7e_dzI', 'AyXX1ltl94E', 'enl-UGhXJ0w', 'hKg7Ronhq00', 'fq4Eebc7aMQ', '56SA_C9o9VU', 'zBFVPI76Z9Y', 'gRJnltYbiyY', 'h0GqRx3BhIE', '4UG1g13wvLY', 'cOx49nX9dnw', 'n7sJyL4WMXY', 'eETWLVAlqT4', 'u4usQWXc1yQ', 'ULWRoU9DUSo', 'kwT1rCm5Wuo', 'XrN1MLdyMM0', 'ZpKzTdMSaJs', 'yYsOnfN5tIU', '0XrRwruU8DE', 'Q3M8whx1gj4', 'meQ8oIOuUqg', 'JHa6RHelvns', 'QsQo2Gvzt8I', 'MkCyVId3KY8', 'JIxhbXSeGjw', 'Fbf-_ZDb8YI', 'lnn2k8BkhLs', 'sqx5bpsjKGM', 'rg8jISMx4dk', 'r5HWzwa3KOo', 'TLLRo5895ZY', 'xJzBpA-gXtI', 'JLAG77f_Xzo', 'uWx6pJ6HzHU', 'by0tQMgrjJc', 'YgXvdBvINlw', 'QDAfX0IBH8k', 'IHr3o3nfUdk', 'G9F0yXS9oDw', '3vAnIJp2dII', 'o-Fw9KOOspo', 'AfWsM4PKPio']
+        'PLCmArB5wTc0SIKYXG2EQX3ZyHLuLbtlld': ["GqlqqltHMWA", "DUR8mqLN4xo", "Y87IJ4-Rw-c", "WR1mQH6xRYM", "8pLBon9Jj6Y", "5e6Y1-aXEdk", "WjPahNtjWow", "cCzdboextGQ", "JOhycC18sSg", "vLOpwkQ7u4E", "nwPuzZr5s94", "pNmC2Gdd1Uo", "AboYWYwDqDw", "IR0OFd3mhmQ", "bSm4g_pAOm0", "0ZwbwweF_WQ", "S4Sl0Jo1A7Q", "waT26XY_rpI", "zADnswZzgfA", "NoQDtZU3Uto", "MBOl_d_sSys", "ySrP-FcZFhg", "wD0Co-ASgOg", "EPmNiXGVNNc", "z63485VqPrc", "SlfJ1vaFFoQ", "_a7fLcAYJL8", "3Sbt1CTTPhw", "5YiYQBrEsbQ", "Gtj0yaq9b_M", "eSdbzElYB_8", "_ypeIdkXzdI", "CuG9rQmUwBY", "pEtRtRxhwHA", "Cy0JT455gEA", "bCjPP7liZCA", "Hx-Qsra5s90", "Ap3okMygbqY", "HOTViYcQiTU", "LXDfgGI9P-g", "zjlIpvewWuE", "0KTNriX6WhY", "WCdDuPKg1u4", "XsK1S5y0ZFU", "-sWBPg9Z068", "CRSdpY_vI1s", "c6nZ4GB9gu0", "2n8W6CBxc64", "KcN-exDsEuI", "ZeFgGJv6xMI", "gG8DHNAtMjM"],
+        'PL6HPvbUV3y90GTk3elKRPsG8zTlm5t7kv': ["r9PeYPHdpNo", "8ncUVddkK3Q", "9FqwhW0B3tY", "jLdO9MBI7eQ", "L0mxKh6CEss", "F08fZFRB8fk", "k_GTIL7AECQ", "q3ZUGrNsZLM", "GUF-dSv701w", "ZuVcOwXLnyQ", "HL-DFiwaJjs", "iM6LSUpanmg"],
+        'PLxdcA8wIcZd1fsXxDiTDoIgaHPQRLiWUp': ["c9MvPEFHGTU", "SEuiN9ja6PU", "cN2PEsgwHKU", "50Mqm9m4VQ0", "gI_Tpi1Acpo", "K09vhqIVZGw", "DvLyHOknKAw", "N231-I8TXYI", "qmnjOm4PUiU", "Dvo0tUERf8s", "LEudGxGNq0U", "7B2Kq-R4giA", "tp_XV7BerXk", "M5rPSdG2sSU", "3MnrAw8Icfs", "rtvWAM140xI", "od2WTLxpvXY", "KfU-E0ya6QM", "rzLIUgnKY40", "mQaDHXSLff8", "11_YoMZMZOM", "Iw8TmXdZLf4", "sJXag2HYT94", "qxLJ5RVSP0Y", "EfSVa0rlNJI", "KkEIdDhSh4k", "0XKNEEqDHPk", "j8AgQN_bZ-U", "jHYqMZGgjIg", "z480YNLVwU4", "7Pv_smABhRw", "-z5ZZEikpQ8", "xtrxortfV0E", "Y7WtkdLQ6PM", "EDF3hbqvVmA", "uuImrvSVOpc", "5UwweFXRRdE", "HBksPFaKy3U", "zcmoibHIIgc", "TjP-ReTD5I0", "VccPksP_kHM", "WRMgvVgu79M", "iPU4xVPqbCk", "GKN5HNK92sI", "lmNfYXheO54", "zOtWmwXdyY4", "p4NUr10DShc", "7OaEHpKDz_M", "E7tbk4Mmblg", "7HvdYtjZzxk", "wnDgTd5mYpM", "7KMTeJdazK4", "MF294hwWKsU", "YbsTv5H1IWs", "-iF03XMJgiw", "SUYy27ltV1s", "n1lnkcqpGgk", "Ig93BK6CYPs", "cKfmMRix0mI", "NoQDtZU3Uto", "dhniqX6WfhM", "NOudIoCjiC4", "LcQUzrW8v3g", "m26K2uKNXBU", "QNsWZsdADv8", "WFTkODtiyWw", "cOloBIIa8eA", "qLcmbqC5t_s", "Q1LIxW-lvkI", "PzIzldk5lVU", "l_eE56rPuVE", "Y_Zpr2pm1xg", "Yg17_y4vO-A", "7XvUCC9-y50", "iR1JZwNhJIw", "S9bGVMBMXY0", "GM4XknKJS_s", "e59_BRSZZzM", "IGQsrJANrmA", "Ysse8t_y_ik", "I3gJAO5KlMs", "nxtyESAsoK8", "34XtASwCfkw", "GFTTMmjSdXQ", "zkxA_GoLOz8", "LHd2pTNzd0E", "x3NhDbzD_zw", "KEI0s0mwqXM", "YzP4IYHoK9c", "0gjsAZqrBeE", "rwwN6KRD8OI", "AT0bAsQ05uk", "l8Yvm-FygrM", "es4ikguCeaE", "MssBJR_UY5I", "X_GpBagv3uI", "nQEjEp4irxI", "tnXi1jKD7As", "Ng89GixZJs0", "Nuv0NfFGEK0"],
+        'PLqPry1bfNMgnYIhDUxlMWalX7IW-1JA_I': ["ZN5PoW7_kdA", "l7F5nIA8xmw", "xjdBCeUdAmI", "fOxg8hT30r0", "Q9jE33s51yY", "ltlsfOOkBqg", "cL_qGMfbtAk", "WCNRGrHMY8c", "H6IeASZZf1c", "InhbSdcNBZw", "E4GhMYxE2Lc", "VEH3u2Qz4fc", "1JO0-WCEOw4", "U_ety9JGwRI", "vMxwPgzF4ME", "qOTNdxOKZiQ", "IcRguMhpQPQ", "3Z66-cl3ghw", "1J5hZWQs-vI", "u9D8Z4SfrXM", "dkHJKakHMpo", "8UaZ9gHr0UQ", "4VInSCDVnP0", "wkfDAnW8ZbA", "BE-KFNO6pE0", "HFZtOk42ets", "0rQ6d6xnJow", "dr9QmTl5v48", "DYnz_06hcUI", "0EiM8Pa91SQ", "bp_qq22rpng", "3xon1c9a1Ms", "D7IXiXxENEA", "l3WPKznFvfk", "C41IBSKGF4w", "QTiFml51wWI", "jvnKybI7fzU", "sGJK5xFqm7Q", "yfoaszc0H_0", "pRvTCu9Ej-8", "6Cad53S2LkQ", "g_h9isVGcE8", "ont3Mq0DARE", "nk-A7xPciyQ", "qVdh0wel-Yo", "ud4YnLT1vWk", "fJAbH4UdciM", "sL80m2yvwrY", "gFn1cLZ3m7E", "hiOfQ8dRKbE", "pezdRcVe04c", "OKI-5MHUkKY", "9ITTyIjYJvs", "k8ZRrhXoXtQ", "pEAoPswuorU", "WLStid2uW0Q", "87UVT_jhUPE", "LAmKx7e_dzI", "AyXX1ltl94E", "enl-UGhXJ0w", "hKg7Ronhq00", "fq4Eebc7aMQ", "56SA_C9o9VU", "zBFVPI76Z9Y", "gRJnltYbiyY", "h0GqRx3BhIE", "4UG1g13wvLY", "cOx49nX9dnw", "n7sJyL4WMXY", "eETWLVAlqT4", "u4usQWXc1yQ", "ULWRoU9DUSo", "kwT1rCm5Wuo", "XrN1MLdyMM0", "ZpKzTdMSaJs", "yYsOnfN5tIU", "0XrRwruU8DE", "Q3M8whx1gj4", "meQ8oIOuUqg", "JHa6RHelvns", "QsQo2Gvzt8I", "MkCyVId3KY8", "JIxhbXSeGjw", "Fbf-_ZDb8YI", "lnn2k8BkhLs", "sqx5bpsjKGM", "rg8jISMx4dk", "r5HWzwa3KOo", "TLLRo5895ZY", "xJzBpA-gXtI", "JLAG77f_Xzo", "uWx6pJ6HzHU", "by0tQMgrjJc", "YgXvdBvINlw", "QDAfX0IBH8k", "IHr3o3nfUdk", "G9F0yXS9oDw", "3vAnIJp2dII", "o-Fw9KOOspo", "AfWsM4PKPio"],
       };
 
       const mountPlayer = () => {
@@ -11130,6 +11130,35 @@ window.game = this;
         window.onYouTubeIframeAPIReady = () => mountPlayer();
         setTimeout(mountPlayer, 800);
       }
+
+      // Automatically fetch updated playlists from playlists.json (with cache-busting)
+      // to keep videos and ordering in sync in real time without needing code edits
+      fetch(`playlists.json?t=${Date.now()}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data && typeof data === 'object') {
+            let changed = false;
+            for (let pid in data) {
+              if (Array.isArray(data[pid]) && data[pid].length > 0) {
+                this.playlistVideoLists[pid] = data[pid];
+                changed = true;
+              }
+            }
+            if (changed && this.activeVideoRoom) {
+              // Refresh currently active video room playlist if updated
+              const curPlaylist = this.videoPlaylists[this.activeVideoRoom.floor];
+              if (curPlaylist && this.ytPlayer && typeof this.ytPlayer.getPlaylistIndex === 'function') {
+                const idx = this.ytPlayer.getPlaylistIndex() || 0;
+                const time = typeof this.ytPlayer.getCurrentTime === 'function' ? (this.ytPlayer.getCurrentTime() || 0) : 0;
+                this.ytCurrentPlaylist = null;
+                this.loadPlaylistForFloor(this.activeVideoRoom.floor, idx, time);
+              }
+            }
+          }
+        })
+        .catch(err => {
+          console.warn('Real-time playlists.json fetch skipped, using embedded lists:', err);
+        });
     }
 
     createVideoInstallationRoom(fl, y0, mats) {
