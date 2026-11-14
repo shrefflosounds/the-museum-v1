@@ -30,6 +30,18 @@
   <!-- Fullscreen Cinematic Fade-to-Black Overlay -->
   <div id="cinema-fade-overlay"></div>
 
+  <!-- Intro Fullscreen Cutscene -->
+  <div id="intro-cutscene" class="hidden">
+    <video id="intro-video" src="assets/THE-MUSEUM-intro.mp4" playsinline preload="auto" webkit-playsinline></video>
+    <div id="intro-unmute-prompt" class="hidden">
+      <div class="cutscene-unmute-content">
+        <span class="cutscene-unmute-icon">🔊</span>
+        <span class="cutscene-unmute-text">CLICK ANYWHERE TO UNMUTE AUDIO</span>
+      </div>
+    </div>
+    <div id="intro-skip-prompt" class="hidden">PRESS ANY KEY TO CONTINUE</div>
+  </div>
+
   <!-- All Relics Found Fullscreen Cutscene -->
   <div id="all-relics-cutscene" class="hidden">
     <video id="all-relics-video" src="assets/AllRelicsFound.mp4" playsinline preload="auto" webkit-playsinline></video>
@@ -409,7 +421,7 @@
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1794651000';
+    gameScript.src = 'game.js?v=2.9.1794652200';
     document.body.appendChild(gameScript);
   </script>
 </body>

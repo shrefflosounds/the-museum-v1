@@ -4319,6 +4319,10 @@
         allRelicsVideo: document.getElementById('all-relics-video'),
         allRelicsSkipPrompt: document.getElementById('all-relics-skip-prompt'),
         allRelicsUnmutePrompt: document.getElementById('all-relics-unmute-prompt'),
+        introCutscene: document.getElementById('intro-cutscene'),
+        introVideo: document.getElementById('intro-video'),
+        introSkipPrompt: document.getElementById('intro-skip-prompt'),
+        introUnmutePrompt: document.getElementById('intro-unmute-prompt'),
         systemNotification: document.getElementById('system-notification'),
         healthValue: document.getElementById('health-value'),
         healthFill: document.getElementById('health-fill'),
@@ -14801,8 +14805,7 @@ window.game = this;
       window.addEventListener('pointerdown', unlockAudio);
       window.addEventListener('keydown', unlockAudio);
 
-      this.dom.startBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
+      const beginGameplay = () => {
         this.dom.startScreen.classList.add('hidden');
         this.gameStarted = true;
         this.startTime = Date.now();
@@ -14817,6 +14820,21 @@ window.game = this;
         this.showFloorNotification(this.playerFloor);
         this.updateHud();
         this.requestNativeOrBrowserLock();
+      };
+
+      this.dom.startBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.smittyEnabled) {
+          // Hide start screen and play intro cutscene if Curator mode is enabled
+          this.dom.startScreen.classList.add('hidden');
+          this.audio.fadeOutMenuMusic(0.3);
+          this.playIntroCutscene(() => {
+            beginGameplay();
+          });
+        } else {
+          // If Curator mode is turned off, skip intro video directly to gameplay
+          beginGameplay();
+        }
       });
 
       // Options hint click in main menu
@@ -16614,6 +16632,154 @@ window.game = this;
           startPlayback();
         }, 1200); // 1.2s black fade transition before video display
       }, 5000); // 5-second delay after collecting the last relic
+    }
+
+    playIntroCutscene(onComplete) {
+      const cutsceneOverlay = this.dom.introCutscene;
+      const videoEl = this.dom.introVideo;
+      const skipPrompt = this.dom.introSkipPrompt;
+      const unmutePrompt = this.dom.introUnmutePrompt;
+      const fadeOverlay = this.dom.cinemaFadeOverlay;
+
+      if (!cutsceneOverlay || !videoEl) {
+        console.error('[INTRO] DOM elements missing!', { cutsceneOverlay, videoEl });
+        if (typeof onComplete === 'function') onComplete();
+        return;
+      }
+
+      console.log('[INTRO] Starting intro cutscene playback...');
+
+      if (!videoEl.src || !videoEl.src.includes('THE-MUSEUM-intro.mp4')) {
+        videoEl.src = 'assets/THE-MUSEUM-intro.mp4';
+      }
+      videoEl.preload = 'auto';
+      videoEl.load();
+
+      this.isPlayingCutscene = true;
+      this.keys = {};
+      this.isSprinting = false;
+
+      // Temporarily release pointer lock for clean video presentation
+      this.releaseNativeOrBrowserLock();
+
+      cutsceneOverlay.classList.remove('hidden');
+      cutsceneOverlay.style.opacity = '1';
+      if (skipPrompt) skipPrompt.classList.add('hidden');
+      if (unmutePrompt) unmutePrompt.classList.add('hidden');
+
+      videoEl.currentTime = 0;
+      videoEl.muted = false;
+
+      let cleanupListeners = null;
+      let isFinishing = false;
+
+      const finishIntro = () => {
+        if (isFinishing) return;
+        isFinishing = true;
+
+        console.log('[INTRO] Finishing intro cutscene...');
+
+        if (cleanupListeners) {
+          cleanupListeners();
+          cleanupListeners = null;
+        }
+
+        cutsceneOverlay.style.opacity = '0';
+        try {
+          videoEl.pause();
+        } catch (e) {}
+
+        setTimeout(() => {
+          cutsceneOverlay.classList.add('hidden');
+          if (skipPrompt) skipPrompt.classList.add('hidden');
+          if (unmutePrompt) unmutePrompt.classList.add('hidden');
+          this.isPlayingCutscene = false;
+          if (typeof onComplete === 'function') {
+            onComplete();
+          }
+        }, 500);
+      };
+
+      // Show "PRESS ANY KEY TO CONTINUE" prompt after 2 seconds
+      const onTimeUpdate = () => {
+        if (skipPrompt && videoEl.currentTime >= 2.0) {
+          skipPrompt.classList.remove('hidden');
+        }
+      };
+      videoEl.addEventListener('timeupdate', onTimeUpdate);
+
+      const onKeyDown = (e) => {
+        if (!this.isPlayingCutscene || isFinishing) return;
+        if (['Shift', 'Control', 'Alt', 'Meta'].includes(e.key)) return;
+        e.preventDefault();
+        e.stopPropagation();
+        finishIntro();
+      };
+
+      const onClick = (e) => {
+        if (!this.isPlayingCutscene || isFinishing) return;
+        if (videoEl.muted) {
+          videoEl.muted = false;
+          videoEl.volume = 1.0;
+          if (unmutePrompt) unmutePrompt.classList.add('hidden');
+          return;
+        }
+        e.preventDefault();
+        e.stopPropagation();
+        finishIntro();
+      };
+
+      window.addEventListener('keydown', onKeyDown, { capture: true });
+      window.addEventListener('click', onClick, { capture: true });
+
+      cleanupListeners = () => {
+        videoEl.removeEventListener('timeupdate', onTimeUpdate);
+        window.removeEventListener('keydown', onKeyDown, { capture: true });
+        window.removeEventListener('click', onClick, { capture: true });
+      };
+
+      videoEl.onended = () => {
+        console.log('[INTRO] Intro video ended.');
+        finishIntro();
+      };
+
+      videoEl.onerror = (e) => {
+        console.error('[INTRO] Video error:', e, videoEl.error);
+        finishIntro();
+      };
+
+      const startPlayback = () => {
+        videoEl.muted = false;
+        const playPromise = videoEl.play();
+        if (playPromise !== undefined) {
+          playPromise.then(() => {
+            console.log('[INTRO] Intro video playing unmuted.');
+            if (unmutePrompt) unmutePrompt.classList.add('hidden');
+          }).catch(err => {
+            console.warn('[INTRO] Autoplay with sound prevented by browser policy:', err);
+            videoEl.muted = true;
+            videoEl.play().then(() => {
+              console.log('[INTRO] Playing muted with unmute prompt.');
+              if (unmutePrompt) unmutePrompt.classList.remove('hidden');
+            }).catch(mutedErr => {
+              console.error('[INTRO] Autoplay blocked completely:', mutedErr);
+              if (unmutePrompt) unmutePrompt.classList.remove('hidden');
+              const onUserTap = () => {
+                window.removeEventListener('click', onUserTap, { capture: true });
+                window.removeEventListener('keydown', onUserTap, { capture: true });
+                videoEl.muted = false;
+                videoEl.play().then(() => {
+                  if (unmutePrompt) unmutePrompt.classList.add('hidden');
+                }).catch(() => finishIntro());
+              };
+              window.addEventListener('click', onUserTap, { capture: true });
+              window.addEventListener('keydown', onUserTap, { capture: true });
+            });
+          });
+        }
+      };
+
+      startPlayback();
     }
 
     updatePlayer(delta) {

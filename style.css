@@ -141,8 +141,9 @@ body.game-playing #game-container {
   pointer-events: auto;
 }
 
-/* All Relics Found Cutscene Modal */
-#all-relics-cutscene {
+/* All Relics Found & Intro Cutscene Modals */
+#all-relics-cutscene,
+#intro-cutscene {
   position: fixed;
   top: 0;
   left: 0;
@@ -158,18 +159,21 @@ body.game-playing #game-container {
   transition: opacity 0.5s ease;
 }
 
-#all-relics-cutscene.hidden {
+#all-relics-cutscene.hidden,
+#intro-cutscene.hidden {
   display: none !important;
 }
 
-#all-relics-video {
+#all-relics-video,
+#intro-video {
   width: 100%;
   height: 100%;
   object-fit: cover;
   background: #000;
 }
 
-#all-relics-skip-prompt {
+#all-relics-skip-prompt,
+#intro-skip-prompt {
   position: absolute;
   bottom: 38px;
   left: 50%;
@@ -194,7 +198,8 @@ body.game-playing #game-container {
   animation: blink-skip-blob 1.1s infinite ease-in-out;
 }
 
-#all-relics-skip-prompt.hidden {
+#all-relics-skip-prompt.hidden,
+#intro-skip-prompt.hidden {
   display: none !important;
 }
 
@@ -203,7 +208,8 @@ body.game-playing #game-container {
   50% { opacity: 0.12; transform: translateX(-50%) scale(0.98); }
 }
 
-#all-relics-unmute-prompt {
+#all-relics-unmute-prompt,
+#intro-unmute-prompt {
   position: absolute;
   top: 40px;
   left: 50%;
@@ -220,7 +226,8 @@ body.game-playing #game-container {
   animation: pulse-continue 2s infinite ease-in-out;
 }
 
-#all-relics-unmute-prompt.hidden {
+#all-relics-unmute-prompt.hidden,
+#intro-unmute-prompt.hidden {
   display: none !important;
 }
 
