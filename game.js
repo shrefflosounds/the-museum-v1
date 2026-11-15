@@ -8800,63 +8800,31 @@ window.game = this;
       flagstoneFloor.position.y = 0.008;
       dungeonGroup.add(flagstoneFloor);
 
-      // 2. Realistic Photographic Transparent Bone PNG Decals (Real photographic human bone cutouts, NO models, NO skulls)
-      const bonesPileTex = this.texLoader.load('assets/textures/dungeon_bones_pile.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const singleBoneTex = this.texLoader.load('assets/textures/dungeon_bone_single.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
+      // 2. Realistic Bone PNG Decals (Only one of each of the 5 user-provided real bone PNGs, NO skulls, NO repetitions)
+      const boneTexs = [
+        { path: 'assets/textures/dungeon_bones/bone_1.png', w: 0.95, h: 0.75, pos: [3.8, -2.8], rot: 0.35 },
+        { path: 'assets/textures/dungeon_bones/bone_2.png', w: 1.45, h: 0.55, pos: [-4.2, 2.8], rot: -0.65 },
+        { path: 'assets/textures/dungeon_bones/bone_3.png', w: 1.65, h: 0.34, pos: [4.5, 1.2], rot: 1.85 },
+        { path: 'assets/textures/dungeon_bones/bone_4.png', w: 1.40, h: 0.62, pos: [-2.2, -3.2], rot: -1.40 },
+        { path: 'assets/textures/dungeon_bones/bone_5.png', w: 1.25, h: 0.61, pos: [-2.6, 0.8], rot: 0.75 }
+      ];
 
-      const bonesPileMat = new THREE.MeshBasicMaterial({
-        map: bonesPileTex,
-        transparent: true,
-        alphaTest: 0.05,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const singleBoneMat = new THREE.MeshBasicMaterial({
-        map: singleBoneTex,
-        transparent: true,
-        alphaTest: 0.05,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-
-      // A. North-East Corner realistic bone pile
-      const pileNE = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), bonesPileMat);
-      pileNE.rotation.x = -Math.PI / 2;
-      pileNE.rotation.z = 0.45;
-      pileNE.position.set(4.2, 0.016, -3.2);
-      dungeonGroup.add(pileNE);
-
-      // B. South-West Corner realistic bone pile
-      const pileSW = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), bonesPileMat);
-      pileSW.rotation.x = -Math.PI / 2;
-      pileSW.rotation.z = -1.2;
-      pileSW.position.set(-4.5, 0.016, 3.2);
-      dungeonGroup.add(pileSW);
-
-      // C. Center-East realistic bone scatter
-      const pileCenter = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), bonesPileMat);
-      pileCenter.rotation.x = -Math.PI / 2;
-      pileCenter.rotation.z = 2.1;
-      pileCenter.position.set(1.8, 0.016, 1.6);
-      dungeonGroup.add(pileCenter);
-
-      // D. Scattered single realistic long bones
-      [
-        [-2.8, 2.4, -0.6, 1.4, 0.45],
-        [3.1, -1.8, 1.1, 1.5, 0.48],
-        [-1.2, -3.4, -2.2, 1.3, 0.42],
-        [4.8, 2.6, 0.8, 1.45, 0.46],
-        [-3.9, -1.2, 0.2, 1.35, 0.44]
-      ].forEach(([bx, bz, rotZ, w, h]) => {
-        const singleBone = new THREE.Mesh(new THREE.PlaneGeometry(w, h), singleBoneMat);
-        singleBone.rotation.x = -Math.PI / 2;
-        singleBone.rotation.z = rotZ;
-        singleBone.position.set(bx, 0.018, bz);
-        dungeonGroup.add(singleBone);
+      boneTexs.forEach((bData, idx) => {
+        const tex = this.texLoader.load(bData.path, (t) => {
+          t.colorSpace = THREE.SRGBColorSpace;
+        });
+        const mat = new THREE.MeshBasicMaterial({
+          map: tex,
+          transparent: true,
+          alphaTest: 0.05,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const mesh = new THREE.Mesh(new THREE.PlaneGeometry(bData.w, bData.h), mat);
+        mesh.rotation.x = -Math.PI / 2;
+        mesh.rotation.z = bData.rot;
+        mesh.position.set(bData.pos[0], 0.016 + idx * 0.001, bData.pos[1]);
+        dungeonGroup.add(mesh);
       });
 
       // 3. Dried Old Dark Red Blood Staining on the Floor Around the Table
