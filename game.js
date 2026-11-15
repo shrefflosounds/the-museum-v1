@@ -4811,21 +4811,25 @@ window.game = this;
         // Top Front Sign: Transparent cutout PNG sign mounted directly on the front exterior wall (x = 18.78), facing west into the gallery, centered halfway between the top of the arched doorway (y0 + 4.50m) and the ceiling (y0 + 7.44m) at y0 + 5.97m
         this.buildEastOfficeSign(18.78, y0 + 5.97, 13.0, -Math.PI / 2, 2.4, 1.35);
       } else {
-        // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON WITH WINDOWS ON ALL SIDES & BONES
+        // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON WITH WIDE WINDOWS, REAL BONES & BUTCHER TABLE
         const dungeonStoneMat = mats.wallBrick || accentWallMat;
-        // North Wall (z = 8, x: 19.2..32.8): Stone wall with barred arched dungeon window
-        this.createWall(21.5, yc, 8, 4.6, wallH, t, dungeonStoneMat, true, fl);      // 19.2..23.8
-        this.createWall(30.5, yc, 8, 4.6, wallH, t, dungeonStoneMat, true, fl);      // 28.2..32.8
-        this.createWall(26.0, y0 + 0.6, 8, 4.4, 1.2, t, dungeonStoneMat, true, fl); // Sill below window
-        this.createLintel(26.0, y0, 8, 4.4, t, ceilH, dungeonStoneMat, 3.6);         // Header above window
-        this.createDungeonBarredWindow(26.0, y0 + 2.4, 8.0, 4.4, 2.4, 'z');
+        // North Wall (z = 8, x: 19.2..32.8):
+        // Wide arched dungeon window shifted towards the front door (x: 20.6..26.6, width 6.0m),
+        // leaving clean 1.4m margins so it does not connect to the museum wall edge at x = 28
+        this.createWall(19.9, yc, 8, 1.4, wallH, t, dungeonStoneMat, true, fl);       // 19.2..20.6 (front pillar)
+        this.createWall(29.7, yc, 8, 6.2, wallH, t, dungeonStoneMat, true, fl);       // 26.6..32.8 (back wall)
+        this.createWall(23.6, y0 + 0.6, 8, 6.0, 1.2, t, dungeonStoneMat, true, fl);  // Sill below window
+        this.createLintel(23.6, y0, 8, 6.0, t, ceilH, dungeonStoneMat, 3.6);          // Arched lintel header
+        this.createDungeonBarredWindow(23.6, y0 + 2.4, 8.0, 6.0, 2.4, 'z');
 
-        // South Wall (z = 18, x: 19.2..32.8): Stone wall with barred arched dungeon window
-        this.createWall(21.5, yc, 18, 4.6, wallH, t, dungeonStoneMat, true, fl);     // 19.2..23.8
-        this.createWall(30.5, yc, 18, 4.6, wallH, t, dungeonStoneMat, true, fl);     // 28.2..32.8
-        this.createWall(26.0, y0 + 0.6, 18, 4.4, 1.2, t, dungeonStoneMat, true, fl); // Sill below window
-        this.createLintel(26.0, y0, 18, 4.4, t, ceilH, dungeonStoneMat, 3.6);        // Header above window
-        this.createDungeonBarredWindow(26.0, y0 + 2.4, 18.0, 4.4, 2.4, 'z');
+        // South Wall (z = 18, x: 19.2..32.8):
+        // Wide arched dungeon window shifted towards the front door (x: 20.6..26.6, width 6.0m),
+        // leaving clean 1.4m margins so it does not connect to the museum wall edge at x = 28
+        this.createWall(19.9, yc, 18, 1.4, wallH, t, dungeonStoneMat, true, fl);      // 19.2..20.6 (front pillar)
+        this.createWall(29.7, yc, 18, 6.2, wallH, t, dungeonStoneMat, true, fl);      // 26.6..32.8 (back wall)
+        this.createWall(23.6, y0 + 0.6, 18, 6.0, 1.2, t, dungeonStoneMat, true, fl); // Sill below window
+        this.createLintel(23.6, y0, 18, 6.0, t, ceilH, dungeonStoneMat, 3.6);         // Arched lintel header
+        this.createDungeonBarredWindow(23.6, y0 + 2.4, 18.0, 6.0, 2.4, 'z');
 
         // West Wall (x = 19, z: 7.8..18.2): Heavy iron-barred cell door opening into the dungeon
         this.createWall(19, yc, 9.65, t, wallH, 3.7, dungeonStoneMat, true, fl);     // 7.8..11.5
@@ -8704,29 +8708,38 @@ window.game = this;
         doorGroup.add(segMesh);
       }
 
-      // 2. Heavy forged cell gate swung wide open inward against the dungeon wall (so player walks in freely)
-      // Bars go ALL THE WAY UP following the arched curve profile, with NO weird objects/locks/torches
+      // 2. Heavy forged cell gate swung wide open OUTSIDE into the museum hall (rotation.y = -1.45)
+      // The top is completely FINISHED with a solid arched top rail capping all vertical bars!
       const gateGroup = new THREE.Group();
       gateGroup.position.set(0, 0, -halfW + postW);
-      gateGroup.rotation.y = 1.35; // Swung wide open ~77 degrees against wall
+      gateGroup.rotation.y = -1.45; // Swung wide open outside into the gallery hall
 
       const gateWidth = width - postW * 2;
       const numGateBars = 7;
+      const barTopPoints = [];
+
       for (let gb = 0; gb < numGateBars; gb++) {
         const barFraction = (gb + 1) / (numGateBars + 1);
         const barZ = barFraction * gateWidth;
         const zFromCenter = -halfW + postW + barZ;
         const archRise = Math.sqrt(Math.max(0, archRadius * archRadius - zFromCenter * zFromCenter));
-        const totalBarH = height + archRise - 0.08;
+        const totalBarH = height + archRise - 0.06;
 
         const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, totalBarH, 12), ironMat);
         bar.position.set(0, totalBarH / 2, barZ);
         gateGroup.add(bar);
+
+        barTopPoints.push({ z: barZ, y: totalBarH });
+
+        // Forged cap finial on top of each bar
+        const cap = new THREE.Mesh(new THREE.SphereGeometry(0.030, 8, 8), ironMat);
+        cap.position.set(0, totalBarH, barZ);
+        gateGroup.add(cap);
       }
 
       // Gate outer vertical frame stile at opening edge
       const outerRise = Math.sqrt(Math.max(0, archRadius * archRadius - (halfW - postW * 2) * (halfW - postW * 2)));
-      const outerH = height + outerRise - 0.08;
+      const outerH = height + outerRise - 0.06;
       const gateOuterStile = new THREE.Mesh(new THREE.BoxGeometry(0.06, outerH, 0.06), ironMat);
       gateOuterStile.position.set(0, outerH / 2, gateWidth);
       gateGroup.add(gateOuterStile);
@@ -8745,6 +8758,20 @@ window.game = this;
       const gateMid = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.05, gateWidth), ironMat);
       gateMid.position.set(0, height * 0.5, gateWidth / 2);
       gateGroup.add(gateMid);
+
+      // Finished curved top rail across the top of all gate bars:
+      // Seamlessly ties the hinge stile, all bar tops, and the outer stile together!
+      const topSegments = [{ z: 0, y: height }, ...barTopPoints, { z: gateWidth, y: outerH }];
+      for (let ts = 0; ts < topSegments.length - 1; ts++) {
+        const p1 = topSegments[ts];
+        const p2 = topSegments[ts + 1];
+        const segLen = Math.hypot(p2.z - p1.z, p2.y - p1.y);
+        const segAng = Math.atan2(p2.y - p1.y, p2.z - p1.z);
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, segLen + 0.02), ironMat);
+        rail.position.set(0, (p1.y + p2.y) / 2, (p1.z + p2.z) / 2);
+        rail.rotation.x = -segAng;
+        gateGroup.add(rail);
+      }
 
       doorGroup.add(gateGroup);
       this.scene.add(doorGroup);
@@ -8773,7 +8800,7 @@ window.game = this;
       flagstoneFloor.position.y = 0.008;
       dungeonGroup.add(flagstoneFloor);
 
-      // 2. Realistic Transparent Bone PNG Decals (NO 3D models, NO skulls, NO floating chains)
+      // 2. Realistic Photographic Transparent Bone PNG Decals (Real photographic human bone cutouts, NO models, NO skulls)
       const bonesPileTex = this.texLoader.load('assets/textures/dungeon_bones_pile.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
@@ -8797,33 +8824,33 @@ window.game = this;
       });
 
       // A. North-East Corner realistic bone pile
-      const pileNE = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), bonesPileMat);
+      const pileNE = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 2.6), bonesPileMat);
       pileNE.rotation.x = -Math.PI / 2;
       pileNE.rotation.z = 0.45;
       pileNE.position.set(4.2, 0.016, -3.2);
       dungeonGroup.add(pileNE);
 
       // B. South-West Corner realistic bone pile
-      const pileSW = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.65), bonesPileMat);
+      const pileSW = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 2.4), bonesPileMat);
       pileSW.rotation.x = -Math.PI / 2;
       pileSW.rotation.z = -1.2;
       pileSW.position.set(-4.5, 0.016, 3.2);
       dungeonGroup.add(pileSW);
 
       // C. Center-East realistic bone scatter
-      const pileCenter = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 1.42), bonesPileMat);
+      const pileCenter = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 2.2), bonesPileMat);
       pileCenter.rotation.x = -Math.PI / 2;
       pileCenter.rotation.z = 2.1;
-      pileCenter.position.set(1.6, 0.016, 1.4);
+      pileCenter.position.set(1.8, 0.016, 1.6);
       dungeonGroup.add(pileCenter);
 
       // D. Scattered single realistic long bones
       [
-        [-2.8, 2.4, -0.6, 1.2, 0.6],
-        [3.1, -1.8, 1.1, 1.3, 0.65],
-        [-1.2, -3.4, -2.2, 1.1, 0.55],
-        [4.8, 2.6, 0.8, 1.25, 0.62],
-        [-3.9, -1.2, 0.2, 1.15, 0.58]
+        [-2.8, 2.4, -0.6, 1.4, 0.45],
+        [3.1, -1.8, 1.1, 1.5, 0.48],
+        [-1.2, -3.4, -2.2, 1.3, 0.42],
+        [4.8, 2.6, 0.8, 1.45, 0.46],
+        [-3.9, -1.2, 0.2, 1.35, 0.44]
       ].forEach(([bx, bz, rotZ, w, h]) => {
         const singleBone = new THREE.Mesh(new THREE.PlaneGeometry(w, h), singleBoneMat);
         singleBone.rotation.x = -Math.PI / 2;
@@ -8832,45 +8859,77 @@ window.game = this;
         dungeonGroup.add(singleBone);
       });
 
-      // 3. Clean Heavy Wooden Dungeon Table in Center (NO items, NO manacles, NO bones, NO random objects)
+      // 3. Dried Old Dark Red Blood Staining on the Floor Around the Table
+      const floorBloodTex = this.texLoader.load('assets/textures/dungeon_floor_blood.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const floorBloodMat = new THREE.MeshBasicMaterial({
+        map: floorBloodTex,
+        transparent: true,
+        opacity: 0.94,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const bloodPuddleMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 5.2), floorBloodMat);
+      bloodPuddleMesh.rotation.x = -Math.PI / 2;
+      bloodPuddleMesh.position.set(0, 0.014, -0.5);
+      dungeonGroup.add(bloodPuddleMesh);
+
+      // 4. Large Butcher Table with Realistic Wood Texture and Old Dark Red Dried Blood Stains
       const tableGroup = new THREE.Group();
       tableGroup.position.set(0, 0, -0.5);
 
-      const darkWoodMat = new THREE.MeshStandardMaterial({
-        color: 0x2b1c14,
-        roughness: 0.90,
-        metalness: 0.05
+      const butcherWoodTex = this.texLoader.load('assets/textures/dungeon_butcher_wood.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.1), darkWoodMat);
-      tableTop.position.y = 0.72;
+      const butcherWoodMat = new THREE.MeshStandardMaterial({
+        map: butcherWoodTex,
+        roughness: 0.82,
+        metalness: 0.08
+      });
+
+      // Bigger table slab: 3.6m length x 1.6m width x 0.16m thickness
+      const tableTop = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.16, 1.6), butcherWoodMat);
+      tableTop.position.y = 0.84;
       tableGroup.add(tableTop);
 
-      [[-1.0, -0.4], [1.0, -0.4], [-1.0, 0.4], [1.0, 0.4]].forEach(([tx, tz]) => {
-        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.66, 0.14), darkWoodMat);
-        leg.position.set(tx, 0.33, tz);
+      // Heavy rustic wood legs and stretchers
+      [[-1.5, -0.6], [1.5, -0.6], [-1.5, 0.6], [1.5, 0.6]].forEach(([tx, tz]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.76, 0.20), butcherWoodMat);
+        leg.position.set(tx, 0.38, tz);
         tableGroup.add(leg);
       });
+
+      // Horizontal support stretchers under the tabletop
+      const stretcher1 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.10, 0.14), butcherWoodMat);
+      stretcher1.position.set(0, 0.24, -0.6);
+      tableGroup.add(stretcher1);
+
+      const stretcher2 = new THREE.Mesh(new THREE.BoxGeometry(3.0, 0.10, 0.14), butcherWoodMat);
+      stretcher2.position.set(0, 0.24, 0.6);
+      tableGroup.add(stretcher2);
+
       dungeonGroup.add(tableGroup);
 
-      // 4. Subtle atmospheric ambient dungeon fill light (NO torch props or flame geometries)
+      // 5. Subtle atmospheric ambient dungeon fill light (NO torch props or flame geometries)
       const dungeonLight = new THREE.PointLight(0xffa255, 0.75, 14.0, 1.8);
       dungeonLight.position.set(0, 3.2, 0);
       dungeonGroup.add(dungeonLight);
 
       this.scene.add(dungeonGroup);
 
-      // Obstacle collider for the wooden table
+      // Obstacle collider for the bigger butcher table
       const fl = Math.round(y0 / CONFIG.FLOOR_HEIGHT);
       if (this.colliders) {
         this.colliders.push({
           type: 'box',
           floor: fl,
-          minX: 26.0 - 1.25,
-          maxX: 26.0 + 1.25,
-          minZ: 13.0 - 0.5 - 0.60,
-          maxZ: 13.0 - 0.5 + 0.60,
+          minX: 26.0 - 1.85,
+          maxX: 26.0 + 1.85,
+          minZ: 13.0 - 0.5 - 0.85,
+          maxZ: 13.0 - 0.5 + 0.85,
           minY: y0,
-          maxY: y0 + 0.85
+          maxY: y0 + 0.95
         });
       }
 
