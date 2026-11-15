@@ -4702,10 +4702,7 @@ window.game = this;
       this.createWall(4, yc, 12.85, t, wallH, 10.7, accentWallMat, true, fl);     // 7.5..18.2 (Mechanical Core East)
 
       // Elevator & Mechanical Core Block (x: -3.8..3.8, z: 8..18)
-      // North wall with arched portal opening (x: -1.5..1.5, doorH = 3.10)
-      this.createWall(-2.65, yc, 8.0, 2.3, wallH, t, accentWallMat, true, fl);    // -3.8..-1.5
-      this.createWall(2.65, yc, 8.0, 2.3, wallH, t, accentWallMat, true, fl);     // 1.5..3.8
-      this.createArchedLintel(0.0, y0, 8.0, 3.0, t, ceilH, accentWallMat, 3.10, 'x', true); // Arched doorway portal (x: -1.5..1.5)
+      this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
       this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
@@ -4820,10 +4817,6 @@ window.game = this;
       // Period Study & Research Library (Central Core z: -6..2)
       this.createRealisticStudyRoom(fl, y0, mats);
 
-      // Central Mahogany Core Room (x: -3.8..3.8, z: 8..14)
-      // Floor 0: Petting Zoo with living livestock & short wooden fence
-      // Floor 1 (Library Floor): Burning Mountain of Books that damages Player, Curator, and Statues
-      this.createBrownBoxRoom(fl, y0, mats);
 
       // Main Gallery Benches (x: -10, z: 0 and z: 14)
       this.createMuseumBench(-10, y0, 0);
@@ -4838,8 +4831,11 @@ window.game = this;
       this.buildStatues(fl, y0, mats);
       this.buildSilverSmitty(fl, y0, mats);
 
-      // Arts and Music Office Desk (x: 26, z: 13)
-      this.createInfoDesk(26, y0, 13, mats.mahogany);
+      // East Office ("Arts & Music Office" brown box x: 19..33, z: 8..18)
+      // Floor 0: Petting zoo with live animals & short wooden fence
+      // Floor 1 (Library level): Burning mountain of books pyre with contact hazard
+      // Floors 2 & 3: Info desk
+      this.createEastOffice(fl, y0, mats);
 
       // South-East Rotunda Circular Reference Desk at (23, 22)
       this.createCircularReferenceDesk(23, y0, 22, mats.mahogany, fl);
@@ -7672,12 +7668,12 @@ window.game = this;
       }
     }
 
-    createBrownBoxRoom(fl, y0, mats) {
+    createEastOffice(fl, y0, mats) {
       if (fl === 0) {
         // =========================================================================
-        // FLOOR 0: INDOOR PETTING ZOO (Short Wooden Fence, Straw Bedding, Live Animals)
-        // Located in the Central Core Room (x: -3.8..3.8, z: 8.2..13.8)
-        // STRICT: ZERO TEXT / SIGN SLOP
+        // FLOOR 0: PETTING ZOO (Replacing the East Office x: 19..33, z: 8..18)
+        // Short wooden fence, straw bedding, live wandering llama, sheep, & goats
+        // STRICT: ZERO TEXT / NO SIGN SLOP
         // =========================================================================
         const rusticWoodMat = new THREE.MeshStandardMaterial({
           color: 0x8a6240,
@@ -7690,11 +7686,11 @@ window.game = this;
           metalness: 0.04
         });
 
-        // 1. Straw & Hay Bedding Floor Covering (x: -3.75..3.75, z: 8.2..13.8)
+        // 1. Straw & Hay Bedding Floor Covering (x: 19.2..32.8, z: 8.2..17.8)
         const strawTex = this.texLoader.load('assets/textures/petting_zoo/straw_bedding.jpg', (tx) => {
           tx.wrapS = THREE.RepeatWrapping;
           tx.wrapT = THREE.RepeatWrapping;
-          tx.repeat.set(4, 3);
+          tx.repeat.set(7, 5);
           tx.colorSpace = THREE.SRGBColorSpace;
         });
         const strawFloorMat = new THREE.MeshStandardMaterial({
@@ -7706,55 +7702,55 @@ window.game = this;
           polygonOffsetUnits: -1
         });
         const strawBedding = new THREE.Mesh(
-          new THREE.PlaneGeometry(7.5, 5.6),
+          new THREE.PlaneGeometry(13.6, 9.6),
           strawFloorMat
         );
         strawBedding.rotation.x = -Math.PI / 2;
-        strawBedding.position.set(0, y0 + 0.006, 11.0);
+        strawBedding.position.set(26.0, y0 + 0.006, 13.0);
         this.scene.add(strawBedding);
 
         // Scattered organic hay mounds for bedding texture
         const hayMoundMat = new THREE.MeshLambertMaterial({ color: 0xcca658 });
         const moundPositions = [
-          [-2.2, 9.5], [2.1, 9.8], [-2.3, 12.8], [2.0, 12.6], [-0.2, 13.0]
+          [22.5, 10.2], [29.8, 10.5], [23.0, 15.8], [30.2, 15.5], [26.0, 16.0], [28.0, 11.5]
         ];
         moundPositions.forEach(([hx, hz]) => {
           const hayMound = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.55, 0.95, 0.16, 10),
+            new THREE.CylinderGeometry(0.65, 1.10, 0.18, 10),
             hayMoundMat
           );
-          hayMound.position.set(hx, y0 + 0.08, hz);
+          hayMound.position.set(hx, y0 + 0.09, hz);
           hayMound.scale.set(1.0 + Math.random() * 0.3, 1.0, 1.0 + Math.random() * 0.3);
           this.scene.add(hayMound);
         });
 
         // Rustic wooden livestock water trough
         const troughGroup = new THREE.Group();
-        troughGroup.position.set(-2.6, y0, 11.2);
-        const troughOuter = new THREE.Mesh(new THREE.BoxGeometry(0.8, 0.48, 1.8), rusticDarkWoodMat);
-        troughOuter.position.y = 0.24;
+        troughGroup.position.set(31.2, y0, 13.0);
+        const troughOuter = new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.52, 2.4), rusticDarkWoodMat);
+        troughOuter.position.y = 0.26;
         troughGroup.add(troughOuter);
         const waterMesh = new THREE.Mesh(
-          new THREE.PlaneGeometry(0.66, 1.66),
+          new THREE.PlaneGeometry(0.82, 2.22),
           new THREE.MeshStandardMaterial({ color: 0x38bdf8, roughness: 0.1, metalness: 0.1, transparent: true, opacity: 0.7 })
         );
         waterMesh.rotation.x = -Math.PI / 2;
-        waterMesh.position.y = 0.45;
+        waterMesh.position.y = 0.49;
         troughGroup.add(waterMesh);
         this.scene.add(troughGroup);
         this.colliders.push({
           type: 'box',
           floor: fl,
-          minX: -3.1,
-          maxX: -2.1,
-          minZ: 10.2,
-          maxZ: 12.2,
+          minX: 30.6,
+          maxX: 31.8,
+          minZ: 11.7,
+          maxZ: 14.3,
           minY: y0,
           maxY: y0 + 0.55
         });
 
-        // 2. Short Wooden Ranch Fence Enclosure Across North Archway (z = 8.0, x: -1.5..1.5)
-        // Wings at x: -1.5..-0.55 and x: 0.55..1.5, leaving an open gate passageway at x: -0.55..0.55
+        // 2. Short Wooden Ranch Fence Enclosure Across the West Doorway (x = 19.0, z: 11.5..14.5)
+        // Wings at z: 11.5..12.45 and z: 13.55..14.5, leaving open gate passageway at z: 12.45..13.55
         const fenceGroup = new THREE.Group();
         const fenceH = 1.05;
         const postH = 1.15;
@@ -7778,7 +7774,6 @@ window.game = this;
           const midZ = (z1 + z2) / 2;
           const ang = Math.atan2(dx, dz);
 
-          // Top and bottom horizontal rails
           [0.32, 0.88].forEach((ry) => {
             const rail = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.09, len), rusticWoodMat);
             rail.position.set(midX, ry, midZ);
@@ -7786,7 +7781,6 @@ window.game = this;
             fenceGroup.add(rail);
           });
 
-          // Vertical pickets
           const picketCount = Math.max(2, Math.floor(len / 0.22));
           for (let p = 1; p < picketCount; p++) {
             const frac = p / picketCount;
@@ -7799,31 +7793,41 @@ window.game = this;
           }
         };
 
-        // Left fence wing: x = -1.50 to x = -0.55 at z = 8.0
-        buildFencePost(-1.50, 8.0);
-        buildFencePost(-0.55, 8.0);
-        buildFenceSection(-1.50, 8.0, -0.55, 8.0);
+        // West doorway fence wings at x = 19.0
+        buildFencePost(19.0, 11.50);
+        buildFencePost(19.0, 12.45);
+        buildFenceSection(19.0, 11.50, 19.0, 12.45);
 
-        // Right fence wing: x = 0.55 to x = 1.50 at z = 8.0
-        buildFencePost(0.55, 8.0);
-        buildFencePost(1.50, 8.0);
-        buildFenceSection(0.55, 8.0, 1.50, 8.0);
+        buildFencePost(19.0, 13.55);
+        buildFencePost(19.0, 14.50);
+        buildFenceSection(19.0, 13.55, 19.0, 14.50);
+
+        // South doorway fence across z = 18.0 (x: 21.5..24.5) with open gate in center (x: 22.45..23.55)
+        buildFencePost(21.50, 18.0);
+        buildFencePost(22.45, 18.0);
+        buildFenceSection(21.50, 18.0, 22.45, 18.0);
+
+        buildFencePost(23.55, 18.0);
+        buildFencePost(24.50, 18.0);
+        buildFenceSection(23.55, 18.0, 24.50, 18.0);
 
         fenceGroup.position.y = y0;
         this.scene.add(fenceGroup);
 
-        // Colliders for fence wings (leave x: -0.55..0.55 open for player access)
+        // Colliders for fence wings
         this.colliders.push(
-          { type: 'box', floor: fl, minX: -1.55, maxX: -0.50, minZ: 7.88, maxZ: 8.12, minY: y0, maxY: y0 + fenceH, isWall: true },
-          { type: 'box', floor: fl, minX:  0.50, maxX:  1.55, minZ: 7.88, maxZ: 8.12, minY: y0, maxY: y0 + fenceH, isWall: true }
+          { type: 'box', floor: fl, minX: 18.88, maxX: 19.12, minZ: 11.45, maxZ: 12.50, minY: y0, maxY: y0 + fenceH, isWall: true },
+          { type: 'box', floor: fl, minX: 18.88, maxX: 19.12, minZ: 13.50, maxZ: 14.55, minY: y0, maxY: y0 + fenceH, isWall: true },
+          { type: 'box', floor: fl, minX: 21.45, maxX: 22.50, minZ: 17.88, maxZ: 18.12, minY: y0, maxY: y0 + fenceH, isWall: true },
+          { type: 'box', floor: fl, minX: 23.50, maxX: 24.55, minZ: 17.88, maxZ: 18.12, minY: y0, maxY: y0 + fenceH, isWall: true }
         );
 
         // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Goats)
         const animalSpecies = [
-          { type: 'llama', file: 'assets/textures/petting_zoo/llama.png', w: 1.45, h: 1.55, startX:  0.0, startZ: 11.8, speed: 0.55 },
-          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 1.05, h: 1.18, startX: -1.6, startZ: 10.2, speed: 0.68 },
-          { type: 'sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 1.35, h: 0.95, startX:  1.5, startZ: 11.5, speed: 0.45 },
-          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 0.88, h: 0.98, startX:  1.2, startZ:  9.5, speed: 0.62 }
+          { type: 'llama', file: 'assets/textures/petting_zoo/llama.png', w: 1.55, h: 1.65, startX: 26.0, startZ: 12.8, speed: 0.55 },
+          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 1.10, h: 1.22, startX: 22.5, startZ: 11.2, speed: 0.68 },
+          { type: 'sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 1.40, h: 1.00, startX: 28.5, startZ: 14.2, speed: 0.45 },
+          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 0.92, h: 1.02, startX: 24.0, startZ: 15.0, speed: 0.62 }
         ];
 
         if (!this.pettingZooAnimals) this.pettingZooAnimals = [];
@@ -7869,8 +7873,8 @@ window.game = this;
             speed: spec.speed,
             pos: new THREE.Vector2(spec.startX, spec.startZ),
             target: new THREE.Vector2(
-              -2.6 + Math.random() * 5.2,
-               8.8 + Math.random() * 4.4
+              20.5 + Math.random() * 10.5,
+               9.5 + Math.random() * 6.5
             ),
             state: 'walk',
             stateTimer: 2.0 + Math.random() * 4.0,
@@ -7881,8 +7885,8 @@ window.game = this;
 
       } else if (fl === 1) {
         // =========================================================================
-        // FLOOR 1 (THE GREAT LIBRARY & CARTOGRAPHY LEVEL): BURNING MOUNTAIN OF BOOKS
-        // Located in the Central Core Room (x: -3.8..3.8, z: 8.2..13.8)
+        // FLOOR 1 (THE GREAT LIBRARY LEVEL): BURNING MOUNTAIN OF BOOKS
+        // Replacing the East Office (x: 19..33, z: 8..18)
         // Realistic fire, animated flames, embers, smoke, dynamic fire lights,
         // and contact/proximity hazard that damages Player, Curator (Smitty), & Statues
         // STRICT: ZERO TEXT SLOP
@@ -7890,7 +7894,7 @@ window.game = this;
         const charredWoodTex = this.texLoader.load('assets/textures/fire/charred_wood.jpg', (tx) => {
           tx.wrapS = THREE.RepeatWrapping;
           tx.wrapT = THREE.RepeatWrapping;
-          tx.repeat.set(3, 3);
+          tx.repeat.set(5, 4);
           tx.colorSpace = THREE.SRGBColorSpace;
         });
 
@@ -7913,24 +7917,24 @@ window.game = this;
           polygonOffsetUnits: -1
         });
 
-        // 1. Scorch and ash floor overlay across the room (x: -3.75..3.75, z: 8.2..13.8)
-        const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(7.5, 5.6), emberAshMat);
+        // 1. Scorch and ash floor overlay across the East Office (x: 19.2..32.8, z: 8.2..17.8)
+        const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 9.6), emberAshMat);
         ashFloor.rotation.x = -Math.PI / 2;
-        ashFloor.position.set(0, y0 + 0.007, 11.0);
+        ashFloor.position.set(26.0, y0 + 0.007, 13.0);
         this.scene.add(ashFloor);
 
-        // Wall soot marks on the inner core walls
+        // Wall soot marks on the inner office walls
         const sootMat = new THREE.MeshBasicMaterial({ color: 0x080605, transparent: true, opacity: 0.65 });
-        [-3.78, 3.78].forEach((wx) => {
-          const sootWall = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 3.8), sootMat);
-          sootWall.position.set(wx, y0 + 2.0, 11.0);
-          sootWall.rotation.y = wx < 0 ? Math.PI / 2 : -Math.PI / 2;
+        [8.22, 17.78].forEach((wz) => {
+          const sootWall = new THREE.Mesh(new THREE.PlaneGeometry(13.4, 3.8), sootMat);
+          sootWall.position.set(26.0, y0 + 2.0, wz);
+          if (wz > 13) sootWall.rotation.y = Math.PI;
           this.scene.add(sootWall);
         });
 
         // 2. Mountain of Books Geometry (Tiered Pyre with tumbling burning tomes)
         const mountainGroup = new THREE.Group();
-        mountainGroup.position.set(0.0, y0, 11.0);
+        mountainGroup.position.set(26.0, y0, 13.0);
 
         const bookCoverColors = [0x1a0f0a, 0x2a140d, 0x180b06, 0x3d1a0d, 0x140e0b, 0x4a1808];
         const burnBookMats = bookCoverColors.map(c => new THREE.MeshStandardMaterial({
@@ -7949,15 +7953,15 @@ window.game = this;
 
         // Massive central mound core geometry (stepped rugged mountain slope)
         const coreTiers = [
-          { rTop: 2.1, rBot: 2.7, h: 0.65, y: 0.325 },
-          { rTop: 1.4, rBot: 2.15, h: 0.75, y: 1.025 },
-          { rTop: 0.80, rBot: 1.45, h: 0.85, y: 1.825 },
-          { rTop: 0.20, rBot: 0.85, h: 0.90, y: 2.70 }
+          { rTop: 2.6, rBot: 3.4, h: 0.65, y: 0.325 },
+          { rTop: 1.8, rBot: 2.65, h: 0.75, y: 1.025 },
+          { rTop: 1.0, rBot: 1.85, h: 0.85, y: 1.825 },
+          { rTop: 0.25, rBot: 1.05, h: 0.90, y: 2.70 }
         ];
 
         coreTiers.forEach(t => {
           const coreTier = new THREE.Mesh(
-            new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 12, 1),
+            new THREE.CylinderGeometry(t.rTop, t.rBot, t.h, 14, 1),
             emberAshMat
           );
           coreTier.position.y = t.y;
@@ -7965,15 +7969,15 @@ window.game = this;
         });
 
         // Clustered book volumes tumbling down all sides of the mountain
-        const bookGeom = new THREE.BoxGeometry(0.55, 0.12, 0.40);
-        const thickBookGeom = new THREE.BoxGeometry(0.70, 0.22, 0.48);
+        const bookGeom = new THREE.BoxGeometry(0.58, 0.13, 0.42);
+        const thickBookGeom = new THREE.BoxGeometry(0.74, 0.24, 0.50);
 
-        const bookCount = 95;
+        const bookCount = 120;
         for (let b = 0; b < bookCount; b++) {
           const angle = (b * 2.39996);
           const radiusNorm = Math.pow((b + 1) / bookCount, 0.65);
-          const radius = 0.35 + radiusNorm * 2.35;
-          const height = (1.0 - radiusNorm) * 2.85 + (Math.sin(b * 5.1) * 0.18);
+          const radius = 0.40 + radiusNorm * 2.95;
+          const height = (1.0 - radiusNorm) * 2.95 + (Math.sin(b * 5.1) * 0.20);
           const bx = Math.cos(angle) * radius;
           const bz = Math.sin(angle) * radius;
 
@@ -7989,7 +7993,7 @@ window.game = this;
           mountainGroup.add(bMesh);
 
           if (b % 4 === 0) {
-            const pageFan = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.08, 0.36), charredPageMat);
+            const pageFan = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 0.38), charredPageMat);
             pageFan.position.set(bx * 0.98, height + 0.04, bz * 0.98);
             pageFan.rotation.copy(bMesh.rotation);
             pageFan.rotation.y += 0.25;
@@ -8002,28 +8006,28 @@ window.game = this;
         const fireLights = [];
         const lightColors = [0xff6b1a, 0xff4d00, 0xff9933];
         const lightOffsets = [
-          [0.0, 1.8, 0.0, 6.5, 7.5],
-          [-1.2, 0.9, -0.8, 4.5, 5.0],
-          [1.1, 1.1, 0.6, 4.5, 5.0],
-          [-0.2, 2.7, 0.3, 5.5, 6.0]
+          [0.0, 1.8, 0.0, 7.5, 8.5],
+          [-1.5, 1.0, -1.0, 5.5, 6.0],
+          [1.5, 1.2, 0.8, 5.5, 6.0],
+          [-0.3, 2.8, 0.4, 6.5, 7.0]
         ];
 
         lightOffsets.forEach(([lx, ly, lz, dist, inten], i) => {
           const flp = new THREE.PointLight(lightColors[i % lightColors.length], inten, dist, 1.8);
-          flp.position.set(lx, y0 + ly, 11.0 + lz);
+          flp.position.set(26.0 + lx, y0 + ly, 13.0 + lz);
           this.scene.add(flp);
           fireLights.push({
             light: flp,
             baseIntensity: inten,
             phase: Math.random() * Math.PI * 2,
-            baseX: lx,
+            baseX: 26.0 + lx,
             baseY: y0 + ly,
-            baseZ: 11.0 + lz
+            baseZ: 13.0 + lz
           });
         });
 
         // 4. Realistic Animated Fire Particles System
-        const flameParticleCount = 45;
+        const flameParticleCount = 55;
         const flameParticles = [];
         const flameMat = new THREE.MeshBasicMaterial({
           map: flameTex,
@@ -8033,16 +8037,16 @@ window.game = this;
           side: THREE.DoubleSide
         });
 
-        const flameGeo = new THREE.PlaneGeometry(0.95, 1.35);
+        const flameGeo = new THREE.PlaneGeometry(1.05, 1.45);
 
         for (let p = 0; p < flameParticleCount; p++) {
           const mesh = new THREE.Mesh(flameGeo, flameMat.clone());
           mesh.material.opacity = 0.85;
           const theta = Math.random() * Math.PI * 2;
-          const r = Math.pow(Math.random(), 0.7) * 2.1;
-          const pY = (1.0 - r / 2.4) * 2.4 + Math.random() * 0.4;
-          const x = Math.cos(theta) * r;
-          const z = 11.0 + Math.sin(theta) * r;
+          const r = Math.pow(Math.random(), 0.7) * 2.7;
+          const pY = (1.0 - r / 3.0) * 2.5 + Math.random() * 0.4;
+          const x = 26.0 + Math.cos(theta) * r;
+          const z = 13.0 + Math.sin(theta) * r;
 
           mesh.position.set(x, y0 + pY, z);
           this.scene.add(mesh);
@@ -8055,24 +8059,24 @@ window.game = this;
             currentY: y0 + pY,
             riseSpeed: 1.2 + Math.random() * 1.6,
             maxHeight: y0 + pY + 1.2 + Math.random() * 1.5,
-            scaleBase: 0.65 + Math.random() * 0.70,
+            scaleBase: 0.70 + Math.random() * 0.75,
             phase: Math.random() * Math.PI * 2,
             flickerSpeed: 7.0 + Math.random() * 9.0
           });
         }
 
         // Rising embers & sparks (golden fiery motes)
-        const emberCount = 60;
+        const emberCount = 70;
         const emberGeo = new THREE.BufferGeometry();
         const emberPos = new Float32Array(emberCount * 3);
         const emberVel = [];
 
         for (let e = 0; e < emberCount; e++) {
           const theta = Math.random() * Math.PI * 2;
-          const r = Math.random() * 2.1;
-          const ex = Math.cos(theta) * r;
+          const r = Math.random() * 2.7;
+          const ex = 26.0 + Math.cos(theta) * r;
           const ey = y0 + 0.4 + Math.random() * 2.8;
-          const ez = 11.0 + Math.sin(theta) * r;
+          const ez = 13.0 + Math.sin(theta) * r;
 
           emberPos[e * 3] = ex;
           emberPos[e * 3 + 1] = ey;
@@ -8102,7 +8106,7 @@ window.game = this;
         this.scene.add(emberPoints);
 
         // Billowing rolling smoke plumes above the mountain
-        const smokeParticleCount = 20;
+        const smokeParticleCount = 24;
         const smokeParticles = [];
         const smokeMat = new THREE.MeshBasicMaterial({
           map: smokeTex,
@@ -8111,24 +8115,24 @@ window.game = this;
           depthWrite: false,
           side: THREE.DoubleSide
         });
-        const smokeGeo = new THREE.PlaneGeometry(1.6, 1.6);
+        const smokeGeo = new THREE.PlaneGeometry(1.8, 1.8);
 
         for (let s = 0; s < smokeParticleCount; s++) {
           const mesh = new THREE.Mesh(smokeGeo, smokeMat.clone());
           const theta = Math.random() * Math.PI * 2;
-          const r = Math.random() * 1.4;
+          const r = Math.random() * 1.8;
           const sy = y0 + 2.0 + Math.random() * 2.5;
-          mesh.position.set(Math.cos(theta) * r, sy, 11.0 + Math.sin(theta) * r);
+          mesh.position.set(26.0 + Math.cos(theta) * r, sy, 13.0 + Math.sin(theta) * r);
           this.scene.add(mesh);
           smokeParticles.push({
             mesh: mesh,
-            baseX: Math.cos(theta) * r,
-            baseZ: 11.0 + Math.sin(theta) * r,
+            baseX: 26.0 + Math.cos(theta) * r,
+            baseZ: 13.0 + Math.sin(theta) * r,
             startY: y0 + 2.0,
             currentY: sy,
             riseSpeed: 0.65 + Math.random() * 0.85,
             maxHeight: y0 + 4.9,
-            scaleBase: 1.2 + Math.random() * 1.2,
+            scaleBase: 1.3 + Math.random() * 1.3,
             rotSpeed: (Math.random() - 0.5) * 0.8
           });
         }
@@ -8136,12 +8140,12 @@ window.game = this;
         // Store Burning Book Mountain structure for dynamic updates and collision/damage checking
         this.burningBookMountain = {
           floor: fl,
-          centerX: 0.0,
+          centerX: 26.0,
           centerY: y0,
-          centerZ: 11.0,
-          radius: 2.70,
-          dangerRadius: 3.10,
-          mountainHeight: 3.40,
+          centerZ: 13.0,
+          radius: 3.20,
+          dangerRadius: 3.80,
+          mountainHeight: 3.50,
           fireLights: fireLights,
           flameParticles: flameParticles,
           emberPoints: emberPoints,
@@ -8157,13 +8161,16 @@ window.game = this;
         this.colliders.push({
           type: 'cylinder',
           floor: fl,
-          x: 0.0,
-          z: 11.0,
-          radius: 2.25,
+          x: 26.0,
+          z: 13.0,
+          radius: 2.85,
           minY: y0,
           maxY: y0 + 3.0,
           isWall: false
         });
+      } else {
+        // Floors 2 & 3: Standard Office Desk
+        this.createInfoDesk(26, y0, 13, mats.mahogany);
       }
     }
 
@@ -8172,8 +8179,8 @@ window.game = this;
       if (this.playerFloor !== 0) return;
 
       const cam = this.camera;
-      const minX = -3.2, maxX = 3.2;
-      const minZ = 8.5, maxZ = 13.5;
+      const minX = 20.2, maxX = 31.8;
+      const minZ = 9.2, maxZ = 16.8;
 
       for (let i = 0; i < this.pettingZooAnimals.length; i++) {
         const animal = this.pettingZooAnimals[i];
@@ -8281,8 +8288,8 @@ window.game = this;
           if (ev.life > ev.maxLife || posArray[e * 3 + 1] > bm.centerY + 4.8) {
             ev.life = 0;
             const theta = Math.random() * Math.PI * 2;
-            const r = Math.random() * 2.1;
-            posArray[e * 3]     = Math.cos(theta) * r;
+            const r = Math.random() * 2.7;
+            posArray[e * 3]     = bm.centerX + Math.cos(theta) * r;
             posArray[e * 3 + 1] = bm.centerY + 0.35 + Math.random() * 0.6;
             posArray[e * 3 + 2] = bm.centerZ + Math.sin(theta) * r;
           }
@@ -13906,14 +13913,7 @@ window.game = this;
         connect(fn.cross_center, fn.cross_e_mid);
         connect(fn.cross_e_mid, fn.cross_e_east);
 
-        // North doorway opening into Central Core Room (z = 8.0, x = 0.0)
-        fn.brownBox_door = addNode(0.0, y, 8.0, fl, 'brownBox_door');
-        connect(fn.cross_center, fn.brownBox_door);
-        if (fl === 0) {
-          // Floor 0 Petting Zoo inside node
-          fn.brownBox_in = addNode(0.0, y, 10.5, fl, 'brownBox_in');
-          connect(fn.brownBox_door, fn.brownBox_in);
-        }
+
 
         // 7. SOUTH CROSS-PASSAGE (x: -4..4, z: 22.0)
         fn.crossS_w_gal = addNode(-6.5, y, 22.0, fl, 'crossS_w_gal');
@@ -14055,35 +14055,42 @@ window.game = this;
           connect(fn.doorStudy_e, fn.studyRoom_c);
         }
 
-        // 10. ARTS & MUSIC OFFICE (x: 19..33, z: 8..18)
-        // Desk is at x: 26, z: 13
+        // 10. EAST OFFICE ("ARTS & MUSIC OFFICE" x: 19..33, z: 8..18)
         // West Doorway at x = 19.0, z = 13.0
         fn.doorOff_w_out = addNode(16.0, y, 13.0, fl, 'doorOff_w_out');
         fn.doorOff_w_mid = addNode(19.0, y, 13.0, fl, 'doorOff_w_mid');
-        fn.doorOff_w_in  = addNode(21.0, y, 13.0, fl, 'doorOff_w_in');
+        fn.doorOff_w_in  = addNode(20.5, y, 13.0, fl, 'doorOff_w_in');
         connect(fn.east_c_p10, fn.doorOff_w_out);
         connect(fn.doorOff_w_out, fn.doorOff_w_mid);
         connect(fn.doorOff_w_mid, fn.doorOff_w_in);
 
-        // Nodes flanking office desk (desk is at x: 26, z: 13)
-        fn.artsOff_n = addNode(26.0, y, 10.5, fl, 'artsOff_n');
-        fn.artsOff_e = addNode(29.5, y, 13.0, fl, 'artsOff_e');
-        fn.artsOff_s = addNode(26.0, y, 15.5, fl, 'artsOff_s');
-        connect(fn.doorOff_w_in, fn.artsOff_n);
-        connect(fn.artsOff_n, fn.artsOff_e);
-        connect(fn.artsOff_e, fn.artsOff_s);
-
         // South Doorway into SE Wing at z = 18.0, x = 23.0
-        // Walk straight through doorway (z = 18.0 -> z = 19.2) before turning towards x = 19
-        fn.doorOff_s_in  = addNode(22.0, y, 16.0, fl, 'doorOff_s_in');
+        fn.doorOff_s_in  = addNode(23.0, y, 16.5, fl, 'doorOff_s_in');
         fn.doorOff_s_mid = addNode(23.0, y, 18.0, fl, 'doorOff_s_mid');
         fn.doorOff_s_ext = addNode(23.0, y, 19.2, fl, 'doorOff_s_ext');
         fn.doorOff_s_out = addNode(19.0, y, 19.5, fl, 'doorOff_s_out');
-        connect(fn.doorOff_w_in, fn.doorOff_s_in);
-        connect(fn.artsOff_s, fn.doorOff_s_in);
         connect(fn.doorOff_s_in, fn.doorOff_s_mid);
         connect(fn.doorOff_s_mid, fn.doorOff_s_ext);
         connect(fn.doorOff_s_ext, fn.doorOff_s_out);
+
+        if (fl === 1) {
+          // On Floor 1, burning mountain is centered at (26, 13); perimeter path around danger radius
+          fn.artsOff_nw = addNode(21.5, y, 9.8, fl, 'artsOff_nw');
+          fn.artsOff_sw = addNode(21.5, y, 16.2, fl, 'artsOff_sw');
+          connect(fn.doorOff_w_in, fn.artsOff_nw);
+          connect(fn.doorOff_w_in, fn.artsOff_sw);
+          connect(fn.artsOff_sw, fn.doorOff_s_in);
+        } else {
+          // Floor 0 (Petting Zoo) & Floors 2/3 (Office)
+          fn.artsOff_n = addNode(26.0, y, 10.5, fl, 'artsOff_n');
+          fn.artsOff_e = addNode(29.5, y, 13.0, fl, 'artsOff_e');
+          fn.artsOff_s = addNode(26.0, y, 15.5, fl, 'artsOff_s');
+          connect(fn.doorOff_w_in, fn.artsOff_n);
+          connect(fn.artsOff_n, fn.artsOff_e);
+          connect(fn.artsOff_e, fn.artsOff_s);
+          connect(fn.artsOff_s, fn.doorOff_s_in);
+          connect(fn.doorOff_w_in, fn.doorOff_s_in);
+        }
 
         // 11. SOUTH-EAST WING (x: 4..28, z: 18..28) & ROTUNDA (z: 28..34)
         fn.se_w_p20 = addNode( 6.5, y, 20.0, fl, 'se_w_p20');
