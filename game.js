@@ -4762,16 +4762,21 @@ window.game = this;
       this.createWall(28, yc, 3.8, t, wallH, 8.0, mainWallMat, true, fl);         // -0.2..7.8
 
       // G. ARTS AND MUSIC OFFICE (x: 19..33, z: 8..18)
-      this.createWall(26.0, yc, 8, 13.6, wallH, t, accentWallMat, true, fl);      // 19.2..32.8
-      this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);       // 7.8..18.2
-      // West wall of Office (x = 19, z: 7.8..18.2) with doorway at z: 11.5..14.5
-      this.createWall(19, yc, 9.65, t, wallH, 3.7, accentWallMat, true, fl);      // 7.8..11.5
-      this.createWall(19, yc, 16.35, t, wallH, 3.7, accentWallMat, true, fl);     // 14.5..18.2
-      this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);             // 11.5..14.5
-      // South wall of Office (z = 18, x: 19.2..32.8) with doorway at x: 21.5..24.5 into South-East Wing
-      this.createWall(20.35, yc, 18, 2.3, wallH, t, accentWallMat, true, fl);     // 19.2..21.5
-      this.createWall(28.65, yc, 18, 8.3, wallH, t, accentWallMat, true, fl);     // 24.5..32.8
-      this.createLintel(23.0, y0, 18, 3.0, t, ceilH, accentWallMat);              // 21.5..24.5
+      // On Floor 0 (Petting Zoo) and Floor 1 (Burning Mountain of Books), the enclosing brown box walls
+      // are omitted so the exhibits are open and integrated into the museum hall with realistic fencing.
+      // On Floors 2 & 3, the classic office partition walls are retained.
+      if (fl > 1) {
+        this.createWall(26.0, yc, 8, 13.6, wallH, t, accentWallMat, true, fl);      // 19.2..32.8
+        this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);       // 7.8..18.2
+        // West wall of Office (x = 19, z: 7.8..18.2) with doorway at z: 11.5..14.5
+        this.createWall(19, yc, 9.65, t, wallH, 3.7, accentWallMat, true, fl);      // 7.8..11.5
+        this.createWall(19, yc, 16.35, t, wallH, 3.7, accentWallMat, true, fl);     // 14.5..18.2
+        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);             // 11.5..14.5
+        // South wall of Office (z = 18, x: 19.2..32.8) with doorway at x: 21.5..24.5 into South-East Wing
+        this.createWall(20.35, yc, 18, 2.3, wallH, t, accentWallMat, true, fl);     // 19.2..21.5
+        this.createWall(28.65, yc, 18, 8.3, wallH, t, accentWallMat, true, fl);     // 24.5..32.8
+        this.createLintel(23.0, y0, 18, 3.0, t, ceilH, accentWallMat);              // 21.5..24.5
+      }
 
       // H. SOUTH-EAST MEDIA & FEATURE FILMS WING (x: -4..28, z: 18..28) + ACCURATE ROTUNDA COLONNADE APSE
       this.createWall(28, yc, 23.2, t, wallH, 10.0, mainWallMat, true, fl);       // 18.2..28.2
@@ -5809,7 +5814,9 @@ window.game = this;
       addRoomPerimeterCornice(-15.8, -4.2, -17.8, 27.8); // Main Gallery Concourse
       addRoomPerimeterCornice(4.2, 27.8, -25.8, 7.8, { n: true, s: false, w: true, e: false }); // East Main Hall North & West walls
       addRoomPerimeterCornice(-3.8, 27.8, -39.8, -26.2, { n: false, s: true, w: true, e: true }); // North Antiquities Gallery
-      addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8);   // Arts & Music Office
+      if (fl > 1) {
+        addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8);   // Arts & Music Office
+      }
       addRoomPerimeterCornice(-3.8, 11.8, 18.2, 27.8, { n: false, s: true, w: false, e: false }); // South Cross-Passage South wall (stops cleanly before Rotunda columns!)
       addRoomPerimeterCornice(19.2, 27.8, 18.2, 27.8, { n: true, s: false, w: false, e: true });  // South-East Media Wing North & East walls
       addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8);// West Office
@@ -7749,8 +7756,10 @@ window.game = this;
           maxY: y0 + 0.55
         });
 
-        // 2. Short Wooden Ranch Fence Enclosure Across the West Doorway (x = 19.0, z: 11.5..14.5)
-        // Wings at z: 11.5..12.45 and z: 13.55..14.5, leaving open gate passageway at z: 12.45..13.55
+        // 2. Realistic Complete Wooden Ranch Fence Perimeter Enclosure
+        // Encloses all 4 sides of the petting zoo area (x: 19.0..33.0, z: 8.0..18.0)
+        // with sturdy square posts, pyramidal post caps, dual horizontal guard rails, vertical pickets,
+        // and a wide inviting entrance gate on the West wall (z: 12.2..13.8) leading from the main gallery.
         const fenceGroup = new THREE.Group();
         const fenceH = 1.05;
         const postH = 1.15;
@@ -7770,6 +7779,7 @@ window.game = this;
           const dx = x2 - x1;
           const dz = z2 - z1;
           const len = Math.hypot(dx, dz);
+          if (len < 0.01) return;
           const midX = (x1 + x2) / 2;
           const midZ = (z1 + z2) / 2;
           const ang = Math.atan2(dx, dz);
@@ -7793,41 +7803,78 @@ window.game = this;
           }
         };
 
-        // West doorway fence wings at x = 19.0
-        buildFencePost(19.0, 11.50);
-        buildFencePost(19.0, 12.45);
-        buildFenceSection(19.0, 11.50, 19.0, 12.45);
+        // Helper to build a continuous fence run with evenly spaced intermediate posts and colliders
+        const addFenceLine = (x1, z1, x2, z2, maxPostSpacing = 2.0) => {
+          const dx = x2 - x1;
+          const dz = z2 - z1;
+          const len = Math.hypot(dx, dz);
+          if (len < 0.05) return;
+          const numSegments = Math.max(1, Math.round(len / maxPostSpacing));
+          let prevX = x1;
+          let prevZ = z1;
+          buildFencePost(prevX, prevZ);
 
-        buildFencePost(19.0, 13.55);
-        buildFencePost(19.0, 14.50);
-        buildFenceSection(19.0, 13.55, 19.0, 14.50);
+          for (let s = 1; s <= numSegments; s++) {
+            const frac = s / numSegments;
+            const nextX = x1 + dx * frac;
+            const nextZ = z1 + dz * frac;
+            buildFenceSection(prevX, prevZ, nextX, nextZ);
+            buildFencePost(nextX, nextZ);
+            prevX = nextX;
+            prevZ = nextZ;
+          }
 
-        // South doorway fence across z = 18.0 (x: 21.5..24.5) with open gate in center (x: 22.45..23.55)
-        buildFencePost(21.50, 18.0);
-        buildFencePost(22.45, 18.0);
-        buildFenceSection(21.50, 18.0, 22.45, 18.0);
+          // Solid box collider for this fence segment
+          const colThickness = 0.24;
+          const minX = Math.min(x1, x2) - (dx === 0 ? colThickness / 2 : 0);
+          const maxX = Math.max(x1, x2) + (dx === 0 ? colThickness / 2 : 0);
+          const minZ = Math.min(z1, z2) - (dz === 0 ? colThickness / 2 : 0);
+          const maxZ = Math.max(z1, z2) + (dz === 0 ? colThickness / 2 : 0);
+          this.colliders.push({
+            type: 'box',
+            floor: fl,
+            minX: minX,
+            maxX: maxX,
+            minZ: minZ,
+            maxZ: maxZ,
+            minY: y0,
+            maxY: y0 + fenceH,
+            isWall: true
+          });
+        };
 
-        buildFencePost(23.55, 18.0);
-        buildFencePost(24.50, 18.0);
-        buildFenceSection(23.55, 18.0, 24.50, 18.0);
+        // 1. North perimeter fence (z = 8.0, x: 19.0 -> 33.0)
+        addFenceLine(19.0, 8.0, 33.0, 8.0, 2.0);
+
+        // 2. East perimeter fence (x = 33.0, z: 8.0 -> 18.0)
+        addFenceLine(33.0, 8.0, 33.0, 18.0, 2.0);
+
+        // 3. South perimeter fence (z = 18.0, x: 33.0 -> 19.0)
+        addFenceLine(33.0, 18.0, 19.0, 18.0, 2.0);
+
+        // 4. West perimeter fence (x = 19.0) with an open visitor gate at z: 12.2..13.8
+        // North wing: z: 8.0 -> 12.2
+        addFenceLine(19.0, 8.0, 19.0, 12.2, 1.4);
+        // South wing: z: 13.8 -> 18.0
+        addFenceLine(19.0, 13.8, 19.0, 18.0, 1.4);
+
+        // Gate decorative framing posts with ornamental ball finials at the gate entrance
+        [12.2, 13.8].forEach((gz) => {
+          const gateFinial = new THREE.Mesh(new THREE.SphereGeometry(0.08, 8, 8), rusticDarkWoodMat);
+          gateFinial.position.set(19.0, postH + 0.12, gz);
+          fenceGroup.add(gateFinial);
+        });
 
         fenceGroup.position.y = y0;
         this.scene.add(fenceGroup);
 
-        // Colliders for fence wings
-        this.colliders.push(
-          { type: 'box', floor: fl, minX: 18.88, maxX: 19.12, minZ: 11.45, maxZ: 12.50, minY: y0, maxY: y0 + fenceH, isWall: true },
-          { type: 'box', floor: fl, minX: 18.88, maxX: 19.12, minZ: 13.50, maxZ: 14.55, minY: y0, maxY: y0 + fenceH, isWall: true },
-          { type: 'box', floor: fl, minX: 21.45, maxX: 22.50, minZ: 17.88, maxZ: 18.12, minY: y0, maxY: y0 + fenceH, isWall: true },
-          { type: 'box', floor: fl, minX: 23.50, maxX: 24.55, minZ: 17.88, maxZ: 18.12, minY: y0, maxY: y0 + fenceH, isWall: true }
-        );
-
-        // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Goats)
+        // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Baby Sheep, Goats)
         const animalSpecies = [
-          { type: 'llama', file: 'assets/textures/petting_zoo/llama.png', w: 1.55, h: 1.65, startX: 26.0, startZ: 12.8, speed: 0.55 },
-          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 1.10, h: 1.22, startX: 22.5, startZ: 11.2, speed: 0.68 },
-          { type: 'sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 1.40, h: 1.00, startX: 28.5, startZ: 14.2, speed: 0.45 },
-          { type: 'goat',  file: 'assets/textures/petting_zoo/goat.png',  w: 0.92, h: 1.02, startX: 24.0, startZ: 15.0, speed: 0.62 }
+          { type: 'llama',      file: 'assets/textures/petting_zoo/llama.png', w: 1.55, h: 1.65, startX: 26.0, startZ: 12.8, speed: 0.55 },
+          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',  w: 1.10, h: 1.22, startX: 22.5, startZ: 11.2, speed: 0.68 },
+          { type: 'sheep',      file: 'assets/textures/petting_zoo/sheep.png', w: 1.40, h: 1.00, startX: 28.5, startZ: 14.2, speed: 0.45 },
+          { type: 'baby_sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 0.72, h: 0.52, startX: 27.5, startZ: 14.6, speed: 0.52 },
+          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',  w: 0.92, h: 1.02, startX: 24.0, startZ: 15.0, speed: 0.62 }
         ];
 
         if (!this.pettingZooAnimals) this.pettingZooAnimals = [];
@@ -7917,20 +7964,11 @@ window.game = this;
           polygonOffsetUnits: -1
         });
 
-        // 1. Scorch and ash floor overlay across the East Office (x: 19.2..32.8, z: 8.2..17.8)
+        // 1. Scorch and ash floor overlay across the burning pyre zone (x: 19.2..32.8, z: 8.2..17.8)
         const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 9.6), emberAshMat);
         ashFloor.rotation.x = -Math.PI / 2;
         ashFloor.position.set(26.0, y0 + 0.007, 13.0);
         this.scene.add(ashFloor);
-
-        // Wall soot marks on the inner office walls
-        const sootMat = new THREE.MeshBasicMaterial({ color: 0x080605, transparent: true, opacity: 0.65 });
-        [8.22, 17.78].forEach((wz) => {
-          const sootWall = new THREE.Mesh(new THREE.PlaneGeometry(13.4, 3.8), sootMat);
-          sootWall.position.set(26.0, y0 + 2.0, wz);
-          if (wz > 13) sootWall.rotation.y = Math.PI;
-          this.scene.add(sootWall);
-        });
 
         // 2. Mountain of Books Geometry (Tiered Pyre with tumbling burning tomes)
         const mountainGroup = new THREE.Group();
@@ -8241,6 +8279,32 @@ window.game = this;
       const bm = this.burningBookMountain;
       if (!bm) return;
 
+      const isCurrentFloor = (this.playerFloor === bm.floor);
+
+      // Floor isolation: Cull all fire meshes, embers, smoke, and point lights when the player
+      // is not on the same floor as the fire. This completely prevents fire, embers, smoke, or light
+      // from clipping, bleeding, or showing through slabs or on the ceiling/floor of the floor below or above.
+      if (bm.emberPoints) {
+        bm.emberPoints.visible = isCurrentFloor;
+      }
+      if (bm.flameParticles) {
+        for (let i = 0; i < bm.flameParticles.length; i++) {
+          bm.flameParticles[i].mesh.visible = isCurrentFloor;
+        }
+      }
+      if (bm.smokeParticles) {
+        for (let s = 0; s < bm.smokeParticles.length; s++) {
+          bm.smokeParticles[s].mesh.visible = isCurrentFloor;
+        }
+      }
+      if (bm.fireLights) {
+        for (let l = 0; l < bm.fireLights.length; l++) {
+          bm.fireLights[l].light.visible = isCurrentFloor;
+        }
+      }
+
+      if (!isCurrentFloor) return;
+
       const cam = this.camera;
       const now = performance.now() / 1000;
 
@@ -8256,9 +8320,11 @@ window.game = this;
             fp.phase = Math.random() * Math.PI * 2;
           }
 
+          // Strict floor containment: clamp Y safely within the floor space
+          const clampedY = Math.max(bm.centerY + 0.15, Math.min(bm.centerY + 4.90, fp.currentY));
           const flickerX = Math.sin(fp.phase) * 0.08;
           const flickerZ = Math.cos(fp.phase * 1.3) * 0.08;
-          fp.mesh.position.set(fp.baseX + flickerX, fp.currentY, fp.baseZ + flickerZ);
+          fp.mesh.position.set(fp.baseX + flickerX, clampedY, fp.baseZ + flickerZ);
 
           const lifeProgress = (fp.currentY - fp.startY) / Math.max(0.1, (fp.maxHeight - fp.startY));
           const scale = fp.scaleBase * (1.0 + Math.sin(fp.phase) * 0.22) * (1.0 - lifeProgress * 0.45);
@@ -8293,6 +8359,8 @@ window.game = this;
             posArray[e * 3 + 1] = bm.centerY + 0.35 + Math.random() * 0.6;
             posArray[e * 3 + 2] = bm.centerZ + Math.sin(theta) * r;
           }
+          // Strict floor boundary clamp for embers
+          posArray[e * 3 + 1] = Math.max(bm.centerY + 0.15, Math.min(bm.centerY + 4.88, posArray[e * 3 + 1]));
         }
         posAttr.needsUpdate = true;
       }
@@ -8308,9 +8376,10 @@ window.game = this;
             sp.currentY = sp.startY;
           }
 
+          const clampedY = Math.max(bm.centerY + 0.50, Math.min(bm.centerY + 4.92, sp.currentY));
           const progress = (sp.currentY - sp.startY) / Math.max(0.1, sp.maxHeight - sp.startY);
           const sScale = sp.scaleBase * (1.0 + progress * 1.8);
-          sp.mesh.position.set(sp.baseX + Math.sin(now * 0.8 + s) * 0.25, sp.currentY, sp.baseZ);
+          sp.mesh.position.set(sp.baseX + Math.sin(now * 0.8 + s) * 0.25, clampedY, sp.baseZ);
           sp.mesh.scale.set(sScale, sScale, 1);
           sp.mesh.material.opacity = Math.max(0.02, (1.0 - progress) * 0.40);
 
