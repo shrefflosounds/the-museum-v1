@@ -4490,7 +4490,7 @@ window.game = this;
         wallConcrete: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 10, 2, 0x888e96),
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
-        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8),
+        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/stone_tiles.jpg', 2, 2, 0xd8d4cd),
         carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
         wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc),
         wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x6e1b28),
@@ -4623,7 +4623,9 @@ window.game = this;
       this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, ceilMat, ceilH);
       this.createSlab(30.5, y0, -18, 5.0, 8.0, floorMat, ceilMat, ceilH);
       this.createSlab(30.5, y0, -4, 5.0, 8.0, floorMat, ceilMat, ceilH);
-      this.createSlab(30.5, y0, 13, 5.0, 10.0, eastOfficeFloorMat, ceilMat, ceilH);
+      // On Floor 1 (2nd Floor), ensure East Office floor slab matches the rest of the gallery parquet floor
+      const eastSlabMat = fl === 1 ? floorMat : eastOfficeFloorMat;
+      this.createSlab(30.5, y0, 13, 5.0, 10.0, eastSlabMat, ceilMat, ceilH);
       // 7. South-East Media Wing Slab (x: 4..28, z: 18..28) + South Beaux-Arts Rotunda (x: 12..26, z: 28..36)
       this.createSlab(16, y0, 23, 24.0, 10.0, floorMat, ceilMat, ceilH);
       this.createSlab(19, y0, 32, 14.0, 8.0, floorMat, ceilMat, ceilH);
@@ -8351,6 +8353,107 @@ window.game = this;
           });
         }
 
+        // Ceiling Fire Sprinkler System above the fire (x: 26.0, z: 13.0, y: y0 + ceilH)
+        const ceilSprinklerH = CONFIG.FLOOR_HEIGHT - 0.06;
+        const sprinklerGroup = new THREE.Group();
+        sprinklerGroup.position.set(26.0, y0 + ceilSprinklerH, 13.0);
+
+        const chromeMat = new THREE.MeshStandardMaterial({
+          color: 0xcccccc,
+          metalness: 0.90,
+          roughness: 0.20
+        });
+        const brassMat = new THREE.MeshStandardMaterial({
+          color: 0xd4af37,
+          metalness: 0.85,
+          roughness: 0.25
+        });
+        const bulbMat = new THREE.MeshBasicMaterial({
+          color: 0xff1e28,
+          transparent: true,
+          opacity: 0.95
+        });
+
+        // 1. Ceiling escutcheon ring / circular canopy plate flush with ceiling
+        const escutcheon = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, 0.024, 16), chromeMat);
+        escutcheon.position.y = -0.012;
+        sprinklerGroup.add(escutcheon);
+
+        // 2. Threaded sprinkler drop pipe nipple
+        const dropPipe = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.16, 12), chromeMat);
+        dropPipe.position.y = -0.09;
+        sprinklerGroup.add(dropPipe);
+
+        // 3. Brass sprinkler body / hex fitting
+        const hexBody = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.034, 0.06, 6), brassMat);
+        hexBody.position.y = -0.18;
+        sprinklerGroup.add(hexBody);
+
+        // 4. Sprinkler frame arms
+        const armLeft = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.09, 8), brassMat);
+        armLeft.position.set(-0.028, -0.23, 0);
+        armLeft.rotation.z = -0.16;
+        sprinklerGroup.add(armLeft);
+
+        const armRight = new THREE.Mesh(new THREE.CylinderGeometry(0.007, 0.007, 0.09, 8), brassMat);
+        armRight.position.set(0.028, -0.23, 0);
+        armRight.rotation.z = 0.16;
+        sprinklerGroup.add(armRight);
+
+        // 5. Thermal red glass bulb in center of frame
+        const glassBulb = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.065, 8), bulbMat);
+        glassBulb.position.y = -0.23;
+        sprinklerGroup.add(glassBulb);
+
+        // 6. Toothed deflector plate at bottom
+        const deflector = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.075, 0.012, 12), brassMat);
+        deflector.position.y = -0.28;
+        sprinklerGroup.add(deflector);
+
+        this.scene.add(sprinklerGroup);
+
+        // Constant Water Sprinkler Particle System (spraying droplets over the fire)
+        const dropletCount = 140;
+        const dropletGeo = new THREE.BufferGeometry();
+        const dropletPos = new Float32Array(dropletCount * 3);
+        const sprinklerDroplets = [];
+
+        const sprinklerTopY = y0 + ceilSprinklerH - 0.28;
+        for (let d = 0; d < dropletCount; d++) {
+          const initProgress = Math.random();
+          const angle = Math.random() * Math.PI * 2;
+          const spreadR = Math.pow(Math.random(), 0.5) * (0.2 + initProgress * 1.9);
+          const dy = sprinklerTopY - initProgress * (sprinklerTopY - (y0 + 0.35));
+          const dx = 26.0 + Math.cos(angle) * spreadR;
+          const dz = 13.0 + Math.sin(angle) * spreadR;
+
+          dropletPos[d * 3]     = dx;
+          dropletPos[d * 3 + 1] = dy;
+          dropletPos[d * 3 + 2] = dz;
+
+          sprinklerDroplets.push({
+            angle: angle,
+            speedY: 4.8 + Math.random() * 2.8,
+            spreadSpeed: 0.35 + Math.random() * 0.65,
+            dist: Math.random() * 0.25,
+            y: dy,
+            minY: y0 + 0.25 + Math.random() * 0.7,
+            topY: sprinklerTopY
+          });
+        }
+
+        dropletGeo.setAttribute('position', new THREE.BufferAttribute(dropletPos, 3));
+        const dropletMat = new THREE.PointsMaterial({
+          color: 0x93c5fd,
+          size: 0.065,
+          transparent: true,
+          opacity: 0.85,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false
+        });
+        const sprinklerPoints = new THREE.Points(dropletGeo, dropletMat);
+        this.scene.add(sprinklerPoints);
+
         // Store Burning Book Mountain structure for dynamic updates and collision/damage checking
         this.burningBookMountain = {
           floor: fl,
@@ -8367,6 +8470,9 @@ window.game = this;
           emberPoints: emberPoints,
           emberVel: emberVel,
           smokeParticles: smokeParticles,
+          sprinklerGroup: sprinklerGroup,
+          sprinklerPoints: sprinklerPoints,
+          sprinklerDroplets: sprinklerDroplets,
           damageCooldown: 0,
           curatorDamageCooldown: 0,
           damageInterval: 0.45,
@@ -8486,6 +8592,12 @@ window.game = this;
           bm.fireLights[l].light.visible = isCurrentFloor;
         }
       }
+      if (bm.sprinklerGroup) {
+        bm.sprinklerGroup.visible = isCurrentFloor;
+      }
+      if (bm.sprinklerPoints) {
+        bm.sprinklerPoints.visible = isCurrentFloor;
+      }
 
       if (!isCurrentFloor) return;
 
@@ -8583,6 +8695,37 @@ window.game = this;
           flp.light.position.x = flp.baseX + Math.sin(flp.phase * 0.7) * 0.08;
           flp.light.position.z = flp.baseZ + Math.cos(flp.phase * 0.9) * 0.08;
         }
+      }
+
+      // 4b. Constant Ceiling Fire Sprinkler Water Simulation (droplets spraying down over the fire)
+      if (bm.sprinklerPoints && bm.sprinklerDroplets) {
+        const dropAttr = bm.sprinklerPoints.geometry.attributes.position;
+        const dropArr = dropAttr.array;
+        const dropCount = bm.sprinklerDroplets.length;
+
+        for (let d = 0; d < dropCount; d++) {
+          const drop = bm.sprinklerDroplets[d];
+          drop.y -= drop.speedY * delta;
+          drop.dist += drop.spreadSpeed * delta;
+
+          const cx = bm.centerX + Math.cos(drop.angle) * drop.dist;
+          const cz = bm.centerZ + Math.sin(drop.angle) * drop.dist;
+
+          dropArr[d * 3]     = cx;
+          dropArr[d * 3 + 1] = drop.y;
+          dropArr[d * 3 + 2] = cz;
+
+          // Recycle droplet back up to sprinkler nozzle when it reaches the fire mound
+          if (drop.y <= drop.minY) {
+            drop.y = drop.topY - Math.random() * 0.15;
+            drop.dist = Math.random() * 0.08;
+            drop.angle = Math.random() * Math.PI * 2;
+            dropArr[d * 3]     = bm.centerX + Math.cos(drop.angle) * drop.dist;
+            dropArr[d * 3 + 1] = drop.y;
+            dropArr[d * 3 + 2] = bm.centerZ + Math.sin(drop.angle) * drop.dist;
+          }
+        }
+        dropAttr.needsUpdate = true;
       }
 
       // 5. Fire Proximity & Contact Damage to Player
@@ -9081,6 +9224,29 @@ window.game = this;
 
       // The crate room floor is a solid collision surface at the game floor height.
       addStaticBox(-2, floorY - 0.10, -2, 74, 0.20, 84);
+
+      // Solid architectural ceilings for milk crates: prevent thrown or stacked crates from clipping upward through ceilings
+      const ceilH = CONFIG.FLOOR_HEIGHT - 0.06;
+      const ceilY = floorY + ceilH + 0.10; // Center of 0.20m thick static collision ceiling slab
+      // 1. West Wing ceiling (x: -36..-16, z: -6..18)
+      addStaticBox(-26.0, ceilY, 5.9, 20.0, 0.20, 23.8);
+      // 2. West Office ceiling (x: -34..-24, z: 18..28)
+      addStaticBox(-29.1, ceilY, 23.0, 9.8, 0.20, 9.6);
+      // 3. Main Gallery ceiling (x: -16..-4, z: -18..28)
+      addStaticBox(-9.9, ceilY, 5.0, 11.8, 0.20, 46.0);
+      // 4. Central Core ceiling (x: -4..4, z: -14..28)
+      addStaticBox(0.0, ceilY, 7.1, 8.0, 0.20, 41.8);
+      // 5. North Gallery ceiling (x: -4..28, z: -40..-26)
+      addStaticBox(12.0, ceilY, -33.0, 32.0, 0.20, 14.0);
+      // 6. East Main Hall & Bay ceiling (x: 4..28, z: -26..18)
+      addStaticBox(16.0, ceilY, -4.0, 24.0, 0.20, 44.0);
+      addStaticBox(30.5, ceilY, -4.0, 5.0, 0.20, 44.0);
+      // 7. South-East Media Wing & Rotunda ceiling (x: 4..28, z: 18..36)
+      addStaticBox(16.0, ceilY, 23.0, 24.0, 0.20, 10.0);
+      addStaticBox(19.0, ceilY, 32.0, 14.0, 0.20, 8.0);
+      // 8. Stairwell landings ceilings
+      addStaticBox(0.0, ceilY, -15.5, 7.6, 0.20, 2.6);
+      addStaticBox(-20.0, ceilY, 19.5, 7.6, 0.20, 2.6);
       for (const obstacle of this.colliders) {
         if (obstacle.disabled || obstacle.isCrate ||
             (obstacle.floor !== 3 && obstacle.floor !== 'all')) continue;
@@ -10027,6 +10193,15 @@ window.game = this;
           crate.collider.disabled = true;
           continue;
         }
+        // Hard ceiling boundary clamp & bounce: guarantee crates cannot tunnel or clip above ceiling
+        const maxCrateCenterY = (3 * CONFIG.FLOOR_HEIGHT + (CONFIG.FLOOR_HEIGHT - 0.06)) - crate.h / 2;
+        if (body.position.y > maxCrateCenterY) {
+          body.position.y = maxCrateCenterY;
+          if (body.velocity.y > 0) {
+            body.velocity.y = -Math.abs(body.velocity.y) * 0.45;
+          }
+        }
+
         crate.x = body.position.x;
         crate.y = body.position.y - crate.h / 2;
         crate.z = body.position.z;
@@ -11911,9 +12086,9 @@ window.game = this;
         // =========================================================================
         // FLOOR 1 ("2ND FLOOR"): THE GREAT LIBRARY & CARTOGRAPHY
         // =========================================================================
-        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x7e8bb2, 0xc6bc99);
-        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
-        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x7e8bb2, 0xc6bc99);
+        this.createGalleryRunnerRug(-10.0, y0, -9.0, 3.0, 14.0, 0x141416, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0,  7.0, 3.0, 10.0, 0x141416, 0xd4af37);
+        this.createGalleryRunnerRug(-10.0, y0, 21.0, 3.0, 10.0, 0x141416, 0xd4af37);
 
         // Entrance potted plants flanking archway
         [
@@ -11923,7 +12098,7 @@ window.game = this;
         });
 
         // West Wing Folio Reading Room (Reading vitrines, rugs)
-        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
+        this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x141416, 0xd4af37);
         this.createVitrineTable(-31.0, y0,  0.0, 'scroll', fl);
         this.createVitrineTable(-21.0, y0,  0.0, 'astrolabe', fl);
         this.createVitrineTable(-31.0, y0, 12.0, 'scroll', fl);
