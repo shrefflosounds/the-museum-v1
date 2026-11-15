@@ -4771,10 +4771,9 @@ window.game = this;
       if (fl <= 1) {
         // Exterior perimeter wall of the museum building (seals East boundary from the void)
         this.createWall(33, yc, 13, t, wallH, 10.4, mainWallMat, true, fl);       // 7.8..18.2
-        // North gallery boundary wall bordering the East Main Hall
-        this.createWall(26.0, yc, 8, 13.6, wallH, t, mainWallMat, true, fl);      // 19.2..32.8
-        // South gallery boundary wall bordering the South-East Wing
-        this.createWall(26.0, yc, 18, 13.6, wallH, t, mainWallMat, true, fl);     // 19.2..32.8
+        // Alcove exterior returns at x: 28.2..32.8 sealing the perimeter alcove with the exterior wall
+        this.createWall(30.5, yc, 8, 4.6, wallH, t, mainWallMat, true, fl);        // 28.2..32.8
+        this.createWall(30.5, yc, 18, 4.6, wallH, t, mainWallMat, true, fl);       // 28.2..32.8
       } else {
         this.createWall(26.0, yc, 8, 13.6, wallH, t, accentWallMat, true, fl);      // 19.2..32.8
         this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);       // 7.8..18.2
@@ -5828,7 +5827,7 @@ window.game = this;
         addRoomPerimeterCornice(19.2, 32.8, 8.2, 17.8);   // Arts & Music Office
       }
       addRoomPerimeterCornice(-3.8, 11.8, 18.2, 27.8, { n: false, s: true, w: false, e: false }); // South Cross-Passage South wall (stops cleanly before Rotunda columns!)
-      addRoomPerimeterCornice(19.2, 27.8, 18.2, 27.8, { n: true, s: false, w: false, e: true });  // South-East Media Wing North & East walls
+      addRoomPerimeterCornice(19.2, 27.8, 18.2, 27.8, { n: (fl > 1), s: false, w: false, e: true });  // South-East Media Wing North (when office wall present) & East walls
       addRoomPerimeterCornice(-33.8, -24.2, 18.2, 27.8);// West Office
 
       // Apply grand coffered laylights to the elevated ceilings of the monumental halls
@@ -7726,19 +7725,67 @@ window.game = this;
         strawBedding.position.set(26.0, y0 + 0.006, 13.0);
         this.scene.add(strawBedding);
 
-        // Scattered organic hay mounds for bedding texture
-        const hayMoundMat = new THREE.MeshLambertMaterial({ color: 0xcca658 });
+        // Realistic Agricultural Hay Bales & Organic Bedding Mounds
+        // 1. Natural Hay Material with golden straw highlights
+        const hayOrganicMat = new THREE.MeshStandardMaterial({
+          map: strawTex,
+          color: 0xecd18a,
+          roughness: 0.96,
+          metalness: 0.02
+        });
+        const twineMat = new THREE.MeshStandardMaterial({
+          color: 0x3d2b1f,
+          roughness: 0.88,
+          metalness: 0.05
+        });
+
+        // 2. Realistic Stacked & Scattered Agricultural Hay Bales
+        const baleGeom = new THREE.BoxGeometry(0.95, 0.48, 0.52);
+        const twineGeom = new THREE.BoxGeometry(0.96, 0.49, 0.02);
+
+        const createHayBale = (bx, by, bz, rotY = 0, tiltX = 0, tiltZ = 0) => {
+          const baleGroup = new THREE.Group();
+          baleGroup.position.set(bx, y0 + by, bz);
+          baleGroup.rotation.set(tiltX, rotY, tiltZ);
+
+          const baleMesh = new THREE.Mesh(baleGeom, hayOrganicMat);
+          baleGroup.add(baleMesh);
+
+          // Authentic dual baling twine strings wrapped around the bale
+          [-0.14, 0.14].forEach(tz => {
+            const twine = new THREE.Mesh(twineGeom, twineMat);
+            twine.position.z = tz;
+            baleGroup.add(twine);
+          });
+
+          this.scene.add(baleGroup);
+        };
+
+        // Organic bale stacks in corners and near trough (never blocking main pathways)
+        createHayBale(31.4, 0.24, 9.8, 0.15);
+        createHayBale(31.3, 0.72, 9.7, -0.08); // Stacked 2nd tier in northeast corner
+        createHayBale(30.4, 0.24, 9.9, 0.35, 0.05); // Leaning bale
+        createHayBale(31.5, 0.24, 16.4, -0.22); // Southeast corner bale
+        createHayBale(31.4, 0.72, 16.3, 0.12);
+        createHayBale(21.4, 0.24, 16.2, 0.82); // Near south fence corner
+        createHayBale(22.2, 0.24, 16.4, 0.45);
+
+        // 3. Smooth, Natural Organic Bedding Hay Mounds (hemi-domes with natural tapered flare)
         const moundPositions = [
-          [22.5, 10.2], [29.8, 10.5], [23.0, 15.8], [30.2, 15.5], [26.0, 16.0], [28.0, 11.5]
+          [22.8, 10.4, 1.25, 0.26],
+          [28.8, 10.8, 1.45, 0.30],
+          [24.0, 15.6, 1.35, 0.28],
+          [29.8, 15.2, 1.40, 0.30],
+          [26.2, 15.8, 1.20, 0.24],
+          [27.6, 11.6, 1.30, 0.26]
         ];
-        moundPositions.forEach(([hx, hz]) => {
-          const hayMound = new THREE.Mesh(
-            new THREE.CylinderGeometry(0.65, 1.10, 0.18, 10),
-            hayMoundMat
-          );
-          hayMound.position.set(hx, y0 + 0.09, hz);
-          hayMound.scale.set(1.0 + Math.random() * 0.3, 1.0, 1.0 + Math.random() * 0.3);
-          this.scene.add(hayMound);
+        moundPositions.forEach(([hx, hz, rad, hgt]) => {
+          const domeGeom = new THREE.SphereGeometry(rad, 16, 12, 0, Math.PI * 2, 0, Math.PI / 2);
+          domeGeom.scale(1.0, hgt / rad, 1.0);
+          const mound = new THREE.Mesh(domeGeom, hayOrganicMat);
+          mound.position.set(hx, y0 + 0.01, hz);
+          mound.rotation.y = Math.random() * Math.PI * 2;
+          this.scene.add(mound);
         });
 
         // Rustic wooden livestock water trough
@@ -11830,8 +11877,7 @@ window.game = this;
         // Living aquatic exhibition tank (South-East Gallery exhibition alcove with blue lid glow)
         this.createAquariumTank(8.5, y0, 27.4, fl, Math.PI);
 
-        // Natural dead grass tufts scattered across the earthen ground
-        this.createFloorThreeDeadGrass(y0, fl);
+        // (No grass on 4th floor / floor 3 per curator request - earthen ground remains clean of grass)
 
         // Low-to-mid level atmospheric mist layers on the top floor (Floor 3 / 4th Floor)
         this.createTopFloorFogLayers(y0);
@@ -11901,19 +11947,19 @@ window.game = this;
 
       const rooms = [
         // [minX, maxX, minZ, maxZ, count]
-        [-34.5, -16.8,  -5.0,  17.0, 36], // West Wing Exhibition
-        [-33.0, -25.0,  18.5,  26.8, 18], // West Office
-        [-15.0,  -4.8, -16.5,  26.5, 34], // Main Gallery & North Alcove
-        [ -3.5,   3.5, -12.5,   6.5, 12], // Central Core South
-        [ -3.5,   3.5,  18.5,  26.5,  8], // South Cross Passage
-        [ -2.5,  26.5, -39.0, -27.0, 38], // North Gallery
-        [  7.0,  17.0, -41.5, -39.5,  8], // North Bay
-        [  4.8,  26.8, -25.0,  17.0, 48], // East Main Hall
-        [ 28.5,  32.0, -21.0, -15.0, 10], // East Bay 1
-        [ 28.5,  32.0,  -7.0,  -1.0, 10], // East Bay 2
-        [ 28.5,  32.0,   9.0,  16.5, 12], // East Office Bay
-        [  4.8,  26.8,  18.5,  26.8, 24], // South-East Wing
-        [ 13.5,  24.5,  28.0,  34.0, 16]  // Rotunda Apse
+        [-34.5, -16.8,  -5.0,  17.0, 84], // West Wing Exhibition
+        [-33.0, -25.0,  18.5,  26.8, 42], // West Office
+        [-15.0,  -4.8, -16.5,  26.5, 80], // Main Gallery & North Alcove
+        [ -3.5,   3.5, -12.5,   6.5, 28], // Central Core South
+        [ -3.5,   3.5,  18.5,  26.5, 20], // South Cross Passage
+        [ -2.5,  26.5, -39.0, -27.0, 90], // North Gallery
+        [  7.0,  17.0, -41.5, -39.5, 20], // North Bay
+        [  4.8,  26.8, -25.0,  17.0, 110], // East Main Hall
+        [ 28.5,  32.0, -21.0, -15.0, 24], // East Bay 1
+        [ 28.5,  32.0,  -7.0,  -1.0, 24], // East Bay 2
+        [ 28.5,  32.0,   9.0,  16.5, 28], // East Office Bay
+        [  4.8,  26.8,  18.5,  26.8, 56], // South-East Wing
+        [ 13.5,  24.5,  28.0,  34.0, 38]  // Rotunda Apse
       ];
 
       const instanceLists = [[], [], []];
@@ -15264,7 +15310,7 @@ window.game = this;
         { floor: 1, x: -26, z: 12, baseY: 1 * H + 1.38 },
         { floor: 1, x: 19, z: 30.5, baseY: 1 * H + 1.38 },
         { floor: 1, x: 12, z: -39, baseY: 1 * H + 1.38 },
-        { floor: 1, x: 26, z: 13, baseY: 1 * H + 1.38 },
+        { floor: 1, x: 23, z: 22, baseY: 1 * H + 1.38 },
         // Floor 2
         { floor: 2, x: -26, z: 0, baseY: 2 * H + 1.38 },
         { floor: 2, x: -26, z: 12, baseY: 2 * H + 1.38 },
