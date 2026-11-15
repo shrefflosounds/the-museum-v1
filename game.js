@@ -4803,13 +4803,13 @@ window.game = this;
         // West Wall (x = 19, z: 7.8..18.2): Central entrance doorway at z: 11.5..14.5 into East Main Hall
         this.createWall(19, yc, 9.65, t, wallH, 3.7, accentWallMat, true, fl);      // 7.8..11.5
         this.createWall(19, yc, 16.35, t, wallH, 3.7, accentWallMat, true, fl);     // 14.5..18.2
-        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);
+        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat, 3.0, false);
 
         // East Wall (x = 33, z: 7.8..18.2): Solid flat perimeter wall with NO indents or alcoves
         this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);
 
-        // Top Front Sign: Transparent cutout PNG sign mounted directly on the top front of the room's box (no black box or back plate)
-        this.buildEastOfficeSign(18.96, y0 + 4.15, 13.0, Math.PI / 2, 4.2, 2.36);
+        // Top Front Sign: Transparent cutout PNG sign mounted directly on the front exterior wall (x = 18.78), facing west into the gallery, positioned right over the doorway
+        this.buildEastOfficeSign(18.78, y0 + 3.85, 13.0, -Math.PI / 2, 2.4, 1.35);
       } else {
         // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON WITH WINDOWS ON ALL SIDES & BONES
         const dungeonStoneMat = mats.wallBrick || accentWallMat;
