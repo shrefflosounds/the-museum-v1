@@ -4493,8 +4493,8 @@ window.game = this;
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8),
         carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
         wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc),
-        wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x222026),
-        ceilingLibraryCoffered: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_ceiling_coffered.png', 1, 1, 0x181822)
+        wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x6e1b28),
+        ceilingLibraryCoffered: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_ceiling_coffered.png', 1, 1, 0x5a1420)
       };
 
       mats.floorDirt.userData = { isDirt: true };
