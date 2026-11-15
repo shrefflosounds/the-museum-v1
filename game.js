@@ -4789,32 +4789,27 @@ window.game = this;
         this.createWall(30.5, yc, 8, 4.6, wallH, t, mainWallMat, true, fl);        // 28.2..32.8
         this.createWall(30.5, yc, 18, 4.6, wallH, t, mainWallMat, true, fl);       // 28.2..32.8
       } else if (fl === 2) {
-        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with ENTRANCES ON ALL SIDES + TOP FRONT SIGN
-        // North Wall (z = 8, x: 19.2..32.8): Central doorway at x: 24.5..27.5
-        this.createWall(21.85, yc, 8, 5.3, wallH, t, accentWallMat, true, fl);      // 19.2..24.5
-        this.createWall(30.15, yc, 8, 5.3, wallH, t, accentWallMat, true, fl);      // 27.5..32.8
-        this.createLintel(26.0, y0, 8, 3.0, t, ceilH, accentWallMat);
+        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with side entrances towards the front & solid back wall
+        // North Wall (z = 8, x: 19.2..32.8): Entrance doorway positioned naturally towards front/west at x: 21.5..24.5
+        this.createWall(20.35, yc, 8, 2.3, wallH, t, accentWallMat, true, fl);      // 19.2..21.5
+        this.createWall(28.65, yc, 8, 8.3, wallH, t, accentWallMat, true, fl);      // 24.5..32.8
+        this.createLintel(23.0, y0, 8, 3.0, t, ceilH, accentWallMat);
 
-        // South Wall (z = 18, x: 19.2..32.8): Central doorway at x: 24.5..27.5 into South-East Wing
-        this.createWall(21.85, yc, 18, 5.3, wallH, t, accentWallMat, true, fl);     // 19.2..24.5
-        this.createWall(30.15, yc, 18, 5.3, wallH, t, accentWallMat, true, fl);     // 27.5..32.8
-        this.createLintel(26.0, y0, 18, 3.0, t, ceilH, accentWallMat);
+        // South Wall (z = 18, x: 19.2..32.8): Entrance doorway positioned naturally towards front/west at x: 21.5..24.5 into SE Wing
+        this.createWall(20.35, yc, 18, 2.3, wallH, t, accentWallMat, true, fl);     // 19.2..21.5
+        this.createWall(28.65, yc, 18, 8.3, wallH, t, accentWallMat, true, fl);     // 24.5..32.8
+        this.createLintel(23.0, y0, 18, 3.0, t, ceilH, accentWallMat);
 
         // West Wall (x = 19, z: 7.8..18.2): Central entrance doorway at z: 11.5..14.5 into East Main Hall
         this.createWall(19, yc, 9.65, t, wallH, 3.7, accentWallMat, true, fl);      // 7.8..11.5
         this.createWall(19, yc, 16.35, t, wallH, 3.7, accentWallMat, true, fl);     // 14.5..18.2
         this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);
 
-        // East Wall (x = 33, z: 7.8..18.2): Exterior museum perimeter must stay solid to protect map boundary
-        // Entrance alcove portal recessed at x = 32.8 (z: 11.5..14.5) with arched portal frame & interior service door
+        // East Wall (x = 33, z: 7.8..18.2): Solid flat perimeter wall with NO indents or alcoves
         this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);
-        this.createLintelZ(32.8, y0, 13.0, t, 3.0, ceilH, accentWallMat);
-        const eastPortalBack = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.0, 2.96), mats.mahogany);
-        eastPortalBack.position.set(32.96, y0 + 1.5, 13.0);
-        this.scene.add(eastPortalBack);
 
-        // Top Front Sign: Display provided logo/sign PNG on top front of the room's box facing the gallery (x: 19, z: 13, y: y0 + 4.2)
-        this.buildEastOfficeSign(18.78, y0 + 4.10, 13.0, Math.PI / 2, 4.4, 2.475);
+        // Top Front Sign: Transparent cutout PNG sign mounted directly on the top front of the room's box (no black box or back plate)
+        this.buildEastOfficeSign(18.96, y0 + 4.15, 13.0, Math.PI / 2, 4.2, 2.36);
       } else {
         // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON WITH WINDOWS ON ALL SIDES & BONES
         const dungeonStoneMat = mats.wallBrick || accentWallMat;
@@ -8554,46 +8549,16 @@ window.game = this;
         tx.colorSpace = THREE.SRGBColorSpace;
       });
 
-      const frameMat = new THREE.MeshStandardMaterial({
-        color: 0x1f242d,
-        metalness: 0.85,
-        roughness: 0.25
-      });
-      const bracketMat = new THREE.MeshStandardMaterial({
-        color: 0xd4af37,
-        metalness: 0.90,
-        roughness: 0.20
-      });
-      const plateMat = new THREE.MeshBasicMaterial({
+      // Pure transparent cutout sign mesh with NO background plate, border, or black rectangle
+      const signMat = new THREE.MeshBasicMaterial({
         map: signTex,
         transparent: true,
+        alphaTest: 0.05,
+        depthWrite: false,
         side: THREE.DoubleSide
       });
 
-      // 1. Sleek metallic mounting backing panel
-      const backPlate = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.14, 0.04), frameMat);
-      backPlate.position.z = -0.02;
-      group.add(backPlate);
-
-      // 2. Brass rim accent bezel
-      const rimTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.20, 0.03, 0.05), bracketMat);
-      rimTop.position.set(0, (h + 0.14) / 2, -0.01);
-      group.add(rimTop);
-
-      const rimBot = new THREE.Mesh(new THREE.BoxGeometry(w + 0.20, 0.03, 0.05), bracketMat);
-      rimBot.position.set(0, -(h + 0.14) / 2, -0.01);
-      group.add(rimBot);
-
-      // 3. Wall mounting brackets
-      [-w / 2 + 0.35, w / 2 - 0.35].forEach((bx) => {
-        const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.08, h + 0.28, 0.06), bracketMat);
-        bracket.position.set(bx, 0, -0.04);
-        group.add(bracket);
-      });
-
-      // 4. Sign Face Mesh rendering the user-provided PNG
-      const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), plateMat);
-      signMesh.position.z = 0.015;
+      const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), signMat);
       group.add(signMesh);
 
       this.scene.add(group);
