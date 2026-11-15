@@ -20294,7 +20294,7 @@ window.game = this;
           }
 
           this.relics.forEach((r) => {
-            if (!r.collected && r.floor === this.playerFloor && r.mesh) {
+            if (!r.collected && r.floor === this.playerFloor && r.mesh && r.mesh.rotation) {
               // Distance culling: only render & animate relics within 22m (room/hall envelope).
               // Eliminates rendering 500k-1.5M polygon relics across opposite wings through multiple walls.
               const dSq = (r.x - this.playerPos.x) ** 2 + (r.z - this.playerPos.z) ** 2;
