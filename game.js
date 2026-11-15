@@ -4491,7 +4491,8 @@ window.game = this;
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8),
-        carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24)
+        carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
+        wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc)
       };
 
       mats.floorDirt.userData = { isDirt: true };
@@ -4580,10 +4581,12 @@ window.game = this;
 
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
                         : fl === 1 ? mats.wallPlasterWarm
-                        : fl === 2 ? mats.wallPlasterSlate
+                        : fl === 2 ? mats.wallPaleWood
                         : mats.wallConcrete;
 
-      const accentWallMat = fl === 3 ? mats.wallBrick : mats.mahogany;
+      const accentWallMat = fl === 2 ? mats.wallPaleWood
+                          : fl === 3 ? mats.wallBrick
+                          : mats.mahogany;
 
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
       // 1. West Wing Slab (x: -36..-16, z: -6.0..17.80 stopping flush at the north face of the z = 18.0 south wall)
@@ -5542,9 +5545,11 @@ window.game = this;
       const yc = y0 + wallH / 2;
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
                         : fl === 1 ? mats.wallPlasterWarm
-                        : fl === 2 ? mats.wallPlasterSlate
+                        : fl === 2 ? mats.wallPaleWood
                         : mats.wallConcrete;
-      const accentMat = fl === 3 ? mats.wallBrick : mats.mahogany;
+      const accentMat = fl === 2 ? mats.wallPaleWood
+                      : fl === 3 ? mats.wallBrick
+                      : mats.mahogany;
 
       // 8 faceted apse wall segments from -PI/2 to +PI/2
       const numFacets = 8;
@@ -8008,6 +8013,9 @@ window.game = this;
         const smokeTex = this.texLoader.load('assets/textures/fire/smoke_particle.png', (tx) => {
           tx.colorSpace = THREE.SRGBColorSpace;
         });
+        const scorchDecalTex = this.texLoader.load('assets/textures/fire/burnt_scorch_organic.png', (tx) => {
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
 
         const emberAshMat = new THREE.MeshStandardMaterial({
           map: charredWoodTex,
@@ -8021,10 +8029,21 @@ window.game = this;
           polygonOffsetUnits: -1
         });
 
-        // 1. Scorch and ash floor overlay across the burning pyre zone (x: 19.2..32.8, z: 8.2..17.8)
-        const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 9.6), emberAshMat);
+        // 1. Organic irregular burnt scorch mark burned into the floor (zero red boxes or perfect shapes!)
+        const burntFloorMat = new THREE.MeshStandardMaterial({
+          map: scorchDecalTex,
+          transparent: true,
+          roughness: 0.96,
+          metalness: 0.05,
+          depthWrite: false,
+          polygonOffset: true,
+          polygonOffsetFactor: -2,
+          polygonOffsetUnits: -2
+        });
+        const ashFloor = new THREE.Mesh(new THREE.PlaneGeometry(9.6, 9.6), burntFloorMat);
         ashFloor.rotation.x = -Math.PI / 2;
-        ashFloor.position.set(26.0, y0 + 0.007, 13.0);
+        ashFloor.rotation.z = 0.45; // Organic asymmetrical orientation
+        ashFloor.position.set(26.0, y0 + 0.008, 13.0);
         this.scene.add(ashFloor);
 
         // 2. Mountain of Books Geometry (Tiered Pyre with tumbling burning tomes)
@@ -11863,6 +11882,9 @@ window.game = this;
         // Natural dead grass tufts scattered across the earthen ground
         this.createFloorThreeDeadGrass(y0, fl);
 
+        // Realistic floating pinkish bubbles gently drifting throughout Floor 3
+        this.createFloorThreeBubbles(y0, fl);
+
       } else {
         // =========================================================================
         // FLOOR 3 ("4TH FLOOR"): RESTRICTED ARCHIVAL STORAGE & MILK CRATES
@@ -11885,7 +11907,7 @@ window.game = this;
     }
 
     createFloorThreeDeadGrass(y0, fl) {
-      // Natural loose dead grass stalks (individual thin blades and sparse wild wisps)
+      // Natural loose dead grass stalks (tall, thick, dense dried stalks)
       const grassTex = this.texLoader.load('assets/textures/dead_grass.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
@@ -11918,23 +11940,29 @@ window.game = this;
         return geom;
       }
 
-      // Single blade wisp (one crossed plane to keep natural 3D silhouette without dense bushy clumping)
-      const s0a = makeStalkGeometry(0.00, 0.33, 0.22, 0.46, 0.06);
-      const s0b = makeStalkGeometry(0.00, 0.33, 0.22, 0.46, -0.06);
-      s0b.rotateY(Math.PI / 2.2);
-      const geoVariant0 = mergeBufferGeometries([s0a, s0b]);
+      // Tall & thick clumps: 3 crossed angled planes per clump with increased height (0.95m - 1.25m) and width (0.38m - 0.46m)
+      const s0a = makeStalkGeometry(0.00, 0.33, 0.40, 1.05, 0.06);
+      const s0b = makeStalkGeometry(0.00, 0.33, 0.38, 0.98, -0.06);
+      s0b.rotateY(Math.PI / 3);
+      const s0c = makeStalkGeometry(0.00, 0.33, 0.36, 1.12, 0.04);
+      s0c.rotateY((2 * Math.PI) / 3);
+      const geoVariant0 = mergeBufferGeometries([s0a, s0b, s0c]);
 
       // Twin loose stalks
-      const s1a = makeStalkGeometry(0.33, 0.66, 0.24, 0.50, -0.08);
-      const s1b = makeStalkGeometry(0.33, 0.66, 0.24, 0.50, 0.08);
-      s1b.rotateY(Math.PI / 2.5);
-      const geoVariant1 = mergeBufferGeometries([s1a, s1b]);
+      const s1a = makeStalkGeometry(0.33, 0.66, 0.44, 1.15, -0.08);
+      const s1b = makeStalkGeometry(0.33, 0.66, 0.42, 1.08, 0.08);
+      s1b.rotateY(Math.PI / 3);
+      const s1c = makeStalkGeometry(0.33, 0.66, 0.40, 1.22, -0.04);
+      s1c.rotateY((2 * Math.PI) / 3);
+      const geoVariant1 = mergeBufferGeometries([s1a, s1b, s1c]);
 
       // Wild dry stalk
-      const s2a = makeStalkGeometry(0.66, 1.00, 0.20, 0.48, 0.10);
-      const s2b = makeStalkGeometry(0.66, 1.00, 0.20, 0.48, -0.10);
-      s2b.rotateY(Math.PI / 1.8);
-      const geoVariant2 = mergeBufferGeometries([s2a, s2b]);
+      const s2a = makeStalkGeometry(0.66, 1.00, 0.38, 1.10, 0.10);
+      const s2b = makeStalkGeometry(0.66, 1.00, 0.40, 1.02, -0.10);
+      s2b.rotateY(Math.PI / 3);
+      const s2c = makeStalkGeometry(0.66, 1.00, 0.36, 1.18, 0.05);
+      s2c.rotateY((2 * Math.PI) / 3);
+      const geoVariant2 = mergeBufferGeometries([s2a, s2b, s2c]);
 
       const variants = [geoVariant0, geoVariant1, geoVariant2];
 
@@ -11946,20 +11974,20 @@ window.game = this;
       };
 
       const rooms = [
-        // [minX, maxX, minZ, maxZ, count]
-        [-34.5, -16.8,  -5.0,  17.0, 84], // West Wing Exhibition
-        [-33.0, -25.0,  18.5,  26.8, 42], // West Office
-        [-15.0,  -4.8, -16.5,  26.5, 80], // Main Gallery & North Alcove
-        [ -3.5,   3.5, -12.5,   6.5, 28], // Central Core South
-        [ -3.5,   3.5,  18.5,  26.5, 20], // South Cross Passage
-        [ -2.5,  26.5, -39.0, -27.0, 90], // North Gallery
-        [  7.0,  17.0, -41.5, -39.5, 20], // North Bay
-        [  4.8,  26.8, -25.0,  17.0, 110], // East Main Hall
-        [ 28.5,  32.0, -21.0, -15.0, 24], // East Bay 1
-        [ 28.5,  32.0,  -7.0,  -1.0, 24], // East Bay 2
-        [ 28.5,  32.0,   9.0,  16.5, 28], // East Office Bay
-        [  4.8,  26.8,  18.5,  26.8, 56], // South-East Wing
-        [ 13.5,  24.5,  28.0,  34.0, 38]  // Rotunda Apse
+        // [minX, maxX, minZ, maxZ, count] - Expanded counts for dense, lush wild groundcover
+        [-34.5, -16.8,  -5.0,  17.0, 140], // West Wing Exhibition
+        [-33.0, -25.0,  18.5,  26.8, 70],  // West Office
+        [-15.0,  -4.8, -16.5,  26.5, 130], // Main Gallery & North Alcove
+        [ -3.5,   3.5, -12.5,   6.5, 45],  // Central Core South
+        [ -3.5,   3.5,  18.5,  26.5, 35],  // South Cross Passage
+        [ -2.5,  26.5, -39.0, -27.0, 145], // North Gallery
+        [  7.0,  17.0, -41.5, -39.5, 35],  // North Bay
+        [  4.8,  26.8, -25.0,  17.0, 175], // East Main Hall
+        [ 28.5,  32.0, -21.0, -15.0, 40],  // East Bay 1
+        [ 28.5,  32.0,  -7.0,  -1.0, 40],  // East Bay 2
+        [ 28.5,  32.0,   9.0,  16.5, 45],  // East Office Bay
+        [  4.8,  26.8,  18.5,  26.8, 90],  // South-East Wing
+        [ 13.5,  24.5,  28.0,  34.0, 60]   // Rotunda Apse
       ];
 
       const instanceLists = [[], [], []];
@@ -11983,14 +12011,14 @@ window.game = this;
           if (Math.hypot(gx - 19.0, gz - 30.5) < 3.2) continue;
 
           const variantIdx = Math.floor(rnd() * 3);
-          const scale = 0.65 + rnd() * 0.70;
+          const scale = 0.90 + rnd() * 0.55;
           const rotY = rnd() * Math.PI * 2;
           const leanX = (rnd() - 0.5) * 0.22;
           const leanZ = (rnd() - 0.5) * 0.22;
 
           tempObj.position.set(gx, y0, gz);
           tempObj.rotation.set(leanX, rotY, leanZ);
-          tempObj.scale.set(scale, scale * (0.80 + rnd() * 0.45), scale);
+          tempObj.scale.set(scale, scale * (0.95 + rnd() * 0.35), scale);
           tempObj.updateMatrix();
 
           instanceLists[variantIdx].push(tempObj.matrix.clone());
@@ -12007,6 +12035,127 @@ window.game = this;
           instancedGrass.instanceMatrix.needsUpdate = true;
           this.scene.add(instancedGrass);
         }
+      }
+    }
+
+    createFloorThreeBubbles(y0, fl) {
+      // Realistic floating bubbles with varied pinkish iridescent hues across Floor 3
+      this.floorThreeBubbles = [];
+      const bubbleGroup = new THREE.Group();
+      bubbleGroup.name = 'FloorThreeFloatingBubbles';
+      this.scene.add(bubbleGroup);
+      this.floorThreeBubbleGroup = bubbleGroup;
+
+      // Realistic iridescent bubble materials in varied delicate pinkish hues:
+      // Rose petal pink, pearlescent blush, subtle pastel magenta, iridescent lavender-pink, and sunset coral-pink
+      const bubbleColorSpecs = [
+        { color: 0xffb6c1, emissive: 0xff69b4, opacity: 0.58 }, // Light pink / Hot pink core
+        { color: 0xffc0cb, emissive: 0xf472b6, opacity: 0.52 }, // Soft blush rose
+        { color: 0xf8bbd0, emissive: 0xec4899, opacity: 0.62 }, // Pearlescent bubblegum pink
+        { color: 0xfda4af, emissive: 0xf43f5e, opacity: 0.55 }, // Coral-rose pink
+        { color: 0xf5d0fe, emissive: 0xd946ef, opacity: 0.50 }, // Lavender-pink sheen
+        { color: 0xffe4e6, emissive: 0xfb7185, opacity: 0.60 }  // Dewdrop rose quartz
+      ];
+
+      const bubbleMats = bubbleColorSpecs.map(spec => new THREE.MeshPhysicalMaterial({
+        color: spec.color,
+        emissive: spec.emissive,
+        emissiveIntensity: 0.28,
+        roughness: 0.04,
+        metalness: 0.10,
+        transmission: 0.88,
+        ior: 1.25,
+        thickness: 0.12,
+        specularIntensity: 1.0,
+        specularColor: new THREE.Color(0xffffff),
+        transparent: true,
+        opacity: spec.opacity,
+        depthWrite: false,
+        side: THREE.FrontSide
+      }));
+
+      // Base sphere geometry (smooth 20x16 segments for glassy bubble curvature)
+      const baseBubbleGeo = new THREE.SphereGeometry(1.0, 20, 16);
+
+      // Distribute bubbles across walkable spaces on Floor 3
+      const bubbleZones = [
+        [-34.0, -17.0,  -4.5,  16.5, 14], // West Wing Exhibition
+        [-32.5, -25.5,  19.0,  26.5,  8], // West Office
+        [-14.5,  -5.2, -15.5,  26.0, 14], // Main Gallery
+        [ -3.0,   3.0, -11.5,   6.0,  6], // Central South
+        [ -2.0,  26.0, -38.5, -27.5, 16], // North Gallery
+        [  5.2,  26.2, -24.5,  16.5, 20], // East Main Hall
+        [ 28.8,  31.5, -20.0, -15.5,  5], // East Bay 1
+        [ 28.8,  31.5,  -6.5,  -1.5,  5], // East Bay 2
+        [ 28.8,  31.5,   9.5,  16.0,  5], // East Office Bay
+        [  5.2,  26.2,  19.0,  26.5, 12], // South-East Wing
+        [ 14.0,  24.0,  28.5,  33.5,  8]  // Rotunda Apse
+      ];
+
+      let bSeed = 91823;
+      const bRnd = () => {
+        bSeed = (bSeed * 16807) % 2147483647;
+        return (bSeed - 1) / 2147483646;
+      };
+
+      for (let z = 0; z < bubbleZones.length; z++) {
+        const [minX, maxX, minZ, maxZ, count] = bubbleZones[z];
+        for (let i = 0; i < count; i++) {
+          const bx = minX + bRnd() * (maxX - minX);
+          const bz = minZ + bRnd() * (maxZ - minZ);
+          const by = y0 + 0.35 + bRnd() * 3.8; // Varied heights from near-floor to upper ceiling
+          const radius = 0.08 + bRnd() * 0.22; // Natural varied bubble diameters (16cm to 60cm)
+
+          const mat = bubbleMats[Math.floor(bRnd() * bubbleMats.length)];
+          const mesh = new THREE.Mesh(baseBubbleGeo, mat);
+          mesh.position.set(bx, by, bz);
+          mesh.scale.set(radius, radius, radius);
+          bubbleGroup.add(mesh);
+
+          this.floorThreeBubbles.push({
+            mesh: mesh,
+            baseX: bx,
+            baseZ: bz,
+            y: by,
+            radius: radius,
+            floorY0: y0,
+            ceilY: y0 + 4.35,
+            speedY: 0.16 + bRnd() * 0.24, // Slow gentle upward buoyancy
+            wobbleSpeedX: 0.8 + bRnd() * 1.4,
+            wobbleSpeedZ: 0.7 + bRnd() * 1.3,
+            wobbleAmpX: 0.15 + bRnd() * 0.25,
+            wobbleAmpZ: 0.15 + bRnd() * 0.25,
+            phase: bRnd() * Math.PI * 2
+          });
+        }
+      }
+    }
+
+    updateFloorThreeBubbles(delta) {
+      if (!this.floorThreeBubbles || this.floorThreeBubbles.length === 0) return;
+      const isFloorThree = (this.playerFloor === 2 || this.isSpectatorMode);
+      if (this.floorThreeBubbleGroup) {
+        this.floorThreeBubbleGroup.visible = isFloorThree;
+      }
+      if (!isFloorThree) return;
+
+      const time = performance.now() * 0.001;
+      for (let i = 0; i < this.floorThreeBubbles.length; i++) {
+        const b = this.floorThreeBubbles[i];
+        b.y += b.speedY * delta;
+
+        // When a bubble floats up near the ceiling, smoothly cycle it back to near the floor
+        if (b.y > b.ceilY) {
+          b.y = b.floorY0 + 0.25 + Math.random() * 0.40;
+        }
+
+        // Gentle harmonic sinusoidal drift & wobble
+        const wx = Math.sin(time * b.wobbleSpeedX + b.phase) * b.wobbleAmpX;
+        const wz = Math.cos(time * b.wobbleSpeedZ + b.phase * 1.5) * b.wobbleAmpZ;
+        const subtlePulse = 1.0 + 0.04 * Math.sin(time * 3.0 + b.phase);
+
+        b.mesh.position.set(b.baseX + wx, b.y, b.baseZ + wz);
+        b.mesh.scale.set(b.radius * subtlePulse, b.radius * (2.0 - subtlePulse), b.radius * subtlePulse);
       }
     }
 
@@ -20350,6 +20499,9 @@ window.game = this;
           this.updateAquariumFish(delta);
           this.updatePettingZoo(delta);
           this.updateBurningMountain(delta);
+          if (this.updateFloorThreeBubbles) {
+            this.updateFloorThreeBubbles(delta);
+          }
           if (!this.navGrid && this.navNodes && this.navNodes.length > 0) {
             this.buildObstacleGrid();
           }
