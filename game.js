@@ -15861,13 +15861,14 @@ window.game = this;
 
     updatePlayerViewVisibility() {
       const thirdPerson = this.isThirdPersonView();
-      // When zoomed fully in (thirdPersonCameraDistance <= 0.42), the fake first-person camera is active.
-      // Hide the third-person player model completely so its transparent silhouette / depth buffer cannot clip or appear in front of fog!
-      const zoomedInFakeFirstPerson = thirdPerson && (this.thirdPersonCameraDistance <= 0.42);
-      const showHands = (!thirdPerson || zoomedInFakeFirstPerson) && !this.isSpectatorHudHidden;
+      // First-person hands (weaponRig and leftArmRig) are strictly for first-person mode, NEVER third-person
+      const showHands = !thirdPerson && !this.isSpectatorHudHidden;
       if (this.weaponRig) this.weaponRig.visible = showHands;
       if (this.leftArmRig) this.leftArmRig.visible = showHands;
-      if (this.playerModelRoot) this.playerModelRoot.visible = thirdPerson && !zoomedInFakeFirstPerson && !!this.playerModel;
+      // In third-person mode, character model is visible whenever loaded and not zoomed into head
+      if (this.playerModelRoot) {
+        this.playerModelRoot.visible = thirdPerson && (this.thirdPersonCameraDistance > 0.405) && !!this.playerModel;
+      }
     }
 
     setPlayerViewMode(mode) {
