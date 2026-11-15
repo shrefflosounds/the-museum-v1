@@ -4762,10 +4762,20 @@ window.game = this;
       this.createWall(28, yc, 3.8, t, wallH, 8.0, mainWallMat, true, fl);         // -0.2..7.8
 
       // G. ARTS AND MUSIC OFFICE (x: 19..33, z: 8..18)
-      // On Floor 0 (Petting Zoo) and Floor 1 (Burning Mountain of Books), the enclosing brown box walls
-      // are omitted so the exhibits are open and integrated into the museum hall with realistic fencing.
-      // On Floors 2 & 3, the classic office partition walls are retained.
-      if (fl > 1) {
+      // The outer exterior perimeter wall of the museum at x = 33 (z: 7.8..18.2) is permanent across ALL floors,
+      // preventing any exposure or opening to the outer void behind the map.
+      // Additionally, the boundary walls at z = 8 (x: 19.2..32.8) and z = 18 (x: 19.2..32.8) define the exhibit space.
+      // On Floor 0 (Petting Zoo) and Floor 1 (Burning Mountain of Books), these walls use clean main gallery plaster (mainWallMat)
+      // and the interior west dividing wall is kept open to integrate seamlessly with the main hall and the petting zoo ranch fence.
+      // On Floors 2 & 3, the classic office partition walls and doorways are retained.
+      if (fl <= 1) {
+        // Exterior perimeter wall of the museum building (seals East boundary from the void)
+        this.createWall(33, yc, 13, t, wallH, 10.4, mainWallMat, true, fl);       // 7.8..18.2
+        // North gallery boundary wall bordering the East Main Hall
+        this.createWall(26.0, yc, 8, 13.6, wallH, t, mainWallMat, true, fl);      // 19.2..32.8
+        // South gallery boundary wall bordering the South-East Wing
+        this.createWall(26.0, yc, 18, 13.6, wallH, t, mainWallMat, true, fl);     // 19.2..32.8
+      } else {
         this.createWall(26.0, yc, 8, 13.6, wallH, t, accentWallMat, true, fl);      // 19.2..32.8
         this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);       // 7.8..18.2
         // West wall of Office (x = 19, z: 7.8..18.2) with doorway at z: 11.5..14.5
@@ -7868,13 +7878,13 @@ window.game = this;
         fenceGroup.position.y = y0;
         this.scene.add(fenceGroup);
 
-        // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Baby Sheep, Goats)
+        // 3. Transparent Living Livestock Cutouts (Llama, Sheep, Baby Lamb, Goats)
         const animalSpecies = [
-          { type: 'llama',      file: 'assets/textures/petting_zoo/llama.png', w: 1.55, h: 1.65, startX: 26.0, startZ: 12.8, speed: 0.55 },
-          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',  w: 1.10, h: 1.22, startX: 22.5, startZ: 11.2, speed: 0.68 },
-          { type: 'sheep',      file: 'assets/textures/petting_zoo/sheep.png', w: 1.40, h: 1.00, startX: 28.5, startZ: 14.2, speed: 0.45 },
-          { type: 'baby_sheep', file: 'assets/textures/petting_zoo/sheep.png', w: 0.72, h: 0.52, startX: 27.5, startZ: 14.6, speed: 0.52 },
-          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',  w: 0.92, h: 1.02, startX: 24.0, startZ: 15.0, speed: 0.62 }
+          { type: 'llama',      file: 'assets/textures/petting_zoo/llama.png',      w: 1.55, h: 1.65, startX: 26.0, startZ: 12.8, speed: 0.55 },
+          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',       w: 1.10, h: 1.22, startX: 22.5, startZ: 11.2, speed: 0.68 },
+          { type: 'sheep',      file: 'assets/textures/petting_zoo/sheep.png',      w: 1.40, h: 1.00, startX: 28.5, startZ: 14.2, speed: 0.45 },
+          { type: 'baby_sheep', file: 'assets/textures/petting_zoo/baby_sheep.png', w: 0.85, h: 0.58, startX: 27.5, startZ: 14.6, speed: 0.52 },
+          { type: 'goat',       file: 'assets/textures/petting_zoo/goat.png',       w: 0.92, h: 1.02, startX: 24.0, startZ: 15.0, speed: 0.62 }
         ];
 
         if (!this.pettingZooAnimals) this.pettingZooAnimals = [];
@@ -8021,7 +8031,8 @@ window.game = this;
 
           const chosenMat = burnBookMats[b % burnBookMats.length];
           const bMesh = new THREE.Mesh(b % 3 === 0 ? thickBookGeom : bookGeom, chosenMat);
-          bMesh.position.set(bx, Math.max(0.06, height), bz);
+          // Elevate base height to at least 0.28m so rotated corners never dip below y0 + 0.05m
+          bMesh.position.set(bx, Math.max(0.28, height), bz);
 
           bMesh.rotation.set(
             (Math.sin(b * 3.3) * 0.45) + (bz / 3.0),
@@ -8032,7 +8043,7 @@ window.game = this;
 
           if (b % 4 === 0) {
             const pageFan = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 0.38), charredPageMat);
-            pageFan.position.set(bx * 0.98, height + 0.04, bz * 0.98);
+            pageFan.position.set(bx * 0.98, Math.max(0.30, height + 0.04), bz * 0.98);
             pageFan.rotation.copy(bMesh.rotation);
             pageFan.rotation.y += 0.25;
             mountainGroup.add(pageFan);
@@ -8184,6 +8195,8 @@ window.game = this;
           radius: 3.20,
           dangerRadius: 3.80,
           mountainHeight: 3.50,
+          ashFloor: ashFloor,
+          mountainGroup: mountainGroup,
           fireLights: fireLights,
           flameParticles: flameParticles,
           emberPoints: emberPoints,
@@ -8281,9 +8294,15 @@ window.game = this;
 
       const isCurrentFloor = (this.playerFloor === bm.floor);
 
-      // Floor isolation: Cull all fire meshes, embers, smoke, and point lights when the player
-      // is not on the same floor as the fire. This completely prevents fire, embers, smoke, or light
+      // Floor isolation: Cull all fire meshes, embers, smoke, point lights, and book mountain geometry when the player
+      // is not on the same floor as the fire. This completely prevents fire, embers, smoke, light, or book models
       // from clipping, bleeding, or showing through slabs or on the ceiling/floor of the floor below or above.
+      if (bm.mountainGroup) {
+        bm.mountainGroup.visible = isCurrentFloor;
+      }
+      if (bm.ashFloor) {
+        bm.ashFloor.visible = isCurrentFloor;
+      }
       if (bm.emberPoints) {
         bm.emberPoints.visible = isCurrentFloor;
       }
@@ -15443,6 +15462,9 @@ window.game = this;
       }
       // Floor Group Visibility Culling: Only render architecture & furniture on the current floor (and adjacent floor when in stairwell)
       this.updateFloorGroupVisibility();
+      if (this.burningBookMountain && typeof this.updateBurningMountain === 'function') {
+        this.updateBurningMountain(0);
+      }
       // Light Culling: Only illuminate point lights for the current active floor!
       // Keep l.visible = true on all floorLights and toggle intensity to 0 on inactive floors so Three.js NUM_POINT_LIGHTS never changes or triggers shader recompilation!
       if (this.floorLights) {
