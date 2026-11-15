@@ -21445,13 +21445,19 @@ window.game = this;
     // =========================================================================
     // BOSTON DYNAMICS ROBOT DOG COMPANION (Living AI, Prowling, Circling, Sitting, Statues Attacking)
     // =========================================================================
+    isPettingZooArea(x, z, fl = 0, pad = 0.6) {
+      // Petting Zoo enclosure on Floor 0: x: 19.0..33.0, z: 8.0..18.0
+      if (fl !== 0) return false;
+      return (x >= (19.0 - pad) && x <= (33.0 + pad) && z >= (8.0 - pad) && z <= (18.0 + pad));
+    }
+
     buildRobotDog(fl, y0, mats) {
       if (fl !== 0) return; // Dog lives on Floor 0 (Ground Floor)
       if (this.robotDog) return;
 
       const group = new THREE.Group();
-      // Spawn Dog initially in the Arts & Music Office / Media Wing area
-      const startX = 22.0;
+      // Spawn Dog initially in the East Main Hall / Arts & Music Stacks area (safely outside Petting Zoo)
+      const startX = 14.0;
       const startZ = 12.0;
       group.position.set(startX, y0, startZ);
 
@@ -21463,9 +21469,9 @@ window.game = this;
         floor: 0,
         x: startX,
         z: startZ,
-        radius: 0.55,
+        radius: 0.42,
         minY: y0,
-        maxY: y0 + 1.2,
+        maxY: y0 + 1.1,
         isRobotDog: true
       };
       if (this.colliders) {
@@ -21484,23 +21490,24 @@ window.game = this;
         baseY: 0,
         aiState: "IDLE", // IDLE, WANDER, CIRCLE, SIT, APPROACH_PLAYER, APPROACH_STATUE, ATTACK_STATUE, BARK_AT_TARGET
         aiTimer: 2.0,
-        walkSpeed: 2.4,
-        runSpeed: 4.5,
-        currentSpeed: 2.4,
+        walkSpeed: 2.2,
+        runSpeed: 3.8,
+        currentSpeed: 2.2,
         circleAngle: 0,
         circleCenter: { x: startX, z: startZ },
-        circleRadius: 2.5,
+        circleRadius: 1.8,
         targetStatue: null,
         targetPlayer: false,
         navPath: null,
         navIndex: 0,
+        stuckTimer: 0,
+        lastPos: { x: startX, z: startZ },
         stairState: { active: null, baseFloor: 0 },
         mixer: null,
         actions: {},
         currentActionName: "Idle",
         stepTimer: 0,
-        stepInterval: 0.32,
-        // Procedural audio buffers
+        stepInterval: 0.35,
         sfx: {
           steps: [
             new Audio(encodeURI("assets/audio/robotdog/servo_step_1.wav")),
@@ -21517,10 +21524,10 @@ window.game = this;
         }
       };
 
-      // Set volume levels: mechanical steps semi-quiet, filtered bark crisp
-      dogObj.sfx.steps.forEach(a => { a.volume = 0.22; a.preload = "auto"; });
-      dogObj.sfx.barks.forEach(a => { a.volume = 0.55; a.preload = "auto"; });
-      dogObj.sfx.attack.volume = 0.50; dogObj.sfx.attack.preload = "auto";
+      // Gentle, non-obnoxious volume levels
+      dogObj.sfx.steps.forEach(a => { a.volume = 0.08; a.preload = "auto"; });
+      dogObj.sfx.barks.forEach(a => { a.volume = 0.20; a.preload = "auto"; });
+      dogObj.sfx.attack.volume = 0.16; dogObj.sfx.attack.preload = "auto";
 
       const gltfLoader = new THREE.GLTFLoader();
       const dogModelPath = "assets/RobotDog.glb";
@@ -21534,22 +21541,22 @@ window.game = this;
               const matsList = Array.isArray(child.material) ? child.material : [child.material];
               matsList.forEach(m => {
                 m.side = THREE.DoubleSide;
-                if (typeof m.metalness === 'number') m.metalness = 0.35;
-                if (typeof m.roughness === 'number') m.roughness = 0.38;
+                if (typeof m.metalness === 'number') m.metalness = 0.30;
+                if (typeof m.roughness === 'number') m.roughness = 0.42;
               });
             }
           });
 
-          // Model faces +X originally in Blender; in Three.js forward movement is along +Z, so rotate -PI/2
+          // Model faces +X originally in Blender; in Three.js forward movement is along +Z, rotate -PI/2
           model.rotation.y = -Math.PI / 2;
 
-          // Scale to realistic Boston Dynamics Spot proportions (~0.84m tall at shoulder, ~1.1m long)
+          // Scale to realistic Boston Dynamics Spot proportions (~0.84m tall)
           model.updateMatrixWorld(true);
           const box = new THREE.Box3().setFromObject(model);
           const size = new THREE.Vector3();
           box.getSize(size);
           const currentH = Math.max(0.001, size.y);
-          const targetH = 0.88; // Realistic Spot height
+          const targetH = 0.85;
           const normScale = targetH / currentH;
           model.scale.set(normScale, normScale, normScale);
           model.updateMatrixWorld(true);
@@ -21563,11 +21570,10 @@ window.game = this;
 
           dogRoot.add(model);
 
-          // Setup Animations via AnimationMixer
+          // Setup Animations
           if (gltf.animations && gltf.animations.length > 0) {
             dogObj.mixer = new THREE.AnimationMixer(model);
             gltf.animations.forEach(clip => {
-              // Normalize clip name e.g. "Walk_RobotDog_Armature" -> "Walk"
               let cleanName = clip.name;
               ['Idle', 'Walk', 'Run', 'Sit', 'Bark', 'Attack', 'Curious'].forEach(n => {
                 if (clip.name.toLowerCase().includes(n.toLowerCase())) cleanName = n;
@@ -21618,44 +21624,78 @@ window.game = this;
         : audioList;
       if (!audio) return;
 
-      // Spatial distance attenuation based on player camera distance
       const dx = (pos ? pos.x : 0) - this.playerPos.x;
       const dz = (pos ? pos.z : 0) - this.playerPos.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 35.0) return; // Too far
+      if (dist > 28.0) return; // Too far to hear soft mechanical noise
 
-      const atten = Math.max(0.02, Math.min(1.0, 1.0 - (dist / 32.0)));
+      // Smooth distance attenuation (cubic dropoff)
+      const atten = Math.max(0.0, Math.pow(1.0 - (dist / 28.0), 2.2));
+      if (atten <= 0.01) return;
+
       try {
         const clone = audio.cloneNode();
-        clone.volume = Math.min(1.0, (audio.volume || 0.4) * atten);
+        clone.volume = Math.max(0.01, Math.min(1.0, (audio.volume || 0.15) * atten));
         clone.play().catch(() => {});
       } catch (e) {}
     }
 
     pickDogWanderNode(dog) {
       if (!this.navNodes || this.navNodes.length === 0) return null;
-      // Primary territory: Arts & Music (East Hall) & Media Wing on Floor 0
-      // East Main Hall: x: 4..28, z: -26..18
-      // Media Wing: x: 4..28, z: 18..28
-      // Office: x: 19..33, z: 8..18
-      const preferTerritory = Math.random() < 0.72;
+      if (!this.navGrid) this.buildObstacleGrid();
+
+      // Preferred territory: Arts & Music (East Hall) & Media Wing on Floor 0
+      // Strict exclusion: never pick Petting Zoo nodes (x: 19..33, z: 8..18)
+      const preferTerritory = Math.random() < 0.75;
       const pool = this.navNodes.filter(n => {
         if (!this.isRoomNavNode(n) || this.isNearStairwell(n)) return false;
+        // Never wander into or inside Petting Zoo enclosure
+        if (n.floor === 0 && this.isPettingZooArea(n.x, n.z, 0, 0.8)) return false;
+
         if (preferTerritory) {
-          return n.floor === 0 && (n.x >= 3.5 && n.x <= 31.0 && n.z >= -24.0 && n.z <= 27.0);
+          // East Main Hall (4..27, -24..7) and South-East Media Wing (4..27, 19..28)
+          const inEastHall = (n.x >= 5.0 && n.x <= 26.5 && n.z >= -24.0 && n.z <= 6.5);
+          const inMediaWing = (n.x >= 5.0 && n.x <= 26.5 && n.z >= 19.0 && n.z <= 27.5);
+          return n.floor === 0 && (inEastHall || inMediaWing);
         }
         return n.floor === dog.floor;
       });
 
       if (pool.length === 0) {
-        return this.navNodes.find(n => n.floor === dog.floor && this.isRoomNavNode(n)) || null;
+        return this.navNodes.find(n => n.floor === dog.floor && this.isRoomNavNode(n) && !this.isPettingZooArea(n.x, n.z, n.floor, 0.8)) || null;
       }
       return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    findDogPath(dog, targetX, targetZ, targetFloor = 0) {
+      if (!this.navNodes || this.navNodes.length === 0) return null;
+      if (!this.navGrid) this.buildObstacleGrid();
+
+      // Clamp goal outside petting zoo if needed
+      let gx = targetX, gz = targetZ;
+      if (this.isPettingZooArea(gx, gz, targetFloor, 0.8)) {
+        gx = 16.0; gz = 13.0; // Stand right outside the entrance gate
+      }
+
+      const startId = this.findNearestNavNode({ x: dog.x, z: dog.z }, dog.floor);
+      const goalId = this.findNearestNavNode({ x: gx, z: gz }, targetFloor);
+      if (startId < 0 || goalId < 0) return null;
+
+      const rawPath = this.findShortestPath(startId, goalId);
+      if (!rawPath || rawPath.length === 0) return null;
+
+      // Filter out any intermediate nodes that accidentally cut through the petting zoo
+      const safeRawPath = rawPath.filter(n => !(n.floor === 0 && this.isPettingZooArea(n.x, n.z, 0, 0.6)));
+      if (safeRawPath.length === 0) return null;
+
+      return this.refineNavPath(safeRawPath, { x: dog.x, z: dog.z }, dog.floor);
     }
 
     updateRobotDog(delta) {
       const dog = this.robotDog;
       if (!dog || !dog.group) return;
+
+      if (!this.navGrid) this.buildObstacleGrid();
 
       // Update animation mixer
       if (dog.mixer) dog.mixer.update(delta);
@@ -21666,16 +21706,88 @@ window.game = this;
       const pDist = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
       const isPlayerSameFloor = (this.playerFloor === dog.floor);
 
+      // If dog somehow spawned or ended up inside the Petting Zoo enclosure on floor 0, gently eject him outside gate
+      if (dog.floor === 0 && this.isPettingZooArea(dog.x, dog.z, 0, 0.1)) {
+        dog.x = 16.5;
+        dog.z = 13.0;
+        dog.group.position.set(dog.x, dog.y, dog.z);
+        dog.aiState = "IDLE";
+        dog.aiTimer = 1.0;
+        dog.navPath = null;
+      }
+
       // Footstep sound tick while moving
       const isMoving = (dog.aiState === "WANDER" || dog.aiState === "RUN" || dog.aiState === "CIRCLE" || dog.aiState === "APPROACH_PLAYER" || dog.aiState === "APPROACH_STATUE");
       if (isMoving) {
         dog.stepTimer = (dog.stepTimer || 0) + delta;
-        const interval = (dog.currentSpeed > 3.0) ? 0.22 : 0.32;
+        const interval = (dog.currentSpeed > 3.0) ? 0.24 : 0.35;
         if (dog.stepTimer >= interval) {
           dog.stepTimer = 0;
           this.playDogSound(dog.sfx.steps, dog);
         }
       }
+
+      // Helper function to safely move dog along a vector with fine collision resolution
+      const moveDogStep = (stepX, stepZ, speed) => {
+        const stepDist = Math.hypot(stepX, stepZ);
+        if (stepDist < 0.0001) return;
+
+        let mx = (stepX / stepDist) * Math.min(stepDist, speed * delta);
+        let mz = (stepZ / stepDist) * Math.min(stepDist, speed * delta);
+
+        const targetX = dog.x + mx;
+        const targetZ = dog.z + mz;
+
+        // Never step into the petting zoo fence
+        if (dog.floor === 0 && this.isPettingZooArea(targetX, targetZ, 0, 0.35)) {
+          // Slide tangentially along x=18.5 outside fence
+          mx = 0;
+          if (dog.x > 18.2) dog.x = 18.0;
+        }
+
+        const tempPos = { x: dog.x + mx, y: dog.y, z: dog.z + mz, _ignoreCollider: dog.collider };
+        this.resolveCollisions(tempPos, 0.40, dog.floor, dog.y, 1.1);
+
+        // Stuck detection
+        const actualMoved = Math.hypot(tempPos.x - dog.x, tempPos.z - dog.z);
+        if (actualMoved < 0.008 && stepDist > 0.1) {
+          dog.stuckTimer = (dog.stuckTimer || 0) + delta;
+          if (dog.stuckTimer > 0.6) {
+            dog.stuckTimer = 0;
+            // Unstick: clear path and switch to IDLE or fresh path
+            dog.navPath = null;
+            dog.aiState = "IDLE";
+            dog.aiTimer = 0.5;
+            return;
+          }
+        } else {
+          dog.stuckTimer = 0;
+        }
+
+        dog.x = tempPos.x;
+        dog.z = tempPos.z;
+
+        // Stairwell floor navigation support
+        if (this.updateStairwellElevation) {
+          const elev = this.updateStairwellElevation(dog, dog.stairState, dog.floor, dog.y);
+          dog.y = elev.y;
+          dog.floor = elev.floor;
+        }
+
+        dog.group.position.set(dog.x, dog.y, dog.z);
+
+        if (dog.collider) {
+          dog.collider.x = dog.x;
+          dog.collider.z = dog.z;
+          dog.collider.floor = dog.floor;
+          dog.collider.minY = dog.y;
+          dog.collider.maxY = dog.y + 1.1;
+        }
+
+        const moveYaw = Math.atan2(stepX, stepZ);
+        dog.yaw = this.lerpStatueAngle(dog.yaw, moveYaw, Math.min(1, delta * 9.0));
+        dog.group.rotation.y = dog.yaw;
+      };
 
       // STATE MACHINE
       switch (dog.aiState) {
@@ -21684,33 +21796,42 @@ window.game = this;
           dog.currentSpeed = 0;
 
           if (dog.aiTimer <= 0) {
-            // Pick next spontaneous dog behavior!
             const roll = Math.random();
             if (isPlayerSameFloor && pDist < 12.0 && roll < 0.30) {
-              // Run enthusiastically up to the player!
+              // Run enthusiastically up to the player using navmesh!
               dog.aiState = "APPROACH_PLAYER";
-              dog.aiTimer = 6.0 + Math.random() * 4.0;
-            } else if (roll < 0.45) {
-              // Happy playful circle spin
-              dog.aiState = "CIRCLE";
-              dog.circleCenter = { x: dog.x, z: dog.z };
-              dog.circleRadius = 1.2 + Math.random() * 1.5;
-              dog.circleAngle = dog.yaw;
-              dog.circleDirection = Math.random() < 0.5 ? 1 : -1;
-              dog.aiTimer = 3.5 + Math.random() * 4.0;
-              this.playDogAction(dog, "Run", 0.2);
-            } else if (roll < 0.60) {
-              // Sit down like a good obedient robot dog
+              dog.aiTimer = 7.0 + Math.random() * 4.0;
+              dog.navPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
+              dog.navIndex = 0;
+            } else if (roll < 0.44) {
+              // Playful circle spin (only if center is obstacle-free)
+              const freeSpace = !this.gridBlocked(dog.floor, dog.x + 1.5, dog.z) && !this.gridBlocked(dog.floor, dog.x - 1.5, dog.z);
+              if (freeSpace && !this.isPettingZooArea(dog.x, dog.z, dog.floor, 1.2)) {
+                dog.aiState = "CIRCLE";
+                dog.circleCenter = { x: dog.x, z: dog.z };
+                dog.circleRadius = 1.3 + Math.random() * 0.8;
+                dog.circleAngle = dog.yaw;
+                dog.circleDirection = Math.random() < 0.5 ? 1 : -1;
+                dog.aiTimer = 3.0 + Math.random() * 3.0;
+                this.playDogAction(dog, "Run", 0.2);
+              } else {
+                dog.aiState = "WANDER";
+                dog.aiTimer = 10.0;
+              }
+            } else if (roll < 0.58) {
+              // Sit down like a good robot dog
               dog.aiState = "SIT";
-              dog.aiTimer = 5.0 + Math.random() * 7.0;
+              dog.aiTimer = 4.0 + Math.random() * 5.0;
               this.playDogAction(dog, "Sit", 0.4);
             } else if (this.statues && this.statues.length > 0 && roll < 0.78) {
-              // Target a nearby living statue!
-              const nearbyStatues = this.statues.filter(s => s.floor === dog.floor);
+              // Target a nearby living statue
+              const nearbyStatues = this.statues.filter(s => s.floor === dog.floor && s.group && s.group.visible);
               if (nearbyStatues.length > 0) {
                 dog.targetStatue = nearbyStatues[Math.floor(Math.random() * nearbyStatues.length)];
                 dog.aiState = "APPROACH_STATUE";
                 dog.aiTimer = 12.0;
+                dog.navPath = this.findDogPath(dog, dog.targetStatue.x, dog.targetStatue.z, dog.floor);
+                dog.navIndex = 0;
               } else {
                 dog.aiState = "WANDER";
                 dog.aiTimer = 10.0;
@@ -21718,14 +21839,11 @@ window.game = this;
             } else {
               // Normal explore / wander
               dog.aiState = "WANDER";
-              dog.aiTimer = 10.0 + Math.random() * 15.0;
+              dog.aiTimer = 12.0 + Math.random() * 12.0;
               const targetNode = this.pickDogWanderNode(dog);
               if (targetNode) {
-                const startId = this.findNearestNavNode({ x: dog.x, z: dog.z }, dog.floor);
-                if (startId >= 0) {
-                  dog.navPath = this.refineNavPath(this.findShortestPath(startId, targetNode.id), { x: dog.x, z: dog.z }, dog.floor);
-                  dog.navIndex = 0;
-                }
+                dog.navPath = this.findDogPath(dog, targetNode.x, targetNode.z, targetNode.floor);
+                dog.navIndex = 0;
               }
             }
           }
@@ -21733,7 +21851,6 @@ window.game = this;
         }
 
         case "SIT": {
-          // Stay seated, head tilted, watching player if nearby
           if (isPlayerSameFloor && pDist < 7.0) {
             const lookYaw = Math.atan2(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
             dog.yaw = this.lerpStatueAngle(dog.yaw, lookYaw, Math.min(1, delta * 6.0));
@@ -21747,10 +21864,9 @@ window.game = this;
         }
 
         case "CIRCLE": {
-          // Playful dog running in happy circles
           dog.currentSpeed = dog.runSpeed;
           this.playDogAction(dog, "Run", 0.2);
-          const circleAngularSpeed = 3.6 * (dog.circleDirection || 1);
+          const circleAngularSpeed = 3.2 * (dog.circleDirection || 1);
           dog.circleAngle += circleAngularSpeed * delta;
 
           const targetX = dog.circleCenter.x + Math.cos(dog.circleAngle) * dog.circleRadius;
@@ -21758,22 +21874,13 @@ window.game = this;
 
           const stepX = targetX - dog.x;
           const stepZ = targetZ - dog.z;
-          const targetYaw = Math.atan2(stepX, stepZ);
-          dog.yaw = this.lerpStatueAngle(dog.yaw, targetYaw, Math.min(1, delta * 12.0));
-          dog.group.rotation.y = dog.yaw;
-
-          const tempPos = { x: targetX, y: dog.y, z: targetZ, _ignoreCollider: dog.collider };
-          this.resolveCollisions(tempPos, 0.45, dog.floor, dog.y, 1.2);
-          dog.x = tempPos.x;
-          dog.z = tempPos.z;
-          dog.group.position.set(dog.x, dog.y, dog.z);
+          moveDogStep(stepX, stepZ, dog.runSpeed);
 
           if (dog.aiTimer <= 0) {
-            // End circle with a playful robotic bark
             this.playDogSound(dog.sfx.barks, dog);
             this.playDogAction(dog, "Bark", 0.1);
             dog.aiState = "IDLE";
-            dog.aiTimer = 1.8;
+            dog.aiTimer = 1.5;
           }
           break;
         }
@@ -21782,31 +21889,38 @@ window.game = this;
           this.playDogAction(dog, "Run", 0.2);
           dog.currentSpeed = dog.runSpeed;
 
-          const dx = this.playerPos.x - dog.x;
-          const dz = this.playerPos.z - dog.z;
-          const dist = Math.hypot(dx, dz);
-
-          if (dist <= 1.8 || dog.aiTimer <= 0) {
-            // Reached player! Stop, look up, bark or act curious!
+          const directDist = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+          if (directDist <= 2.0 || dog.aiTimer <= 0) {
             dog.aiState = Math.random() < 0.5 ? "BARK_AT_TARGET" : "CURIOUS_PLAYER";
-            dog.aiTimer = 2.4;
+            dog.aiTimer = 2.2;
             dog.targetPlayer = true;
             return;
           }
 
-          const step = Math.min(dist, dog.currentSpeed * delta);
-          let moveX = (dx / dist) * step;
-          let moveZ = (dz / dist) * step;
+          // Follow navmesh towards player
+          if (!dog.navPath || dog.navIndex >= dog.navPath.length) {
+            dog.navPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
+            dog.navIndex = 0;
+            if (!dog.navPath) {
+              dog.aiState = "IDLE";
+              dog.aiTimer = 1.0;
+              return;
+            }
+          }
 
-          const tempPos = { x: dog.x + moveX, y: dog.y, z: dog.z + moveZ, _ignoreCollider: dog.collider };
-          this.resolveCollisions(tempPos, 0.45, dog.floor, dog.y, 1.2);
-          dog.x = tempPos.x;
-          dog.z = tempPos.z;
-          dog.group.position.set(dog.x, dog.y, dog.z);
+          const wp = dog.navPath[dog.navIndex];
+          const distToWp = Math.hypot(wp.x - dog.x, wp.z - dog.z);
+          if (distToWp < 0.7) {
+            dog.navIndex++;
+            if (dog.navIndex >= dog.navPath.length) {
+              dog.aiState = "CURIOUS_PLAYER";
+              dog.aiTimer = 2.0;
+              return;
+            }
+          }
 
-          const moveYaw = Math.atan2(dx, dz);
-          dog.yaw = this.lerpStatueAngle(dog.yaw, moveYaw, Math.min(1, delta * 10.0));
-          dog.group.rotation.y = dog.yaw;
+          const curWp = dog.navPath[dog.navIndex];
+          moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.runSpeed);
           break;
         }
 
@@ -21817,9 +21931,9 @@ window.game = this;
           dog.group.rotation.y = dog.yaw;
 
           if (dog.aiTimer <= 0) {
-            if (Math.random() < 0.6) {
+            if (Math.random() < 0.55) {
               dog.aiState = "BARK_AT_TARGET";
-              dog.aiTimer = 1.5;
+              dog.aiTimer = 1.4;
             } else {
               dog.aiState = "IDLE";
               dog.aiTimer = 1.0;
@@ -21839,36 +21953,43 @@ window.game = this;
           this.playDogAction(dog, "Run", 0.2);
           dog.currentSpeed = dog.runSpeed;
 
-          const dx = st.x - dog.x;
-          const dz = st.z - dog.z;
-          const dist = Math.hypot(dx, dz);
-
-          if (dist <= 1.9 || dog.aiTimer <= 0) {
-            // Close to statue! Decide whether to attack or bark!
+          const directDist = Math.hypot(st.x - dog.x, st.z - dog.z);
+          if (directDist <= 2.2 || dog.aiTimer <= 0) {
             if (Math.random() < 0.65) {
               dog.aiState = "ATTACK_STATUE";
-              dog.aiTimer = 2.0;
+              dog.aiTimer = 1.8;
             } else {
               dog.aiState = "BARK_AT_TARGET";
-              dog.aiTimer = 2.0;
+              dog.aiTimer = 1.8;
               dog.targetPlayer = false;
             }
             return;
           }
 
-          const step = Math.min(dist, dog.currentSpeed * delta);
-          let moveX = (dx / dist) * step;
-          let moveZ = (dz / dist) * step;
+          // Follow obstacle-aware path
+          if (!dog.navPath || dog.navIndex >= dog.navPath.length) {
+            dog.navPath = this.findDogPath(dog, st.x, st.z, dog.floor);
+            dog.navIndex = 0;
+            if (!dog.navPath) {
+              dog.aiState = "IDLE";
+              dog.aiTimer = 1.0;
+              return;
+            }
+          }
 
-          const tempPos = { x: dog.x + moveX, y: dog.y, z: dog.z + moveZ, _ignoreCollider: dog.collider };
-          this.resolveCollisions(tempPos, 0.45, dog.floor, dog.y, 1.2);
-          dog.x = tempPos.x;
-          dog.z = tempPos.z;
-          dog.group.position.set(dog.x, dog.y, dog.z);
+          const wp = dog.navPath[dog.navIndex];
+          const distToWp = Math.hypot(wp.x - dog.x, wp.z - dog.z);
+          if (distToWp < 0.7) {
+            dog.navIndex++;
+            if (dog.navIndex >= dog.navPath.length) {
+              dog.aiState = "ATTACK_STATUE";
+              dog.aiTimer = 1.8;
+              return;
+            }
+          }
 
-          const moveYaw = Math.atan2(dx, dz);
-          dog.yaw = this.lerpStatueAngle(dog.yaw, moveYaw, Math.min(1, delta * 10.0));
-          dog.group.rotation.y = dog.yaw;
+          const curWp = dog.navPath[dog.navIndex];
+          moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.runSpeed);
           break;
         }
 
@@ -21877,7 +21998,6 @@ window.game = this;
           if (!dog.attackSoundPlayed) {
             dog.attackSoundPlayed = true;
             this.playDogSound(dog.sfx.attack, dog);
-            // Apply comical recoil to statue if nearby!
             const st = dog.targetStatue;
             if (st && st.statueRoot) {
               const rdx = st.x - dog.x;
@@ -21894,9 +22014,8 @@ window.game = this;
 
           if (dog.aiTimer <= 0) {
             dog.attackSoundPlayed = false;
-            // Bark triumphantly after attack
             dog.aiState = "BARK_AT_TARGET";
-            dog.aiTimer = 1.5;
+            dog.aiTimer = 1.4;
           }
           break;
         }
@@ -21908,7 +22027,6 @@ window.game = this;
             this.playDogSound(dog.sfx.barks, dog);
           }
 
-          // Face the target (player or statue)
           const target = dog.targetPlayer ? this.playerPos : (dog.targetStatue || this.playerPos);
           if (target) {
             const lookYaw = Math.atan2(target.x - dog.x, target.z - dog.z);
@@ -21919,7 +22037,7 @@ window.game = this;
           if (dog.aiTimer <= 0) {
             dog.barkSoundPlayed = false;
             dog.aiState = "IDLE";
-            dog.aiTimer = 1.5;
+            dog.aiTimer = 1.4;
           }
           break;
         }
@@ -21930,64 +22048,19 @@ window.game = this;
 
           if (!dog.navPath || dog.navIndex >= dog.navPath.length || dog.aiTimer <= 0) {
             dog.aiState = "IDLE";
-            dog.aiTimer = 2.0 + Math.random() * 3.0;
+            dog.aiTimer = 1.5 + Math.random() * 2.5;
             return;
           }
 
           const wp = dog.navPath[dog.navIndex];
-          const dx = wp.x - dog.x;
-          const dz = wp.z - dog.z;
-          const dist = Math.hypot(dx, dz);
+          const dist = Math.hypot(wp.x - dog.x, wp.z - dog.z);
 
-          if (dist < 0.6) {
+          if (dist < 0.65) {
             dog.navIndex++;
             return;
           }
 
-          const speed = dog.currentSpeed;
-          let stepX = (dx / dist) * speed * delta;
-          let stepZ = (dz / dist) * speed * delta;
-
-          const tempPos = { x: dog.x + stepX, y: dog.y, z: dog.z + stepZ, _ignoreCollider: dog.collider };
-          this.resolveCollisions(tempPos, 0.45, dog.floor, dog.y, 1.2);
-
-          // Avoid colliding with statues
-          if (this.statues) {
-            for (let other of this.statues) {
-              if (other.floor !== dog.floor) continue;
-              const odx = tempPos.x - other.x;
-              const odz = tempPos.z - other.z;
-              const od = Math.hypot(odx, odz);
-              if (od < 1.4 && od > 0.001) {
-                tempPos.x += (odx / od) * (1.4 - od);
-                tempPos.z += (odz / od) * (1.4 - od);
-              }
-            }
-          }
-
-          dog.x = tempPos.x;
-          dog.z = tempPos.z;
-
-          // Stairwell floor navigation support
-          if (this.updateStairwellElevation) {
-            const elev = this.updateStairwellElevation(dog, dog.stairState, dog.floor, dog.y);
-            dog.y = elev.y;
-            dog.floor = elev.floor;
-          }
-
-          dog.group.position.set(dog.x, dog.y, dog.z);
-
-          if (dog.collider) {
-            dog.collider.x = dog.x;
-            dog.collider.z = dog.z;
-            dog.collider.floor = dog.floor;
-            dog.collider.minY = dog.y;
-            dog.collider.maxY = dog.y + 1.2;
-          }
-
-          const moveYaw = Math.atan2(dx, dz);
-          dog.yaw = this.lerpStatueAngle(dog.yaw, moveYaw, Math.min(1, delta * 9.0));
-          dog.group.rotation.y = dog.yaw;
+          moveDogStep(wp.x - dog.x, wp.z - dog.z, dog.walkSpeed);
           break;
         }
       }
