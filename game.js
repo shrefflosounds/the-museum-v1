@@ -4490,7 +4490,8 @@ window.game = this;
         wallConcrete: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 10, 2, 0x888e96),
         mahogany: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/mahogany_wood.jpg', 4, 2, 0x6e4730),
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
-        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/stone_tiles.jpg', 2, 2, 0xd8d4cd),
+        stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 2, 2, 0xdcd6cb),
+        stairWall: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/gallery_plaster.jpg', 6, 2, 0xd4cec3),
         carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
         wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc),
         wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x6e1b28),
@@ -4504,6 +4505,11 @@ window.game = this;
       mats.ceiling.emissive = new THREE.Color(0x322f28);
       mats.ceiling.shininess = 16;
       mats.ceiling.specular = new THREE.Color(0x222222);
+
+      mats.stairStone.shininess = 4;
+      mats.stairStone.specular = new THREE.Color(0x181818);
+      mats.stairWall.shininess = 6;
+      mats.stairWall.specular = new THREE.Color(0x202020);
 
       // Build all 4 floors of the Museum into dedicated per-floor groups so only the active floor(s) are rendered
       this.floorGroups = [];
@@ -5003,7 +5009,7 @@ window.game = this;
 
       // --- 1. NORTH-CENTRAL U-STAIRWELL (x: -4..4, z: -26..-14) ---
       // Stop the divider short of both landings so the player can turn between flights.
-      this.createWall(0, midY, -20.0, 0.34, totalH, 6.40, mats.wallConcrete, true, 'all');
+      this.createWall(0, midY, -20.0, 0.34, totalH, 6.40, mats.stairWall, true, 'all');
       this.createCeiling(0, totalH - 0.06, -20, 8.0, 12.0, mats.ceiling);
 
       // Solid pit floor under Stairwell B on Floor 0 so looking down between flights never exposes the void
@@ -5090,9 +5096,9 @@ window.game = this;
         isWall: true
       });
       // --- 2. SOUTH-WEST GRAND U-STAIRWELL (x: -24..-16, z: 18..28) ---
-      this.createWall(-20, midY, 28, 7.6, totalH, t, mats.wallConcrete, true, 'all');
+      this.createWall(-20, midY, 28, 7.6, totalH, t, mats.stairWall, true, 'all');
       // Leave turning clearance at south mid-landing (z: 25.6..28.0), but extend to z = 20.80 to seamlessly abut the north landing box with zero shaft gap!
-      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.80, mats.wallConcrete, true, 'all');
+      this.createWall(-20, midY, 23.2, 0.34, totalH, 4.80, mats.stairWall, true, 'all');
       this.createCeiling(-20, totalH - 0.06, 23, 8.0, 10.0, mats.ceiling);
 
       // Solid pit floor under Stairwell A on Floor 0 so looking down between flights never exposes the void
@@ -8453,7 +8459,7 @@ window.game = this;
         this.scene.add(sprinklerGroup);
 
         // Constant Water Sprinkler Particle System (spraying droplets over the fire)
-        const dropletCount = 140;
+        const dropletCount = 70;
         const dropletGeo = new THREE.BufferGeometry();
         const dropletPos = new Float32Array(dropletCount * 3);
         const sprinklerDroplets = [];
