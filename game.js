@@ -4775,26 +4775,66 @@ window.game = this;
       // The outer exterior perimeter wall of the museum at x = 33 (z: 7.8..18.2) is permanent across ALL floors,
       // preventing any exposure or opening to the outer void behind the map.
       // Additionally, the boundary walls at z = 8 (x: 19.2..32.8) and z = 18 (x: 19.2..32.8) define the exhibit space.
-      // On Floor 0 (Petting Zoo) and Floor 1 (Burning Mountain of Books), these walls use clean main gallery plaster (mainWallMat)
-      // and the interior west dividing wall is kept open to integrate seamlessly with the main hall and the petting zoo ranch fence.
-      // On Floors 2 & 3, the classic office partition walls and doorways are retained.
       if (fl <= 1) {
+        // Floor 0 (Petting Zoo) & Floor 1 (Burning Mountain of Books): open interior west partition
         // Exterior perimeter wall of the museum building (seals East boundary from the void)
         this.createWall(33, yc, 13, t, wallH, 10.4, mainWallMat, true, fl);       // 7.8..18.2
         // Alcove exterior returns at x: 28.2..32.8 sealing the perimeter alcove with the exterior wall
         this.createWall(30.5, yc, 8, 4.6, wallH, t, mainWallMat, true, fl);        // 28.2..32.8
         this.createWall(30.5, yc, 18, 4.6, wallH, t, mainWallMat, true, fl);       // 28.2..32.8
-      } else {
-        this.createWall(26.0, yc, 8, 13.6, wallH, t, accentWallMat, true, fl);      // 19.2..32.8
-        this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);       // 7.8..18.2
-        // West wall of Office (x = 19, z: 7.8..18.2) with doorway at z: 11.5..14.5
+      } else if (fl === 2) {
+        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with ENTRANCES ON ALL SIDES + TOP FRONT SIGN
+        // North Wall (z = 8, x: 19.2..32.8): Central doorway at x: 24.5..27.5
+        this.createWall(21.85, yc, 8, 5.3, wallH, t, accentWallMat, true, fl);      // 19.2..24.5
+        this.createWall(30.15, yc, 8, 5.3, wallH, t, accentWallMat, true, fl);      // 27.5..32.8
+        this.createLintel(26.0, y0, 8, 3.0, t, ceilH, accentWallMat);
+
+        // South Wall (z = 18, x: 19.2..32.8): Central doorway at x: 24.5..27.5 into South-East Wing
+        this.createWall(21.85, yc, 18, 5.3, wallH, t, accentWallMat, true, fl);     // 19.2..24.5
+        this.createWall(30.15, yc, 18, 5.3, wallH, t, accentWallMat, true, fl);     // 27.5..32.8
+        this.createLintel(26.0, y0, 18, 3.0, t, ceilH, accentWallMat);
+
+        // West Wall (x = 19, z: 7.8..18.2): Central entrance doorway at z: 11.5..14.5 into East Main Hall
         this.createWall(19, yc, 9.65, t, wallH, 3.7, accentWallMat, true, fl);      // 7.8..11.5
         this.createWall(19, yc, 16.35, t, wallH, 3.7, accentWallMat, true, fl);     // 14.5..18.2
-        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);             // 11.5..14.5
-        // South wall of Office (z = 18, x: 19.2..32.8) with doorway at x: 21.5..24.5 into South-East Wing
-        this.createWall(20.35, yc, 18, 2.3, wallH, t, accentWallMat, true, fl);     // 19.2..21.5
-        this.createWall(28.65, yc, 18, 8.3, wallH, t, accentWallMat, true, fl);     // 24.5..32.8
-        this.createLintel(23.0, y0, 18, 3.0, t, ceilH, accentWallMat);              // 21.5..24.5
+        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, accentWallMat);
+
+        // East Wall (x = 33, z: 7.8..18.2): Exterior museum perimeter must stay solid to protect map boundary
+        // Entrance alcove portal recessed at x = 32.8 (z: 11.5..14.5) with arched portal frame & interior service door
+        this.createWall(33, yc, 13, t, wallH, 10.4, accentWallMat, true, fl);
+        this.createLintelZ(32.8, y0, 13.0, t, 3.0, ceilH, accentWallMat);
+        const eastPortalBack = new THREE.Mesh(new THREE.BoxGeometry(0.08, 3.0, 2.96), mats.mahogany);
+        eastPortalBack.position.set(32.96, y0 + 1.5, 13.0);
+        this.scene.add(eastPortalBack);
+
+        // Top Front Sign: Display provided logo/sign PNG on top front of the room's box facing the gallery (x: 19, z: 13, y: y0 + 4.2)
+        this.buildEastOfficeSign(18.78, y0 + 4.10, 13.0, Math.PI / 2, 4.4, 2.475);
+      } else {
+        // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON WITH WINDOWS ON ALL SIDES & BONES
+        const dungeonStoneMat = mats.wallBrick || accentWallMat;
+        // North Wall (z = 8, x: 19.2..32.8): Stone wall with barred arched dungeon window
+        this.createWall(21.5, yc, 8, 4.6, wallH, t, dungeonStoneMat, true, fl);      // 19.2..23.8
+        this.createWall(30.5, yc, 8, 4.6, wallH, t, dungeonStoneMat, true, fl);      // 28.2..32.8
+        this.createWall(26.0, y0 + 0.6, 8, 4.4, 1.2, t, dungeonStoneMat, true, fl); // Sill below window
+        this.createLintel(26.0, y0, 8, 4.4, t, ceilH, dungeonStoneMat, 3.6);         // Header above window
+        this.createDungeonBarredWindow(26.0, y0 + 2.4, 8.0, 4.4, 2.4, 'z');
+
+        // South Wall (z = 18, x: 19.2..32.8): Stone wall with barred arched dungeon window
+        this.createWall(21.5, yc, 18, 4.6, wallH, t, dungeonStoneMat, true, fl);     // 19.2..23.8
+        this.createWall(30.5, yc, 18, 4.6, wallH, t, dungeonStoneMat, true, fl);     // 28.2..32.8
+        this.createWall(26.0, y0 + 0.6, 18, 4.4, 1.2, t, dungeonStoneMat, true, fl); // Sill below window
+        this.createLintel(26.0, y0, 18, 4.4, t, ceilH, dungeonStoneMat, 3.6);        // Header above window
+        this.createDungeonBarredWindow(26.0, y0 + 2.4, 18.0, 4.4, 2.4, 'z');
+
+        // West Wall (x = 19, z: 7.8..18.2): Heavy iron-barred cell door & high observation window
+        this.createWall(19, yc, 9.65, t, wallH, 3.7, dungeonStoneMat, true, fl);     // 7.8..11.5
+        this.createWall(19, yc, 16.35, t, wallH, 3.7, dungeonStoneMat, true, fl);    // 14.5..18.2
+        this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, dungeonStoneMat);            // Lintel above doorway
+        this.createDungeonCellDoor(19.0, y0, 13.0, 3.0, 3.0);
+
+        // East Wall (x = 33, z: 7.8..18.2): Solid perimeter with deeply recessed barred window alcove
+        this.createWall(33, yc, 13, t, wallH, 10.4, dungeonStoneMat, true, fl);
+        this.createDungeonBarredWindow(32.78, y0 + 2.6, 13.0, 3.8, 2.2, 'x', true);
       }
 
       // H. SOUTH-EAST MEDIA & FEATURE FILMS WING (x: -4..28, z: 18..28) + ACCURATE ROTUNDA COLONNADE APSE
@@ -8490,10 +8530,609 @@ window.game = this;
           maxY: y0 + 3.0,
           isWall: false
         });
-      } else {
-        // Floors 2 & 3: Standard Office Desk
+      } else if (fl === 2) {
+        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with four-sided access and executive desk
         this.createInfoDesk(26, y0, 13, mats.mahogany);
+      } else {
+        // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON REWORK WITH WINDOWS ON ALL SIDES & BONES
+        this.buildDungeonEastOffice(y0, mats);
       }
+    }
+
+    buildEastOfficeSign(x, y, z, rotY, w, h) {
+      const group = new THREE.Group();
+      group.position.set(x, y, z);
+      group.rotation.y = rotY;
+
+      const signTex = this.texLoader.load('assets/textures/east_office_sign.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x1f242d,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+      const bracketMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.90,
+        roughness: 0.20
+      });
+      const plateMat = new THREE.MeshBasicMaterial({
+        map: signTex,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+
+      // 1. Sleek metallic mounting backing panel
+      const backPlate = new THREE.Mesh(new THREE.BoxGeometry(w + 0.16, h + 0.14, 0.04), frameMat);
+      backPlate.position.z = -0.02;
+      group.add(backPlate);
+
+      // 2. Brass rim accent bezel
+      const rimTop = new THREE.Mesh(new THREE.BoxGeometry(w + 0.20, 0.03, 0.05), bracketMat);
+      rimTop.position.set(0, (h + 0.14) / 2, -0.01);
+      group.add(rimTop);
+
+      const rimBot = new THREE.Mesh(new THREE.BoxGeometry(w + 0.20, 0.03, 0.05), bracketMat);
+      rimBot.position.set(0, -(h + 0.14) / 2, -0.01);
+      group.add(rimBot);
+
+      // 3. Wall mounting brackets
+      [-w / 2 + 0.35, w / 2 - 0.35].forEach((bx) => {
+        const bracket = new THREE.Mesh(new THREE.BoxGeometry(0.08, h + 0.28, 0.06), bracketMat);
+        bracket.position.set(bx, 0, -0.04);
+        group.add(bracket);
+      });
+
+      // 4. Sign Face Mesh rendering the user-provided PNG
+      const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), plateMat);
+      signMesh.position.z = 0.015;
+      group.add(signMesh);
+
+      this.scene.add(group);
+      return group;
+    }
+
+    createDungeonBarredWindow(x, y, z, width, height, axis = 'z', isBlindAlcove = false) {
+      const windowGroup = new THREE.Group();
+      windowGroup.position.set(x, y, z);
+      if (axis === 'x') {
+        windowGroup.rotation.y = Math.PI / 2;
+      }
+
+      const ironMat = new THREE.MeshStandardMaterial({
+        color: 0x222428,
+        metalness: 0.88,
+        roughness: 0.32
+      });
+      const frameMat = new THREE.MeshStandardMaterial({
+        color: 0x3d3228,
+        roughness: 0.85,
+        metalness: 0.15
+      });
+
+      // Outer window stone/iron casing frame
+      const frameThick = 0.18;
+      const topBar = new THREE.Mesh(new THREE.BoxGeometry(width + frameThick * 2, frameThick, 0.36), frameMat);
+      topBar.position.y = height / 2;
+      windowGroup.add(topBar);
+
+      const botBar = new THREE.Mesh(new THREE.BoxGeometry(width + frameThick * 2, frameThick, 0.36), frameMat);
+      botBar.position.y = -height / 2;
+      windowGroup.add(botBar);
+
+      const leftBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, height, 0.36), frameMat);
+      leftBar.position.x = -width / 2;
+      windowGroup.add(leftBar);
+
+      const rightBar = new THREE.Mesh(new THREE.BoxGeometry(frameThick, height, 0.36), frameMat);
+      rightBar.position.x = width / 2;
+      windowGroup.add(rightBar);
+
+      // Deep dungeon window alcove backing if on exterior perimeter wall
+      if (isBlindAlcove) {
+        const backWall = new THREE.Mesh(
+          new THREE.BoxGeometry(width, height, 0.12),
+          new THREE.MeshStandardMaterial({ color: 0x0f1115, roughness: 0.95 })
+        );
+        backWall.position.z = -0.16;
+        windowGroup.add(backWall);
+      }
+
+      // Vertical heavy iron security bars
+      const barCount = Math.max(3, Math.floor(width / 0.38));
+      const barSpacing = (width - 0.24) / (barCount - 1);
+      for (let b = 0; b < barCount; b++) {
+        const bx = -width / 2 + 0.12 + b * barSpacing;
+        const barMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.024, 0.024, height - 0.04, 12), ironMat);
+        barMesh.position.set(bx, 0, 0);
+        windowGroup.add(barMesh);
+
+        // Forged rivet joints on each bar
+        [-height * 0.28, height * 0.28].forEach((ry) => {
+          const collar = new THREE.Mesh(new THREE.CylinderGeometry(0.038, 0.038, 0.045, 10), ironMat);
+          collar.position.set(bx, ry, 0);
+          windowGroup.add(collar);
+        });
+      }
+
+      // Horizontal reinforcing cross-strut
+      [-height * 0.28, height * 0.28].forEach((hy) => {
+        const hBar = new THREE.Mesh(new THREE.BoxGeometry(width - 0.06, 0.04, 0.04), ironMat);
+        hBar.position.set(0, hy, 0);
+        windowGroup.add(hBar);
+      });
+
+      this.scene.add(windowGroup);
+
+      // Add solid collider across window frame so players and crates cannot clip out through the bars
+      const fl = Math.round(y / CONFIG.FLOOR_HEIGHT);
+      if (this.colliders) {
+        this.colliders.push({
+          type: 'box',
+          floor: fl,
+          minX: axis === 'x' ? x - 0.20 : x - width / 2,
+          maxX: axis === 'x' ? x + 0.20 : x + width / 2,
+          minZ: axis === 'x' ? z - width / 2 : z - 0.20,
+          maxZ: axis === 'x' ? z + width / 2 : z + 0.20,
+          minY: y - height / 2,
+          maxY: y + height / 2
+        });
+      }
+
+      return windowGroup;
+    }
+
+    createDungeonCellDoor(x, y0, z, width, height) {
+      const doorGroup = new THREE.Group();
+      doorGroup.position.set(x, y0, z);
+
+      const ironMat = new THREE.MeshStandardMaterial({
+        color: 0x1f2228,
+        metalness: 0.90,
+        roughness: 0.35
+      });
+      const lockMat = new THREE.MeshStandardMaterial({
+        color: 0xb59445,
+        metalness: 0.85,
+        roughness: 0.28
+      });
+
+      // 1. Heavy iron gate perimeter jamb
+      const postW = 0.12;
+      const leftPost = new THREE.Mesh(new THREE.BoxGeometry(0.36, height, postW), ironMat);
+      leftPost.position.set(0, height / 2, -width / 2 + postW / 2);
+      doorGroup.add(leftPost);
+
+      const rightPost = new THREE.Mesh(new THREE.BoxGeometry(0.36, height, postW), ironMat);
+      rightPost.position.set(0, height / 2, width / 2 - postW / 2);
+      doorGroup.add(rightPost);
+
+      const archTop = new THREE.Mesh(new THREE.BoxGeometry(0.36, postW, width), ironMat);
+      archTop.position.set(0, height - postW / 2, 0);
+      doorGroup.add(archTop);
+
+      // 2. Heavy forged cell gate (ajar at 35 degrees so player can walk freely into the dungeon!)
+      const gateGroup = new THREE.Group();
+      gateGroup.position.set(0, 0, -width / 2 + postW);
+      gateGroup.rotation.y = 0.65; // Ajar ~37 degrees
+
+      const gateWidth = width - postW * 2;
+      const gateFrame = new THREE.Mesh(new THREE.BoxGeometry(0.06, height - postW * 2, 0.06), ironMat);
+      gateFrame.position.set(0, (height - postW * 2) / 2, gateWidth);
+      gateGroup.add(gateFrame);
+
+      const gateTop = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, gateWidth), ironMat);
+      gateTop.position.set(0, height - postW * 1.5, gateWidth / 2);
+      gateGroup.add(gateTop);
+
+      const gateBot = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.06, gateWidth), ironMat);
+      gateBot.position.set(0, 0.06, gateWidth / 2);
+      gateGroup.add(gateBot);
+
+      // Heavy vertical iron bars across the open swinging cell door
+      const numGateBars = 6;
+      for (let gb = 0; gb < numGateBars; gb++) {
+        const barZ = (gb + 1) * (gateWidth / (numGateBars + 1));
+        const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, height - postW * 2.2, 12), ironMat);
+        bar.position.set(0, (height - postW * 2) / 2, barZ);
+        gateGroup.add(bar);
+      }
+
+      // Large medieval padlock & chain on gate
+      const padlock = new THREE.Mesh(new THREE.BoxGeometry(0.08, 0.14, 0.10), lockMat);
+      padlock.position.set(0.06, height * 0.45, gateWidth - 0.08);
+      gateGroup.add(padlock);
+
+      const shackle = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.014, 10, 16, Math.PI), ironMat);
+      shackle.rotation.z = Math.PI;
+      shackle.position.set(0.06, height * 0.45 + 0.08, gateWidth - 0.08);
+      gateGroup.add(shackle);
+
+      doorGroup.add(gateGroup);
+      this.scene.add(doorGroup);
+      return doorGroup;
+    }
+
+    buildDungeonEastOffice(y0, mats) {
+      const dungeonGroup = new THREE.Group();
+      dungeonGroup.position.set(26.0, y0, 13.0);
+
+      const stonePavingTex = this.texLoader.load('assets/textures/stone_tiles.jpg', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(5, 4);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const dungeonFloorMat = new THREE.MeshStandardMaterial({
+        map: stonePavingTex,
+        roughness: 0.92,
+        metalness: 0.08
+      });
+
+      // 1. Dark wet flagstone dungeon floor overlay (x: 19.2..32.8, z: 8.2..17.8)
+      const flagstoneFloor = new THREE.Mesh(new THREE.PlaneGeometry(13.6, 9.6), dungeonFloorMat);
+      flagstoneFloor.rotation.x = -Math.PI / 2;
+      flagstoneFloor.position.y = 0.008;
+      dungeonGroup.add(flagstoneFloor);
+
+      // 2. High-Fidelity Anatomical Bone Material (authentic aged ivory/bone patina)
+      const boneMat = new THREE.MeshStandardMaterial({
+        color: 0xded5c0,
+        roughness: 0.48,
+        metalness: 0.05
+      });
+      const agedBoneMat = new THREE.MeshStandardMaterial({
+        color: 0xbcb098,
+        roughness: 0.62,
+        metalness: 0.04
+      });
+      const ironMat = new THREE.MeshStandardMaterial({
+        color: 0x1f2228,
+        metalness: 0.88,
+        roughness: 0.35
+      });
+
+      // High-Fidelity Anatomical Long Bone Builder (Femur / Tibia with true bi-condylar epiphyses and trochanters)
+      const createAnatomicalLongBone = (length = 0.52, shaftRadius = 0.024) => {
+        const bone = new THREE.Group();
+
+        // Diaphysis: gently curved ergonomic cortical shaft with anatomical cross-section
+        const shaftCurve = new THREE.CatmullRomCurve3([
+          new THREE.Vector3(0, -length * 0.38, 0),
+          new THREE.Vector3(shaftRadius * 0.35, -length * 0.15, shaftRadius * 0.25),
+          new THREE.Vector3(-shaftRadius * 0.20, length * 0.15, -shaftRadius * 0.20),
+          new THREE.Vector3(0, length * 0.38, 0)
+        ]);
+        const shaftGeo = new THREE.TubeGeometry(shaftCurve, 20, shaftRadius, 14, false);
+        bone.add(new THREE.Mesh(shaftGeo, boneMat));
+
+        // Proximal Epiphysis: Spherical femoral head with distinct anatomical neck & greater trochanter
+        const neckGroup = new THREE.Group();
+        neckGroup.position.set(0, length * 0.38, 0);
+
+        const neck = new THREE.Mesh(new THREE.CylinderGeometry(shaftRadius * 0.85, shaftRadius * 1.1, length * 0.12, 12), boneMat);
+        neck.rotation.z = -0.38;
+        neck.position.set(-shaftRadius * 0.9, length * 0.05, 0);
+        neckGroup.add(neck);
+
+        const head = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius * 1.45, 16, 14), boneMat);
+        head.position.set(-shaftRadius * 1.85, length * 0.09, 0);
+        neckGroup.add(head);
+
+        const greaterTrochanter = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius * 1.15, 12, 10), boneMat);
+        greaterTrochanter.scale.set(1.0, 1.4, 0.9);
+        greaterTrochanter.position.set(shaftRadius * 1.1, length * 0.04, 0);
+        neckGroup.add(greaterTrochanter);
+
+        bone.add(neckGroup);
+
+        // Distal Epiphysis: Classic dual rounded condyles separated by the intercondylar fossa
+        const condyleGroup = new THREE.Group();
+        condyleGroup.position.set(0, -length * 0.38, 0);
+
+        const medialCondyle = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius * 1.25, 14, 12), boneMat);
+        medialCondyle.scale.set(0.9, 1.3, 1.4);
+        medialCondyle.position.set(-shaftRadius * 1.05, -shaftRadius * 0.5, 0);
+        condyleGroup.add(medialCondyle);
+
+        const lateralCondyle = new THREE.Mesh(new THREE.SphereGeometry(shaftRadius * 1.25, 14, 12), boneMat);
+        lateralCondyle.scale.set(0.9, 1.3, 1.4);
+        lateralCondyle.position.set(shaftRadius * 1.05, -shaftRadius * 0.5, 0);
+        condyleGroup.add(lateralCondyle);
+
+        bone.add(condyleGroup);
+        return bone;
+      };
+
+      // High-Fidelity Anatomical Human Cranium Builder (Neurocranium, zygomatic arches, maxilla & orbits)
+      const createAnatomicalSkull = (scale = 1.0) => {
+        const skull = new THREE.Group();
+        skull.scale.setScalar(scale);
+
+        // 1. Neurocranium (Cranial Vault): smoothly deformed high-poly organic ellipsoid
+        const craniumGeo = new THREE.SphereGeometry(0.145, 24, 20);
+        craniumGeo.scale(1.0, 1.15, 1.28);
+        const cranium = new THREE.Mesh(craniumGeo, boneMat);
+        cranium.position.set(0, 0.15, -0.015);
+        skull.add(cranium);
+
+        // 2. Facial Splanchnocranium & Maxilla
+        const faceGeo = new THREE.SphereGeometry(0.105, 18, 16);
+        faceGeo.scale(0.92, 1.20, 1.05);
+        const face = new THREE.Mesh(faceGeo, boneMat);
+        face.position.set(0, 0.05, 0.085);
+        skull.add(face);
+
+        // 3. Eye Orbits (carved deep sunken cavity sockets)
+        [-0.046, 0.046].forEach((ox) => {
+          const orbit = new THREE.Mesh(
+            new THREE.SphereGeometry(0.038, 14, 12),
+            new THREE.MeshStandardMaterial({ color: 0x11100e, roughness: 0.95 })
+          );
+          orbit.scale.set(1.0, 1.1, 0.7);
+          orbit.position.set(ox, 0.088, 0.135);
+          skull.add(orbit);
+
+          // Brow ridge supraorbital margin
+          const brow = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.07, 8), boneMat);
+          brow.rotation.z = Math.PI / 2 + (ox > 0 ? -0.2 : 0.2);
+          brow.position.set(ox, 0.125, 0.142);
+          skull.add(brow);
+        });
+
+        // 4. Piriform Nasal Aperture (triangular sunken nasal cavity)
+        const nasal = new THREE.Mesh(
+          new THREE.ConeGeometry(0.024, 0.048, 8),
+          new THREE.MeshStandardMaterial({ color: 0x11100e, roughness: 0.95 })
+        );
+        nasal.rotation.x = Math.PI;
+        nasal.position.set(0, 0.045, 0.155);
+        skull.add(nasal);
+
+        // 5. Bilateral Zygomatic Arches (Cheekbones)
+        [-0.088, 0.088].forEach((zx) => {
+          const cheek = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.085, 8), boneMat);
+          cheek.rotation.x = Math.PI / 3;
+          cheek.position.set(zx, 0.055, 0.075);
+          skull.add(cheek);
+        });
+
+        // 6. Maxillary Dental Arch & Upper Teeth Row
+        const teethArch = new THREE.Mesh(
+          new THREE.TorusGeometry(0.038, 0.012, 8, 14, Math.PI * 0.85),
+          new THREE.MeshStandardMaterial({ color: 0xeeece4, roughness: 0.35 })
+        );
+        teethArch.rotation.x = -Math.PI / 2;
+        teethArch.position.set(0, 0.005, 0.125);
+        skull.add(teethArch);
+
+        // 7. Articulated Mandible (Jawbone)
+        const jaw = new THREE.Mesh(new THREE.TorusGeometry(0.048, 0.018, 8, 14, Math.PI * 0.9), agedBoneMat);
+        jaw.rotation.x = -Math.PI / 2;
+        jaw.position.set(0, -0.042, 0.115);
+        skull.add(jaw);
+
+        return skull;
+      };
+
+      // High-Fidelity Rib Cage / Thoracic Skeleton
+      const createAnatomicalRibCage = (scale = 0.85) => {
+        const thorax = new THREE.Group();
+        thorax.scale.setScalar(scale);
+
+        // Thoracic Vertebrae central spine column
+        for (let v = 0; v < 10; v++) {
+          const vert = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.028, 0.038, 10), boneMat);
+          vert.position.set(0, 0.045 * v, -0.12);
+          thorax.add(vert);
+        }
+
+        // Sternum plate in front
+        const sternum = new THREE.Mesh(new THREE.BoxGeometry(0.036, 0.32, 0.016), boneMat);
+        sternum.position.set(0, 0.22, 0.12);
+        thorax.add(sternum);
+
+        // 8 paired curved ribs sweeping from spine to sternum
+        for (let r = 0; r < 7; r++) {
+          const ry = 0.05 + r * 0.045;
+          const curveR = 0.11 + Math.sin((r / 6) * Math.PI) * 0.05;
+          [-1, 1].forEach((side) => {
+            const ribCurve = new THREE.CatmullRomCurve3([
+              new THREE.Vector3(0, ry + 0.02, -0.11),
+              new THREE.Vector3(side * curveR * 1.35, ry, -0.02),
+              new THREE.Vector3(side * curveR * 1.15, ry - 0.03, 0.08),
+              new THREE.Vector3(side * 0.02, ry - 0.04, 0.12)
+            ]);
+            const ribMesh = new THREE.Mesh(new THREE.TubeGeometry(ribCurve, 14, 0.009, 8, false), boneMat);
+            thorax.add(ribMesh);
+          });
+        }
+        return thorax;
+      };
+
+      // 3. SCATTERED BONES & SKELETON ARTIFACTS HERE AND THERE
+      // A. North-East Corner Bone Cache (Piled femurs, tibias, and human skulls)
+      const neBoneMound = new THREE.Group();
+      neBoneMound.position.set(4.2, 0, -3.2);
+
+      const skullNE1 = createAnatomicalSkull(1.0);
+      skullNE1.position.set(0, 0.12, 0);
+      skullNE1.rotation.set(0.2, 0.8, -0.15);
+      neBoneMound.add(skullNE1);
+
+      const skullNE2 = createAnatomicalSkull(0.92);
+      skullNE2.position.set(0.32, 0.10, -0.25);
+      skullNE2.rotation.set(-0.3, 2.1, 0.4);
+      neBoneMound.add(skullNE2);
+
+      // Crossed and scattered long bones
+      [
+        [0.10, 0.04, 0.20, 0.1, 1.2, 0],
+        [-0.20, 0.05, -0.15, -0.15, 0.4, 0.8],
+        [0.35, 0.06, 0.10, 0.8, -0.6, 0.3],
+        [-0.10, 0.08, 0.35, 0.2, 2.2, 0.1],
+        [0.25, 0.07, -0.40, -0.7, 1.8, -0.2]
+      ].forEach(([bx, by, bz, rx, ry, rz]) => {
+        const bone = createAnatomicalLongBone(0.48, 0.022);
+        bone.position.set(bx, by, bz);
+        bone.rotation.set(rx, ry, rz);
+        neBoneMound.add(bone);
+      });
+      dungeonGroup.add(neBoneMound);
+
+      // B. South-West Corner Chained Skeleton with Rib Cage and Skull
+      const swSkeleton = new THREE.Group();
+      swSkeleton.position.set(-4.5, 0, 3.5);
+
+      const ribCage = createAnatomicalRibCage(0.95);
+      ribCage.position.set(0, 0.18, 0);
+      ribCage.rotation.set(-1.1, 0.3, 0.5);
+      swSkeleton.add(ribCage);
+
+      const skullSW = createAnatomicalSkull(1.05);
+      skullSW.position.set(0.18, 0.14, -0.32);
+      skullSW.rotation.set(0.4, -0.9, 0.2);
+      swSkeleton.add(skullSW);
+
+      // Scattered leg and arm bones near ribcage
+      [
+        [-0.45, 0.04, 0.10, 0.1, 0.7, 0.2],
+        [-0.25, 0.04, 0.55, 0.3, -1.1, 0],
+        [0.40, 0.05, -0.10, -0.2, 1.9, 0.4],
+        [0.60, 0.04, 0.30, 0.4, 0.3, -0.5]
+      ].forEach(([bx, by, bz, rx, ry, rz]) => {
+        const bone = createAnatomicalLongBone(0.50, 0.024);
+        bone.position.set(bx, by, bz);
+        bone.rotation.set(rx, ry, rz);
+        swSkeleton.add(bone);
+      });
+
+      // Wall shackles & hanging iron chains
+      const chainWall = new THREE.Mesh(new THREE.TorusGeometry(0.08, 0.018, 8, 16), ironMat);
+      chainWall.position.set(-0.7, 1.6, 0);
+      chainWall.rotation.y = Math.PI / 2;
+      swSkeleton.add(chainWall);
+      for (let ln = 0; ln < 8; ln++) {
+        const link = new THREE.Mesh(new THREE.TorusGeometry(0.045, 0.012, 6, 12), ironMat);
+        link.position.set(-0.7, 1.5 - ln * 0.07, 0);
+        link.rotation.y = (ln % 2 === 0) ? 0 : Math.PI / 2;
+        swSkeleton.add(link);
+      }
+      dungeonGroup.add(swSkeleton);
+
+      // C. Center-East Solitary Skull & Crossed Bones
+      const centerBones = new THREE.Group();
+      centerBones.position.set(1.5, 0, 1.2);
+
+      const boneCross1 = createAnatomicalLongBone(0.52, 0.024);
+      boneCross1.rotation.set(0, Math.PI / 4, Math.PI / 2);
+      boneCross1.position.y = 0.03;
+      centerBones.add(boneCross1);
+
+      const boneCross2 = createAnatomicalLongBone(0.52, 0.024);
+      boneCross2.rotation.set(0, -Math.PI / 4, Math.PI / 2);
+      boneCross2.position.y = 0.06;
+      centerBones.add(boneCross2);
+
+      const skullCenter = createAnatomicalSkull(1.0);
+      skullCenter.position.set(0, 0.16, 0);
+      skullCenter.rotation.set(0.1, -0.4, 0);
+      centerBones.add(skullCenter);
+
+      dungeonGroup.add(centerBones);
+
+      // D. Heavy Dungeon Torture Rack / Wooden Table in Center
+      const tableGroup = new THREE.Group();
+      tableGroup.position.set(0, 0, -0.5);
+
+      const darkWoodMat = new THREE.MeshStandardMaterial({
+        color: 0x2b1c14,
+        roughness: 0.90,
+        metalness: 0.05
+      });
+      const tableTop = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.12, 1.1), darkWoodMat);
+      tableTop.position.y = 0.72;
+      tableGroup.add(tableTop);
+
+      [[-1.0, -0.4], [1.0, -0.4], [-1.0, 0.4], [1.0, 0.4]].forEach(([tx, tz]) => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.66, 0.14), darkWoodMat);
+        leg.position.set(tx, 0.33, tz);
+        tableGroup.add(leg);
+      });
+
+      // Iron manacles and chain on table
+      [-0.7, 0.7].forEach((mx) => {
+        const manacle = new THREE.Mesh(new THREE.TorusGeometry(0.065, 0.016, 8, 16), ironMat);
+        manacle.position.set(mx, 0.81, 0);
+        manacle.rotation.x = Math.PI / 2;
+        tableGroup.add(manacle);
+      });
+
+      // Skull & femur resting on the wooden rack
+      const tableSkull = createAnatomicalSkull(0.88);
+      tableSkull.position.set(0.4, 0.88, 0.1);
+      tableSkull.rotation.set(-0.2, 1.1, 0.3);
+      tableGroup.add(tableSkull);
+
+      const tableBone = createAnatomicalLongBone(0.44, 0.020);
+      tableBone.position.set(-0.3, 0.80, -0.1);
+      tableBone.rotation.set(0, 0.8, Math.PI / 2);
+      tableGroup.add(tableBone);
+
+      dungeonGroup.add(tableGroup);
+
+      // 4. Atmospheric Dungeon Sconce Torches with warm flickering amber light
+      const torchMat = new THREE.MeshStandardMaterial({ color: 0x111215, metalness: 0.9, roughness: 0.3 });
+      const flameMat = new THREE.MeshBasicMaterial({ color: 0xff7722 });
+
+      [
+        [-6.4, 2.4, 0, Math.PI / 2],
+        [6.4, 2.4, 0, -Math.PI / 2]
+      ].forEach(([tx, ty, tz, rotY]) => {
+        const sconce = new THREE.Group();
+        sconce.position.set(tx, ty, tz);
+        sconce.rotation.y = rotY;
+
+        const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.025, 0.025, 0.28, 8), torchMat);
+        arm.rotation.x = Math.PI / 3;
+        arm.position.set(0, 0.08, 0.12);
+        sconce.add(arm);
+
+        const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.03, 0.12, 10), torchMat);
+        cup.position.set(0, 0.22, 0.22);
+        sconce.add(cup);
+
+        const flame = new THREE.Mesh(new THREE.ConeGeometry(0.05, 0.16, 8), flameMat);
+        flame.position.set(0, 0.33, 0.22);
+        sconce.add(flame);
+
+        const light = new THREE.PointLight(0xff8833, 0.85, 9.0, 1.6);
+        light.position.set(0, 0.35, 0.25);
+        sconce.add(light);
+
+        dungeonGroup.add(sconce);
+      });
+
+      this.scene.add(dungeonGroup);
+
+      // Obstacle collider for the torture rack table
+      const fl = Math.round(y0 / CONFIG.FLOOR_HEIGHT);
+      if (this.colliders) {
+        this.colliders.push({
+          type: 'box',
+          floor: fl,
+          minX: 26.0 - 1.25,
+          maxX: 26.0 + 1.25,
+          minZ: 13.0 - 0.5 - 0.60,
+          maxZ: 13.0 - 0.5 + 0.60,
+          minY: y0,
+          maxY: y0 + 0.85
+        });
+      }
+
+      return dungeonGroup;
     }
 
     updatePettingZoo(delta) {
@@ -10565,10 +11204,7 @@ window.game = this;
 
         if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
         glass.visible = false;
-        const prevFogVis = this.topFloorFogGroup ? this.topFloorFogGroup.visible : false;
-        const prevStairFogVis = this.topFloorStairFogGroup ? this.topFloorStairFogGroup.visible : false;
-        if (this.topFloorFogGroup) this.topFloorFogGroup.visible = false;
-        if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = false;
+        // Keep top floor atmospheric strata and stair trickle fog groups visible so they reflect accurately in the mirror
         this._isRenderingMirrorReflection = true;
         const currentRenderTarget = renderer.getRenderTarget();
         try {
@@ -10580,11 +11216,20 @@ window.game = this;
           renderer.setRenderTarget(currentRenderTarget);
           this._isRenderingMirrorReflection = false;
           glass.visible = true;
-          if (this.topFloorFogGroup) this.topFloorFogGroup.visible = prevFogVis;
-          if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = prevStairFogVis;
         }
-        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
-        if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = fade2; } });
+        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.42) / 0.18, 0, 1);
+        if (this.playerModelRoot) {
+          this.playerModelRoot.visible = (fade2 > 0.001);
+        }
+        if (this.playerModel) {
+          this.playerModel.traverse((c) => {
+            if (c.isMesh && c.material) {
+              c.material.transparent = fade2 < 0.999;
+              c.material.opacity = fade2;
+              c.material.depthWrite = (fade2 > 0.85);
+            }
+          });
+        }
       };
 
       // Collision so the player/NPCs can't walk through the mirror stand
@@ -15415,10 +16060,13 @@ window.game = this;
 
     updatePlayerViewVisibility() {
       const thirdPerson = this.isThirdPersonView();
-      const showHands = !thirdPerson && !this.isSpectatorHudHidden;
+      // When zoomed fully in (thirdPersonCameraDistance <= 0.42), the fake first-person camera is active.
+      // Hide the third-person player model completely so its transparent silhouette / depth buffer cannot clip or appear in front of fog!
+      const zoomedInFakeFirstPerson = thirdPerson && (this.thirdPersonCameraDistance <= 0.42);
+      const showHands = (!thirdPerson || zoomedInFakeFirstPerson) && !this.isSpectatorHudHidden;
       if (this.weaponRig) this.weaponRig.visible = showHands;
       if (this.leftArmRig) this.leftArmRig.visible = showHands;
-      if (this.playerModelRoot) this.playerModelRoot.visible = thirdPerson && !!this.playerModel;
+      if (this.playerModelRoot) this.playerModelRoot.visible = thirdPerson && !zoomedInFakeFirstPerson && !!this.playerModel;
     }
 
     setPlayerViewMode(mode) {
@@ -15699,8 +16347,19 @@ window.game = this;
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / 0.2, 0, 1);
-      if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.transparent = true; c.material.opacity = fade; } });
+      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.42) / 0.18, 0, 1);
+      if (this.playerModelRoot) {
+        this.playerModelRoot.visible = (fade > 0.001);
+      }
+      if (this.playerModel) {
+        this.playerModel.traverse((c) => {
+          if (c.isMesh && c.material) {
+            c.material.transparent = fade < 0.999;
+            c.material.opacity = fade;
+            c.material.depthWrite = (fade > 0.85);
+          }
+        });
+      }
     }
 
     zoomThirdPersonCamera(deltaY) {
