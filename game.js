@@ -4492,7 +4492,9 @@ window.game = this;
         ceiling: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/ceiling_plaster.jpg', 1, 1, 0xf6f3eb),
         stairStone: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/vault_concrete.jpg', 4, 4, 0x9aa0a8),
         carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
-        wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc)
+        wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc),
+        wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x222026),
+        ceilingLibraryCoffered: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_ceiling_coffered.png', 1, 1, 0x181822)
       };
 
       mats.floorDirt.userData = { isDirt: true };
@@ -4580,48 +4582,51 @@ window.game = this;
       const eastOfficeFloorMat = (fl === 2 || fl === 3) ? mats.floorDirt : mats.floorDarkWood;
 
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
-                        : fl === 1 ? mats.wallPlasterWarm
+                        : fl === 1 ? mats.wallDarkLibrary
                         : fl === 2 ? mats.wallPaleWood
                         : mats.wallConcrete;
 
-      const accentWallMat = fl === 2 ? mats.wallPaleWood
+      const accentWallMat = fl === 1 ? mats.wallDarkLibrary
+                          : fl === 2 ? mats.wallPaleWood
                           : fl === 3 ? mats.wallBrick
                           : mats.mahogany;
 
+      const ceilMat = fl === 1 ? mats.ceilingLibraryCoffered : mats.ceiling;
+
       // --- FLOOR SLABS (Exact non-overlapping grid partition — zero overlap at doorways!) ---
       // 1. West Wing Slab (x: -36..-16, z: -6.0..17.80 stopping flush at the north face of the z = 18.0 south wall)
-      this.createSlab(-26, y0, 5.90, 20.0, 23.80, floorMat, mats.ceiling, ceilH);
+      this.createSlab(-26, y0, 5.90, 20.0, 23.80, floorMat, ceilMat, ceilH);
       // 1b. West Wing to West Office doorway floor strip (x: -31.5..-28.5, z: 17.80..18.00)
       this.createFloor(-30.0, y0, 17.90, 3.0, 0.20, floorMat);
-      this.createCeiling(-30.0, y0 + ceilH, 17.90, 3.0, 0.20, mats.ceiling);
+      this.createCeiling(-30.0, y0 + ceilH, 17.90, 3.0, 0.20, ceilMat);
       // 2. West Office / Video Room Slab (x: -34.0..-24.20, z: 18.20..27.80 strictly inside the room walls)
-      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, videoRoomFloorMat, mats.ceiling, ceilH);
+      this.createSlab(-29.10, y0, 23.00, 9.80, 9.60, videoRoomFloorMat, ceilMat, ceilH);
       // 2b. West Office North doorway floor strip (x: -31.5..-28.5, z: 18.00..18.20)
       this.createFloor(-30.0, y0, 18.10, 3.0, 0.20, videoRoomFloorMat);
-      this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, mats.ceiling);
+      this.createCeiling(-30.0, y0 + ceilH, 18.10, 3.0, 0.20, ceilMat);
       // 3. Main Gallery + North Magazine Alcove Slab (x: -15.80..-4.00, z: -18..28 stopping flush at the east face of the x = -16.0 wall)
-      this.createSlab(-9.90, y0, 5, 11.80, 46.0, floorMat, mats.ceiling, ceilH);
+      this.createSlab(-9.90, y0, 5, 11.80, 46.0, floorMat, ceilMat, ceilH);
       // 3b. West Wing to Main Gallery doorway floor strips (x: -16.00..-15.80 at z = -2.0, 6.0, 14.0)
       for (const dz of [-2.0, 6.0, 14.0]) {
         this.createFloor(-15.90, y0, dz, 0.20, 3.0, floorMat);
-        this.createCeiling(-15.90, y0 + ceilH, dz, 0.20, 3.0, mats.ceiling);
+        this.createCeiling(-15.90, y0 + ceilH, dz, 0.20, 3.0, ceilMat);
       }
       // 4. Central Core South of Stairwell N (x: -4..4, z: -13.80..28.00 stopping flush at the south face of the z = -14.0 wall)
-      this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, mats.ceiling, ceilH);
+      this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, ceilMat, ceilH);
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
-      this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, mats.ceiling, ceilH);
+      this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, ceilMat, ceilH);
 
       this.createHallwayMirror(9, 3, y0);
       this.createHallwayMirror(-26, -3, y0);
-      this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, mats.ceiling, ceilH);
+      this.createSlab(12, y0, -41, 12.0, 2.0, floorMat, ceilMat, ceilH);
       // 6. East Main Hall ("Arts & Music / Books") Slab (x: 4..28, z: -26..18) + East Bays (x: 28..33)
-      this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(30.5, y0, -18, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(30.5, y0, -4, 5.0, 8.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(30.5, y0, 13, 5.0, 10.0, eastOfficeFloorMat, mats.ceiling, ceilH);
+      this.createSlab(16, y0, -4, 24.0, 44.0, floorMat, ceilMat, ceilH);
+      this.createSlab(30.5, y0, -18, 5.0, 8.0, floorMat, ceilMat, ceilH);
+      this.createSlab(30.5, y0, -4, 5.0, 8.0, floorMat, ceilMat, ceilH);
+      this.createSlab(30.5, y0, 13, 5.0, 10.0, eastOfficeFloorMat, ceilMat, ceilH);
       // 7. South-East Media Wing Slab (x: 4..28, z: 18..28) + South Beaux-Arts Rotunda (x: 12..26, z: 28..36)
-      this.createSlab(16, y0, 23, 24.0, 10.0, floorMat, mats.ceiling, ceilH);
-      this.createSlab(19, y0, 32, 14.0, 8.0, floorMat, mats.ceiling, ceilH);
+      this.createSlab(16, y0, 23, 24.0, 10.0, floorMat, ceilMat, ceilH);
+      this.createSlab(19, y0, 32, 14.0, 8.0, floorMat, ceilMat, ceilH);
 
       // --- OUTER & INTERIOR ARCHITECTURAL WALLS ---
       // Convention: Z-walls own the 0.4x0.4 corner pillars; X-walls butt flush against the ±X faces of Z-walls (x1+0.2 .. x2-0.2).
@@ -5544,10 +5549,11 @@ window.game = this;
       const t = 0.4;
       const yc = y0 + wallH / 2;
       const mainWallMat = fl === 0 ? mats.wallPlasterCool
-                        : fl === 1 ? mats.wallPlasterWarm
+                        : fl === 1 ? mats.wallDarkLibrary
                         : fl === 2 ? mats.wallPaleWood
                         : mats.wallConcrete;
-      const accentMat = fl === 2 ? mats.wallPaleWood
+      const accentMat = fl === 1 ? mats.wallDarkLibrary
+                      : fl === 2 ? mats.wallPaleWood
                       : fl === 3 ? mats.wallBrick
                       : mats.mahogany;
 
@@ -8016,6 +8022,12 @@ window.game = this;
         const scorchDecalTex = this.texLoader.load('assets/textures/fire/burnt_scorch_organic.png', (tx) => {
           tx.colorSpace = THREE.SRGBColorSpace;
         });
+        const charredPagesTex = this.texLoader.load('assets/textures/fire/charred_book_pages.png', (tx) => {
+          tx.wrapS = THREE.RepeatWrapping;
+          tx.wrapT = THREE.RepeatWrapping;
+          tx.repeat.set(1, 1);
+          tx.colorSpace = THREE.SRGBColorSpace;
+        });
 
         const emberAshMat = new THREE.MeshStandardMaterial({
           map: charredWoodTex,
@@ -8046,7 +8058,7 @@ window.game = this;
         ashFloor.position.set(26.0, y0 + 0.008, 13.0);
         this.scene.add(ashFloor);
 
-        // 2. Mountain of Books Geometry (Tiered Pyre with tumbling burning tomes)
+        // 2. Mountain of Books Geometry (Tiered Pyre with tumbling realistic burning tomes)
         const mountainGroup = new THREE.Group();
         mountainGroup.position.set(26.0, y0, 13.0);
 
@@ -8059,10 +8071,19 @@ window.game = this;
           emissiveIntensity: 0.28
         }));
         const charredPageMat = new THREE.MeshStandardMaterial({
-          color: 0x3a2818,
-          roughness: 0.92,
-          emissive: 0xff4500,
-          emissiveIntensity: 0.32
+          map: charredPagesTex,
+          color: 0xdfd3b8,
+          roughness: 0.90,
+          metalness: 0.05,
+          emissive: 0xff3300,
+          emissiveIntensity: 0.22
+        });
+        const goldEmbossMat = new THREE.MeshStandardMaterial({
+          color: 0xc5a059,
+          roughness: 0.35,
+          metalness: 0.80,
+          emissive: 0x994400,
+          emissiveIntensity: 0.25
         });
 
         // Massive central mound core geometry (stepped rugged mountain slope)
@@ -8082,36 +8103,114 @@ window.game = this;
           mountainGroup.add(coreTier);
         });
 
-        // Clustered book volumes tumbling down all sides of the mountain
-        const bookGeom = new THREE.BoxGeometry(0.58, 0.13, 0.42);
-        const thickBookGeom = new THREE.BoxGeometry(0.74, 0.24, 0.50);
+        // Helper to construct a realistic hardcover book with overhang covers, spine ridge, and recessed charred pages
+        function createDetailedBurningBook(width, thickness, depth, coverMat, pagesMat, goldMat, hasFoil = false, openSpread = false) {
+          const book = new THREE.Group();
+          const coverThick = 0.012;
+          const overhang = 0.016;
 
-        const bookCount = 120;
+          if (!openSpread) {
+            // Closed / partially askew hardcover book
+            // 1. Bottom hardcover board
+            const bottomBoard = new THREE.Mesh(new THREE.BoxGeometry(width, coverThick, depth), coverMat);
+            bottomBoard.position.y = coverThick / 2;
+            book.add(bottomBoard);
+
+            // 2. Top hardcover board
+            const topBoard = new THREE.Mesh(new THREE.BoxGeometry(width, coverThick, depth), coverMat);
+            topBoard.position.y = thickness - coverThick / 2;
+            book.add(topBoard);
+
+            // 3. Curved spine along left edge (-X)
+            const spine = new THREE.Mesh(new THREE.CylinderGeometry(thickness / 2, thickness / 2, depth, 10, 1, false, Math.PI / 2, Math.PI), coverMat);
+            spine.rotation.x = Math.PI / 2;
+            spine.position.set(-width / 2, thickness / 2, 0);
+            book.add(spine);
+
+            // 4. Recessed charred paper page block (fore-edge, top, and bottom indented inside cover)
+            const pageW = width - overhang - 0.02;
+            const pageT = thickness - (coverThick * 2) - 0.004;
+            const pageD = depth - (overhang * 2);
+            const pageBlock = new THREE.Mesh(new THREE.BoxGeometry(pageW, pageT, pageD), pagesMat);
+            pageBlock.position.set(overhang / 2, thickness / 2, 0);
+            book.add(pageBlock);
+
+            // 5. Gilded spine ribs & title tooling band
+            if (hasFoil && goldMat) {
+              for (let r = -0.35; r <= 0.35; r += 0.35) {
+                const rib = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, thickness * 0.95, 8), goldMat);
+                rib.position.set(-width / 2 - 0.005, thickness / 2, r * depth);
+                book.add(rib);
+              }
+            }
+          } else {
+            // Open / curled burning book with splayed pages
+            const wingW = (width - 0.04) / 2;
+            [-1, 1].forEach((side) => {
+              const wingCover = new THREE.Mesh(new THREE.BoxGeometry(wingW, coverThick, depth), coverMat);
+              wingCover.rotation.z = side * 0.28;
+              wingCover.position.set(side * (wingW * 0.48), 0.06, 0);
+              book.add(wingCover);
+
+              const wingPages = new THREE.Mesh(new THREE.BoxGeometry(wingW * 0.92, thickness * 0.45, depth * 0.92), pagesMat);
+              wingPages.rotation.z = side * 0.28;
+              wingPages.position.set(side * (wingW * 0.48), 0.06 + (thickness * 0.22), 0);
+              book.add(wingPages);
+            });
+            const openSpine = new THREE.Mesh(new THREE.BoxGeometry(0.04, coverThick, depth), coverMat);
+            openSpine.position.y = 0.01;
+            book.add(openSpine);
+          }
+
+          return book;
+        }
+
+        // Clustered realistic book volumes tumbling down all sides of the mountain
+        const bookCount = 135;
         for (let b = 0; b < bookCount; b++) {
           const angle = (b * 2.39996);
           const radiusNorm = Math.pow((b + 1) / bookCount, 0.65);
-          const radius = 0.40 + radiusNorm * 2.95;
+          const radius = 0.35 + radiusNorm * 2.95;
           const height = (1.0 - radiusNorm) * 2.95 + (Math.sin(b * 5.1) * 0.20);
           const bx = Math.cos(angle) * radius;
           const bz = Math.sin(angle) * radius;
 
-          const chosenMat = burnBookMats[b % burnBookMats.length];
-          const bMesh = new THREE.Mesh(b % 3 === 0 ? thickBookGeom : bookGeom, chosenMat);
-          // Elevate base height to at least 0.28m so rotated corners never dip below y0 + 0.05m
-          bMesh.position.set(bx, Math.max(0.28, height), bz);
+          const chosenCoverMat = burnBookMats[b % burnBookMats.length];
+          const isThick = (b % 3 === 0);
+          const isOpen = (b % 7 === 0);
+          const hasGold = (b % 2 === 0);
 
-          bMesh.rotation.set(
+          const bkW = isThick ? 0.68 : 0.54;
+          const bkT = isThick ? 0.22 : 0.12;
+          const bkD = isThick ? 0.48 : 0.38;
+
+          const bookObj = createDetailedBurningBook(bkW, bkT, bkD, chosenCoverMat, charredPageMat, goldEmbossMat, hasGold, isOpen);
+          bookObj.position.set(bx, Math.max(0.28, height), bz);
+
+          bookObj.rotation.set(
             (Math.sin(b * 3.3) * 0.45) + (bz / 3.0),
             angle + Math.sin(b * 1.7),
             (Math.cos(b * 4.1) * 0.45) - (bx / 3.0)
           );
-          mountainGroup.add(bMesh);
+          mountainGroup.add(bookObj);
 
+          // Add curled loose burning leaves/pages fluttering on tumbling tomes
           if (b % 4 === 0) {
-            const pageFan = new THREE.Mesh(new THREE.BoxGeometry(0.50, 0.08, 0.38), charredPageMat);
-            pageFan.position.set(bx * 0.98, Math.max(0.30, height + 0.04), bz * 0.98);
-            pageFan.rotation.copy(bMesh.rotation);
-            pageFan.rotation.y += 0.25;
+            const loosePageGeo = new THREE.PlaneGeometry(0.36, 0.26, 4, 3);
+            // Curl corners of loose burning page
+            const posAttr = loosePageGeo.getAttribute('position');
+            for (let pi = 0; pi < posAttr.count; pi++) {
+              const px = posAttr.getX(pi);
+              const py = posAttr.getY(pi);
+              posAttr.setZ(pi, Math.sin(px * 6.0) * 0.03 + Math.cos(py * 6.0) * 0.02);
+            }
+            loosePageGeo.computeVertexNormals();
+
+            const pageFan = new THREE.Mesh(loosePageGeo, charredPageMat);
+            pageFan.position.set(bx * 0.98, Math.max(0.32, height + bkT + 0.03), bz * 0.98);
+            pageFan.rotation.copy(bookObj.rotation);
+            pageFan.rotation.x += Math.PI / 2;
+            pageFan.rotation.z += 0.35;
             mountainGroup.add(pageFan);
           }
         }
@@ -12004,11 +12103,36 @@ window.game = this;
           if (this.isInStairwell({ x: gx, z: gz })) continue;
 
           // Avoid placing directly on pallet racks or aquarium
-          if (Math.abs(gx - 8.5) < 1.2 && Math.abs(gz - 27.4) < 1.0) continue;
-          if ((Math.abs(gx - 10.0) < 1.5 || Math.abs(gx - 20.0) < 1.5) &&
-              (Math.abs(gz - (-21.0)) < 1.2 || Math.abs(gz - 1.0) < 1.2)) continue;
+          if (Math.abs(gx - 8.5) < 1.4 && Math.abs(gz - 27.4) < 1.2) continue;
+          if ((Math.abs(gx - 10.0) < 1.6 || Math.abs(gx - 20.0) < 1.6) &&
+              (Math.abs(gz - (-21.0)) < 1.4 || Math.abs(gz - 1.0) < 1.4)) continue;
           // Avoid central dais in Rotunda
           if (Math.hypot(gx - 19.0, gz - 30.5) < 3.2) continue;
+
+          // Strictly prevent grass from poking through exhibition stands, plinths, vitrine cases, benches, or potted plants
+          let hitsFurniture = false;
+          if (this.colliders && this.colliders.length > 0) {
+            const grassClearance = 0.35; // Generous buffer around every furniture footprint
+            for (let c = 0; c < this.colliders.length; c++) {
+              const col = this.colliders[c];
+              if (col.floor !== fl && col.floor !== 'all') continue;
+              if (col.type === 'box') {
+                if (gx >= (col.minX - grassClearance) && gx <= (col.maxX + grassClearance) &&
+                    gz >= (col.minZ - grassClearance) && gz <= (col.maxZ + grassClearance)) {
+                  hitsFurniture = true;
+                  break;
+                }
+              } else if (col.type === 'cylinder') {
+                const distSq = (gx - col.x) * (gx - col.x) + (gz - col.z) * (gz - col.z);
+                const reqDist = (col.radius || 0.5) + grassClearance;
+                if (distSq < reqDist * reqDist) {
+                  hitsFurniture = true;
+                  break;
+                }
+              }
+            }
+          }
+          if (hitsFurniture) continue;
 
           const variantIdx = Math.floor(rnd() * 3);
           const scale = 0.90 + rnd() * 0.55;
