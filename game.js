@@ -19183,8 +19183,9 @@ window.game = this;
             this.audio.pauseGameplayAudio();
           }
 
-          // Temporarily release pointer lock for clean video presentation
-          this.releaseNativeOrBrowserLock();
+          // Maintain pointer lock & cursor hiding during scene before FinalFight appears
+          document.body.classList.add('cutscene-playing');
+          this.requestNativeOrBrowserLock();
 
           cutsceneOverlay.classList.remove('hidden');
           cutsceneOverlay.style.opacity = '1';
@@ -19228,6 +19229,7 @@ window.game = this;
                 fadeOverlay.classList.remove('active');
               }
 
+              document.body.classList.remove('cutscene-playing');
               this.isPlayingCutscene = false;
               if (this.finalFight) {
                 this.finalFight.spawn();
