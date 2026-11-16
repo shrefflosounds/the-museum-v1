@@ -7960,7 +7960,7 @@ window.game = this;
       plaqueFace.rotation.x = -0.15;
       counterGroup.add(plaqueBase, plaqueFace);
 
-      // Engraved lettering on the nameplate: "REem8"
+      // Bright polished gold lettering on the nameplate: "REem8"
       const nameCanvas = document.createElement('canvas');
       nameCanvas.width = 512;
       nameCanvas.height = 200;
@@ -7968,11 +7968,17 @@ window.game = this;
       nctx.clearRect(0, 0, 512, 200);
       nctx.textAlign = 'center';
       nctx.textBaseline = 'middle';
-      nctx.font = 'bold 104px Caryn, Georgia, serif';
-      // Offset highlight first, then the dark cut, for an engraved look
-      nctx.fillStyle = 'rgba(222, 190, 132, 0.35)';
-      nctx.fillText('REem8', 258, 103);
-      nctx.fillStyle = '#1b1108';
+      nctx.font = '900 112px Caryn, Georgia, serif';
+      // Deep dark drop shadow for maximum contrast against any wood grain
+      nctx.fillStyle = '#0a0604';
+      nctx.fillText('REem8', 259, 103);
+      // Bright radiant metallic gold lettering
+      const goldGrad = nctx.createLinearGradient(0, 40, 0, 160);
+      goldGrad.addColorStop(0, '#fff4cc');
+      goldGrad.addColorStop(0.35, '#ffd700');
+      goldGrad.addColorStop(0.7, '#f59e0b');
+      goldGrad.addColorStop(1, '#b45309');
+      nctx.fillStyle = goldGrad;
       nctx.fillText('REem8', 256, 100);
 
       const nameTex = new THREE.CanvasTexture(nameCanvas);
@@ -7983,8 +7989,11 @@ window.game = this;
       const nameMat = new THREE.MeshStandardMaterial({
         map: nameTex,
         transparent: true,
-        roughness: 0.55,
-        metalness: 0.12,
+        emissive: 0xffd700,
+        emissiveMap: nameTex,
+        emissiveIntensity: 0.65,
+        roughness: 0.25,
+        metalness: 0.8,
         depthWrite: false
       });
 
@@ -8043,22 +8052,18 @@ window.game = this;
         if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
         else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
         tx.anisotropy = 8;
+        tx.needsUpdate = true;
       });
 
-      // Low self-illumination keeps the artwork legible in this dim back office
-      const vendingFaceMat = new THREE.MeshStandardMaterial({
+      const vendingFaceMat = new THREE.MeshBasicMaterial({
         map: vendingTex,
-        emissive: 0xffffff,
-        emissiveMap: vendingTex,
-        emissiveIntensity: 0.22,
-        roughness: 0.35,
-        metalness: 0.2
+        side: THREE.DoubleSide
       });
 
-      // Front face. A plane (not a box face) so the artwork orientation is unambiguous.
-      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.03, VEND_H - 0.03), vendingFaceMat);
-      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.004);
-      vendingFace.rotation.y = Math.PI; // face south, out toward the counter
+      // Front face centered and facing toward the desk opening
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
+      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.006);
+      vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
 
