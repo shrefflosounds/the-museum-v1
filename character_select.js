@@ -67,12 +67,12 @@
 
         const img = document.createElement('img');
         img.src = unlocked ? char.portrait : 'assets/ui/portraits/char_mystery.png';
-        img.alt = unlocked ? char.name : '?';
+        img.alt = unlocked ? char.name : 'LOCKED';
         img.loading = 'eager';
 
         const label = document.createElement('div');
         label.className = 'char-card-label';
-        label.textContent = unlocked ? char.name : '?';
+        label.textContent = unlocked ? char.name : 'LOCKED';
 
         card.appendChild(img);
         card.appendChild(label);
