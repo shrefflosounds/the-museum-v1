@@ -4148,7 +4148,10 @@
       this.keys = {};
       this.viewMode = 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
-      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter < 7 ? savedCharacter : 0;
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 7 ? savedCharacter : 0;
+      if (this.selectedPlayerCharacter === 7 && localStorage.getItem('the_museum_game_completed') !== 'true') {
+        this.selectedPlayerCharacter = 0;
+      }
       this.playerModelRoot = null;
       this.playerModel = null;
       this.playerMixer = null;
@@ -16407,7 +16410,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student'];
+        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -16440,7 +16443,8 @@ window.game = this;
 
     setPlayerCharacter(index) {
       const next = Number(index);
-      if (!Number.isInteger(next) || next < 0 || next > 6) return;
+      if (!Number.isInteger(next) || next < 0 || next > 7) return;
+      if (next === 7 && localStorage.getItem('the_museum_game_completed') !== 'true') return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
@@ -16472,7 +16476,8 @@ window.game = this;
         { name: 'The Cook', file: 'cook.glb' },
         { name: 'The Arse', file: 'the-tundra.glb' },
         { name: 'The Clown', file: 'the-clown.glb' },
-        { name: 'The Student', file: 'the-student.glb' }
+        { name: 'The Student', file: 'the-student.glb' },
+        { name: 'The Being', file: 'the-being.glb' }
       ];
       const character = characters[this.selectedPlayerCharacter];
       if (!character || !this.playerModelRoot) return;
@@ -16522,7 +16527,7 @@ window.game = this;
             if (name.includes('jump')) this.playerActions.Jump = action;
             else if (name.includes('run')) this.playerActions.Run = action;
             else if (name.includes('walk')) this.playerActions.Walk = action;
-            else if (name.includes('idle')) this.playerActions.Idle = action;
+            else if (name.includes('idle') || name.includes('slither')) this.playerActions.Idle = action;
           });
           this.playerCurrentAction = null;
           this.playPlayerAnimation('Idle');
@@ -16703,6 +16708,20 @@ window.game = this;
         }
         if (b['hand.L']) {
           b['hand.L'].rotation.x -= 0.40 * punchW;
+        }
+
+        // Procedural snake arm strike for The Being / FinalFight (bones: snake.00 through snake.08)
+        if (b['snake.00']) {
+          b['snake.00'].rotation.x += 0.75 * punchW;
+          b['snake.00'].rotation.y -= 0.45 * punchW;
+        }
+        for (let sIdx = 1; sIdx <= 8; sIdx++) {
+          const snakeBone = b[`snake.0${sIdx}`];
+          if (snakeBone) {
+            // Uncoil and lash outward forward into a lunging strike
+            snakeBone.rotation.x -= 0.35 * punchW;
+            snakeBone.rotation.z += (sIdx % 2 === 0 ? 0.25 : -0.25) * punchW;
+          }
         }
       }
     }
@@ -20515,8 +20534,11 @@ window.game = this;
 
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const punchOrigin = new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z);
-      const punchRange = 2.4; // Melee reach in meters
-      const punchDamage = 25;
+      // The Being (character index 7) wields the deadly snake arm punch
+      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      const punchRange = isTheBeing ? 2.8 : 2.4; // Extended melee reach for snake arm
+      const punchDamage = isTheBeing ? 99999 : 25;
+      const playerKnockback = isTheBeing ? 10.0 : 3.5;
 
       const candidates = [];
 
@@ -20555,7 +20577,12 @@ window.game = this;
               dist,
               type: 'smitty',
               hitPoint,
-              hit: () => this.damageSmitty(punchDamage, hitPoint, fwd)
+              hit: () => {
+                if (isTheBeing) {
+                  this.smittyHasBeenShot = true;
+                }
+                this.damageSmitty(punchDamage, hitPoint, fwd);
+              }
             });
           }
         }
@@ -20600,7 +20627,7 @@ window.game = this;
                 hitPoint,
                 hit: () => {
                   if (typeof this.mp.notifyPlayerHit === 'function') {
-                    this.mp.notifyPlayerHit(remoteId, hitPoint, fwd, punchDamage, 3.5);
+                    this.mp.notifyPlayerHit(remoteId, hitPoint, fwd, punchDamage, playerKnockback);
                   } else {
                     this.spawnLiquidBlood(hitPoint, fwd, 28, rPos.y);
                   }
@@ -22002,6 +22029,11 @@ window.game = this;
     triggerVictory() {
       this.isVictory = true;
       this.releaseNativeOrBrowserLock();
+
+      // Permanently unlock 'The Being' mystery character slot upon completing the game
+      try {
+        localStorage.setItem('the_museum_game_completed', 'true');
+      } catch (e) {}
 
       const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
       const mins = Math.floor(elapsedSec / 60);

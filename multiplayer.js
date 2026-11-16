@@ -24,7 +24,8 @@
         { name: 'The Cook', file: 'cook.glb' },
         { name: 'The Arse', file: 'the-tundra.glb' },
         { name: 'The Clown', file: 'the-clown.glb' },
-        { name: 'The Student', file: 'the-student.glb' }
+        { name: 'The Student', file: 'the-student.glb' },
+        { name: 'The Being', file: 'the-being.glb' }
       ];
 
       // Free, high-speed, enterprise-grade public WebSocket brokers

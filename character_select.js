@@ -10,7 +10,8 @@
         { id: 3, name: 'The Cook', file: 'cook.glb', portrait: 'assets/ui/portraits/char_3.png' },
         { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png' },
         { id: 5, name: 'The Clown', file: 'the-clown.glb', portrait: 'assets/ui/portraits/char_5.png' },
-        { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png' }
+        { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png' },
+        { id: 7, name: 'The Being', file: 'the-being.glb', portrait: 'assets/ui/portraits/char_7.png', isUnlockable: true }
       ];
 
       this.selectedIndex = this.game.selectedPlayerCharacter || 0;
@@ -33,6 +34,11 @@
       this.setupMouseControls();
     }
 
+    isCharacterUnlocked(char) {
+      if (!char || !char.isUnlockable) return true;
+      return localStorage.getItem('the_museum_game_completed') === 'true';
+    }
+
     initDOM() {
       this.modal = document.getElementById('char-select-modal');
       this.grid = document.getElementById('char-roster-grid');
@@ -43,21 +49,30 @@
       this.codeVal = document.getElementById('char-select-code-val');
       this.loadingEl = document.getElementById('char-preview-loading');
 
-      // Build roster grid cards
+      this.renderRosterGrid();
+
+      this.confirmBtn.addEventListener('click', () => {
+        this.confirmSelection();
+      });
+    }
+
+    renderRosterGrid() {
+      if (!this.grid) return;
       this.grid.innerHTML = '';
       this.characters.forEach((char, index) => {
+        const unlocked = this.isCharacterUnlocked(char);
         const card = document.createElement('div');
-        card.className = 'char-card' + (index === this.selectedIndex ? ' selected' : '');
+        card.className = 'char-card' + (index === this.selectedIndex ? ' selected' : '') + (!unlocked ? ' locked' : '');
         card.dataset.index = index;
 
         const img = document.createElement('img');
-        img.src = char.portrait;
-        img.alt = char.name;
+        img.src = unlocked ? char.portrait : 'assets/ui/portraits/char_mystery.png';
+        img.alt = unlocked ? char.name : '?';
         img.loading = 'eager';
 
         const label = document.createElement('div');
         label.className = 'char-card-label';
-        label.textContent = char.name;
+        label.textContent = unlocked ? char.name : '?';
 
         card.appendChild(img);
         card.appendChild(label);
@@ -67,10 +82,6 @@
         });
 
         this.grid.appendChild(card);
-      });
-
-      this.confirmBtn.addEventListener('click', () => {
-        this.confirmSelection();
       });
     }
 
@@ -156,6 +167,7 @@
           this.codeBadge.classList.add('hidden');
         }
       }
+      this.renderRosterGrid();
       this.modal.classList.remove('hidden');
       this.resizeCanvas();
       this.selectCharacter(this.selectedIndex, true);
@@ -185,9 +197,15 @@
     }
 
     selectCharacter(index, force = false) {
+      const char = this.characters[index];
+      const unlocked = this.isCharacterUnlocked(char);
+      if (!unlocked) {
+        // Locked mystery slot cannot be selected
+        return;
+      }
+
       if (index === this.selectedIndex && !force && this.previewModel) return;
       this.selectedIndex = index;
-      const char = this.characters[index];
 
       // Update grid selection highlights
       const cards = this.grid.querySelectorAll('.char-card');
