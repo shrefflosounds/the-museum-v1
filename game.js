@@ -4912,6 +4912,7 @@ window.game = this;
         this.createWall(19, yc, 16.35, t, wallH, 3.7, dungeonStoneMat, true, fl);    // 14.5..18.2
         this.createLintelZ(19, y0, 13.0, t, 3.0, ceilH, dungeonStoneMat);            // Arched stone lintel above doorway
         this.createDungeonCellDoor(19.0, y0, 13.0, 3.0, 3.0);
+        this.createDungeonMarqueeLights(19.0, y0, 13.0, 3.0, 3.0);
 
         // East Wall (x = 33, z: 7.8..18.2): Solid flat perimeter wall (no random blackboard, alcoves, or torches)
         this.createWall(33, yc, 13, t, wallH, 10.4, dungeonStoneMat, true, fl);
@@ -9246,6 +9247,130 @@ window.game = this;
       doorGroup.add(gateGroup);
       this.scene.add(doorGroup);
       return doorGroup;
+    }
+
+    createDungeonMarqueeLights(x, y0, z, width, height) {
+      // Marquee lighting running along the entrance archway to the 4th floor dungeon
+      const marqueeGroup = new THREE.Group();
+      marqueeGroup.position.set(x, y0, z);
+
+      const archRadius = width / 2;
+      const bulbRadius = 0.052;
+      const socketMat = new THREE.MeshStandardMaterial({
+        color: 0x221c16,
+        metalness: 0.85,
+        roughness: 0.35
+      });
+
+      // Warm vintage marquee bulb material
+      const bulbMat = new THREE.MeshStandardMaterial({
+        color: 0xfff6d6,
+        emissive: 0xffb84d,
+        emissiveIntensity: 1.6,
+        roughness: 0.2,
+        metalness: 0.1
+      });
+
+      const bulbGeom = new THREE.SphereGeometry(bulbRadius, 14, 14);
+      const socketGeom = new THREE.CylinderGeometry(0.045, 0.048, 0.05, 12);
+      socketGeom.rotateZ(Math.PI / 2); // Axis along X
+
+      const lightPoints = [];
+      const numJambBulbs = 7;
+      // Left vertical jamb (-Z side)
+      for (let i = 1; i <= numJambBulbs; i++) {
+        const py = (i / (numJambBulbs + 0.5)) * height;
+        const pz = -archRadius;
+        lightPoints.push({ y: py, z: pz, nx: 1, ny: 0, nz: 0 });
+      }
+
+      // Curved arch over top
+      const numArchBulbs = 15;
+      for (let i = 0; i <= numArchBulbs; i++) {
+        const angle = (i / numArchBulbs) * Math.PI;
+        const pz = -Math.cos(angle) * archRadius;
+        const py = height + Math.sin(angle) * archRadius;
+        lightPoints.push({ y: py, z: pz, nx: 1, ny: 0, nz: 0 });
+      }
+
+      // Right vertical jamb (+Z side)
+      for (let i = numJambBulbs; i >= 1; i--) {
+        const py = (i / (numJambBulbs + 0.5)) * height;
+        const pz = archRadius;
+        lightPoints.push({ y: py, z: pz, nx: 1, ny: 0, nz: 0 });
+      }
+
+      // Place marquee trim channelling and bulbs on both hallway side (-X) and dungeon side (+X)
+      // along the archway surround so the entrance looks grand and illuminated from both perspectives!
+      const xOffsets = [-0.22, 0.22];
+      const allBulbMeshes = [];
+
+      for (const ox of xOffsets) {
+        // Brass / dark steel conduit backing strip along jambs and arch
+        const trimMat = new THREE.MeshStandardMaterial({
+          color: 0x3d3024,
+          metalness: 0.8,
+          roughness: 0.4
+        });
+
+        // Vertical trims
+        const jambTrimL = new THREE.Mesh(new THREE.BoxGeometry(0.04, height, 0.12), trimMat);
+        jambTrimL.position.set(ox, height / 2, -archRadius);
+        marqueeGroup.add(jambTrimL);
+
+        const jambTrimR = new THREE.Mesh(new THREE.BoxGeometry(0.04, height, 0.12), trimMat);
+        jambTrimR.position.set(ox, height / 2, archRadius);
+        marqueeGroup.add(jambTrimR);
+
+        // Arch trim segments
+        const numTrimSegs = 24;
+        for (let s = 0; s < numTrimSegs; s++) {
+          const a1 = (s / numTrimSegs) * Math.PI;
+          const a2 = ((s + 1) / numTrimSegs) * Math.PI;
+          const pz1 = -Math.cos(a1) * archRadius;
+          const py1 = height + Math.sin(a1) * archRadius;
+          const pz2 = -Math.cos(a2) * archRadius;
+          const py2 = height + Math.sin(a2) * archRadius;
+          const segLen = Math.hypot(pz2 - pz1, py2 - py1);
+          const segAng = Math.atan2(py2 - py1, pz2 - pz1);
+          const segMesh = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.12, segLen + 0.02), trimMat);
+          segMesh.position.set(ox, (py1 + py2) / 2, (pz1 + pz2) / 2);
+          segMesh.rotation.x = -segAng;
+          marqueeGroup.add(segMesh);
+        }
+
+        // Bulbs + Sockets
+        for (let idx = 0; idx < lightPoints.length; idx++) {
+          const pt = lightPoints[idx];
+          const socket = new THREE.Mesh(socketGeom, socketMat);
+          const socketX = ox + (ox > 0 ? 0.02 : -0.02);
+          socket.position.set(socketX, pt.y, pt.z);
+          marqueeGroup.add(socket);
+
+          const bulb = new THREE.Mesh(bulbGeom, bulbMat.clone());
+          const bulbX = ox + (ox > 0 ? 0.055 : -0.055);
+          bulb.position.set(bulbX, pt.y, pt.z);
+          marqueeGroup.add(bulb);
+
+          allBulbMeshes.push({ mesh: bulb, idx: idx, side: ox > 0 ? 1 : 0 });
+        }
+      }
+
+      // Warm marquee atmospheric illumination around the entrance
+      const hallMarqueeLight = new THREE.PointLight(0xffbe6b, 1.25, 9.5, 1.5);
+      hallMarqueeLight.position.set(-1.0, height * 0.9, 0);
+      marqueeGroup.add(hallMarqueeLight);
+
+      const dungeonMarqueeLight = new THREE.PointLight(0xffaa4d, 1.1, 8.5, 1.5);
+      dungeonMarqueeLight.position.set(1.0, height * 0.9, 0);
+      marqueeGroup.add(dungeonMarqueeLight);
+
+      // Store in instance for marquee light chase / twinkle animation in update loop
+      if (!this.dungeonMarqueeBulbs) this.dungeonMarqueeBulbs = [];
+      this.dungeonMarqueeBulbs.push(...allBulbMeshes);
+
+      this.scene.add(marqueeGroup);
+      return marqueeGroup;
     }
 
     buildDungeonEastOffice(y0, mats) {
@@ -22314,6 +22439,19 @@ window.game = this;
           }
           if (this.topFloorFogUniforms && (this.playerFloor >= 2 || this.isSpectatorMode)) {
             this.topFloorFogUniforms.uTime.value += delta;
+          }
+
+          // Animate 4th floor dungeon entrance marquee lights (classic running chase effect)
+          if (this.dungeonMarqueeBulbs && (this.playerFloor === 3 || this.isSpectatorMode)) {
+            const chaseSpeed = 5.0; // bulbs per second
+            for (let b of this.dungeonMarqueeBulbs) {
+              // 3-phase alternating chase pattern
+              const phase = (b.idx + Math.floor(time * chaseSpeed)) % 3;
+              const brightness = (phase === 0) ? 2.4 : 0.85;
+              if (b.mesh.material && b.mesh.material.emissiveIntensity !== undefined) {
+                b.mesh.material.emissiveIntensity = brightness;
+              }
+            }
           }
 
           // Dynamic distance culling for paintings on current floor (or all floors in spectator mode)
