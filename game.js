@@ -4150,6 +4150,7 @@
       this.aquariumFX = [];
       this.pettingZooAnimals = [];
       this.burningBookMountain = null;
+      this.etherealPortal = null;
       this.heldCrate = null;
       this.lastAnnouncedFloor = null;
       this.floorIndicatorTimeout = null;
@@ -8536,12 +8537,248 @@ window.game = this;
           isWall: false
         });
       } else if (fl === 2) {
-        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with four-sided access and executive desk
-        this.createInfoDesk(26, y0, 13, mats.mahogany);
+        // Floor 3 (fl = 2, "3RD FLOOR"): East Office with Ethereal Shining Portal Light
+        this.buildEtherealPortal(y0, mats);
       } else {
         // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON REWORK WITH WINDOWS ON ALL SIDES & BONES
         this.buildDungeonEastOffice(y0, mats);
       }
+    }
+
+    buildEtherealPortal(y0, mats) {
+      const fl = 2;
+      const portalX = 26.0;
+      const portalY = y0 + 1.85;
+      const portalZ = 13.0;
+
+      const portalGroup = new THREE.Group();
+      portalGroup.position.set(portalX, portalY, portalZ);
+
+      // 1. Center Pedestal (matching reference photo: dark plinth in center of room)
+      const pedestalMat = mats.darkWood || mats.mahogany || new THREE.MeshStandardMaterial({ color: 0x2b1d14, roughness: 0.6 });
+      const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 1.4), pedestalMat);
+      pedestal.position.set(portalX, y0 + 0.45, portalZ);
+      this.scene.add(pedestal);
+
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: portalX - 0.75,
+        maxX: portalX + 0.75,
+        minZ: portalZ - 0.75,
+        maxZ: portalZ + 0.75,
+        minY: y0,
+        maxY: y0 + 0.95
+      });
+
+      // 2. Texture loaders for portal flare & beams
+      const burstTex = this.texLoader.load('assets/textures/portal_burst.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const beamTex = this.texLoader.load('assets/textures/portal_beam.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+
+      // 3. Central Radiant Starburst (Billboard planes with additive blending)
+      const burstGeo = new THREE.PlaneGeometry(5.4, 5.4);
+      const burstMat = new THREE.MeshBasicMaterial({
+        map: burstTex,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const burstMesh1 = new THREE.Mesh(burstGeo, burstMat);
+      portalGroup.add(burstMesh1);
+
+      const burstMat2 = new THREE.MeshBasicMaterial({
+        map: burstTex,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const burstMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 7.2), burstMat2);
+      burstMesh2.rotation.z = Math.PI / 4;
+      portalGroup.add(burstMesh2);
+
+      // Core incandescent sphere
+      const coreSphereGeo = new THREE.SphereGeometry(0.35, 16, 16);
+      const coreSphereMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.98
+      });
+      const coreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
+      portalGroup.add(coreSphere);
+
+      // Surrounding ethereal glowing orb
+      const outerSphereGeo = new THREE.SphereGeometry(0.85, 20, 20);
+      const outerSphereMat = new THREE.MeshBasicMaterial({
+        color: 0x90e8ff,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const outerSphere = new THREE.Mesh(outerSphereGeo, outerSphereMat);
+      portalGroup.add(outerSphere);
+
+      // Concentric glowing halo rings around portal
+      const ringGeo1 = new THREE.RingGeometry(1.2, 1.45, 32);
+      const ringMat1 = new THREE.MeshBasicMaterial({
+        color: 0xffe890,
+        transparent: true,
+        opacity: 0.60,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+      portalGroup.add(ring1);
+
+      const ringGeo2 = new THREE.RingGeometry(1.8, 2.05, 32);
+      const ringMat2 = new THREE.MeshBasicMaterial({
+        color: 0x5ce6ff,
+        transparent: true,
+        opacity: 0.40,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+      portalGroup.add(ring2);
+
+      // 4. Ethereal Point Lights (casting golden-celestial radiance into the room)
+      const portalPointLight = new THREE.PointLight(0xfff1aa, 3.2, 22.0, 1.2);
+      portalPointLight.position.set(0, 0, 0);
+      portalGroup.add(portalPointLight);
+
+      const cyanPointLight = new THREE.PointLight(0x70d8ff, 1.8, 16.0, 1.4);
+      cyanPointLight.position.set(0, 0, 0);
+      portalGroup.add(cyanPointLight);
+
+      this.scene.add(portalGroup);
+
+      // 5. Volumetric Light Shafts / Beams emanating out through doorways
+      // Doorway locations on Floor 3 (y0 = 10.4):
+      // - Main West Arched Doorway: x = 19.0, z = 13.0 (portal is at x=26.0, beam travels west dx = -10.5m)
+      // - North Doorway: z = 8.0, x = 23.0 (portal at z=13.0, beam travels north dz = -7.5m)
+      // - South Doorway: z = 18.0, x = 23.0 (portal at z=13.0, beam travels south dz = +7.5m)
+      const beamsGroup = new THREE.Group();
+      this.scene.add(beamsGroup);
+
+      const beamMeshes = [];
+
+      const createDoorwayBeams = (startX, startY, startZ, targetX, targetY, targetZ, beamWidth, beamLength, colorHex = 0xffe990) => {
+        const dx = targetX - startX;
+        const dy = targetY - startY;
+        const dz = targetZ - startZ;
+        const angleY = Math.atan2(dx, dz);
+        const dist = Math.hypot(dx, dz);
+
+        const beamMat = new THREE.MeshBasicMaterial({
+          map: beamTex,
+          color: colorHex,
+          transparent: true,
+          opacity: 0.72,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+
+        // Horizontal shaft plane
+        const hGeo = new THREE.PlaneGeometry(beamWidth, beamLength);
+        const hMesh = new THREE.Mesh(hGeo, beamMat.clone());
+        hMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
+        hMesh.rotation.y = angleY;
+        hMesh.rotation.x = -Math.PI / 2; // Flat horizontal plane extending outwards
+        beamsGroup.add(hMesh);
+        beamMeshes.push({ mesh: hMesh, baseOpacity: 0.65, phase: Math.random() * Math.PI * 2 });
+
+        // Vertical shaft plane (crossing the horizontal plane for 3D volumetric feel)
+        const vGeo = new THREE.PlaneGeometry(beamLength, beamWidth * 0.9);
+        const vMesh = new THREE.Mesh(vGeo, beamMat.clone());
+        vMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
+        vMesh.rotation.y = angleY + Math.PI / 2;
+        beamsGroup.add(vMesh);
+        beamMeshes.push({ mesh: vMesh, baseOpacity: 0.50, phase: Math.random() * Math.PI * 2 });
+
+        // Diagonal fan plane for soft glow dispersion
+        const dMesh = new THREE.Mesh(hGeo, beamMat.clone());
+        dMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
+        dMesh.rotation.y = angleY;
+        dMesh.rotation.x = -Math.PI / 2;
+        dMesh.rotation.z = Math.PI / 6;
+        beamsGroup.add(dMesh);
+        beamMeshes.push({ mesh: dMesh, baseOpacity: 0.35, phase: Math.random() * Math.PI * 2 });
+      };
+
+      // West Arched Entrance Beams (shooting out into the 3rd floor hallway as shown in mockup photo)
+      createDoorwayBeams(26.0, portalY, 13.0, 15.0, portalY - 0.2, 13.0, 3.4, 11.5, 0xffe899);
+      createDoorwayBeams(26.0, portalY, 13.0, 16.0, portalY - 0.3, 13.0, 4.2, 10.5, 0x88e6ff);
+
+      // North Doorway Beams (pointing towards North doorway at z = 8.0, x = 23.0)
+      createDoorwayBeams(26.0, portalY, 13.0, 23.0, portalY - 0.2, 5.0, 3.0, 8.5, 0xffebb5);
+
+      // South Doorway Beams (pointing towards South doorway at z = 18.0, x = 23.0)
+      createDoorwayBeams(26.0, portalY, 13.0, 23.0, portalY - 0.2, 21.0, 3.0, 8.5, 0x9be8ff);
+
+      // 6. Ethereal Floating Dust / Light Motes hovering in the beam
+      const moteCount = 65;
+      const moteGeo = new THREE.BufferGeometry();
+      const motePos = new Float32Array(moteCount * 3);
+      const moteVel = [];
+
+      for (let m = 0; m < moteCount; m++) {
+        const mx = 26.0 + (Math.random() - 0.6) * 10.0;
+        const my = y0 + 0.3 + Math.random() * 3.4;
+        const mz = 13.0 + (Math.random() - 0.5) * 6.0;
+        motePos[m * 3] = mx;
+        motePos[m * 3 + 1] = my;
+        motePos[m * 3 + 2] = mz;
+        moteVel.push({
+          vx: (Math.random() - 0.6) * 0.25,
+          vy: 0.15 + Math.random() * 0.3,
+          vz: (Math.random() - 0.5) * 0.25,
+          baseX: mx,
+          baseY: my,
+          baseZ: mz
+        });
+      }
+
+      moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+      const moteMat = new THREE.PointsMaterial({
+        color: 0xfffaea,
+        size: 0.08,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const motePoints = new THREE.Points(moteGeo, moteMat);
+      this.scene.add(motePoints);
+
+      this.etherealPortal = {
+        floor: fl,
+        portalGroup: portalGroup,
+        beamsGroup: beamsGroup,
+        pedestal: pedestal,
+        burstMesh1: burstMesh1,
+        burstMesh2: burstMesh2,
+        coreSphere: coreSphere,
+        outerSphere: outerSphere,
+        ring1: ring1,
+        ring2: ring2,
+        beamMeshes: beamMeshes,
+        pointLight1: portalPointLight,
+        pointLight2: cyanPointLight,
+        motePoints: motePoints,
+        moteVel: moteVel,
+        time: 0
+      };
     }
 
     buildEastOfficeSign(x, y, z, rotY, w, h) {
@@ -9244,6 +9481,83 @@ window.game = this;
             }
           }
         }
+      }
+    }
+
+    updateEtherealPortal(delta) {
+      const ep = this.etherealPortal;
+      if (!ep) return;
+
+      const isCurrentFloor = (this.playerFloor === ep.floor);
+
+      if (ep.portalGroup) ep.portalGroup.visible = isCurrentFloor;
+      if (ep.beamsGroup) ep.beamsGroup.visible = isCurrentFloor;
+      if (ep.pedestal) ep.pedestal.visible = isCurrentFloor;
+      if (ep.motePoints) ep.motePoints.visible = isCurrentFloor;
+
+      if (!isCurrentFloor) return;
+
+      ep.time += delta;
+
+      // 1. Shimmering starburst rotation and pulsing
+      if (ep.burstMesh1) {
+        ep.burstMesh1.rotation.z += delta * 0.12;
+        const scale1 = 1.0 + Math.sin(ep.time * 2.8) * 0.08;
+        ep.burstMesh1.scale.set(scale1, scale1, 1.0);
+      }
+      if (ep.burstMesh2) {
+        ep.burstMesh2.rotation.z -= delta * 0.08;
+        const scale2 = 1.0 + Math.cos(ep.time * 2.1) * 0.10;
+        ep.burstMesh2.scale.set(scale2, scale2, 1.0);
+      }
+
+      // 2. Halo ring rotations
+      if (ep.ring1) {
+        ep.ring1.rotation.z += delta * 0.25;
+      }
+      if (ep.ring2) {
+        ep.ring2.rotation.z -= delta * 0.18;
+      }
+
+      // 3. Dynamic point light pulsing
+      if (ep.pointLight1) {
+        ep.pointLight1.intensity = 3.0 + Math.sin(ep.time * 3.5) * 0.5 + Math.cos(ep.time * 7.1) * 0.25;
+      }
+      if (ep.pointLight2) {
+        ep.pointLight2.intensity = 1.7 + Math.cos(ep.time * 2.7) * 0.4;
+      }
+
+      // 4. Volumetric beam opacity pulsing
+      if (ep.beamMeshes) {
+        for (let i = 0; i < ep.beamMeshes.length; i++) {
+          const bm = ep.beamMeshes[i];
+          if (bm && bm.mesh && bm.mesh.material) {
+            bm.mesh.material.opacity = bm.baseOpacity * (0.85 + 0.25 * Math.sin(ep.time * 2.4 + bm.phase));
+          }
+        }
+      }
+
+      // 5. Light motes drifting through the air
+      if (ep.motePoints && ep.moteVel) {
+        const posAttr = ep.motePoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = ep.moteVel.length;
+        const y0 = ep.floor * CONFIG.FLOOR_HEIGHT;
+
+        for (let m = 0; m < count; m++) {
+          const v = ep.moteVel[m];
+          arr[m * 3 + 1] += v.vy * delta; // Rise
+          arr[m * 3]     += v.vx * delta;
+          arr[m * 3 + 2] += v.vz * delta;
+
+          // Wrap back to floor height
+          if (arr[m * 3 + 1] > y0 + 3.8) {
+            arr[m * 3 + 1] = y0 + 0.3;
+            arr[m * 3]     = 26.0 + (Math.random() - 0.6) * 10.0;
+            arr[m * 3 + 2] = 13.0 + (Math.random() - 0.5) * 6.0;
+          }
+        }
+        posAttr.needsUpdate = true;
       }
     }
 
@@ -16389,6 +16703,9 @@ window.game = this;
       if (this.burningBookMountain && typeof this.updateBurningMountain === 'function') {
         this.updateBurningMountain(0);
       }
+      if (this.etherealPortal && typeof this.updateEtherealPortal === 'function') {
+        this.updateEtherealPortal(0);
+      }
       // Light Culling: Only illuminate point lights for the current active floor!
       // Keep l.visible = true on all floorLights and toggle intensity to 0 on inactive floors so Three.js NUM_POINT_LIGHTS never changes or triggers shader recompilation!
       if (this.floorLights) {
@@ -21228,6 +21545,9 @@ window.game = this;
           this.updateAquariumFish(delta);
           this.updatePettingZoo(delta);
           this.updateBurningMountain(delta);
+          if (this.updateEtherealPortal) {
+            this.updateEtherealPortal(delta);
+          }
           if (this.updateFloorThreeBubbles) {
             this.updateFloorThreeBubbles(delta);
           }
@@ -21505,6 +21825,7 @@ window.game = this;
         actions: {},
         currentActionName: "Idle",
         stepTimer: 0,
+        layDownIntervalTimer: 180.0, // Every 3 minutes (180s), dog lays down for ~20s
         sfx: {
           steps: [
             new Audio(encodeURI("assets/audio/robotdog/servo_step_1.wav")),
@@ -21614,6 +21935,10 @@ window.game = this;
 
     playDogSound(audioList, pos) {
       if (!audioList) return;
+      // Strict floor isolation: Dog sounds can NEVER be heard across different floors
+      const dogFloor = (pos && typeof pos.floor === 'number') ? pos.floor : 0;
+      if (this.playerFloor !== dogFloor) return;
+
       const audio = Array.isArray(audioList)
         ? audioList[Math.floor(Math.random() * audioList.length)]
         : audioList;
@@ -21622,12 +21947,15 @@ window.game = this;
       const dx = (pos ? pos.x : 0) - this.playerPos.x;
       const dz = (pos ? pos.z : 0) - this.playerPos.z;
       const dist = Math.hypot(dx, dz);
-      if (dist > 35.0) return;
+      // Falloff: inaudible if further than 14 meters away
+      if (dist > 14.0) return;
 
-      const atten = Math.max(0.04, Math.pow(Math.max(0, 1.0 - (dist / 32.0)), 1.5));
+      const atten = Math.max(0.0, Math.pow(1.0 - (dist / 14.0), 1.8));
+      if (atten <= 0.01) return;
+
       try {
         const clone = audio.cloneNode();
-        clone.volume = Math.max(0.02, Math.min(1.0, (audio.volume || 0.3) * atten));
+        clone.volume = Math.max(0.01, Math.min(1.0, (audio.volume || 0.3) * atten));
         clone.play().catch(() => {});
       } catch (e) {}
     }
@@ -21690,6 +22018,19 @@ window.game = this;
 
       if (dog.mixer) dog.mixer.update(delta);
       dog.aiTimer -= delta;
+
+      // Periodic Rest Behavior: Every 3 minutes (180s), lay down peacefully for 20 seconds
+      if (dog.aiState !== "LAY_DOWN") {
+        dog.layDownIntervalTimer = (dog.layDownIntervalTimer !== undefined ? dog.layDownIntervalTimer : 180.0) - delta;
+        if (dog.layDownIntervalTimer <= 0) {
+          dog.layDownIntervalTimer = 180.0;
+          dog.aiState = "LAY_DOWN";
+          dog.aiTimer = 20.0;
+          dog.currentSpeed = 0;
+          dog.navPath = null;
+          this.playDogAction(dog, "LayDown", 0.4);
+        }
+      }
 
       const pDist = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
       const isPlayerSameFloor = (this.playerFloor === dog.floor);
@@ -21771,6 +22112,18 @@ window.game = this;
 
       // STATE MACHINE: Hyperactive, fast transitions, full behaviors
       switch (dog.aiState) {
+        case "LAY_DOWN": {
+          this.playDogAction(dog, "LayDown", 0.4);
+          dog.currentSpeed = 0;
+          // Quiet resting state for 20s
+          if (dog.aiTimer <= 0) {
+            dog.aiState = "IDLE";
+            dog.aiTimer = 1.0;
+            this.playDogAction(dog, "Idle", 0.4);
+          }
+          break;
+        }
+
         case "IDLE": {
           this.playDogAction(dog, "Idle", 0.2);
           dog.currentSpeed = 0;
