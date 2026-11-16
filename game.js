@@ -22079,14 +22079,14 @@ window.game = this;
             dogObj.mixer = new THREE.AnimationMixer(model);
             gltf.animations.forEach(clip => {
               let cleanName = clip.name;
-              ['Idle', 'Walk', 'Run', 'Sit', 'Bark', 'Attack', 'Curious'].forEach(n => {
+              ['Idle', 'Walk', 'Run', 'Sit', 'Bark', 'Attack', 'Curious', 'LayDown'].forEach(n => {
                 if (clip.name.toLowerCase().includes(n.toLowerCase())) cleanName = n;
               });
               const action = dogObj.mixer.clipAction(clip);
               if (cleanName === 'Bark' || cleanName === 'Attack') {
                 action.setLoop(THREE.LoopOnce, 1);
                 action.clampWhenFinished = true;
-              } else if (cleanName === 'Sit') {
+              } else if (cleanName === 'Sit' || cleanName === 'LayDown') {
                 action.setLoop(THREE.LoopClamp, 0);
                 action.clampWhenFinished = true;
               } else {
