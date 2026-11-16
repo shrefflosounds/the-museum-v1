@@ -8034,8 +8034,8 @@ window.game = this;
       // cabinet must stay south of 13.8 or it buries itself in the wall.
       vendingGroup.position.set(-1.6, 0, 5.42);
 
-      // Dimensions are now 2x: derived from artwork's own aspect (1793 x 2924 = 0.613) so nothing stretches
-      const VEND_W = 2.40;
+      // Dimensions derived from artwork's aspect (1793 x 2924 = 0.613) so nothing stretches - now 2x height
+      const VEND_W = 1.20;
       const VEND_H = 3.92;
       const VEND_D = 0.70;
 
@@ -8067,7 +8067,7 @@ window.game = this;
       });
 
       // Front face centered and facing toward the desk opening
-      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W * 2 - 0.02, VEND_H * 2 - 0.02), vendingFaceMat);
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H * 2 - 0.02), vendingFaceMat);
       vendingFace.position.set(0, VEND_H / 2 * 2, -VEND_D / 2 - 0.006);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
       vendingGroup.add(vendingFace);
@@ -8078,9 +8078,8 @@ window.game = this;
       const cabinetGroup = new THREE.Group();
       cabinetGroup.position.set(1.6, 0, 5.45); // 0.62m deep, clears the wall inner face at z = 13.8
 
-      // Cabinet is now 2x bigger along with the vending machine
-      const CAB_W = 1.40;
-      const CAB_H = 2.70;
+      const CAB_W = 0.70;
+      const CAB_H = 1.35;
       const CAB_D = 0.62;
 
       const cabinetSteel = new THREE.MeshStandardMaterial({ color: 0x767e86, roughness: 0.38, metalness: 0.82 });
@@ -8094,7 +8093,7 @@ window.game = this;
 
       // Three flush drawers, each with a shadow gap, a pull and a label holder
       const CAB_FRONT = -CAB_D / 2 - 0.008;
-      const drawerH = 0.45; // Slightly increased to accommodate taller cabinet (2.70 height)
+      const drawerH = 0.40;
       for (let di = 0; di < 3; di++) {
         const dy = CAB_H - 0.05 - drawerH / 2 - di * (drawerH + 0.02);
 
@@ -8107,11 +8106,11 @@ window.game = this;
         shadowGap.position.set(0, dy - drawerH / 2 - 0.006, CAB_FRONT - 0.007);
         cabinetGroup.add(shadowGap);
 
-        const pull = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.035, 0.04), cabinetSteelDark);
+        const pull = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.024, 0.03), cabinetSteelDark);
         pull.position.set(0, dy + 0.055, CAB_FRONT - 0.019);
         cabinetGroup.add(pull);
 
-        const labelHolder = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.048, 0.006), cabinetSteelDark);
+        const labelHolder = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.042, 0.006), cabinetSteelDark);
         labelHolder.position.set(0, dy - 0.035, CAB_FRONT - 0.011);
         cabinetGroup.add(labelHolder);
       }
