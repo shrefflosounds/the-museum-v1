@@ -4146,7 +4146,8 @@
 
       // Input Map & Movement State
       this.keys = {};
-      this.viewMode = 'first-person';
+      const savedViewMode = localStorage.getItem('the_museum_view_mode');
+      this.viewMode = (savedViewMode === 'third-person') ? 'third-person' : 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
       this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 7 ? savedCharacter : 0;
       if (this.selectedPlayerCharacter === 7 && localStorage.getItem('the_museum_game_completed') !== 'true') {
@@ -16431,6 +16432,7 @@ window.game = this;
     setPlayerViewMode(mode) {
       if (mode !== 'first-person' && mode !== 'third-person') return;
       this.viewMode = mode;
+      localStorage.setItem('the_museum_view_mode', mode);
       this.thirdPersonCameraReady = false;
       this.updatePlayerViewUI();
       if (mode === 'third-person' && !this.playerModel) this.loadPlayerCharacter();
@@ -16501,8 +16503,14 @@ window.game = this;
           this.disposePlayerModel(this.playerModel);
           this.playerModelRoot.clear();
           this.playerModel = gltf.scene;
-          this.playerModel.scale.setScalar(1.75 / size.y);
-          this.playerModel.position.y = -box.min.y * this.playerModel.scale.y;
+
+          // The Being is a towering character (~4.15m), just a little bit shorter than the NPC FinalFight (~4.64m)
+          const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 7);
+          const targetHeight = isTheBeing ? 4.15 : 1.75;
+          const scale = targetHeight / size.y;
+          this.playerModel.scale.setScalar(scale);
+          this.playerModel.position.y = -box.min.y * scale;
+
           this.playerModel.traverse((child) => {
             if (!child.isMesh) return;
             child.castShadow = false;
@@ -16513,8 +16521,11 @@ window.game = this;
           this.playerModelRoot.add(this.playerModel);
           this.playerBones = {};
           this.playerModel.traverse((child) => {
-            if (child.isBone && child.name) {
+            if (child.name) {
               this.playerBones[child.name] = child;
+              // Normalize sanitized Three.js names (e.g. snake00 -> snake.00, upperArmL -> upperArm.L)
+              const norm = child.name.replace(/([LR])$/, ".$1").replace(/([a-zA-Z]+)(\d+)$/, "$1.$2");
+              this.playerBones[norm] = child;
             }
           });
           this.playerMixer = new THREE.AnimationMixer(this.playerModel);
@@ -16711,30 +16722,48 @@ window.game = this;
         }
 
         // Procedural snake arm strike for The Being / FinalFight (bones: snake.00 through snake.08)
-        if (b['snake.00']) {
-          // Swing snake root bone forward along the attack vector into +Z
-          const swingAngle = (Math.PI * 0.52) * punchW;
-          const qSwing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), swingAngle);
-          b['snake.00'].quaternion.premultiply(qSwing);
+        const s00 = b['snake.00'] || b['snake00'];
+        if (s00) {
+          if (!s00.userData.restPos) {
+            s00.userData.restPos = s00.position.clone();
+            s00.userData.restQuat = s00.quaternion.clone();
+          }
+          s00.position.copy(s00.userData.restPos);
+          s00.quaternion.copy(s00.userData.restQuat);
 
-          // Thrust snake forward along strike vector
-          b['snake.00'].position.z += 0.85 * punchW;
-          b['snake.00'].position.x -= 0.15 * punchW;
-          b['snake.00'].position.y -= 0.08 * punchW;
+          if (punchW > 0.001) {
+            // Swing snake root bone forward along the attack vector into +Z
+            const swingAngle = (Math.PI * 0.50) * punchW;
+            const qSwing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), swingAngle);
+            s00.quaternion.premultiply(qSwing);
 
-          // Upper body pitches forward into the strike for athletic momentum
-          if (b['chest']) {
-            b['chest'].rotation.x += 0.28 * punchW;
-            b['chest'].rotation.y += 0.18 * punchW;
+            // Thrust snake forward along strike vector
+            s00.position.z += 0.85 * punchW;
+            s00.position.x -= 0.15 * punchW;
+            s00.position.y += 0.05 * punchW;
+
+            // Upper body pitches forward into the strike for athletic momentum
+            if (b['chest']) {
+              b['chest'].rotation.x += 0.22 * punchW;
+            }
           }
         }
         for (let sIdx = 1; sIdx <= 8; sIdx++) {
-          const snakeBone = b[`snake.0${sIdx}`];
+          const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
           if (snakeBone) {
-            // Uncoil and lash outward forward into a lunging strike
-            snakeBone.rotation.x -= 0.25 * punchW;
-            snakeBone.rotation.z += (sIdx % 2 === 0 ? 0.15 : -0.15) * punchW;
-            snakeBone.position.y += 0.04 * punchW; // Extend segment length
+            if (!snakeBone.userData.restPos) {
+              snakeBone.userData.restPos = snakeBone.position.clone();
+              snakeBone.userData.restQuat = snakeBone.quaternion.clone();
+            }
+            snakeBone.position.copy(snakeBone.userData.restPos);
+            snakeBone.quaternion.copy(snakeBone.userData.restQuat);
+
+            if (punchW > 0.001) {
+              // Uncoil and lash outward forward into a lunging strike
+              const qUncoil = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.08 * punchW);
+              snakeBone.quaternion.multiply(qUncoil);
+              snakeBone.position.y += 0.06 * punchW; // Extend segment length
+            }
           }
         }
       }
@@ -16742,12 +16771,15 @@ window.game = this;
 
     updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      // For The Being (~4.15m tall), camera targets upper torso and sits back proportionally
+      const targetYOffset = isTheBeing ? 2.5 : 1.3;
       const target = new THREE.Vector3(
         this.playerPos.x,
-        footY + 1.3,
+        footY + targetYOffset,
         this.playerPos.z
       );
-      const distance = this.thirdPersonCameraDistance;
+      const distance = isTheBeing ? Math.max(3.2, this.thirdPersonCameraDistance * 1.8) : this.thirdPersonCameraDistance;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const sinYaw = Math.sin(this.playerYaw);
@@ -16770,7 +16802,8 @@ window.game = this;
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      const fade = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.42) / 0.18, 0, 1);
+      const fadeMin = isTheBeing ? 0.80 : 0.42;
+      const fade = THREE.MathUtils.clamp((distance - fadeMin) / 0.18, 0, 1);
       if (this.playerModelRoot) {
         this.playerModelRoot.visible = (fade > 0.001);
       }
