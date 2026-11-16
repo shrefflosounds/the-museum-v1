@@ -7904,27 +7904,29 @@ window.game = this;
       brassEdge.position.set(0, 0.88, -0.32);
       counterGroup.add(brassEdge);
 
-      // Back work-counter surface behind the front ledge (desk depth 0.60m at height 0.72m)
+      // Back work-counter surface behind the front ledge (height 0.72m).
+      // Depth kept shallow (0.40m) so the clerk has clear floor to stand on behind it.
       const deskSlab = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.04, 0.60),
+        new THREE.BoxGeometry(width - 0.2, 0.04, 0.40),
         darkWoodMat
       );
-      deskSlab.position.set(0, 0.72, 0.58);
+      deskSlab.position.set(0, 0.72, 0.54);
       deskSlab.receiveShadow = true;
       counterGroup.add(deskSlab);
 
       // Counter cabinet base and support panels underneath desk
       const cabinetBase = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.70, 0.56),
+        new THREE.BoxGeometry(width - 0.2, 0.70, 0.36),
         darkWoodMat
       );
-      cabinetBase.position.set(0, 0.35, 0.58);
+      cabinetBase.position.set(0, 0.35, 0.54);
       counterGroup.add(cabinetBase);
 
       // Front desk props:
-      // 1. Classical solid brass service call bell (interactive bell at x = 0.85, y = 0.90, z = -0.05)
+      // 1. Classical solid brass service call bell, parked at the far-LEFT end of the counter
+      // (x = -1.45) so its interaction hotspot no longer overlaps the clerk standing at centre.
       const bellGroup = new THREE.Group();
-      bellGroup.position.set(0.85, 0.90, -0.05);
+      bellGroup.position.set(-1.45, 0.90, -0.05);
 
       const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 0.025, 16), brassMat);
       bellBase.position.set(0, 0.012, 0);
@@ -7939,7 +7941,7 @@ window.game = this;
         group: bellGroup,
         plunger: bellPlunger,
         origPlungerY: 0.075,
-        worldPos: new THREE.Vector3(x + 0.85, y0 + 0.90, z - 0.05),
+        worldPos: new THREE.Vector3(x - 1.45, y0 + 0.90, z - 0.05),
         ringCount: 0,
         lastRingTime: 0
       };
@@ -7961,7 +7963,7 @@ window.game = this;
       // 4. Ceramic mug / pen holder on the inner desk
       const mugMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3 });
       const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.09, 12), mugMat);
-      mug.position.set(-0.65, 0.78, 0.55);
+      mug.position.set(-0.65, 0.78, 0.54);
       counterGroup.add(mug);
 
       // 5. Stack of museum guide pamphlets / brochures on the counter
@@ -8041,7 +8043,9 @@ window.game = this;
 
       const clerkGroup = new THREE.Group();
       const startX = 0.0;
-      const startZ = 8.82; // Stands directly behind the lowered counter ledge (z = 8.0)
+      // The rear work-desk occupies z 8.34..8.74 at 0.70m tall, so he must stand clear of it.
+      // Standing any closer buried his legs inside the cabinet, which read as sinking into the desk.
+      const startZ = 9.02;
       clerkGroup.position.set(startX, y0, startZ);
       clerkGroup.rotation.y = Math.PI; // Face north towards counter and player
 
@@ -8052,6 +8056,7 @@ window.game = this;
         x: startX,
         y: y0,
         z: startZ,
+        counterZ: startZ, // canonical counter stance depth; every state below references this
         targetX: startX,
         targetZ: startZ,
         baseY: y0,
@@ -8077,8 +8082,9 @@ window.game = this;
         (gltf) => {
           const model = gltf.scene;
 
-          // Vendor mesh height is ~1.20m, scale to ~1.75m standard human clerk
-          const scale = 1.75 / 1.20;
+          // Vendor mesh height is ~1.20m. Raised from 1.75m to 1.92m so he reads as a
+          // full-sized adult behind the counter instead of a small figure.
+          const scale = 1.92 / 1.20;
           model.scale.set(scale, scale, scale);
 
           model.traverse((child) => {
@@ -8143,7 +8149,7 @@ window.game = this;
         clerk.targetLeanWeight = 0.0;
         clerk.targetStareWeight = 1.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = 8.78; // right up against the counter ledge
+        clerk.targetZ = clerk.counterZ - 0.04; // leaned in tight, but still clear of the work-desk
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8162,7 +8168,7 @@ window.game = this;
         clerk.targetLeanWeight = 0.0;
         clerk.targetStareWeight = 0.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = 8.82;
+        clerk.targetZ = clerk.counterZ;
 
         const dx = clerk.targetX - clerk.x;
         const dz = clerk.targetZ - clerk.z;
@@ -8202,7 +8208,7 @@ window.game = this;
         clerk.targetLeanWeight = 1.0;
         clerk.targetStareWeight = 0.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = 8.82; // Snug against counter ledge at z = 8.0..8.32
+        clerk.targetZ = clerk.counterZ; // Snug behind the rear work-desk, elbows out over the ledge
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8267,7 +8273,7 @@ window.game = this;
           if (clerk.stateTimer <= 0) {
             clerk.state = 'RETURN_COUNTER';
             clerk.targetX = 0.0;
-            clerk.targetZ = 8.82;
+            clerk.targetZ = clerk.counterZ;
           }
         }
       } else if (clerk.state === 'RETURN_COUNTER') {
@@ -8459,7 +8465,7 @@ window.game = this;
       clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
 
       // If he's already at counter and player rings 4+ times, trigger stare-down
-      if (clerk.bellPesterCount >= 4 && Math.abs(clerk.z - 8.82) < 0.35) {
+      if (clerk.bellPesterCount >= 4 && Math.abs(clerk.z - clerk.counterZ) < 0.35) {
         clerk.state = 'STARE_DOWN';
         clerk.stateTimer = 10.0;
         clerk.targetStareWeight = 1.0;
@@ -8472,7 +8478,7 @@ window.game = this;
       clerk.state = 'SUMMONED_BELL';
       clerk.stateTimer = 12.0;
       clerk.targetX = 0.0;
-      clerk.targetZ = 8.82;
+      clerk.targetZ = clerk.counterZ;
       const dx = clerk.targetX - clerk.x;
       const dz = clerk.targetZ - clerk.z;
       if (Math.hypot(dx, dz) > 0.15) {
@@ -19996,11 +20002,14 @@ window.game = this;
         }
       }
 
-      // Check Desk Call Bell on Clerk Stand Counter
+      // Clerk's Stand: clerk takes precedence; the bell is a small, deliberate hotspot only.
       const bell = this.clerkDeskBell;
+      const clerk = this.museumClerk;
+
+      let aimingAtBell = false;
       if (bell && this.playerFloor === 0) {
         const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (bellDist < 2.5) {
+        if (bellDist < 1.6) {
           const cosPitch = Math.cos(this.playerPitch);
           const sinPitch = Math.sin(this.playerPitch);
           const cosYaw = Math.cos(this.playerYaw);
@@ -20008,21 +20017,22 @@ window.game = this;
           const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
           const camPos = this.camera ? this.camera.position : this.playerPos;
           const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
-          if (toBell.dot(fwd) > 0.65) {
-            this.ringClerkDeskBell();
-            return;
-          }
+          aimingAtBell = toBell.dot(fwd) > 0.90;
         }
       }
 
-      // Check Museum Clerk (REem8) interaction
-      const clerk = this.museumClerk;
-      if (clerk && clerk.group && this.playerFloor === 0) {
+      // Check Museum Clerk (REem8) interaction - takes precedence over the bell
+      if (clerk && clerk.group && this.playerFloor === 0 && !aimingAtBell) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
         if (dClerk < 4.2) {
           this.interactMuseumClerk();
           return;
         }
+      }
+
+      if (aimingAtBell) {
+        this.ringClerkDeskBell();
+        return;
       }
       // Check Video Installation Console
       if (this.focusedVideoControl) {
@@ -21037,11 +21047,16 @@ window.game = this;
         }
       }
 
-      // Check Desk Call Bell on Clerk Stand Counter
+      // Clerk's Stand: the clerk owns the counter. The bell only surfaces when the player is
+      // standing on top of it at the far-left end AND aiming straight down at it, so the
+      // "talk to REem8" prompt is no longer crowded out whenever the player approaches the desk.
       const bell = this.clerkDeskBell;
+      const clerk = this.museumClerk;
+
+      let aimingAtBell = false;
       if (bell && this.playerFloor === 0) {
         const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (bellDist < 2.5) {
+        if (bellDist < 1.6) {
           const cosPitch = Math.cos(this.playerPitch);
           const sinPitch = Math.sin(this.playerPitch);
           const cosYaw = Math.cos(this.playerYaw);
@@ -21049,23 +21064,24 @@ window.game = this;
           const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
           const camPos = this.camera ? this.camera.position : this.playerPos;
           const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
-          if (toBell.dot(fwd) > 0.65) {
-            this.setInteractPrompt('[E] RING BELL');
-            this.focusedPainting = null;
-            return;
-          }
+          aimingAtBell = toBell.dot(fwd) > 0.90;
         }
       }
 
-      // Check near Museum Clerk (REem8) at the Clerk's Stand
-      const clerk = this.museumClerk;
-      if (clerk && clerk.group && this.playerFloor === 0) {
+      // Check near Museum Clerk (REem8) at the Clerk's Stand - takes precedence over the bell
+      if (clerk && clerk.group && this.playerFloor === 0 && !aimingAtBell) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
         if (dClerk < 4.2) {
           this.setInteractPrompt(T('hud.prompt_talk_clerk', '[E] TALK TO REem8'));
           this.focusedPainting = null;
           return;
         }
+      }
+
+      if (aimingAtBell) {
+        this.setInteractPrompt('[E] RING BELL');
+        this.focusedPainting = null;
+        return;
       }
 
       _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));

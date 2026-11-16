@@ -92,6 +92,8 @@ hud.interact_prompt = PRESS [E] TO INTERACT
 hud.prompt_take_relic = [E] TAKE RELIC: {relic}
 # Prompt when looking at a painting. {title} = the artwork title
 hud.prompt_examine_art = [E] EXAMINE ARTWORK: "{title}"
+# Prompt when standing at the Clerk's Stand counter in front of REem8
+hud.prompt_talk_clerk = [E] TALK TO REem8
 # Shown at the top of the screen once all relics are collected
 hud.exit_unlocked = LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!
 # Room name at the top of the screen. {floor} = floor name, {area} = room name (both listed below)
