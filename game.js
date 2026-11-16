@@ -22788,9 +22788,11 @@ window.game = this;
           if (dog.stuckTimer > 0.45) {
             dog.stuckTimer = 0;
             dog.navPath = null;
-            dog.aiState = "IDLE";
-            dog.aiTimer = 0.3;
-            return;
+            if (dog.aiState !== "FOLLOW_PLAYER") {
+              dog.aiState = "IDLE";
+              dog.aiTimer = 0.3;
+              return;
+            }
           }
         } else {
           dog.stuckTimer = 0;
@@ -23061,7 +23063,6 @@ window.game = this;
             // Get sidetracked or stop
             const sidetrackRoll = Math.random();
             if (sidetrackRoll < 0.4) {
-              // Curious look or playful circle
               dog.aiState = "CURIOUS_PLAYER";
               dog.aiTimer = 1.8;
             } else if (sidetrackRoll < 0.7) {
@@ -23082,27 +23083,48 @@ window.game = this;
             this.playDogAction(dog, runFast ? "Run" : "Walk", 0.15);
             dog.currentSpeed = runFast ? dog.runSpeed : dog.walkSpeed * 1.35;
 
-            // Recompute / update path towards player periodically
-            dog.followRepathTimer = (dog.followRepathTimer || 0) - delta;
-            if (!dog.navPath || dog.navIndex >= dog.navPath.length || dog.followRepathTimer <= 0) {
-              dog.followRepathTimer = 0.65;
-              dog.navPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
-              dog.navIndex = 0;
-            }
+            // Check if dog has direct line of sight to player on the same floor
+            const hasLOS = sameFl && this.gridLOS && this.gridLOS(dog.floor, dog, this.playerPos);
 
-            if (dog.navPath && dog.navIndex < dog.navPath.length) {
-              const wp = dog.navPath[dog.navIndex];
-              const distToWp = Math.hypot(wp.x - dog.x, wp.z - dog.z);
-              if (distToWp < 0.75) {
-                dog.navIndex++;
-              }
-              if (dog.navIndex < dog.navPath.length) {
-                const curWp = dog.navPath[dog.navIndex];
-                moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.currentSpeed);
-              }
-            } else {
-              // Direct movement if within direct line of sight
+            if (hasLOS) {
+              // Direct steering towards player avoids discrete node snapping / oscillating loops
+              dog.navPath = null;
               moveDogStep(this.playerPos.x - dog.x, this.playerPos.z - dog.z, dog.currentSpeed);
+            } else {
+              // Need navigation path around walls / obstacles
+              dog.followRepathTimer = (dog.followRepathTimer || 0) - delta;
+              if (!dog.navPath || dog.navIndex >= dog.navPath.length || dog.followRepathTimer <= 0) {
+                dog.followRepathTimer = 1.2;
+                const newPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
+                if (newPath && newPath.length > 0) {
+                  dog.navPath = newPath;
+                  dog.navIndex = 0;
+                  // Skip waypoint 0 if the dog is already at or past it to prevent turning backwards
+                  if (dog.navPath.length > 1) {
+                    const d0 = Math.hypot(dog.navPath[0].x - dog.x, dog.navPath[0].z - dog.z);
+                    const d1 = Math.hypot(dog.navPath[1].x - dog.x, dog.navPath[1].z - dog.z);
+                    if (d0 < 0.8 || d1 < d0) {
+                      dog.navIndex = 1;
+                    }
+                  }
+                }
+              }
+
+              if (dog.navPath && dog.navIndex < dog.navPath.length) {
+                const wp = dog.navPath[dog.navIndex];
+                const distToWp = Math.hypot(wp.x - dog.x, wp.z - dog.z);
+                if (distToWp < 0.8) {
+                  dog.navIndex++;
+                }
+                if (dog.navIndex < dog.navPath.length) {
+                  const curWp = dog.navPath[dog.navIndex];
+                  moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.currentSpeed);
+                } else {
+                  moveDogStep(this.playerPos.x - dog.x, this.playerPos.z - dog.z, dog.currentSpeed);
+                }
+              } else {
+                moveDogStep(this.playerPos.x - dog.x, this.playerPos.z - dog.z, dog.currentSpeed);
+              }
             }
           } else {
             // Close enough to player: face player with happy tail wag / idle
