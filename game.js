@@ -19012,21 +19012,7 @@ window.game = this;
     }
 
     interact() {
-      // 0. Check Interactive Statues
-      if (this.statues && this.statues.length > 0) {
-        const nearS = this.getNearestStatue(3.8);
-        if (nearS) {
-          this.interactStatue(nearS);
-          return;
-        }
-      }
-      // Check Video Installation Console
-      if (this.focusedVideoControl) {
-        this.triggerVideoControl(this.focusedVideoControl.id);
-        return;
-      }
-
-      // 1. Check Relics
+      // 1. Check Relics (takes priority over NPCs/statues and paintings)
       for (let relic of this.relics) {
         if (relic.collected || relic.floor !== this.playerFloor) continue;
         const d = Math.hypot(this.playerPos.x - relic.x, this.playerPos.z - relic.z);
@@ -19073,7 +19059,21 @@ window.game = this;
         }
       }
 
-      // 3. Check Paintings
+      // 3. Check Interactive Statues / NPCs
+      if (this.statues && this.statues.length > 0) {
+        const nearS = this.getNearestStatue(3.8);
+        if (nearS) {
+          this.interactStatue(nearS);
+          return;
+        }
+      }
+      // Check Video Installation Console
+      if (this.focusedVideoControl) {
+        this.triggerVideoControl(this.focusedVideoControl.id);
+        return;
+      }
+
+      // 4. Check Paintings
       if (this.focusedPainting) {
         this.openArtModal(this.focusedPainting);
         return;
