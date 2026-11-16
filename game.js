@@ -4217,6 +4217,7 @@
       this.bloodDroplets = [];
       this.bloodPuddles = [];
       this.bloodDropGeom = new THREE.SphereGeometry(1, 10, 10);
+      this.bloodPuddleGeom = new THREE.CircleGeometry(1, 16);
       this.bloodDropMat = new THREE.MeshPhongMaterial({
         color: 0x7a0202,
         emissive: 0x240000,
@@ -20802,19 +20803,25 @@ window.game = this;
     spawnBloodPuddle(x, floorY, z, targetRadius = 0.38, isBlackJuice = false) {
       for (let i = 0; i < this.bloodPuddles.length; i++) {
         const p = this.bloodPuddles[i];
-        if (Math.abs(p.floorY - floorY) < 0.2 && Math.hypot(p.x - x, p.z - z) < 0.45) {
+        if (Math.abs(p.floorY - floorY) < 0.25 && Math.hypot(p.x - x, p.z - z) < 0.45) {
           p.targetRadius = Math.min(1.65, Math.hypot(p.targetRadius, targetRadius * 0.55));
+          p.age = Math.max(0, p.age - 8.0); // Refresh puddle age slightly on fresh blood hits
           return;
         }
       }
 
-      if (this.bloodPuddles.length > 90) {
+      if (this.bloodPuddles.length > 75) {
         const oldest = this.bloodPuddles.shift();
-        this.scene.remove(oldest.mesh);
+        if (oldest && oldest.mesh) {
+          this.scene.remove(oldest.mesh);
+          if (oldest.mesh.material && typeof oldest.mesh.material.dispose === 'function') {
+            oldest.mesh.material.dispose();
+          }
+        }
       }
 
       const puddleFloor = Math.max(0, Math.min((CONFIG.NUM_FLOORS || 4) - 1, Math.floor((floorY + 0.35) / CONFIG.FLOOR_HEIGHT)));
-      const puddleGeom = new THREE.CircleGeometry(1, 24);
+      const puddleGeom = this.bloodPuddleGeom || new THREE.CircleGeometry(1, 16);
       const puddleMat = (isBlackJuice && this.blackJuicePuddleMat)
         ? this.blackJuicePuddleMat.clone()
         : this.bloodPuddleMat.clone();
@@ -20861,7 +20868,7 @@ window.game = this;
       }
 
       // Cap total live droplets so rapid multiplayer fire never stalls physics
-      const maxDroplets = 160;
+      const maxDroplets = 140;
       while (this.bloodDroplets.length + count > maxDroplets && this.bloodDroplets.length > 0) {
         const old = this.bloodDroplets.shift();
         if (old && old.mesh) this.scene.remove(old.mesh);
@@ -20901,6 +20908,7 @@ window.game = this;
           mesh,
           vel,
           radius,
+          prevY: mesh.position.y,
           floorY: bloodFloorY,
           floor: dropFloor,
           life: 2.2,
@@ -20920,6 +20928,7 @@ window.game = this;
         d.vel.x *= (1 - 0.6 * delta);
         d.vel.z *= (1 - 0.6 * delta);
 
+        const prevY = d.mesh.position.y;
         d.mesh.position.x += d.vel.x * delta;
         d.mesh.position.y += d.vel.y * delta;
         d.mesh.position.z += d.vel.z * delta;
@@ -20934,26 +20943,31 @@ window.game = this;
         }
         d.mesh.visible = this.isSpectatorMode || (d.floor === this.playerFloor);
 
+        // Check if droplet impacted or passed through ground floor surface, or expired
+        const hitGround = (d.mesh.position.y <= d.floorY + 0.035) || (prevY >= d.floorY && d.mesh.position.y <= d.floorY);
+        if (hitGround || d.life <= 0) {
+          // Guaranteed splat into horizontal puddle on floor surface - never leaves vertical droplet
+          const puddleX = d.mesh.position.x;
+          const puddleZ = d.mesh.position.z;
+          const targetPuddleY = d.floorY;
+          this.spawnBloodPuddle(
+            puddleX,
+            targetPuddleY,
+            puddleZ,
+            0.14 + d.radius * 5.2,
+            !!d.isBlackJuice
+          );
+          this.scene.remove(d.mesh);
+          this.bloodDroplets.splice(i, 1);
+          continue;
+        }
+
         // Orient and elongate droplet along velocity vector for continuous liquid stream physics
         const speed = d.vel.length();
         const stretch = Math.max(1.2, Math.min(4.8, 1.0 + speed * 0.42));
         _tempVec1.copy(d.mesh.position).add(d.vel);
         d.mesh.lookAt(_tempVec1);
         d.mesh.scale.set(d.radius, d.radius, d.radius * stretch);
-
-        if (d.mesh.position.y <= d.floorY + 0.015 || d.life <= 0) {
-          if (d.mesh.position.y <= d.floorY + 0.08) {
-            this.spawnBloodPuddle(
-              d.mesh.position.x,
-              d.floorY,
-              d.mesh.position.z,
-              0.14 + d.radius * 5.2,
-              !!d.isBlackJuice
-            );
-          }
-          this.scene.remove(d.mesh);
-          this.bloodDroplets.splice(i, 1);
-        }
       }
 
       for (let i = this.bloodPuddles.length - 1; i >= 0; i--) {
@@ -20972,8 +20986,9 @@ window.game = this;
         const maxLife = p.maxLife || 60.0;
         if (p.age >= maxLife) {
           this.scene.remove(p.mesh);
-          if (p.mesh.geometry) p.mesh.geometry.dispose();
-          if (p.mesh.material) p.mesh.material.dispose();
+          if (p.mesh.material && typeof p.mesh.material.dispose === 'function') {
+            p.mesh.material.dispose();
+          }
           this.bloodPuddles.splice(i, 1);
         } else if (p.age > (maxLife - 10.0)) {
           const fadeProgress = (maxLife - p.age) / 10.0; // 1.0 down to 0.0

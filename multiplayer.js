@@ -15,7 +15,7 @@
       this.clientId = 'user_' + Array.from(idBytes, value => value.toString(36).padStart(2, '0')).join('');
       this.remotePlayers = new Map(); // clientId -> remote player object
       this.tickInterval = null;
-      this.broadcastRate = 30; // 30Hz
+      this.broadcastRate = 20; // 20Hz - optimal smooth rate avoiding MQTT WebSocket packet drop & buffer thrashing
       this.onPlayerJoined = null;
       this.characterData = [
         { name: 'The Animal', file: 'the-animal.glb' },
@@ -206,6 +206,7 @@
             p.targetPos.set(data.x, data.y, data.z);
             p.targetYaw = data.yaw;
             p.targetPitch = data.pitch;
+            p.floor = data.floor !== undefined ? data.floor : Math.max(0, Math.min(3, Math.floor((data.y + 0.35) / 6.0)));
             p.anim = data.anim || 'Idle';
             if (p.flashlight) {
               const prevFl = p.flashlight.visible;
@@ -213,7 +214,7 @@
               p.flashlight.visible = nextFl;
               // Play spatialized 3D flashlight click when remote player toggles flashlight
               if (prevFl !== nextFl && this.game && this.game.audio && typeof this.game.audio.playFlashlightClick === 'function') {
-                const myPos = this.game.camera ? this.game.camera.position : this.game.playerPos;
+                const myPos = this.game.playerPos || (this.game.camera ? this.game.camera.position : null);
                 const d = myPos ? myPos.distanceTo(p.group.position) : 0;
                 if (d < 30) {
                   this.game.audio.playFlashlightClick();
@@ -381,7 +382,7 @@
     }
 
     sendLocalTransform() {
-      if (!this.game || !this.game.camera || !this.client || !this.client.connected) return;
+      if (!this.game || !this.client || !this.client.connected) return;
 
       let anim = 'Idle';
       if (!this.game.isGrounded) {
@@ -394,16 +395,22 @@
         anim = 'Dance';
       }
 
+      // Always transmit the actual player world position, NOT the 3rd person trailing camera position
+      const pPos = this.game.playerPos || (this.game.camera ? this.game.camera.position : { x: 0, y: 0, z: 0 });
       const footY = (this.game.playerPos ? this.game.playerPos.y : this.game.camera.position.y) - (this.game.currentCamHeight || 1.72) + (this.game.jumpOffset || 0);
+      const yaw = this.game.playerYaw !== undefined ? this.game.playerYaw : (this.game.camera ? this.game.camera.rotation.y : 0);
+      const pitch = this.game.playerPitch !== undefined ? this.game.playerPitch : (this.game.camera ? this.game.camera.rotation.x : 0);
+      const fl = this.game.playerFloor !== undefined ? this.game.playerFloor : Math.max(0, Math.min(3, Math.floor((footY + 0.35) / (this.game.CONFIG ? this.game.CONFIG.FLOOR_HEIGHT : 6.0))));
 
       this.publish({
         type: 'transform',
         charIdx: this.game.selectedPlayerCharacter,
-        x: Number(this.game.camera.position.x.toFixed(3)),
+        x: Number(pPos.x.toFixed(3)),
         y: Number(footY.toFixed(3)),
-        z: Number(this.game.camera.position.z.toFixed(3)),
-        yaw: Number(this.game.camera.rotation.y.toFixed(3)),
-        pitch: Number(this.game.camera.rotation.x.toFixed(3)),
+        z: Number(pPos.z.toFixed(3)),
+        yaw: Number(yaw.toFixed(3)),
+        pitch: Number(pitch.toFixed(3)),
+        floor: fl,
         anim: anim,
         fl: this.game.flashlight ? this.game.flashlight.intensity > 0 : !!this.game.flashlightOn
       });
@@ -766,11 +773,25 @@
     }
 
     update(delta) {
+      const H = (this.game && this.game.CONFIG) ? this.game.CONFIG.FLOOR_HEIGHT : 6.0;
+
       this.remotePlayers.forEach((p) => {
         if (!p.group) return;
 
-        // Smooth position lerp
-        p.group.position.lerp(p.targetPos, Math.min(1, delta * 14));
+        // Smooth position interpolation
+        const prevDist = p.group.position.distanceTo(p.targetPos);
+        if (prevDist > 12.0) {
+          // Snap if teleported or spawned far away
+          p.group.position.copy(p.targetPos);
+        } else {
+          p.group.position.lerp(p.targetPos, Math.min(1, delta * 14));
+        }
+
+        // Collision-aware position resolution to prevent remote models clipping or warping through museum walls
+        if (this.game && typeof this.game.resolveCollisions === 'function') {
+          const approxFloor = p.floor !== undefined ? p.floor : Math.max(0, Math.min(3, Math.floor((p.group.position.y + 0.35) / H)));
+          this.game.resolveCollisions(p.group.position, 0.36, approxFloor, p.group.position.y, 1.85);
+        }
 
         // Smooth yaw rotation lerp
         let diffYaw = p.targetYaw - p.group.rotation.y;
