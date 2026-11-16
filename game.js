@@ -583,6 +583,34 @@
       src.start(now, 0.2, 0.025);
     }
 
+    playDeskServiceBell() {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      // High-pitched brass desk bell ping with harmonic ringing and slow natural decay
+      const tones = [
+        { f: 2093.0, gain: 0.35, decay: 1.8 }, // C7
+        { f: 4186.0, gain: 0.18, decay: 1.2 }, // C8 harmonic
+        { f: 6280.0, gain: 0.08, decay: 0.7 }  // 3rd metallic overtone
+      ];
+      tones.forEach(t => {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(t.f, now);
+        osc.frequency.exponentialRampToValueAtTime(t.f * 0.996, now + 0.04);
+
+        gain.gain.setValueAtTime(0.001, now);
+        gain.gain.linearRampToValueAtTime(t.gain, now + 0.004);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + t.decay);
+
+        osc.connect(gain);
+        gain.connect(this.masterGain);
+        if (this.reverbNode) gain.connect(this.reverbNode);
+        osc.start(now);
+        osc.stop(now + t.decay + 0.05);
+      });
+    }
+
     playReloadSound() {
       if (!this.ctx) return;
       if (this.playCustom('weapon_reload.wav', null, 0.96)) return; // Boosted by +60% (from 0.6)
@@ -4801,10 +4829,10 @@ window.game = this;
         // East side jamb wall: x: 1.8..3.8 (width 2.0m)
         this.createWall(2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
         // Service opening (x: -1.8..1.8, width 3.6m):
-        // Base wall below counter (height 1.05m)
-        this.createWall(0.0, y0 + 0.525, 8.0, 3.6, 1.05, t, accentWallMat, true, fl);
-        // Arched lintel header above opening (open between 1.05m and 2.9m)
-        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, accentWallMat, 2.9);
+        // Base wall below counter (height 0.88m)
+        this.createWall(0.0, y0 + 0.44, 8.0, 3.6, 0.88, t, accentWallMat, true, fl);
+        // Arched lintel header above opening (open between 0.88m and 3.0m)
+        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, accentWallMat, 3.0);
         // Create the Clerk's counter desk & ledge structure
         this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
       } else {
@@ -7836,7 +7864,7 @@ window.game = this;
     }
 
     createClerkStandCounter(x, y0, z, width, mats) {
-      // Mahogany reception / information counter at z = 8.0, spanning x: -1.8..1.8 (width 3.6m)
+      // Warm mahogany reception / information counter at z = 8.0, spanning x: -1.8..1.8 (width 3.6m)
       const counterGroup = new THREE.Group();
       counterGroup.position.set(x, y0, z);
 
@@ -7855,14 +7883,15 @@ window.game = this;
         metalness: 0.85,
         roughness: 0.25
       });
+      const paperMat = new THREE.MeshLambertMaterial({ color: 0xf4eedb });
 
-      // Main front counter ledge top (polished mahogany slab):
-      // Height 1.05m, depth 0.65m, width 3.6m
+      // Lowered counter height for better ergonomics and natural elbow resting:
+      // Height 0.88m (was 1.05m), depth 0.65m, width 3.6m
       const topSlab = new THREE.Mesh(
-        new THREE.BoxGeometry(width, 0.06, 0.65),
+        new THREE.BoxGeometry(width, 0.05, 0.65),
         woodMat
       );
-      topSlab.position.set(0, 1.05, 0);
+      topSlab.position.set(0, 0.88, 0);
       topSlab.castShadow = true;
       topSlab.receiveShadow = true;
       counterGroup.add(topSlab);
@@ -7872,56 +7901,119 @@ window.game = this;
         new THREE.BoxGeometry(width + 0.04, 0.02, 0.04),
         brassMat
       );
-      brassEdge.position.set(0, 1.05, -0.32);
+      brassEdge.position.set(0, 0.88, -0.32);
       counterGroup.add(brassEdge);
 
-      // Back work-counter surface behind the front ledge (desk depth 0.55m at height 0.78m)
+      // Back work-counter surface behind the front ledge (desk depth 0.60m at height 0.72m)
       const deskSlab = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.04, 0.55),
+        new THREE.BoxGeometry(width - 0.2, 0.04, 0.60),
         darkWoodMat
       );
-      deskSlab.position.set(0, 0.78, 0.55);
+      deskSlab.position.set(0, 0.72, 0.58);
       deskSlab.receiveShadow = true;
       counterGroup.add(deskSlab);
 
       // Counter cabinet base and support panels underneath desk
       const cabinetBase = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.76, 0.52),
+        new THREE.BoxGeometry(width - 0.2, 0.70, 0.56),
         darkWoodMat
       );
-      cabinetBase.position.set(0, 0.38, 0.55);
+      cabinetBase.position.set(0, 0.35, 0.58);
       counterGroup.add(cabinetBase);
 
       // Front desk props:
-      // 1. Classical solid brass service call bell
-      const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 0.025, 16), brassMat);
-      bellBase.position.set(0.85, 1.09, -0.05);
-      const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), brassMat);
-      bellDome.position.set(0.85, 1.10, -0.05);
-      const bellPlunger = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), brassMat);
-      bellPlunger.position.set(0.85, 1.15, -0.05);
-      counterGroup.add(bellBase, bellDome, bellPlunger);
+      // 1. Classical solid brass service call bell (interactive bell at x = 0.85, y = 0.90, z = -0.05)
+      const bellGroup = new THREE.Group();
+      bellGroup.position.set(0.85, 0.90, -0.05);
 
-      // 2. Acrylic / brass informational stand plaque: "INFORMATION & GUEST SERVICES"
-      const plaqueBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.02, 0.08), brassMat);
-      plaqueBase.position.set(-0.85, 1.09, -0.05);
-      const plaqueFace = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.14, 0.015), woodMat);
-      plaqueFace.position.set(-0.85, 1.17, -0.05);
+      const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 0.025, 16), brassMat);
+      bellBase.position.set(0, 0.012, 0);
+      const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), brassMat);
+      bellDome.position.set(0, 0.025, 0);
+      const bellPlunger = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.035, 8), brassMat);
+      bellPlunger.position.set(0, 0.075, 0);
+      bellGroup.add(bellBase, bellDome, bellPlunger);
+      counterGroup.add(bellGroup);
+
+      this.clerkDeskBell = {
+        group: bellGroup,
+        plunger: bellPlunger,
+        origPlungerY: 0.075,
+        worldPos: new THREE.Vector3(x + 0.85, y0 + 0.90, z - 0.05),
+        ringCount: 0,
+        lastRingTime: 0
+      };
+
+      // 2. Leather desk blotter / pad on counter
+      const blotterMat = new THREE.MeshStandardMaterial({ color: 0x1f1917, roughness: 0.7 });
+      const blotter = new THREE.Mesh(new THREE.BoxGeometry(0.85, 0.008, 0.45), blotterMat);
+      blotter.position.set(0.0, 0.908, 0.0);
+      counterGroup.add(blotter);
+
+      // 3. Wooden stand plaque on counter
+      const plaqueBase = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.018, 0.07), brassMat);
+      plaqueBase.position.set(-0.85, 0.915, -0.05);
+      const plaqueFace = new THREE.Mesh(new THREE.BoxGeometry(0.28, 0.11, 0.012), woodMat);
+      plaqueFace.position.set(-0.85, 0.975, -0.05);
       plaqueFace.rotation.x = -0.15;
       counterGroup.add(plaqueBase, plaqueFace);
 
-      // 3. Ceramic mug / pen holder on the inner desk
+      // 4. Ceramic mug / pen holder on the inner desk
       const mugMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3 });
       const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.09, 12), mugMat);
-      mug.position.set(-0.5, 0.84, 0.5);
+      mug.position.set(-0.65, 0.78, 0.55);
       counterGroup.add(mug);
 
-      // 4. Stack of museum guide pamphlets / flyers on the counter
-      const paperMat = new THREE.MeshLambertMaterial({ color: 0xf4eedb });
-      const paperStack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.28), paperMat);
-      paperStack.position.set(0.35, 1.09, -0.04);
+      // 5. Stack of museum guide pamphlets / brochures on the counter
+      const paperStack = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.035, 0.26), paperMat);
+      paperStack.position.set(0.35, 0.915, -0.04);
       paperStack.rotation.y = 0.12;
       counterGroup.add(paperStack);
+
+      // 6. Realistic Office Back Wall Decor & Room Furniture:
+      // Tall Oak Bookshelf along the back wall (x = -1.8, z = 13.8)
+      const shelfWoodMat = mats && mats.darkOak ? mats.darkOak : darkWoodMat;
+      const shelfGroup = new THREE.Group();
+      shelfGroup.position.set(-1.6, 0, 5.6); // relative to counter (z = 8.0 + 5.6 = 13.6)
+      const shelfFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 0.42), shelfWoodMat);
+      shelfFrame.position.set(0, 1.2, 0);
+      shelfFrame.castShadow = true;
+      shelfGroup.add(shelfFrame);
+
+      // Shelves with archival binders & folders
+      for (let sy = 0.45; sy <= 2.1; sy += 0.48) {
+        const rowBooks = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.34, 0.32), darkWoodMat);
+        rowBooks.position.set(0, sy, 0.02);
+        shelfGroup.add(rowBooks);
+      }
+      counterGroup.add(shelfGroup);
+
+      // Metal filing cabinet on east side (x = 1.6, z = 13.6)
+      const filingMat = new THREE.MeshStandardMaterial({ color: 0x545b62, roughness: 0.45, metalness: 0.75 });
+      const filingCab = new THREE.Mesh(new THREE.BoxGeometry(0.70, 1.35, 0.65), filingMat);
+      filingCab.position.set(1.6, 0.675, 5.6);
+      filingCab.castShadow = true;
+      counterGroup.add(filingCab);
+
+      // Rolling swivel office chair behind the counter
+      const chairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
+      const chairGroup = new THREE.Group();
+      chairGroup.position.set(0.0, 0, 1.55); // z = 9.55
+      const chairBase = new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 0.05, 12), brassMat);
+      chairBase.position.set(0, 0.08, 0);
+      const chairStem = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.40, 12), brassMat);
+      chairStem.position.set(0, 0.26, 0);
+      const chairSeat = new THREE.Mesh(new THREE.BoxGeometry(0.52, 0.08, 0.48), chairMat);
+      chairSeat.position.set(0, 0.48, 0);
+      const chairBack = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.55, 0.07), chairMat);
+      chairBack.position.set(0, 0.76, 0.22);
+      chairGroup.add(chairBase, chairStem, chairSeat, chairBack);
+      counterGroup.add(chairGroup);
+
+      // Warm overhead recessed task light inside the clerk's office
+      const officeLight = new THREE.PointLight(0xfff0dd, 0.95, 6.5, 1.2);
+      officeLight.position.set(0, 2.75, 1.8);
+      counterGroup.add(officeLight);
 
       this.scene.add(counterGroup);
 
@@ -7934,8 +8026,13 @@ window.game = this;
         minZ: z - 0.35,
         maxZ: z + 0.85,
         minY: y0,
-        maxY: y0 + 1.25
+        maxY: y0 + 1.15
       });
+      // Solid collision for rear bookshelf & filing cabinet
+      this.colliders.push(
+        { type: 'box', floor: 0, minX: x - 2.6, maxX: x - 0.6, minZ: z + 5.3, maxZ: z + 5.9, minY: y0, maxY: y0 + 2.5 },
+        { type: 'box', floor: 0, minX: x + 1.2, maxX: x + 2.0, minZ: z + 5.2, maxZ: z + 5.9, minY: y0, maxY: y0 + 1.4 }
+      );
     }
 
     buildMuseumClerk(fl, y0, mats) {
@@ -7944,11 +8041,12 @@ window.game = this;
 
       const clerkGroup = new THREE.Group();
       const startX = 0.0;
-      const startZ = 9.25; // Stands behind counter at z = 8.0, looking north
+      const startZ = 8.82; // Stands directly behind the lowered counter ledge (z = 8.0)
       clerkGroup.position.set(startX, y0, startZ);
-      clerkGroup.rotation.y = Math.PI; // Face north towards counter and corridor
+      clerkGroup.rotation.y = Math.PI; // Face north towards counter and player
 
       const clerk = {
+        name: 'REem8',
         group: clerkGroup,
         floor: 0,
         x: startX,
@@ -7959,16 +8057,18 @@ window.game = this;
         baseY: y0,
         rotY: Math.PI,
         targetRotY: Math.PI,
-        state: 'LEAN_COUNTER', // 'LEAN_COUNTER', 'IDLE_COUNTER', 'WANDER', 'RETURN_COUNTER'
-        stateTimer: 6.0 + Math.random() * 5.0,
-        moveSpeed: 1.4,
+        state: 'LEAN_COUNTER', // 'LEAN_COUNTER', 'IDLE_COUNTER', 'WANDER', 'RETURN_COUNTER', 'SUMMONED_BELL', 'STARE_DOWN'
+        stateTimer: 8.0 + Math.random() * 6.0,
+        moveSpeed: 1.5,
         leanWeight: 1.0,
         targetLeanWeight: 1.0,
+        stareWeight: 0.0,
+        targetStareWeight: 0.0,
         mixer: null,
         actions: {},
         currentAction: null,
         bones: {},
-        dialogueIndex: 0
+        bellPesterCount: 0
       };
 
       const gltfLoader = new THREE.GLTFLoader();
@@ -8010,7 +8110,7 @@ window.game = this;
         },
         undefined,
         (err) => {
-          console.error('Failed to load Museum Clerk model:', err);
+          console.error('Failed to load REem8 clerk model:', err);
         }
       );
 
@@ -8025,47 +8125,124 @@ window.game = this;
       const pPos = this.playerPos;
       const isPlayerNear = this.playerFloor === 0 && Math.hypot(pPos.x - clerk.x, pPos.z - clerk.z) < 12.0;
 
+      // Animate desk bell plunger return if recently rung
+      if (this.clerkDeskBell && this.clerkDeskBell.plunger) {
+        const timeSinceRing = performance.now() - (this.clerkDeskBell.lastRingTime || 0);
+        if (timeSinceRing < 220) {
+          this.clerkDeskBell.plunger.position.y = this.clerkDeskBell.origPlungerY - 0.015;
+        } else {
+          this.clerkDeskBell.plunger.position.y = this.clerkDeskBell.origPlungerY;
+        }
+      }
+
       // Update state timer
       clerk.stateTimer -= delta;
 
-      if (clerk.state === 'LEAN_COUNTER') {
-        clerk.targetLeanWeight = 1.0;
+      if (clerk.state === 'STARE_DOWN') {
+        // High alert: hands firmly planted up on the counter ledge, rigid spine, hard locked eye contact
+        clerk.targetLeanWeight = 0.0;
+        clerk.targetStareWeight = 1.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = 8.85; // Close to counter ledge (counter ledge is at z = 8.0..8.32)
+        clerk.targetZ = 8.78; // right up against the counter ledge
         clerk.targetRotY = Math.PI;
 
+        if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+          if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+          clerk.actions['idle'].reset().fadeIn(0.2).play();
+          clerk.currentAction = 'idle';
+        }
+
         if (clerk.stateTimer <= 0) {
-          // Switch to either IDLE upright or WANDER inside room
+          clerk.state = 'LEAN_COUNTER';
+          clerk.stateTimer = 10.0 + Math.random() * 6.0;
+          clerk.targetStareWeight = 0.0;
+        }
+      } else if (clerk.state === 'SUMMONED_BELL') {
+        // Walk briskly directly to the front counter to face the player
+        clerk.targetLeanWeight = 0.0;
+        clerk.targetStareWeight = 0.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = 8.82;
+
+        const dx = clerk.targetX - clerk.x;
+        const dz = clerk.targetZ - clerk.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 0.12) {
+          const moveDist = Math.min(dist, (clerk.moveSpeed * 1.35) * delta);
+          clerk.x += (dx / dist) * moveDist;
+          clerk.z += (dz / dist) * moveDist;
+          clerk.targetRotY = Math.atan2(dx, dz);
+
+          if (clerk.actions['walk'] && clerk.currentAction !== 'walk') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.18);
+            clerk.actions['walk'].reset().fadeIn(0.18).play();
+            clerk.currentAction = 'walk';
+          }
+        } else {
+          // Arrived at counter
+          clerk.targetRotY = Math.PI;
+          if (clerk.bellPesterCount >= 4) {
+            clerk.state = 'STARE_DOWN';
+            clerk.stateTimer = 9.0;
+            clerk.targetStareWeight = 1.0;
+          } else {
+            clerk.state = 'LEAN_COUNTER';
+            clerk.stateTimer = 8.0 + Math.random() * 6.0;
+            clerk.targetLeanWeight = 1.0;
+          }
+
+          if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['idle'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'idle';
+          }
+        }
+      } else if (clerk.state === 'LEAN_COUNTER') {
+        clerk.targetLeanWeight = 1.0;
+        clerk.targetStareWeight = 0.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = 8.82; // Snug against counter ledge at z = 8.0..8.32
+        clerk.targetRotY = Math.PI;
+
+        if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+          if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+          clerk.actions['idle'].reset().fadeIn(0.2).play();
+          clerk.currentAction = 'idle';
+        }
+
+        if (clerk.stateTimer <= 0) {
           if (Math.random() < 0.5) {
             clerk.state = 'IDLE_COUNTER';
-            clerk.stateTimer = 4.0 + Math.random() * 5.0;
+            clerk.stateTimer = 5.0 + Math.random() * 5.0;
           } else {
             clerk.state = 'WANDER';
-            clerk.stateTimer = 5.0 + Math.random() * 6.0;
-            // Pick a spot inside clerk's stand (x: -1.6..1.6, z: 9.5..12.5)
-            clerk.targetX = (Math.random() - 0.5) * 2.8;
-            clerk.targetZ = 9.8 + Math.random() * 2.5;
+            clerk.stateTimer = 6.0 + Math.random() * 6.0;
+            clerk.targetX = (Math.random() - 0.5) * 2.2;
+            clerk.targetZ = 9.8 + Math.random() * 2.2;
           }
         }
       } else if (clerk.state === 'IDLE_COUNTER') {
         clerk.targetLeanWeight = 0.0;
+        clerk.targetStareWeight = 0.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = 9.25;
+        clerk.targetZ = 9.20;
         clerk.targetRotY = Math.PI;
 
         if (clerk.stateTimer <= 0) {
           if (Math.random() < 0.65) {
             clerk.state = 'LEAN_COUNTER';
-            clerk.stateTimer = 8.0 + Math.random() * 8.0;
+            clerk.stateTimer = 9.0 + Math.random() * 8.0;
           } else {
             clerk.state = 'WANDER';
             clerk.stateTimer = 5.0 + Math.random() * 5.0;
-            clerk.targetX = (Math.random() - 0.5) * 2.8;
-            clerk.targetZ = 9.8 + Math.random() * 2.5;
+            clerk.targetX = (Math.random() - 0.5) * 2.2;
+            clerk.targetZ = 9.8 + Math.random() * 2.2;
           }
         }
       } else if (clerk.state === 'WANDER') {
         clerk.targetLeanWeight = 0.0;
+        clerk.targetStareWeight = 0.0;
         const dx = clerk.targetX - clerk.x;
         const dz = clerk.targetZ - clerk.z;
         const dist = Math.hypot(dx, dz);
@@ -8082,7 +8259,6 @@ window.game = this;
             clerk.currentAction = 'walk';
           }
         } else {
-          // Reached destination, pause briefly then return to counter
           if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
             if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
             clerk.actions['idle'].reset().fadeIn(0.2).play();
@@ -8091,11 +8267,12 @@ window.game = this;
           if (clerk.stateTimer <= 0) {
             clerk.state = 'RETURN_COUNTER';
             clerk.targetX = 0.0;
-            clerk.targetZ = 8.85;
+            clerk.targetZ = 8.82;
           }
         }
       } else if (clerk.state === 'RETURN_COUNTER') {
         clerk.targetLeanWeight = 0.0;
+        clerk.targetStareWeight = 0.0;
         const dx = clerk.targetX - clerk.x;
         const dz = clerk.targetZ - clerk.z;
         const dist = Math.hypot(dx, dz);
@@ -8112,9 +8289,8 @@ window.game = this;
             clerk.currentAction = 'walk';
           }
         } else {
-          // Reached counter! Transition back to leaning on the ledge looking tired
           clerk.state = 'LEAN_COUNTER';
-          clerk.stateTimer = 9.0 + Math.random() * 8.0;
+          clerk.stateTimer = 10.0 + Math.random() * 8.0;
           clerk.targetRotY = Math.PI;
 
           if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8126,84 +8302,183 @@ window.game = this;
       }
 
       // Smooth position interpolation
-      const posLerp = Math.min(1.0, delta * 6.0);
       clerk.group.position.x = clerk.x;
       clerk.group.position.z = clerk.z;
 
-      // Facing / rotation logic: when close to counter and player is nearby, look at player
-      if ((clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER') && isPlayerNear) {
+      // Facing / rotation logic: when at counter and player is nearby, look towards player
+      if ((clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER' || clerk.state === 'STARE_DOWN') && isPlayerNear) {
         const toPx = pPos.x - clerk.x;
         const toPz = pPos.z - clerk.z;
-        // Clamp looking angle to front hemisphere so he doesn't spin around backwards behind counter
         const lookAngle = Math.atan2(toPx, toPz);
         const diff = Math.atan2(Math.sin(lookAngle - Math.PI), Math.cos(lookAngle - Math.PI));
-        const clampedDiff = Math.max(-0.65, Math.min(0.65, diff));
+        const maxAngle = clerk.state === 'STARE_DOWN' ? 0.95 : 0.65;
+        const clampedDiff = Math.max(-maxAngle, Math.min(maxAngle, diff));
         clerk.targetRotY = Math.PI + clampedDiff;
       }
 
       // Smooth rotation
       let rDiff = Math.atan2(Math.sin(clerk.targetRotY - clerk.rotY), Math.cos(clerk.targetRotY - clerk.rotY));
-      clerk.rotY += rDiff * Math.min(1.0, delta * 5.0);
+      clerk.rotY += rDiff * Math.min(1.0, delta * 6.0);
       clerk.group.rotation.y = clerk.rotY;
 
-      // Smooth lean weight transition
-      clerk.leanWeight += (clerk.targetLeanWeight - clerk.leanWeight) * Math.min(1.0, delta * 4.0);
+      // Smooth lean and stare weight transitions
+      clerk.leanWeight += (clerk.targetLeanWeight - clerk.leanWeight) * Math.min(1.0, delta * 4.5);
+      clerk.stareWeight += (clerk.targetStareWeight - clerk.stareWeight) * Math.min(1.0, delta * 5.0);
 
       // Animation mixer update
       if (clerk.mixer) {
         clerk.mixer.update(delta);
       }
 
-      // Procedural bone posing for leaning over the ledge with elbows on the counter:
-      // When leanWeight > 0.01, tilt spine & chest forward, angle upperArms forward & down,
-      // bend elbows / forearms flat along counter, and angle head up to maintain tired eye contact.
+      // Procedural bone posing:
       const b = clerk.bones;
       const lw = clerk.leanWeight;
-      if (lw > 0.01 && b) {
-        // Spine & Chest pitch forward towards counter
-        if (b['spine']) {
-          b['spine'].rotation.x += 0.28 * lw;
-        }
-        if (b['chest']) {
-          b['chest'].rotation.x += 0.22 * lw;
+      const sw = clerk.stareWeight;
+
+      if (b) {
+        // 1. Tired Elbows Resting Over Counter Pose:
+        // Torso tilts comfortably forward, shoulders rotate forward, upper arms angle down/forward,
+        // and lower arms / forearms bend resting flat onto the lowered counter ledge (height ~0.88m).
+        if (lw > 0.01) {
+          if (b['spine']) {
+            b['spine'].rotation.x += 0.32 * lw;
+          }
+          if (b['chest']) {
+            b['chest'].rotation.x += 0.25 * lw;
+          }
+
+          // Left Arm: elbow resting on counter ledge
+          if (b['shoulder.L']) {
+            b['shoulder.L'].rotation.z += 0.15 * lw;
+          }
+          if (b['upperArm.L']) {
+            b['upperArm.L'].rotation.x += 0.85 * lw;
+            b['upperArm.L'].rotation.y += -0.15 * lw;
+            b['upperArm.L'].rotation.z += 0.35 * lw;
+          }
+          if (b['lowerArm.L']) {
+            b['lowerArm.L'].rotation.x += -1.25 * lw;
+            b['lowerArm.L'].rotation.y += 0.45 * lw;
+            b['lowerArm.L'].rotation.z += -0.20 * lw;
+          }
+          if (b['hand.L']) {
+            b['hand.L'].rotation.x += 0.20 * lw;
+          }
+
+          // Right Arm: elbow resting on counter ledge
+          if (b['shoulder.R']) {
+            b['shoulder.R'].rotation.z -= 0.15 * lw;
+          }
+          if (b['upperArm.R']) {
+            b['upperArm.R'].rotation.x += 0.85 * lw;
+            b['upperArm.R'].rotation.y += 0.15 * lw;
+            b['upperArm.R'].rotation.z -= 0.35 * lw;
+          }
+          if (b['lowerArm.R']) {
+            b['lowerArm.R'].rotation.x += -1.25 * lw;
+            b['lowerArm.R'].rotation.y += -0.45 * lw;
+            b['lowerArm.R'].rotation.z += 0.20 * lw;
+          }
+          if (b['hand.R']) {
+            b['hand.R'].rotation.x += 0.20 * lw;
+          }
+
+          // Neck & Head: tilt up slightly to maintain tired eye contact with player
+          if (b['neck']) {
+            b['neck'].rotation.x -= 0.25 * lw;
+          }
+          if (b['head']) {
+            b['head'].rotation.x -= 0.32 * lw;
+          }
         }
 
-        // Left Arm: elbow resting on counter
-        if (b['upperArm.L']) {
-          b['upperArm.L'].rotation.x += 0.75 * lw;
-          b['upperArm.L'].rotation.z += 0.20 * lw;
-        }
-        if (b['lowerArm.L']) {
-          b['lowerArm.L'].rotation.x += -1.15 * lw;
-          b['lowerArm.L'].rotation.y += 0.25 * lw;
+        // 2. Both Hands Firmly Planted on Counter (Stare Down Pose after repeated bell ringing):
+        // Upright, palms flat down on the mahogany slab, chest squared, unblinking hard eye contact
+        if (sw > 0.01) {
+          if (b['spine']) {
+            b['spine'].rotation.x += 0.12 * sw;
+          }
+          if (b['chest']) {
+            b['chest'].rotation.x += 0.10 * sw;
+          }
+          if (b['upperArm.L']) {
+            b['upperArm.L'].rotation.x += 0.55 * sw;
+            b['upperArm.L'].rotation.z += 0.25 * sw;
+          }
+          if (b['lowerArm.L']) {
+            b['lowerArm.L'].rotation.x += -0.75 * sw;
+            b['lowerArm.L'].rotation.y += 0.25 * sw;
+          }
+          if (b['hand.L']) {
+            b['hand.L'].rotation.x += 0.45 * sw;
+          }
+
+          if (b['upperArm.R']) {
+            b['upperArm.R'].rotation.x += 0.55 * sw;
+            b['upperArm.R'].rotation.z -= 0.25 * sw;
+          }
+          if (b['lowerArm.R']) {
+            b['lowerArm.R'].rotation.x += -0.75 * sw;
+            b['lowerArm.R'].rotation.y -= 0.25 * sw;
+          }
+          if (b['hand.R']) {
+            b['hand.R'].rotation.x += 0.45 * sw;
+          }
+
+          if (b['head']) {
+            b['head'].rotation.x -= 0.15 * sw;
+          }
         }
 
-        // Right Arm: elbow resting on counter
-        if (b['upperArm.R']) {
-          b['upperArm.R'].rotation.x += 0.75 * lw;
-          b['upperArm.R'].rotation.z -= 0.20 * lw;
-        }
-        if (b['lowerArm.R']) {
-          b['lowerArm.R'].rotation.x += -1.15 * lw;
-          b['lowerArm.R'].rotation.y -= 0.25 * lw;
-        }
-
-        // Head & Neck: tilt up slightly to compensate for torso pitch and look straight at player
-        if (b['neck']) {
-          b['neck'].rotation.x -= 0.20 * lw;
-        }
-        if (b['head']) {
-          b['head'].rotation.x -= 0.28 * lw;
+        // Head tracking toward player when player is near (unyielding eye contact)
+        if (isPlayerNear && b['head']) {
+          const toPx = pPos.x - clerk.x;
+          const toPz = pPos.z - clerk.z;
+          const relYaw = Math.atan2(toPx, toPz) - clerk.rotY;
+          const trackingMult = clerk.state === 'STARE_DOWN' ? 0.95 : 0.65;
+          const clampedYaw = Math.max(-0.65, Math.min(0.65, Math.atan2(Math.sin(relYaw), Math.cos(relYaw))));
+          b['head'].rotation.y += clampedYaw * trackingMult;
         }
       }
+    }
 
-      // Head tracking toward player when player is near
-      if (isPlayerNear && b && b['head']) {
-        const toPx = pPos.x - clerk.x;
-        const toPz = pPos.z - clerk.z;
-        const relYaw = Math.atan2(toPx, toPz) - clerk.rotY;
-        const clampedYaw = Math.max(-0.45, Math.min(0.45, Math.atan2(Math.sin(relYaw), Math.cos(relYaw))));
-        b['head'].rotation.y += clampedYaw * 0.5;
+    ringClerkDeskBell() {
+      if (this.audio && this.audio.playDeskServiceBell) {
+        this.audio.playDeskServiceBell();
+      }
+
+      const bell = this.clerkDeskBell;
+      if (bell) {
+        bell.lastRingTime = performance.now();
+        bell.ringCount = (bell.ringCount || 0) + 1;
+      }
+
+      const clerk = this.museumClerk;
+      if (!clerk) return;
+
+      clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
+
+      // If he's already at counter and player rings 4+ times, trigger stare-down
+      if (clerk.bellPesterCount >= 4 && Math.abs(clerk.z - 8.82) < 0.35) {
+        clerk.state = 'STARE_DOWN';
+        clerk.stateTimer = 10.0;
+        clerk.targetStareWeight = 1.0;
+        clerk.targetLeanWeight = 0.0;
+        clerk.targetRotY = Math.PI;
+        return;
+      }
+
+      // If he is wandering, returning, or facing away, turn immediately and walk to counter
+      clerk.state = 'SUMMONED_BELL';
+      clerk.stateTimer = 12.0;
+      clerk.targetX = 0.0;
+      clerk.targetZ = 8.82;
+      const dx = clerk.targetX - clerk.x;
+      const dz = clerk.targetZ - clerk.z;
+      if (Math.hypot(dx, dz) > 0.15) {
+        clerk.targetRotY = Math.atan2(dx, dz);
+      } else {
+        clerk.targetRotY = Math.PI;
       }
     }
 
@@ -8211,20 +8486,10 @@ window.game = this;
       const clerk = this.museumClerk;
       if (!clerk) return;
 
-      const lines = [
-        "Admission is free... look around, don't break anything.",
-        "I don't sell tickets. Entry is free. Just go on in.",
-        "Another day, another shift... standing behind this counter.",
-        "Please don't touch the living statues. Not that they ever listen anyway.",
-        "Free admission. Feel free to roam the galleries. Just let me rest my elbows."
-      ];
+      // REem8 has only one singular canonical line of dialogue:
+      this.showSystemNotification('REem8: "Admission is free"', 3500);
 
-      const line = lines[clerk.dialogueIndex % lines.length];
-      clerk.dialogueIndex++;
-
-      this.showSystemNotification(`CLERK: "${line}"`, 4200);
-
-      // When player talks to him, if leaning or idle, face player immediately
+      // Face player
       const toPx = this.playerPos.x - clerk.x;
       const toPz = this.playerPos.z - clerk.z;
       clerk.targetRotY = Math.atan2(toPx, toPz);
@@ -16980,7 +17245,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being', 'The Vendor'];
+        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being', 'REem8'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -17049,7 +17314,7 @@ window.game = this;
         { name: 'The Clown', file: 'the-clown.glb' },
         { name: 'The Student', file: 'the-student.glb' },
         { name: 'The Being', file: 'the-being.glb' },
-        { name: 'The Vendor', file: 'the-vendor.glb' }
+        { name: 'REem8', file: 'the-vendor.glb' }
       ];
       const character = characters[this.selectedPlayerCharacter];
       if (!character || !this.playerModelRoot) return;
@@ -19731,7 +19996,26 @@ window.game = this;
         }
       }
 
-      // Check Museum Clerk (The Vendor) interaction
+      // Check Desk Call Bell on Clerk Stand Counter
+      const bell = this.clerkDeskBell;
+      if (bell && this.playerFloor === 0) {
+        const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (bellDist < 2.5) {
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const camPos = this.camera ? this.camera.position : this.playerPos;
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
+          if (toBell.dot(fwd) > 0.65) {
+            this.ringClerkDeskBell();
+            return;
+          }
+        }
+      }
+
+      // Check Museum Clerk (REem8) interaction
       const clerk = this.museumClerk;
       if (clerk && clerk.group && this.playerFloor === 0) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
@@ -20753,12 +21037,32 @@ window.game = this;
         }
       }
 
-      // Check near Museum Clerk (The Vendor) at the Clerk's Stand
+      // Check Desk Call Bell on Clerk Stand Counter
+      const bell = this.clerkDeskBell;
+      if (bell && this.playerFloor === 0) {
+        const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (bellDist < 2.5) {
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const camPos = this.camera ? this.camera.position : this.playerPos;
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
+          if (toBell.dot(fwd) > 0.65) {
+            this.setInteractPrompt('[E] RING BELL');
+            this.focusedPainting = null;
+            return;
+          }
+        }
+      }
+
+      // Check near Museum Clerk (REem8) at the Clerk's Stand
       const clerk = this.museumClerk;
       if (clerk && clerk.group && this.playerFloor === 0) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
         if (dClerk < 4.2) {
-          this.setInteractPrompt(T('hud.prompt_talk_clerk', '[E] TALK TO CLERK'));
+          this.setInteractPrompt(T('hud.prompt_talk_clerk', '[E] TALK TO REem8'));
           this.focusedPainting = null;
           return;
         }
