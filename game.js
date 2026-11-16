@@ -8571,41 +8571,156 @@ window.game = this;
         maxY: y0 + 0.95
       });
 
-      // 2. Texture loaders for portal flare & beams
-      const burstTex = this.texLoader.load('assets/textures/portal_burst.png', (tx) => {
+      // 2. Texture loaders for flowing portal flare & beams
+      const burstTex = this.texLoader.load('assets/textures/portal_burst_flow.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const beamTex = this.texLoader.load('assets/textures/portal_beam.png', (tx) => {
+      const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
 
-      // 3. Central Radiant Starburst (Billboard planes with additive blending)
-      const burstGeo = new THREE.PlaneGeometry(5.4, 5.4);
-      const burstMat = new THREE.MeshBasicMaterial({
-        map: burstTex,
+      // 3. Fluid Ethereal Portal Core Shader
+      // Procedurally animated swirl, chromatic energy flow, distortion & luminous corona
+      const portalUniforms = {
+        uTime: { value: 0 },
+        uColorHot: { value: new THREE.Color(0xfff7d0) },
+        uColorMid: { value: new THREE.Color(0x38d9f5) },
+        uColorOuter: { value: new THREE.Color(0x7c3aed) }
+      };
+
+      const portalVertexShader = `
+        varying vec2 vUv;
+        varying vec3 vWorldPosition;
+        void main() {
+          vUv = uv;
+          vec4 worldPos = modelMatrix * vec4(position, 1.0);
+          vWorldPosition = worldPos.xyz;
+          gl_Position = projectionMatrix * viewMatrix * worldPos;
+        }
+      `;
+
+      const portalFragmentShader = `
+        uniform float uTime;
+        uniform vec3 uColorHot;
+        uniform vec3 uColorMid;
+        uniform vec3 uColorOuter;
+        varying vec2 vUv;
+
+        // Simplex / Perlin noise approximation
+        vec3 permute(vec3 x) { return mod(((x*34.0)+1.0)*x, 289.0); }
+        float snoise(vec2 v) {
+          const vec4 C = vec4(0.211324865405187, 0.366025403784439,
+                           -0.577350269189626, 0.024390243902439);
+          vec2 i  = floor(v + dot(v, C.yy));
+          vec2 x0 = v -   i + dot(i, C.xx);
+          vec2 i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+          vec4 x12 = x0.xyxy + C.xxzz;
+          x12.xy -= i1;
+          i = mod(i, 289.0);
+          vec3 p = permute(permute(i.y + vec3(0.0, i1.y, 1.0))
+            + i.x + vec3(0.0, i1.x, 1.0));
+          vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy),
+            dot(x12.zw,x12.zw)), 0.0);
+          m = m*m;
+          m = m*m;
+          vec3 x = 2.0 * fract(p * C.www) - 1.0;
+          vec3 h = abs(x) - 0.5;
+          vec3 ox = floor(x + 0.5);
+          vec3 a0 = x - ox;
+          m *= 1.79284291400159 - 0.85373472095314 * (a0*a0 + h*h);
+          vec3 g;
+          g.x  = a0.x  * x0.x  + h.x  * x0.y;
+          g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+          return 130.0 * dot(m, g);
+        }
+
+        void main() {
+          vec2 centered = (vUv - 0.5) * 2.0;
+          float r = length(centered);
+          if (r > 1.0) discard;
+
+          float angle = atan(centered.y, centered.x);
+
+          // Flowing swirl vortex
+          float swirl = angle + r * 3.5 - uTime * 1.8;
+          vec2 swirlUv = vec2(cos(swirl), sin(swirl)) * r;
+
+          // Layered flowing plasma noise
+          float n1 = snoise(swirlUv * 3.2 + vec2(uTime * 0.4, -uTime * 0.3));
+          float n2 = snoise(swirlUv * 6.5 - vec2(uTime * 0.6, uTime * 0.5));
+          float plasma = (n1 * 0.65 + n2 * 0.35) * 0.5 + 0.5;
+
+          // Flowing radiating rays with organic modulation (no sharp edges)
+          float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.2) * 0.5 + 0.5;
+          rays = pow(rays, 2.0);
+
+          // Smooth radial falloff (completely eliminates any square borders or image seam artifacts)
+          float smoothEdge = cos(r * 1.5707963);
+          smoothEdge = pow(max(0.0, smoothEdge), 2.2);
+
+          // Luminous color blending
+          vec3 col = mix(uColorOuter, uColorMid, smoothstep(0.7, 0.25, r));
+          col = mix(col, uColorHot, smoothstep(0.35, 0.0, r));
+
+          // Plasma energy modulation
+          col += uColorMid * (plasma * 0.45);
+          col += uColorHot * (rays * 0.35 * smoothstep(0.9, 0.1, r));
+
+          float alpha = smoothEdge * (0.85 + 0.25 * plasma);
+
+          gl_FragColor = vec4(col, alpha);
+        }
+      `;
+
+      // 4. Central Portal Vortex Disk (Facing the room entrance)
+      const portalShaderMat = new THREE.ShaderMaterial({
+        uniforms: portalUniforms,
+        vertexShader: portalVertexShader,
+        fragmentShader: portalFragmentShader,
         transparent: true,
-        opacity: 0.95,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const burstMesh1 = new THREE.Mesh(burstGeo, burstMat);
+
+      const portalDiscGeo = new THREE.PlaneGeometry(3.6, 3.6, 32, 32);
+      const portalDisc = new THREE.Mesh(portalDiscGeo, portalShaderMat);
+      portalDisc.rotation.y = -Math.PI / 2; // Facing west towards the main arched doorway
+      portalGroup.add(portalDisc);
+
+      // Back-to-back cross disk for full 3D presence inside the room
+      const portalDiscCross = new THREE.Mesh(portalDiscGeo, portalShaderMat);
+      portalGroup.add(portalDiscCross);
+
+      // 5. Silky Flowing Halo Corona Layers (Soft rotating celestial nebula)
+      const burstGeo = new THREE.PlaneGeometry(5.8, 5.8);
+      const burstMat1 = new THREE.MeshBasicMaterial({
+        map: burstTex,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const burstMesh1 = new THREE.Mesh(burstGeo, burstMat1);
+      burstMesh1.rotation.y = -Math.PI / 2;
       portalGroup.add(burstMesh1);
 
       const burstMat2 = new THREE.MeshBasicMaterial({
         map: burstTex,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.72,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const burstMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 7.2), burstMat2);
-      burstMesh2.rotation.z = Math.PI / 4;
+      const burstMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.6), burstMat2);
+      burstMesh2.rotation.y = -Math.PI / 2;
+      burstMesh2.rotation.z = Math.PI / 3;
       portalGroup.add(burstMesh2);
 
-      // Core incandescent sphere
-      const coreSphereGeo = new THREE.SphereGeometry(0.35, 16, 16);
+      // Spherical core essence
+      const coreSphereGeo = new THREE.SphereGeometry(0.38, 24, 24);
       const coreSphereMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
@@ -8614,34 +8729,34 @@ window.game = this;
       const coreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
       portalGroup.add(coreSphere);
 
-      // Surrounding ethereal glowing orb
-      const outerSphereGeo = new THREE.SphereGeometry(0.85, 20, 20);
+      const outerSphereGeo = new THREE.SphereGeometry(1.0, 24, 24);
       const outerSphereMat = new THREE.MeshBasicMaterial({
-        color: 0x90e8ff,
+        color: 0x44ddff,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.38,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
       const outerSphere = new THREE.Mesh(outerSphereGeo, outerSphereMat);
       portalGroup.add(outerSphere);
 
-      // Concentric glowing halo rings around portal
-      const ringGeo1 = new THREE.RingGeometry(1.2, 1.45, 32);
+      // Concentric spinning energy rings
+      const ringGeo1 = new THREE.RingGeometry(1.3, 1.55, 48);
       const ringMat1 = new THREE.MeshBasicMaterial({
-        color: 0xffe890,
+        color: 0xffe270,
         transparent: true,
-        opacity: 0.60,
+        opacity: 0.55,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
       const ring1 = new THREE.Mesh(ringGeo1, ringMat1);
+      ring1.rotation.y = -Math.PI / 2;
       portalGroup.add(ring1);
 
-      const ringGeo2 = new THREE.RingGeometry(1.8, 2.05, 32);
+      const ringGeo2 = new THREE.RingGeometry(1.9, 2.18, 48);
       const ringMat2 = new THREE.MeshBasicMaterial({
-        color: 0x5ce6ff,
+        color: 0x38bdf8,
         transparent: true,
         opacity: 0.40,
         blending: THREE.AdditiveBlending,
@@ -8649,112 +8764,150 @@ window.game = this;
         side: THREE.DoubleSide
       });
       const ring2 = new THREE.Mesh(ringGeo2, ringMat2);
+      ring2.rotation.y = -Math.PI / 2;
       portalGroup.add(ring2);
 
-      // 4. Ethereal Point Lights (casting golden-celestial radiance into the room)
-      const portalPointLight = new THREE.PointLight(0xfff1aa, 3.2, 22.0, 1.2);
+      // 6. Dynamic Ethereal Point Lights
+      const portalPointLight = new THREE.PointLight(0xfff1aa, 3.4, 24.0, 1.2);
       portalPointLight.position.set(0, 0, 0);
       portalGroup.add(portalPointLight);
 
-      const cyanPointLight = new THREE.PointLight(0x70d8ff, 1.8, 16.0, 1.4);
+      const cyanPointLight = new THREE.PointLight(0x38bdf8, 2.2, 18.0, 1.4);
       cyanPointLight.position.set(0, 0, 0);
       portalGroup.add(cyanPointLight);
 
+      const violetPointLight = new THREE.PointLight(0x9333ea, 1.6, 12.0, 1.5);
+      violetPointLight.position.set(0, 0, 0);
+      portalGroup.add(violetPointLight);
+
       this.scene.add(portalGroup);
 
-      // 5. Volumetric Light Shafts / Beams emanating out through doorways
-      // Doorway locations on Floor 3 (y0 = 10.4):
-      // - Main West Arched Doorway: x = 19.0, z = 13.0 (portal is at x=26.0, beam travels west dx = -10.5m)
-      // - North Doorway: z = 8.0, x = 23.0 (portal at z=13.0, beam travels north dz = -7.5m)
-      // - South Doorway: z = 18.0, x = 23.0 (portal at z=13.0, beam travels south dz = +7.5m)
+      // 7. Flowing Volumetric Light Cones / Shafts (Radial multi-fin cylinder/cone geometry)
+      // Using feathered flowing texture with zero intersecting line seams
       const beamsGroup = new THREE.Group();
       this.scene.add(beamsGroup);
 
       const beamMeshes = [];
 
-      const createDoorwayBeams = (startX, startY, startZ, targetX, targetY, targetZ, beamWidth, beamLength, colorHex = 0xffe990) => {
+      const createDoorwayLightTunnel = (startX, startY, startZ, targetX, targetY, targetZ, radiusStart, radiusEnd, finCount = 8, colorHex = 0xffebaa) => {
         const dx = targetX - startX;
         const dy = targetY - startY;
         const dz = targetZ - startZ;
-        const angleY = Math.atan2(dx, dz);
-        const dist = Math.hypot(dx, dz);
+        const length = Math.hypot(dx, dy, dz);
+        const midX = startX + dx * 0.5;
+        const midY = startY + dy * 0.5;
+        const midZ = startZ + dz * 0.5;
 
-        const beamMat = new THREE.MeshBasicMaterial({
+        const forward = new THREE.Vector3(dx, dy, dz).normalize();
+        const up = new THREE.Vector3(0, 1, 0);
+        const quat = new THREE.Quaternion().setFromUnitVectors(up, forward);
+
+        const tunnelGroup = new THREE.Group();
+        tunnelGroup.position.set(midX, midY, midZ);
+        tunnelGroup.quaternion.copy(quat);
+
+        const mat = new THREE.MeshBasicMaterial({
           map: beamTex,
           color: colorHex,
           transparent: true,
-          opacity: 0.72,
+          opacity: 0.55,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
         });
 
-        // Horizontal shaft plane
-        const hGeo = new THREE.PlaneGeometry(beamWidth, beamLength);
-        const hMesh = new THREE.Mesh(hGeo, beamMat.clone());
-        hMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
-        hMesh.rotation.y = angleY;
-        hMesh.rotation.x = -Math.PI / 2; // Flat horizontal plane extending outwards
-        beamsGroup.add(hMesh);
-        beamMeshes.push({ mesh: hMesh, baseOpacity: 0.65, phase: Math.random() * Math.PI * 2 });
+        // Multi-angle radial fins spanning through the 3D doorway volume
+        for (let i = 0; i < finCount; i++) {
+          const finAngle = (i / finCount) * Math.PI;
+          const finGeo = new THREE.PlaneGeometry(radiusStart * 2.2, length, 1, 4);
+          const finMesh = new THREE.Mesh(finGeo, mat.clone());
+          finMesh.rotation.y = finAngle;
+          tunnelGroup.add(finMesh);
+          beamMeshes.push({
+            mesh: finMesh,
+            baseOpacity: 0.42,
+            phase: i * 0.7,
+            rotSpeed: (i % 2 === 0 ? 1 : -1) * 0.15
+          });
+        }
 
-        // Vertical shaft plane (crossing the horizontal plane for 3D volumetric feel)
-        const vGeo = new THREE.PlaneGeometry(beamLength, beamWidth * 0.9);
-        const vMesh = new THREE.Mesh(vGeo, beamMat.clone());
-        vMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
-        vMesh.rotation.y = angleY + Math.PI / 2;
-        beamsGroup.add(vMesh);
-        beamMeshes.push({ mesh: vMesh, baseOpacity: 0.50, phase: Math.random() * Math.PI * 2 });
+        // Tapered cylinder / cone hull for rich volumetric body
+        const coneGeo = new THREE.CylinderGeometry(radiusEnd, radiusStart, length, 16, 4, true);
+        const coneMat = new THREE.MeshBasicMaterial({
+          map: beamTex,
+          color: colorHex,
+          transparent: true,
+          opacity: 0.35,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+          side: THREE.DoubleSide
+        });
+        const coneMesh = new THREE.Mesh(coneGeo, coneMat);
+        tunnelGroup.add(coneMesh);
+        beamMeshes.push({
+          mesh: coneMesh,
+          baseOpacity: 0.32,
+          phase: Math.random() * Math.PI,
+          rotSpeed: 0.08
+        });
 
-        // Diagonal fan plane for soft glow dispersion
-        const dMesh = new THREE.Mesh(hGeo, beamMat.clone());
-        dMesh.position.set(startX + dx * 0.5, startY + dy * 0.5, startZ + dz * 0.5);
-        dMesh.rotation.y = angleY;
-        dMesh.rotation.x = -Math.PI / 2;
-        dMesh.rotation.z = Math.PI / 6;
-        beamsGroup.add(dMesh);
-        beamMeshes.push({ mesh: dMesh, baseOpacity: 0.35, phase: Math.random() * Math.PI * 2 });
+        beamsGroup.add(tunnelGroup);
       };
 
-      // West Arched Entrance Beams (shooting out into the 3rd floor hallway as shown in mockup photo)
-      createDoorwayBeams(26.0, portalY, 13.0, 15.0, portalY - 0.2, 13.0, 3.4, 11.5, 0xffe899);
-      createDoorwayBeams(26.0, portalY, 13.0, 16.0, portalY - 0.3, 13.0, 4.2, 10.5, 0x88e6ff);
+      // West Arched Entrance: Volumetric Light Tunnel projecting through the archway into the main hall
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 14.5, portalY - 0.25, 13.0, 1.2, 3.2, 8, 0xfff0b8);
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 15.0, portalY - 0.15, 13.0, 1.5, 3.8, 6, 0x5ce6ff);
 
-      // North Doorway Beams (pointing towards North doorway at z = 8.0, x = 23.0)
-      createDoorwayBeams(26.0, portalY, 13.0, 23.0, portalY - 0.2, 5.0, 3.0, 8.5, 0xffebb5);
+      // North Doorway: Volumetric Light Tunnel pointing towards North doorway (z = 8.0, x = 23.0)
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 4.5, 1.0, 2.6, 6, 0xffeab0);
 
-      // South Doorway Beams (pointing towards South doorway at z = 18.0, x = 23.0)
-      createDoorwayBeams(26.0, portalY, 13.0, 23.0, portalY - 0.2, 21.0, 3.0, 8.5, 0x9be8ff);
+      // South Doorway: Volumetric Light Tunnel pointing towards South doorway (z = 18.0, x = 23.0)
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 21.5, 1.0, 2.6, 6, 0x88e6ff);
 
-      // 6. Ethereal Floating Dust / Light Motes hovering in the beam
-      const moteCount = 65;
+      // 8. Swirling Cosmic Light Motes & Stardust
+      const moteCount = 90;
       const moteGeo = new THREE.BufferGeometry();
       const motePos = new Float32Array(moteCount * 3);
+      const moteColors = new Float32Array(moteCount * 3);
       const moteVel = [];
 
       for (let m = 0; m < moteCount; m++) {
-        const mx = 26.0 + (Math.random() - 0.6) * 10.0;
-        const my = y0 + 0.3 + Math.random() * 3.4;
-        const mz = 13.0 + (Math.random() - 0.5) * 6.0;
-        motePos[m * 3] = mx;
+        const mx = 26.0 + (Math.random() - 0.6) * 11.0;
+        const my = y0 + 0.3 + Math.random() * 3.6;
+        const mz = 13.0 + (Math.random() - 0.5) * 7.0;
+        motePos[m * 3]     = mx;
         motePos[m * 3 + 1] = my;
         motePos[m * 3 + 2] = mz;
+
+        const isGold = Math.random() < 0.55;
+        if (isGold) {
+          moteColors[m * 3]     = 1.0;
+          moteColors[m * 3 + 1] = 0.92;
+          moteColors[m * 3 + 2] = 0.65;
+        } else {
+          moteColors[m * 3]     = 0.40;
+          moteColors[m * 3 + 1] = 0.88;
+          moteColors[m * 3 + 2] = 1.0;
+        }
+
         moteVel.push({
-          vx: (Math.random() - 0.6) * 0.25,
-          vy: 0.15 + Math.random() * 0.3,
-          vz: (Math.random() - 0.5) * 0.25,
-          baseX: mx,
-          baseY: my,
-          baseZ: mz
+          vx: (Math.random() - 0.65) * 0.35,
+          vy: 0.12 + Math.random() * 0.35,
+          vz: (Math.random() - 0.5) * 0.35,
+          orbitAngle: Math.random() * Math.PI * 2,
+          orbitSpeed: 0.8 + Math.random() * 1.4,
+          orbitRadius: 1.0 + Math.random() * 3.5
         });
       }
 
       moteGeo.setAttribute('position', new THREE.BufferAttribute(motePos, 3));
+      moteGeo.setAttribute('color', new THREE.BufferAttribute(moteColors, 3));
+
       const moteMat = new THREE.PointsMaterial({
-        color: 0xfffaea,
-        size: 0.08,
+        size: 0.09,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.90,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -8766,6 +8919,9 @@ window.game = this;
         portalGroup: portalGroup,
         beamsGroup: beamsGroup,
         pedestal: pedestal,
+        portalUniforms: portalUniforms,
+        portalDisc: portalDisc,
+        portalDiscCross: portalDiscCross,
         burstMesh1: burstMesh1,
         burstMesh2: burstMesh2,
         coreSphere: coreSphere,
@@ -8775,6 +8931,7 @@ window.game = this;
         beamMeshes: beamMeshes,
         pointLight1: portalPointLight,
         pointLight2: cyanPointLight,
+        pointLight3: violetPointLight,
         motePoints: motePoints,
         moteVel: moteVel,
         time: 0
@@ -9499,45 +9656,73 @@ window.game = this;
 
       ep.time += delta;
 
-      // 1. Shimmering starburst rotation and pulsing
+      // 1. Update procedural portal vortex shader uniforms
+      if (ep.portalUniforms) {
+        ep.portalUniforms.uTime.value = ep.time;
+
+        // Dynamic color breathing: shift hot core & mid colors organically
+        const hueShift = Math.sin(ep.time * 0.8) * 0.08;
+        ep.portalUniforms.uColorMid.value.setHSL(0.52 + hueShift, 0.95, 0.60);
+      }
+
+      // Smooth portal disc subtle tilt & breathing
+      if (ep.portalDisc) {
+        const discScale = 1.0 + Math.sin(ep.time * 2.4) * 0.06;
+        ep.portalDisc.scale.set(discScale, discScale, 1.0);
+      }
+      if (ep.portalDiscCross) {
+        const discCrossScale = 1.0 + Math.cos(ep.time * 2.1) * 0.07;
+        ep.portalDiscCross.scale.set(discCrossScale, discCrossScale, 1.0);
+        ep.portalDiscCross.rotation.y = Math.sin(ep.time * 0.4) * 0.35;
+      }
+
+      // 2. Shimmering celestial corona layers (flow texture, zero sharp borders)
       if (ep.burstMesh1) {
-        ep.burstMesh1.rotation.z += delta * 0.12;
-        const scale1 = 1.0 + Math.sin(ep.time * 2.8) * 0.08;
+        ep.burstMesh1.rotation.z += delta * 0.16;
+        const scale1 = 1.0 + Math.sin(ep.time * 2.6) * 0.09;
         ep.burstMesh1.scale.set(scale1, scale1, 1.0);
       }
       if (ep.burstMesh2) {
-        ep.burstMesh2.rotation.z -= delta * 0.08;
-        const scale2 = 1.0 + Math.cos(ep.time * 2.1) * 0.10;
+        ep.burstMesh2.rotation.z -= delta * 0.11;
+        const scale2 = 1.0 + Math.cos(ep.time * 1.9) * 0.11;
         ep.burstMesh2.scale.set(scale2, scale2, 1.0);
       }
 
-      // 2. Halo ring rotations
+      // 3. Halo ring rotations
       if (ep.ring1) {
-        ep.ring1.rotation.z += delta * 0.25;
+        ep.ring1.rotation.z += delta * 0.32;
       }
       if (ep.ring2) {
-        ep.ring2.rotation.z -= delta * 0.18;
+        ep.ring2.rotation.z -= delta * 0.22;
       }
 
-      // 3. Dynamic point light pulsing
+      // 4. Dynamic point lights pulsing
       if (ep.pointLight1) {
-        ep.pointLight1.intensity = 3.0 + Math.sin(ep.time * 3.5) * 0.5 + Math.cos(ep.time * 7.1) * 0.25;
+        ep.pointLight1.intensity = 3.2 + Math.sin(ep.time * 3.6) * 0.6 + Math.cos(ep.time * 7.2) * 0.25;
       }
       if (ep.pointLight2) {
-        ep.pointLight2.intensity = 1.7 + Math.cos(ep.time * 2.7) * 0.4;
+        ep.pointLight2.intensity = 2.0 + Math.cos(ep.time * 2.8) * 0.45;
+      }
+      if (ep.pointLight3) {
+        ep.pointLight3.intensity = 1.5 + Math.sin(ep.time * 1.8) * 0.4;
       }
 
-      // 4. Volumetric beam opacity pulsing
+      // 5. Volumetric light shafts & cone hulls (slow organic axial rotation and undulating opacity)
       if (ep.beamMeshes) {
         for (let i = 0; i < ep.beamMeshes.length; i++) {
           const bm = ep.beamMeshes[i];
-          if (bm && bm.mesh && bm.mesh.material) {
-            bm.mesh.material.opacity = bm.baseOpacity * (0.85 + 0.25 * Math.sin(ep.time * 2.4 + bm.phase));
+          if (bm && bm.mesh) {
+            if (bm.rotSpeed) {
+              bm.mesh.rotation.y += delta * bm.rotSpeed;
+            }
+            if (bm.mesh.material) {
+              bm.mesh.material.opacity = bm.baseOpacity * (0.82 + 0.28 * Math.sin(ep.time * 2.2 + bm.phase));
+            }
           }
         }
       }
 
-      // 5. Light motes drifting through the air
+      // 6. Swirling cosmic stardust & floating motes
       if (ep.motePoints && ep.moteVel) {
         const posAttr = ep.motePoints.geometry.attributes.position;
         const arr = posAttr.array;
@@ -9546,15 +9731,21 @@ window.game = this;
 
         for (let m = 0; m < count; m++) {
           const v = ep.moteVel[m];
-          arr[m * 3 + 1] += v.vy * delta; // Rise
-          arr[m * 3]     += v.vx * delta;
-          arr[m * 3 + 2] += v.vz * delta;
+          // Swirling orbit around portal center (x=26.0, z=13.0)
+          v.orbitAngle += v.orbitSpeed * delta * 0.4;
+          const targetX = 26.0 + Math.cos(v.orbitAngle) * v.orbitRadius;
+          const targetZ = 13.0 + Math.sin(v.orbitAngle) * (v.orbitRadius * 0.7);
 
-          // Wrap back to floor height
-          if (arr[m * 3 + 1] > y0 + 3.8) {
+          arr[m * 3]     += (targetX - arr[m * 3]) * Math.min(1.0, delta * 1.5) + v.vx * delta * 0.3;
+          arr[m * 3 + 1] += v.vy * delta; // Upward drift
+          arr[m * 3 + 2] += (targetZ - arr[m * 3 + 2]) * Math.min(1.0, delta * 1.5) + v.vz * delta * 0.3;
+
+          // Recycle motes when they rise too high
+          if (arr[m * 3 + 1] > y0 + 3.9) {
             arr[m * 3 + 1] = y0 + 0.3;
-            arr[m * 3]     = 26.0 + (Math.random() - 0.6) * 10.0;
-            arr[m * 3 + 2] = 13.0 + (Math.random() - 0.5) * 6.0;
+            v.orbitAngle = Math.random() * Math.PI * 2;
+            arr[m * 3]     = 26.0 + Math.cos(v.orbitAngle) * v.orbitRadius;
+            arr[m * 3 + 2] = 13.0 + Math.sin(v.orbitAngle) * (v.orbitRadius * 0.7);
           }
         }
         posAttr.needsUpdate = true;
@@ -16508,7 +16699,7 @@ window.game = this;
         { floor: 2, x: -26, z: 12, baseY: 2 * H + 1.38 },
         { floor: 2, x: 19, z: 30.5, baseY: 2 * H + 1.38 },
         { floor: 2, x: 12, z: -39, baseY: 2 * H + 1.38 },
-        { floor: 2, x: 26, z: 13, baseY: 2 * H + 1.38 },
+        // (Floor 2 x: 26, z: 13 removed - reserved for the Ethereal Portal room)
         // Floor 3
         { floor: 3, x: -26, z: 0, baseY: 3 * H + 1.38 },
         { floor: 3, x: -26, z: 12, baseY: 3 * H + 1.38 },
