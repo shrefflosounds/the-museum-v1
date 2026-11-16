@@ -19182,6 +19182,16 @@ window.game = this;
           return;
         }
       }
+
+      // Check Robot Dog interaction (E to interact: barks, then follows player for 5-10s)
+      const dog = this.robotDog;
+      if (dog && dog.group && dog.floor === this.playerFloor) {
+        const dDog = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+        if (dDog < 3.5) {
+          this.interactRobotDog(dog);
+          return;
+        }
+      }
       // Check Video Installation Console
       if (this.focusedVideoControl) {
         this.triggerVideoControl(this.focusedVideoControl.id);
@@ -20180,6 +20190,17 @@ window.game = this;
           this.setInteractPrompt(nearS.isPlayingAudio
             ? `[E] STOP: ${nearS.cfg.name.toUpperCase()}`
             : `[E] COMMUNE: ${nearS.cfg.name.toUpperCase()}`);
+          return;
+        }
+      }
+
+      // Check near robot dog (only "[E] INTERACT", no extra text per user prompt instructions)
+      const dog = this.robotDog;
+      if (dog && dog.group && dog.floor === this.playerFloor) {
+        const dDog = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+        if (dDog < 3.5) {
+          this.setInteractPrompt('[E] INTERACT');
+          this.focusedPainting = null;
           return;
         }
       }
@@ -22593,6 +22614,25 @@ window.game = this;
       this.robotDog = dogObj;
     }
 
+    interactRobotDog(dog) {
+      if (!dog) return;
+      // Turn to face player
+      const toPx = this.playerPos.x - dog.x;
+      const toPz = this.playerPos.z - dog.z;
+      dog.yaw = Math.atan2(toPx, toPz);
+      if (dog.group) dog.group.rotation.y = dog.yaw;
+
+      // Bark at player happily
+      this.playDogSound(dog.sfx.barks, dog);
+      this.playDogAction(dog, "Bark", 0.1);
+
+      // Start following player for 5-10 seconds
+      dog.aiState = "FOLLOW_PLAYER";
+      dog.aiTimer = 5.0 + Math.random() * 5.0; // 5 to 10 seconds duration
+      dog.followRepathTimer = 0;
+      dog.navPath = null;
+    }
+
     playDogAction(dog, name, duration = 0.18) {
       if (!dog.mixer || !dog.actions[name]) return;
       if (dog.currentActionName === name) return;
@@ -22714,7 +22754,7 @@ window.game = this;
         dog.navPath = null;
       }
 
-      const isMoving = (dog.aiState === "WANDER" || dog.aiState === "RUN" || dog.aiState === "CIRCLE" || dog.aiState === "APPROACH_PLAYER" || dog.aiState === "APPROACH_STATUE");
+      const isMoving = (dog.aiState === "WANDER" || dog.aiState === "RUN" || dog.aiState === "CIRCLE" || dog.aiState === "APPROACH_PLAYER" || dog.aiState === "APPROACH_STATUE" || dog.aiState === "FOLLOW_PLAYER");
       if (isMoving) {
         dog.stepTimer = (dog.stepTimer || 0) + delta;
         const interval = (dog.currentSpeed > 3.5) ? 0.18 : 0.28;
@@ -23008,6 +23048,70 @@ window.game = this;
 
           const curWp = dog.navPath[dog.navIndex];
           moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.runSpeed);
+          break;
+        }
+
+        case "FOLLOW_PLAYER": {
+          // Energetic following behavior triggered by pressing E on the dog
+          const distToPlayer = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+          const sameFl = (dog.floor === this.playerFloor);
+
+          // If follow duration ends (or player goes to another floor and is out of reach)
+          if (dog.aiTimer <= 0 || (!sameFl && distToPlayer > 18.0)) {
+            // Get sidetracked or stop
+            const sidetrackRoll = Math.random();
+            if (sidetrackRoll < 0.4) {
+              // Curious look or playful circle
+              dog.aiState = "CURIOUS_PLAYER";
+              dog.aiTimer = 1.8;
+            } else if (sidetrackRoll < 0.7) {
+              dog.aiState = "SIT";
+              dog.aiTimer = 2.5;
+              this.playDogAction(dog, "Sit", 0.3);
+            } else {
+              dog.aiState = "IDLE";
+              dog.aiTimer = 1.0;
+            }
+            dog.navPath = null;
+            return;
+          }
+
+          // Follow spacing: trot/run if farther than 2.0m, pause/idle happily if close
+          if (distToPlayer > 2.0) {
+            const runFast = distToPlayer > 4.5;
+            this.playDogAction(dog, runFast ? "Run" : "Walk", 0.15);
+            dog.currentSpeed = runFast ? dog.runSpeed : dog.walkSpeed * 1.35;
+
+            // Recompute / update path towards player periodically
+            dog.followRepathTimer = (dog.followRepathTimer || 0) - delta;
+            if (!dog.navPath || dog.navIndex >= dog.navPath.length || dog.followRepathTimer <= 0) {
+              dog.followRepathTimer = 0.65;
+              dog.navPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
+              dog.navIndex = 0;
+            }
+
+            if (dog.navPath && dog.navIndex < dog.navPath.length) {
+              const wp = dog.navPath[dog.navIndex];
+              const distToWp = Math.hypot(wp.x - dog.x, wp.z - dog.z);
+              if (distToWp < 0.75) {
+                dog.navIndex++;
+              }
+              if (dog.navIndex < dog.navPath.length) {
+                const curWp = dog.navPath[dog.navIndex];
+                moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.currentSpeed);
+              }
+            } else {
+              // Direct movement if within direct line of sight
+              moveDogStep(this.playerPos.x - dog.x, this.playerPos.z - dog.z, dog.currentSpeed);
+            }
+          } else {
+            // Close enough to player: face player with happy tail wag / idle
+            this.playDogAction(dog, "Idle", 0.2);
+            dog.currentSpeed = 0;
+            const lookYaw = Math.atan2(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+            dog.yaw = this.lerpStatueAngle(dog.yaw, lookYaw, Math.min(1, delta * 8.0));
+            dog.group.rotation.y = dog.yaw;
+          }
           break;
         }
 
