@@ -8030,7 +8030,7 @@ window.game = this;
             maxZ: maxZ,
             minY: y0,
             maxY: y0 + fenceH,
-            isWall: true
+            isWall: false
           });
         };
 
@@ -15894,6 +15894,14 @@ window.game = this;
       }
     }
 
+    isInBathroom(pos, floor = this.playerFloor) {
+      if (!pos) return false;
+      const fl = (floor !== undefined) ? floor : this.playerFloor;
+      if (fl !== 0 && fl !== 1) return false; // Restrooms are built on Floor 0 and Floor 1
+      // Restrooms occupy x: -3.8..4.0, z: -14.0..-6.0
+      return (pos.x >= -3.8 && pos.x <= 4.0 && pos.z >= -14.0 && pos.z <= -6.0);
+    }
+
     isInStairwell(pos) {
       if (!pos) return false;
       if (pos.x >= -4.2 && pos.x <= 4.2 && pos.z >= -26.5 && pos.z <= -13.5) return true;
@@ -19703,16 +19711,20 @@ window.game = this;
       if (!wantsSprint) this.sprintExhausted = false;
       if (wantsSprint && !this.sprintExhausted && this.stamina > 5) {
         this.isSprinting = true;
-        this.stamina = Math.max(0, this.stamina - delta * 11); // halved drain = 2x sprint duration
+        this.stamina = Math.max(0, this.stamina - delta * 5.5); // halved drain = 2x sprint duration
         if (this.stamina <= 5) this.sprintExhausted = true;
       } else {
         this.isSprinting = false;
         this.stamina = Math.min(CONFIG.PLAYER.MAX_STAMINA, this.stamina + delta * 16);
       }
 
-      const baseSpeed = isCrouching
+      // The Being has 2.5x speed and 1.2x jump
+      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      const charSpeedMultiplier = isTheBeing ? 2.5 : 1.0;
+
+      const baseSpeed = (isCrouching
         ? CONFIG.PLAYER.CROUCH_SPEED
-        : (this.isSprinting ? CONFIG.PLAYER.SPRINT_SPEED : CONFIG.PLAYER.WALK_SPEED);
+        : (this.isSprinting ? CONFIG.PLAYER.SPRINT_SPEED : CONFIG.PLAYER.WALK_SPEED)) * charSpeedMultiplier;
 
       // Sprint-jump momentum boost: extra speed while airborne during a running jump
       const moveSpeed = (this.isSprinting && !this.isGrounded && !isCrouching)
@@ -19786,7 +19798,8 @@ window.game = this;
       // Jump mechanics (Space)
       const wantsJump = !!this.keys['Space'];
       if (wantsJump && this.isGrounded && !isCrouching) {
-        this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE;
+        const jumpMultiplier = isTheBeing ? 1.2 : 1.0;
+        this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier;
         this.isGrounded = false;
         this.footstepTimer = 0;
       }
@@ -19868,6 +19881,12 @@ window.game = this;
       }
 
       this.trackCurrentRoom();
+
+      // Standing in the bathrooms slowly heals the player's health
+      if (this.isInBathroom(this.playerPos, this.playerFloor) && this.health < CONFIG.PLAYER.MAX_HEALTH && this.health > 0) {
+        this.health = Math.min(CONFIG.PLAYER.MAX_HEALTH, this.health + delta * 6.0); // restores ~6 HP per second
+      }
+
       this._interactPromptTimer = (this._interactPromptTimer || 0) - delta;
       if (this._interactPromptTimer <= 0) {
         this._interactPromptTimer = 0.05;
