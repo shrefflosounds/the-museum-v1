@@ -461,8 +461,9 @@
       heelOsc.stop(now + 0.10);
     }
 
-    playSmittyFootstep(distance) {
+    playSmittyFootstep(distance, soundFloor = null) {
       if (!this.ctx || distance > 24) return;
+      if (soundFloor !== null && soundFloor !== undefined && soundFloor !== this.playerFloor) return;
       const atten = Math.max(0, 1 - distance / 24);
       const vol = atten * atten * 0.45; // Gentle muffled footfall to prevent repetitive thumping
       if (this.playCustom('smitty_footstep.wav', null, vol)) return;
@@ -633,8 +634,9 @@
       this.playLockdownDisengaged();
     }
 
-    playSmittyGrowl() {
+    playSmittyGrowl(soundFloor = null) {
       if (!this.ctx) return;
+      if (soundFloor !== null && soundFloor !== undefined && soundFloor !== this.playerFloor) return;
       const nowAudio = performance.now() / 1000;
       if (this.lastGrowlTime && (nowAudio - this.lastGrowlTime < 4.0)) return;
       this.lastGrowlTime = nowAudio;
@@ -20696,7 +20698,7 @@ window.game = this;
     }
 
     damageSmitty(amount, hitPoint = null, shotDir = null) {
-      this.audio.playSmittyGrowl();
+      this.audio.playSmittyGrowl(this.smittyFloor);
       this.smittyHp -= amount;
 
       // Smitty only freezes/stuns upon the very first shot
@@ -20758,7 +20760,7 @@ window.game = this;
         this.audio.playJumpscareStinger();
       } else if (!wasInChase && (now - (this.lastChaseGrowlTime || 0) > 6.0)) {
         this.lastChaseGrowlTime = now;
-        this.audio.playSmittyGrowl();
+        this.audio.playSmittyGrowl(this.smittyFloor);
       }
     }
 
@@ -21214,7 +21216,7 @@ window.game = this;
           this.smittyState = 'PATROL';
           this.smittyStunTimer = 0;
           this.smittyHasBeenShot = false;
-          this.audio.playSmittyGrowl();
+          // Silent respawn — zero audio cues when The Curator respawns
           this.playSmittyAnimation('Walk');
           this.pickNextPatrolNode();
         }
@@ -21592,12 +21594,7 @@ window.game = this;
           this.smittyFootstepTimer = this.smittyFootstepInterval;
           if (floorDiff === 0) {
             if (horizontalDist < 34) {
-              this.audio.playSmittyFootstep(horizontalDist);
-            }
-          } else if (floorDiff === 1) {
-            // Immediately adjacent floor: muffled reverberation through concrete ceiling
-            if (horizontalDist < 14) {
-              this.audio.playSmittyFootstep(horizontalDist * 2.2 + 16);
+              this.audio.playSmittyFootstep(horizontalDist, this.smittyFloor);
             }
           }
         }
@@ -21640,7 +21637,7 @@ window.game = this;
     attackPlayer() {
       if (!this.smittyEnabled) return;
       this.playSmittyAnimation('Attack');
-      this.audio.playSmittyGrowl();
+      this.audio.playSmittyGrowl(this.smittyFloor);
 
       this.dom.damageOverlay.style.opacity = '1';
       setTimeout(() => {

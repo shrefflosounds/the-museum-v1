@@ -487,11 +487,32 @@
         this.model.scale.y = this.baseScale;
       }
 
-      // Loose leash: let FinalFight roam freely up to 65m away or a floor ahead/behind before catching up
+      // Inter-floor following & leash:
+      // When the player changes floors, FinalFight immediately prioritizes following them up/down to protect them!
       const dP = this._dist2D(this.pos, g.playerPos);
       const floorGap = Math.abs(this.floor - g.playerFloor);
-      if (!this.jump && (dP > 68 || floorGap > 1 || (floorGap === 1 && !g.isInStairwell(this.pos) && !g.isInStairwell(g.playerPos) && dP > 44))) {
-        this._teleportBehindPlayer();
+
+      if (floorGap > 0) {
+        // Player is on a different floor: if not already navigating stairs rapidly toward them,
+        // or if player has established distance/time on the new floor, promptly catch up to defend them!
+        this.floorChangeFollowTimer = (this.floorChangeFollowTimer || 0) + delta;
+        if (!this.jump && (floorGap > 1 || this.floorChangeFollowTimer > 1.8 || dP > 28)) {
+          this._teleportBehindPlayer();
+          this.floorChangeFollowTimer = 0;
+        } else if (this.mode !== 'INTERCEPT_FLOOR' && this.mode !== 'HUNT') {
+          // Immediately route into stairs toward the player's floor
+          this.mode = 'INTERCEPT_FLOOR';
+          this.modeTimer = 4.0;
+        }
+      } else {
+        this.floorChangeFollowTimer = 0;
+        if (this.mode === 'INTERCEPT_FLOOR') {
+          this.mode = 'ROAM';
+          this.modeTimer = rand(3, 6);
+        }
+        if (!this.jump && dP > 48) {
+          this._teleportBehindPlayer();
+        }
       }
 
       this.routeTimer -= delta;
@@ -657,6 +678,17 @@
       }
 
       switch (this.mode) {
+        case 'INTERCEPT_FLOOR': {
+          // Rapidly follow the player across floors via nearest stairs or direct path
+          const sp = this._moveTo(g.playerPos, g.playerFloor, RUN_SPEED * 1.15, delta);
+          this._animForSpeed(sp);
+          if (this.floor === g.playerFloor && dP < 8.0) {
+            this.mode = 'LEAD';
+            this.modeTimer = rand(4, 7);
+          }
+          return;
+        }
+
         case 'SCOUT': {
           if (!this.scoutTarget || this.modeTimer <= 0) {
             this.mode = 'ROAM';
