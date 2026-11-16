@@ -8034,9 +8034,9 @@ window.game = this;
       // cabinet must stay south of 13.8 or it buries itself in the wall.
       vendingGroup.position.set(-1.6, 0, 5.42);
 
-      // Dimensions derived from artwork's aspect (1793 x 2924 = 0.613) so nothing stretches - now 2x height
+      // Dimensions derived from artwork's aspect (1793 x 2924 = 0.613) so nothing stretches
       const VEND_W = 1.20;
-      const VEND_H = 3.92;
+      const VEND_H = 1.96;
       const VEND_D = 0.70;
 
       const vendingShellMat = new THREE.MeshStandardMaterial({ color: 0x1e2226, roughness: 0.45, metalness: 0.7 });
@@ -8051,6 +8051,7 @@ window.game = this;
       [-1, 1].forEach((side) => {
         const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H * 2, 0.035), vendingRailMat);
         rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2 * 2, -VEND_D / 2 + 0.018);
+      });
         vendingGroup.add(rail);
       });
 
@@ -8068,7 +8069,6 @@ window.game = this;
 
       // Front face centered and facing toward the desk opening
       const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H * 2 - 0.02), vendingFaceMat);
-      vendingFace.position.set(0, VEND_H / 2 * 2, -VEND_D / 2 - 0.006);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
