@@ -11561,7 +11561,22 @@ window.game = this;
         projectionMatrix.elements[10] = clipPlane.z + 1.0 - clipBias;
         projectionMatrix.elements[14] = clipPlane.w;
 
-        if (this.playerModel) this.playerModel.traverse((c) => { if (c.isMesh && c.material) { c.material.opacity = 1; } });
+        // In third-person mirror reflection, ensure the player model is fully visible and opaque (even when camera is zoomed in close)
+        const isThirdPerson = this.isThirdPersonView();
+        const prevRootVis = this.playerModelRoot ? this.playerModelRoot.visible : false;
+        if (this.playerModelRoot && isThirdPerson && this.playerModel) {
+          this.playerModelRoot.visible = true;
+        }
+        if (this.playerModel) {
+          this.playerModel.traverse((c) => {
+            if (c.isMesh && c.material) {
+              c.material.transparent = false;
+              c.material.opacity = 1.0;
+              c.material.depthWrite = true;
+            }
+          });
+        }
+
         glass.visible = false;
         // Keep top floor atmospheric strata and stair trickle fog groups visible so they reflect accurately in the mirror
         this._isRenderingMirrorReflection = true;
@@ -11576,9 +11591,14 @@ window.game = this;
           this._isRenderingMirrorReflection = false;
           glass.visible = true;
         }
-        const fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.42) / 0.18, 0, 1);
+
+        // Restore real player model visibility and fade for the primary camera
+        const isTheBeing = (this.selectedPlayerCharacter === 7);
+        const fadeDist = isTheBeing ? Math.max(3.2, this.thirdPersonCameraDistance * 1.8) : this.thirdPersonCameraDistance;
+        const fadeMin = isTheBeing ? 0.80 : 0.42;
+        const fade2 = THREE.MathUtils.clamp((fadeDist - fadeMin) / 0.18, 0, 1);
         if (this.playerModelRoot) {
-          this.playerModelRoot.visible = (fade2 > 0.001);
+          this.playerModelRoot.visible = isThirdPerson && (fade2 > 0.001) && !!this.playerModel;
         }
         if (this.playerModel) {
           this.playerModel.traverse((c) => {
