@@ -55,6 +55,19 @@
       this.roamRun = false;
       this.currentAnim = null;
       this.actions = {};
+      this.reem8Enabled = true;
+      this.reem8ExpressiveTimer = 0;
+      this.bellSoundTriggered = false;
+
+      // Reem8 expressive animations (added later)
+      this.reem8Expressions = {
+        headSpinUp: 0,      // random vertical upside-down rotation
+        handOnLedge: 0,     // arm/shoulder down on ledge
+        elbowOnLedge: 0,    // leaning in with elbow
+        slowLeanIn: 0,      // slowly lean forward and stare
+        headSpinCycle: 0    // cycling head rotations for expressiveness
+      };
+
       this._load();
     }
 
@@ -63,6 +76,14 @@
       const loader = new THREE.GLTFLoader();
       const v = window._ASSET_VERSION || Date.now();
       loader.load(`assets/finalfight.glb?v=${v}`, (gltf) => {
+        this.reem8Model = null;
+        this.reem8Mixer = null;
+
+        // Store reference to Reem8 character for modifications below
+        this.charactersReem8 = gltf.scene.children.find(c => c.name?.toLowerCase().includes('the arse') || c.userData?.charName === 'The Arse');
+      }, (err) => {
+        console.error('Failed to load FinalFight:', err);
+      });
         const model = gltf.scene;
         model.traverse((c) => {
           if (c.isMesh) {
