@@ -16712,15 +16712,29 @@ window.game = this;
 
         // Procedural snake arm strike for The Being / FinalFight (bones: snake.00 through snake.08)
         if (b['snake.00']) {
-          b['snake.00'].rotation.x += 0.75 * punchW;
-          b['snake.00'].rotation.y -= 0.45 * punchW;
+          // Swing snake root bone forward along the attack vector into +Z
+          const swingAngle = (Math.PI * 0.52) * punchW;
+          const qSwing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), swingAngle);
+          b['snake.00'].quaternion.premultiply(qSwing);
+
+          // Thrust snake forward along strike vector
+          b['snake.00'].position.z += 0.85 * punchW;
+          b['snake.00'].position.x -= 0.15 * punchW;
+          b['snake.00'].position.y -= 0.08 * punchW;
+
+          // Upper body pitches forward into the strike for athletic momentum
+          if (b['chest']) {
+            b['chest'].rotation.x += 0.28 * punchW;
+            b['chest'].rotation.y += 0.18 * punchW;
+          }
         }
         for (let sIdx = 1; sIdx <= 8; sIdx++) {
           const snakeBone = b[`snake.0${sIdx}`];
           if (snakeBone) {
             // Uncoil and lash outward forward into a lunging strike
-            snakeBone.rotation.x -= 0.35 * punchW;
-            snakeBone.rotation.z += (sIdx % 2 === 0 ? 0.25 : -0.25) * punchW;
+            snakeBone.rotation.x -= 0.25 * punchW;
+            snakeBone.rotation.z += (sIdx % 2 === 0 ? 0.15 : -0.15) * punchW;
+            snakeBone.position.y += 0.04 * punchW; // Extend segment length
           }
         }
       }
@@ -20657,14 +20671,17 @@ window.game = this;
       const hitPoint = new THREE.Vector3(dog.x, dog.y + 0.40, dog.z);
       const sprayDir = hitDir ? hitDir.clone() : new THREE.Vector3(0, 0, 1);
 
-      // Black juice liquid spray and puddles
+      // Black juice liquid spray and puddles (dog never dies, only bleeds and charges/retaliates)
       this.spawnLiquidBlood(hitPoint, sprayDir, 32, dog.y, true);
 
-      // Dog retaliates: attacks the player once with its attack animation and audio, hurts player, then runs away!
-      dog.aiState = "RETALIATE_PLAYER";
-      dog.aiTimer = 0.55;
+      // Dog takes about 1.5 seconds to growl/charge up before lunging into an attack!
+      dog.aiState = "CHARGE_PLAYER";
+      dog.aiTimer = 1.4; // 1.4s charge time before attack
       dog.retaliated = false;
       dog.retaliateDir = sprayDir.clone().negate();
+      dog.currentSpeed = 0;
+      dog.navPath = null;
+      this.playDogSound(dog.sfx.bark, dog);
     }
 
     shootPistol() {
@@ -20737,6 +20754,23 @@ window.game = this;
             target: this.smittyPos,
             hitPoint,
             hit: () => this.damageSmitty(CONFIG.WEAPON.DAMAGE, hitPoint, raycaster.ray.direction)
+          });
+        }
+      }
+
+      // Robot Dog hitbox
+      const dog = this.robotDog;
+      if (dog && dog.group && dog.floor === this.playerFloor) {
+        const hitPoint = new THREE.Vector3();
+        const hitBox = new THREE.Box3(
+          new THREE.Vector3(dog.x - 0.55, dog.y, dog.z - 0.55),
+          new THREE.Vector3(dog.x + 0.55, dog.y + 0.90, dog.z + 0.55)
+        );
+        if (raycaster.ray.intersectBox(hitBox, hitPoint)) {
+          candidates.push({
+            target: new THREE.Vector3(dog.x, dog.y, dog.z),
+            hitPoint,
+            hit: () => this.damageRobotDog(CONFIG.WEAPON.DAMAGE, raycaster.ray.direction)
           });
         }
       }
@@ -22563,7 +22597,7 @@ window.game = this;
       dog.aiTimer -= delta;
 
       // Periodic Rest Behavior: Every 3 minutes (180s), lay down peacefully for 20 seconds
-      if (dog.aiState !== "LAY_DOWN" && dog.aiState !== "RETALIATE_PLAYER" && dog.aiState !== "RUN_AWAY") {
+      if (dog.aiState !== "LAY_DOWN" && dog.aiState !== "CHARGE_PLAYER" && dog.aiState !== "RETALIATE_PLAYER" && dog.aiState !== "RUN_AWAY") {
         dog.layDownIntervalTimer = (dog.layDownIntervalTimer !== undefined ? dog.layDownIntervalTimer : 180.0) - delta;
         if (dog.layDownIntervalTimer <= 0) {
           dog.layDownIntervalTimer = 180.0;
@@ -22655,6 +22689,23 @@ window.game = this;
 
       // STATE MACHINE: Hyperactive, fast transitions, full behaviors
       switch (dog.aiState) {
+        case "CHARGE_PLAYER": {
+          // Play menacing bark/idle stance and lock eyes on player for 1.4s while charging up
+          this.playDogAction(dog, "Bark", 0.15);
+          const toPx = this.playerPos.x - dog.x;
+          const toPz = this.playerPos.z - dog.z;
+          dog.yaw = Math.atan2(toPx, toPz);
+          dog.group.rotation.y = dog.yaw;
+
+          if (dog.aiTimer <= 0) {
+            // Charge phase complete, now lunge into the attack
+            dog.aiState = "RETALIATE_PLAYER";
+            dog.aiTimer = 0.55;
+            dog.retaliated = false;
+          }
+          break;
+        }
+
         case "RETALIATE_PLAYER": {
           this.playDogAction(dog, "Attack", 0.08);
           // Face the player
