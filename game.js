@@ -4149,8 +4149,8 @@
       const savedViewMode = localStorage.getItem('the_museum_view_mode');
       this.viewMode = (savedViewMode === 'third-person') ? 'third-person' : 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
-      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 7 ? savedCharacter : 0;
-      if (this.selectedPlayerCharacter === 7 && localStorage.getItem('the_museum_game_completed') !== 'true') {
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 8 ? savedCharacter : 0;
+      if ((this.selectedPlayerCharacter === 7 || this.selectedPlayerCharacter === 8) && localStorage.getItem('the_museum_game_completed') !== 'true') {
         this.selectedPlayerCharacter = 0;
       }
       this.playerModelRoot = null;
@@ -4794,7 +4794,22 @@ window.game = this;
       this.createWall(4, yc, 12.85, t, wallH, 10.7, accentWallMat, true, fl);     // 7.5..18.2 (Mechanical Core East)
 
       // Elevator & Mechanical Core Block (x: -3.8..3.8, z: 8..18)
-      this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
+      // On Floor 0: "CLERK'S STAND" with customer counter & service ledge facing the corridor
+      if (fl === 0) {
+        // West side jamb wall: x: -3.8..-1.8 (width 2.0m)
+        this.createWall(-2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
+        // East side jamb wall: x: 1.8..3.8 (width 2.0m)
+        this.createWall(2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
+        // Service opening (x: -1.8..1.8, width 3.6m):
+        // Base wall below counter (height 1.05m)
+        this.createWall(0.0, y0 + 0.525, 8.0, 3.6, 1.05, t, accentWallMat, true, fl);
+        // Arched lintel header above opening (open between 1.05m and 2.9m)
+        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, accentWallMat, 2.9);
+        // Create the Clerk's counter desk & ledge structure
+        this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
+      } else {
+        this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
+      }
       this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
@@ -4976,6 +4991,7 @@ window.game = this;
       this.buildStatues(fl, y0, mats);
       this.buildSilverSmitty(fl, y0, mats);
       this.buildRobotDog(fl, y0, mats);
+      this.buildMuseumClerk(fl, y0, mats);
 
       // East Office ("Arts & Music Office" brown box x: 19..33, z: 8..18)
       // Floor 0: Petting zoo with live animals & short wooden fence
@@ -7817,6 +7833,401 @@ window.game = this;
           { type: 'box', floor: fl, minX: -0.7, maxX: 1.9, minZ: -2.8, maxZ: -1.2, minY: y0, maxY: y0 + 0.82 }
         );
       }
+    }
+
+    createClerkStandCounter(x, y0, z, width, mats) {
+      // Mahogany reception / information counter at z = 8.0, spanning x: -1.8..1.8 (width 3.6m)
+      const counterGroup = new THREE.Group();
+      counterGroup.position.set(x, y0, z);
+
+      const woodMat = mats && mats.mahogany ? mats.mahogany : new THREE.MeshStandardMaterial({
+        color: 0x3d271d,
+        roughness: 0.45,
+        metalness: 0.1
+      });
+      const darkWoodMat = new THREE.MeshStandardMaterial({
+        color: 0x22140d,
+        roughness: 0.6,
+        metalness: 0.05
+      });
+      const brassMat = new THREE.MeshStandardMaterial({
+        color: 0xd4af37,
+        metalness: 0.85,
+        roughness: 0.25
+      });
+
+      // Main front counter ledge top (polished mahogany slab):
+      // Height 1.05m, depth 0.65m, width 3.6m
+      const topSlab = new THREE.Mesh(
+        new THREE.BoxGeometry(width, 0.06, 0.65),
+        woodMat
+      );
+      topSlab.position.set(0, 1.05, 0);
+      topSlab.castShadow = true;
+      topSlab.receiveShadow = true;
+      counterGroup.add(topSlab);
+
+      // Decorative brass front edge trim
+      const brassEdge = new THREE.Mesh(
+        new THREE.BoxGeometry(width + 0.04, 0.02, 0.04),
+        brassMat
+      );
+      brassEdge.position.set(0, 1.05, -0.32);
+      counterGroup.add(brassEdge);
+
+      // Back work-counter surface behind the front ledge (desk depth 0.55m at height 0.78m)
+      const deskSlab = new THREE.Mesh(
+        new THREE.BoxGeometry(width - 0.2, 0.04, 0.55),
+        darkWoodMat
+      );
+      deskSlab.position.set(0, 0.78, 0.55);
+      deskSlab.receiveShadow = true;
+      counterGroup.add(deskSlab);
+
+      // Counter cabinet base and support panels underneath desk
+      const cabinetBase = new THREE.Mesh(
+        new THREE.BoxGeometry(width - 0.2, 0.76, 0.52),
+        darkWoodMat
+      );
+      cabinetBase.position.set(0, 0.38, 0.55);
+      counterGroup.add(cabinetBase);
+
+      // Front desk props:
+      // 1. Classical solid brass service call bell
+      const bellBase = new THREE.Mesh(new THREE.CylinderGeometry(0.065, 0.08, 0.025, 16), brassMat);
+      bellBase.position.set(0.85, 1.09, -0.05);
+      const bellDome = new THREE.Mesh(new THREE.SphereGeometry(0.055, 16, 12, 0, Math.PI * 2, 0, Math.PI * 0.5), brassMat);
+      bellDome.position.set(0.85, 1.10, -0.05);
+      const bellPlunger = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.04, 8), brassMat);
+      bellPlunger.position.set(0.85, 1.15, -0.05);
+      counterGroup.add(bellBase, bellDome, bellPlunger);
+
+      // 2. Acrylic / brass informational stand plaque: "INFORMATION & GUEST SERVICES"
+      const plaqueBase = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.02, 0.08), brassMat);
+      plaqueBase.position.set(-0.85, 1.09, -0.05);
+      const plaqueFace = new THREE.Mesh(new THREE.BoxGeometry(0.30, 0.14, 0.015), woodMat);
+      plaqueFace.position.set(-0.85, 1.17, -0.05);
+      plaqueFace.rotation.x = -0.15;
+      counterGroup.add(plaqueBase, plaqueFace);
+
+      // 3. Ceramic mug / pen holder on the inner desk
+      const mugMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3 });
+      const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.09, 12), mugMat);
+      mug.position.set(-0.5, 0.84, 0.5);
+      counterGroup.add(mug);
+
+      // 4. Stack of museum guide pamphlets / flyers on the counter
+      const paperMat = new THREE.MeshLambertMaterial({ color: 0xf4eedb });
+      const paperStack = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.035, 0.28), paperMat);
+      paperStack.position.set(0.35, 1.09, -0.04);
+      paperStack.rotation.y = 0.12;
+      counterGroup.add(paperStack);
+
+      this.scene.add(counterGroup);
+
+      // Solid collision for the front counter and internal service desk
+      this.colliders.push({
+        type: 'box',
+        floor: 0,
+        minX: x - width / 2 - 0.05,
+        maxX: x + width / 2 + 0.05,
+        minZ: z - 0.35,
+        maxZ: z + 0.85,
+        minY: y0,
+        maxY: y0 + 1.25
+      });
+    }
+
+    buildMuseumClerk(fl, y0, mats) {
+      if (fl !== 0) return;
+      if (this.museumClerk) return;
+
+      const clerkGroup = new THREE.Group();
+      const startX = 0.0;
+      const startZ = 9.25; // Stands behind counter at z = 8.0, looking north
+      clerkGroup.position.set(startX, y0, startZ);
+      clerkGroup.rotation.y = Math.PI; // Face north towards counter and corridor
+
+      const clerk = {
+        group: clerkGroup,
+        floor: 0,
+        x: startX,
+        y: y0,
+        z: startZ,
+        targetX: startX,
+        targetZ: startZ,
+        baseY: y0,
+        rotY: Math.PI,
+        targetRotY: Math.PI,
+        state: 'LEAN_COUNTER', // 'LEAN_COUNTER', 'IDLE_COUNTER', 'WANDER', 'RETURN_COUNTER'
+        stateTimer: 6.0 + Math.random() * 5.0,
+        moveSpeed: 1.4,
+        leanWeight: 1.0,
+        targetLeanWeight: 1.0,
+        mixer: null,
+        actions: {},
+        currentAction: null,
+        bones: {},
+        dialogueIndex: 0
+      };
+
+      const gltfLoader = new THREE.GLTFLoader();
+      gltfLoader.load(
+        'assets/playermodels/the-vendor.glb',
+        (gltf) => {
+          const model = gltf.scene;
+
+          // Vendor mesh height is ~1.20m, scale to ~1.75m standard human clerk
+          const scale = 1.75 / 1.20;
+          model.scale.set(scale, scale, scale);
+
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+            }
+            if (child.isBone) {
+              clerk.bones[child.name] = child;
+            }
+          });
+
+          clerkGroup.add(model);
+          clerk.model = model;
+
+          // Animations: idle, walk, run, jump
+          if (gltf.animations && gltf.animations.length > 0) {
+            clerk.mixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach((clip) => {
+              const action = clerk.mixer.clipAction(clip);
+              clerk.actions[clip.name.toLowerCase()] = action;
+            });
+
+            if (clerk.actions['idle']) {
+              clerk.actions['idle'].play();
+              clerk.currentAction = 'idle';
+            }
+          }
+        },
+        undefined,
+        (err) => {
+          console.error('Failed to load Museum Clerk model:', err);
+        }
+      );
+
+      this.scene.add(clerkGroup);
+      this.museumClerk = clerk;
+    }
+
+    updateMuseumClerk(delta) {
+      const clerk = this.museumClerk;
+      if (!clerk || !clerk.group) return;
+
+      const pPos = this.playerPos;
+      const isPlayerNear = this.playerFloor === 0 && Math.hypot(pPos.x - clerk.x, pPos.z - clerk.z) < 12.0;
+
+      // Update state timer
+      clerk.stateTimer -= delta;
+
+      if (clerk.state === 'LEAN_COUNTER') {
+        clerk.targetLeanWeight = 1.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = 8.85; // Close to counter ledge (counter ledge is at z = 8.0..8.32)
+        clerk.targetRotY = Math.PI;
+
+        if (clerk.stateTimer <= 0) {
+          // Switch to either IDLE upright or WANDER inside room
+          if (Math.random() < 0.5) {
+            clerk.state = 'IDLE_COUNTER';
+            clerk.stateTimer = 4.0 + Math.random() * 5.0;
+          } else {
+            clerk.state = 'WANDER';
+            clerk.stateTimer = 5.0 + Math.random() * 6.0;
+            // Pick a spot inside clerk's stand (x: -1.6..1.6, z: 9.5..12.5)
+            clerk.targetX = (Math.random() - 0.5) * 2.8;
+            clerk.targetZ = 9.8 + Math.random() * 2.5;
+          }
+        }
+      } else if (clerk.state === 'IDLE_COUNTER') {
+        clerk.targetLeanWeight = 0.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = 9.25;
+        clerk.targetRotY = Math.PI;
+
+        if (clerk.stateTimer <= 0) {
+          if (Math.random() < 0.65) {
+            clerk.state = 'LEAN_COUNTER';
+            clerk.stateTimer = 8.0 + Math.random() * 8.0;
+          } else {
+            clerk.state = 'WANDER';
+            clerk.stateTimer = 5.0 + Math.random() * 5.0;
+            clerk.targetX = (Math.random() - 0.5) * 2.8;
+            clerk.targetZ = 9.8 + Math.random() * 2.5;
+          }
+        }
+      } else if (clerk.state === 'WANDER') {
+        clerk.targetLeanWeight = 0.0;
+        const dx = clerk.targetX - clerk.x;
+        const dz = clerk.targetZ - clerk.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 0.15) {
+          const moveDist = Math.min(dist, clerk.moveSpeed * delta);
+          clerk.x += (dx / dist) * moveDist;
+          clerk.z += (dz / dist) * moveDist;
+          clerk.targetRotY = Math.atan2(dx, dz);
+
+          if (clerk.actions['walk'] && clerk.currentAction !== 'walk') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['walk'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'walk';
+          }
+        } else {
+          // Reached destination, pause briefly then return to counter
+          if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['idle'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'idle';
+          }
+          if (clerk.stateTimer <= 0) {
+            clerk.state = 'RETURN_COUNTER';
+            clerk.targetX = 0.0;
+            clerk.targetZ = 8.85;
+          }
+        }
+      } else if (clerk.state === 'RETURN_COUNTER') {
+        clerk.targetLeanWeight = 0.0;
+        const dx = clerk.targetX - clerk.x;
+        const dz = clerk.targetZ - clerk.z;
+        const dist = Math.hypot(dx, dz);
+
+        if (dist > 0.15) {
+          const moveDist = Math.min(dist, clerk.moveSpeed * delta);
+          clerk.x += (dx / dist) * moveDist;
+          clerk.z += (dz / dist) * moveDist;
+          clerk.targetRotY = Math.atan2(dx, dz);
+
+          if (clerk.actions['walk'] && clerk.currentAction !== 'walk') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['walk'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'walk';
+          }
+        } else {
+          // Reached counter! Transition back to leaning on the ledge looking tired
+          clerk.state = 'LEAN_COUNTER';
+          clerk.stateTimer = 9.0 + Math.random() * 8.0;
+          clerk.targetRotY = Math.PI;
+
+          if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['idle'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'idle';
+          }
+        }
+      }
+
+      // Smooth position interpolation
+      const posLerp = Math.min(1.0, delta * 6.0);
+      clerk.group.position.x = clerk.x;
+      clerk.group.position.z = clerk.z;
+
+      // Facing / rotation logic: when close to counter and player is nearby, look at player
+      if ((clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER') && isPlayerNear) {
+        const toPx = pPos.x - clerk.x;
+        const toPz = pPos.z - clerk.z;
+        // Clamp looking angle to front hemisphere so he doesn't spin around backwards behind counter
+        const lookAngle = Math.atan2(toPx, toPz);
+        const diff = Math.atan2(Math.sin(lookAngle - Math.PI), Math.cos(lookAngle - Math.PI));
+        const clampedDiff = Math.max(-0.65, Math.min(0.65, diff));
+        clerk.targetRotY = Math.PI + clampedDiff;
+      }
+
+      // Smooth rotation
+      let rDiff = Math.atan2(Math.sin(clerk.targetRotY - clerk.rotY), Math.cos(clerk.targetRotY - clerk.rotY));
+      clerk.rotY += rDiff * Math.min(1.0, delta * 5.0);
+      clerk.group.rotation.y = clerk.rotY;
+
+      // Smooth lean weight transition
+      clerk.leanWeight += (clerk.targetLeanWeight - clerk.leanWeight) * Math.min(1.0, delta * 4.0);
+
+      // Animation mixer update
+      if (clerk.mixer) {
+        clerk.mixer.update(delta);
+      }
+
+      // Procedural bone posing for leaning over the ledge with elbows on the counter:
+      // When leanWeight > 0.01, tilt spine & chest forward, angle upperArms forward & down,
+      // bend elbows / forearms flat along counter, and angle head up to maintain tired eye contact.
+      const b = clerk.bones;
+      const lw = clerk.leanWeight;
+      if (lw > 0.01 && b) {
+        // Spine & Chest pitch forward towards counter
+        if (b['spine']) {
+          b['spine'].rotation.x += 0.28 * lw;
+        }
+        if (b['chest']) {
+          b['chest'].rotation.x += 0.22 * lw;
+        }
+
+        // Left Arm: elbow resting on counter
+        if (b['upperArm.L']) {
+          b['upperArm.L'].rotation.x += 0.75 * lw;
+          b['upperArm.L'].rotation.z += 0.20 * lw;
+        }
+        if (b['lowerArm.L']) {
+          b['lowerArm.L'].rotation.x += -1.15 * lw;
+          b['lowerArm.L'].rotation.y += 0.25 * lw;
+        }
+
+        // Right Arm: elbow resting on counter
+        if (b['upperArm.R']) {
+          b['upperArm.R'].rotation.x += 0.75 * lw;
+          b['upperArm.R'].rotation.z -= 0.20 * lw;
+        }
+        if (b['lowerArm.R']) {
+          b['lowerArm.R'].rotation.x += -1.15 * lw;
+          b['lowerArm.R'].rotation.y -= 0.25 * lw;
+        }
+
+        // Head & Neck: tilt up slightly to compensate for torso pitch and look straight at player
+        if (b['neck']) {
+          b['neck'].rotation.x -= 0.20 * lw;
+        }
+        if (b['head']) {
+          b['head'].rotation.x -= 0.28 * lw;
+        }
+      }
+
+      // Head tracking toward player when player is near
+      if (isPlayerNear && b && b['head']) {
+        const toPx = pPos.x - clerk.x;
+        const toPz = pPos.z - clerk.z;
+        const relYaw = Math.atan2(toPx, toPz) - clerk.rotY;
+        const clampedYaw = Math.max(-0.45, Math.min(0.45, Math.atan2(Math.sin(relYaw), Math.cos(relYaw))));
+        b['head'].rotation.y += clampedYaw * 0.5;
+      }
+    }
+
+    interactMuseumClerk() {
+      const clerk = this.museumClerk;
+      if (!clerk) return;
+
+      const lines = [
+        "Admission is free... look around, don't break anything.",
+        "I don't sell tickets. Entry is free. Just go on in.",
+        "Another day, another shift... standing behind this counter.",
+        "Please don't touch the living statues. Not that they ever listen anyway.",
+        "Free admission. Feel free to roam the galleries. Just let me rest my elbows."
+      ];
+
+      const line = lines[clerk.dialogueIndex % lines.length];
+      clerk.dialogueIndex++;
+
+      this.showSystemNotification(`CLERK: "${line}"`, 4200);
+
+      // When player talks to him, if leaning or idle, face player immediately
+      const toPx = this.playerPos.x - clerk.x;
+      const toPz = this.playerPos.z - clerk.z;
+      clerk.targetRotY = Math.atan2(toPx, toPz);
     }
 
     createEastOffice(fl, y0, mats) {
@@ -16569,7 +16980,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being'];
+        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being', 'The Vendor'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -16603,8 +17014,8 @@ window.game = this;
 
     setPlayerCharacter(index) {
       const next = Number(index);
-      if (!Number.isInteger(next) || next < 0 || next > 7) return;
-      if (next === 7 && localStorage.getItem('the_museum_game_completed') !== 'true') return;
+      if (!Number.isInteger(next) || next < 0 || next > 8) return;
+      if ((next === 7 || next === 8) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
@@ -16637,7 +17048,8 @@ window.game = this;
         { name: 'The Arse', file: 'the-tundra.glb' },
         { name: 'The Clown', file: 'the-clown.glb' },
         { name: 'The Student', file: 'the-student.glb' },
-        { name: 'The Being', file: 'the-being.glb' }
+        { name: 'The Being', file: 'the-being.glb' },
+        { name: 'The Vendor', file: 'the-vendor.glb' }
       ];
       const character = characters[this.selectedPlayerCharacter];
       if (!character || !this.playerModelRoot) return;
@@ -18461,6 +18873,7 @@ window.game = this;
       drawRoomBox(-16, -18, -4, 28, T('map.label.buffoon_gallery', 'BUFFOON GALLERY'));
       drawRoomBox(-4, -26, 4, -14, T('map.label.stair_b', 'STAIR B'), true);
       drawRoomBox(-4, -14, 4, 2, T('map.label.study_wc', 'STUDY/WC'));
+      drawRoomBox(-4, 8, 4, 18, T('map.label.clerks_stand', "CLERK'S STAND"));
       drawRoomBox(-4, -40, 28, -26, T('map.label.north_gallery', 'NORTH GALLERY'));
       drawRoomBox(4, -26, 28, 18, T('map.label.arts_music_stacks', 'ARTS & MUSIC STACKS'));
       drawRoomBox(19, 8, 33, 18, T('map.label.east_office', 'OFFICE'));
@@ -19314,6 +19727,16 @@ window.game = this;
         const dDog = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
         if (dDog < 3.5) {
           this.interactRobotDog(dog);
+          return;
+        }
+      }
+
+      // Check Museum Clerk (The Vendor) interaction
+      const clerk = this.museumClerk;
+      if (clerk && clerk.group && this.playerFloor === 0) {
+        const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
+        if (dClerk < 4.2) {
+          this.interactMuseumClerk();
           return;
         }
       }
@@ -20325,6 +20748,17 @@ window.game = this;
         const dDog = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
         if (dDog < 3.5) {
           this.setInteractPrompt('[E] INTERACT');
+          this.focusedPainting = null;
+          return;
+        }
+      }
+
+      // Check near Museum Clerk (The Vendor) at the Clerk's Stand
+      const clerk = this.museumClerk;
+      if (clerk && clerk.group && this.playerFloor === 0) {
+        const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
+        if (dClerk < 4.2) {
+          this.setInteractPrompt(T('hud.prompt_talk_clerk', '[E] TALK TO CLERK'));
           this.focusedPainting = null;
           return;
         }
@@ -22380,6 +22814,7 @@ window.game = this;
             if (this.updateStatues) this.updateStatues(delta);
             if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
             if (this.updateRobotDog) this.updateRobotDog(delta);
+            if (this.updateMuseumClerk) this.updateMuseumClerk(delta);
           } else if (this.statues) {
             // Client smoothly interpolates statue positions and plays synced animation
             const now = performance.now() / 1000;

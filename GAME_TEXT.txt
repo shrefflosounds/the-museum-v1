@@ -208,6 +208,7 @@ map.label.stair_a = STAIR A
 map.label.buffoon_gallery = BUFFOON GALLERY
 map.label.stair_b = STAIR B
 map.label.study_wc = STUDY/WC
+map.label.clerks_stand = CLERK'S STAND
 map.label.north_gallery = NORTH GALLERY
 map.label.arts_music_stacks = ARTS & MUSIC STACKS
 map.label.east_office = OFFICE

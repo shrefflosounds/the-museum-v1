@@ -11,7 +11,8 @@
         { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png' },
         { id: 5, name: 'The Clown', file: 'the-clown.glb', portrait: 'assets/ui/portraits/char_5.png' },
         { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png' },
-        { id: 7, name: 'The Being', file: 'the-being.glb', portrait: 'assets/ui/portraits/char_7.png', isUnlockable: true }
+        { id: 7, name: 'The Being', file: 'the-being.glb', portrait: 'assets/ui/portraits/char_7.png', isUnlockable: true },
+        { id: 8, name: 'The Vendor', file: 'the-vendor.glb', portrait: 'assets/ui/portraits/char_8.png', isUnlockable: true }
       ];
 
       this.selectedIndex = this.game.selectedPlayerCharacter || 0;
