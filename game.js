@@ -384,6 +384,40 @@
       }
     }
 
+    playPunchSound(hit = false) {
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      // Low punch whoosh / impact thud
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = hit ? 'triangle' : 'sine';
+      osc.frequency.setValueAtTime(hit ? 175 : 120, now);
+      osc.frequency.exponentialRampToValueAtTime(32, now + (hit ? 0.12 : 0.09));
+      gain.gain.setValueAtTime(hit ? 0.75 : 0.42, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + (hit ? 0.13 : 0.10));
+      osc.connect(gain);
+      gain.connect(this.masterGain);
+      osc.start(now);
+      osc.stop(now + (hit ? 0.14 : 0.11));
+
+      // Swoosh/smack noise transient
+      if (this.noiseBuffer) {
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = hit ? 'bandpass' : 'lowpass';
+        filter.frequency.setValueAtTime(hit ? 1800 : 700, now);
+        filter.frequency.exponentialRampToValueAtTime(hit ? 320 : 160, now + (hit ? 0.11 : 0.14));
+        const nGain = this.ctx.createGain();
+        nGain.gain.setValueAtTime(hit ? 0.65 : 0.28, now);
+        nGain.gain.exponentialRampToValueAtTime(0.001, now + (hit ? 0.12 : 0.15));
+        src.connect(filter);
+        filter.connect(nGain);
+        nGain.connect(this.masterGain);
+        src.start(now, Math.random(), hit ? 0.12 : 0.15);
+      }
+    }
+
     playCrateImpact() {
       if (!this.ctx) return;
       const now = this.ctx.currentTime;
@@ -4134,6 +4168,8 @@
       this.leftHandHoverTimer = 0;
       this.leftHandGrabTimer = 0;
       this.leftHandGrabDuration = 0.55;
+      this.leftHandPunchTimer = 0;
+      this.leftHandPunchDuration = 0.38;
       this.isPlayerDancing = false;
       this.playerDanceTimer = 0;
       this.isCrouching = false;
@@ -4188,6 +4224,13 @@
         shininess: 120
       });
       this.bloodPuddleMat = this.createLiquidBloodPuddleMaterial();
+      this.blackJuiceDropMat = new THREE.MeshPhongMaterial({
+        color: 0x0a0c10,
+        emissive: 0x020305,
+        specular: 0x334455,
+        shininess: 150
+      });
+      this.blackJuicePuddleMat = this.createLiquidBlackJuicePuddleMaterial();
       this.hiddenCapMat = new THREE.MeshBasicMaterial({ visible: false });
 
       this.smittyPos = new THREE.Vector3(12.0, 3 * CONFIG.FLOOR_HEIGHT, -34.0);
@@ -4472,6 +4515,31 @@ window.game = this;
         depthWrite: false,
         specular: 0xffaaaa,
         shininess: 140,
+        polygonOffset: true,
+        polygonOffsetFactor: -2,
+        polygonOffsetUnits: -2
+      });
+    }
+
+    createLiquidBlackJuicePuddleMaterial() {
+      const cvs = document.createElement('canvas');
+      cvs.width = 128;
+      cvs.height = 128;
+      const ctx = cvs.getContext('2d');
+      const grad = ctx.createRadialGradient(64, 64, 6, 64, 64, 62);
+      grad.addColorStop(0, 'rgba(12, 14, 18, 0.98)');
+      grad.addColorStop(0.65, 'rgba(8, 10, 14, 0.92)');
+      grad.addColorStop(0.92, 'rgba(5, 7, 10, 0.60)');
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, 128, 128);
+      const tex = new THREE.CanvasTexture(cvs);
+      return new THREE.MeshPhongMaterial({
+        map: tex,
+        transparent: true,
+        depthWrite: false,
+        specular: 0x446688,
+        shininess: 160,
         polygonOffset: true,
         polygonOffsetFactor: -2,
         polygonOffsetUnits: -2
@@ -10547,22 +10615,31 @@ window.game = this;
       const sinYaw = Math.sin(this.playerYaw);
 
       const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-      const camPos = this.camera.position;
+      const isThirdPerson = this.isThirdPersonView();
+
+      // In third person, raycast from the player character chest/head rather than the camera trailing far behind!
+      const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+      const pickupOrigin = isThirdPerson
+        ? new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z)
+        : this.camera.position;
 
       let bestCrate = null;
-      let bestDist = 2.85;
+      let bestDist = isThirdPerson ? 3.4 : 2.85;
 
       for (let i = 0; i < this.physicsCrates.length; i++) {
         const crate = this.physicsCrates[i];
         if (crate.isHeld) continue;
 
-        const toCrate = new THREE.Vector3(crate.x - camPos.x, (crate.y + crate.h / 2) - camPos.y, crate.z - camPos.z);
+        const crateCenter = new THREE.Vector3(crate.x, crate.y + crate.h / 2, crate.z);
+        const toCrate = new THREE.Vector3().subVectors(crateCenter, pickupOrigin);
         const dist = toCrate.length();
         if (dist > bestDist) continue;
 
         toCrate.normalize();
         const dot = toCrate.dot(fwd);
-        if (dot > 0.78) {
+        // Slightly more forgiving angle in third-person view
+        const threshold = isThirdPerson ? 0.60 : 0.78;
+        if (dot > threshold) {
           bestCrate = crate;
           bestDist = dist;
         }
@@ -16593,6 +16670,40 @@ window.game = this;
           b['lowerArm.R'].rotation.x += Math.cos(t * 9.5) * 0.30;
         }
       }
+
+      // Procedural punch overlay on third-person character left arm
+      if (this.leftHandPunchTimer > 0 && this.playerBones) {
+        const dur = this.leftHandPunchDuration || 0.38;
+        const p = 1.0 - (this.leftHandPunchTimer / dur);
+        let punchW = 0;
+        if (p < 0.30) {
+          punchW = Math.sin((p / 0.30) * (Math.PI / 2));
+        } else if (p < 0.50) {
+          punchW = 1.0;
+        } else {
+          const ret = (p - 0.50) / 0.50;
+          punchW = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
+        }
+
+        const b = this.playerBones;
+        if (b['shoulder.L']) {
+          b['shoulder.L'].rotation.y += 0.35 * punchW;
+        }
+        if (b['upperArm.L']) {
+          // Drive arm forward into a punch thrust
+          b['upperArm.L'].rotation.x -= 1.35 * punchW;
+          b['upperArm.L'].rotation.z += 0.40 * punchW;
+          b['upperArm.L'].rotation.y += 0.25 * punchW;
+        }
+        if (b['lowerArm.L']) {
+          // Extend elbow into punch
+          b['lowerArm.L'].rotation.x -= 0.65 * punchW;
+          b['lowerArm.L'].rotation.y += 0.50 * punchW;
+        }
+        if (b['hand.L']) {
+          b['hand.L'].rotation.x -= 0.40 * punchW;
+        }
+      }
     }
 
     updateThirdPersonCamera(delta) {
@@ -17989,7 +18100,11 @@ window.game = this;
           }
         }
 
-        if (e.code === 'KeyX') {
+        if (e.code === 'KeyQ') {
+          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
+            this.performPlayerPunch();
+          }
+        } else if (e.code === 'KeyX') {
           if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
             this.togglePlayerDance();
           }
@@ -19849,13 +19964,20 @@ window.game = this;
         const cosYaw = Math.cos(this.playerYaw);
         const sinYaw = Math.sin(this.playerYaw);
         const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-        const camPos = this.camera.position;
+
+        const isThirdPerson = this.isThirdPersonView();
+        const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+        const pickupOrigin = isThirdPerson
+          ? new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z)
+          : this.camera.position;
+        const maxDist = isThirdPerson ? 3.4 : 2.85;
+        const threshold = isThirdPerson ? 0.60 : 0.78;
 
         for (let i = 0; i < this.physicsCrates.length; i++) {
           const c = this.physicsCrates[i];
           if (c.isHeld) continue;
-          const toC = new THREE.Vector3(c.x - camPos.x, (c.y + c.h / 2) - camPos.y, c.z - camPos.z);
-          if (toC.length() < 2.85 && toC.normalize().dot(fwd) > 0.78) {
+          const toC = new THREE.Vector3(c.x - pickupOrigin.x, (c.y + c.h / 2) - pickupOrigin.y, c.z - pickupOrigin.z);
+          if (toC.length() < maxDist && toC.normalize().dot(fwd) > threshold) {
             this.setInteractPrompt('HOLD [E] LIFT & CARRY CRATE  •  [LMB] THROW');
             return;
           }
@@ -20326,8 +20448,42 @@ window.game = this;
         targetRotZ = THREE.MathUtils.lerp(targetRotZ, grabRotZ, grabWeight);
       }
 
+      // Punch / swipe scratch attack animation (Q key)
+      if (this.leftHandPunchTimer > 0) {
+        this.leftHandPunchTimer = Math.max(0, this.leftHandPunchTimer - delta);
+        const dur = this.leftHandPunchDuration || 0.38;
+        const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
+
+        let punchWeight = 0;
+        if (p < 0.32) {
+          // Swift forward swipe/jab forward into the center
+          punchWeight = Math.sin((p / 0.32) * (Math.PI / 2));
+        } else if (p < 0.50) {
+          punchWeight = 1.0;
+        } else {
+          // Return smoothly to idle stance
+          const ret = (p - 0.50) / 0.50;
+          punchWeight = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
+        }
+
+        // Left arm thrusts forward, slightly inward towards center of screen with aggressive punch/swipe angle
+        const punchPoseX = -0.08;
+        const punchPoseY = -0.18;
+        const punchPoseZ = -0.72;
+        const punchRotX = -0.92;
+        const punchRotY = 0.65;
+        const punchRotZ = -1.15;
+
+        targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
+        targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
+        targetZ = THREE.MathUtils.lerp(targetZ, punchPoseZ, punchWeight);
+        targetRotX = THREE.MathUtils.lerp(targetRotX, punchRotX, punchWeight);
+        targetRotY = THREE.MathUtils.lerp(targetRotY, punchRotY, punchWeight);
+        targetRotZ = THREE.MathUtils.lerp(targetRotZ, punchRotZ, punchWeight);
+      }
+
       // Smooth physical interpolation towards target transforms
-      const lerpFactor = this.leftHandGrabTimer > 0 ? delta * 18 : delta * 14;
+      const lerpFactor = (this.leftHandGrabTimer > 0 || this.leftHandPunchTimer > 0) ? delta * 24 : delta * 14;
       this.leftArmRig.position.x = THREE.MathUtils.lerp(this.leftArmRig.position.x, targetX, lerpFactor);
       this.leftArmRig.position.y = THREE.MathUtils.lerp(this.leftArmRig.position.y, targetY, lerpFactor);
       this.leftArmRig.position.z = THREE.MathUtils.lerp(this.leftArmRig.position.z, targetZ, lerpFactor);
@@ -20335,6 +20491,150 @@ window.game = this;
       this.leftArmRig.rotation.x = THREE.MathUtils.lerp(this.leftArmRig.rotation.x, targetRotX, lerpFactor);
       this.leftArmRig.rotation.y = THREE.MathUtils.lerp(this.leftArmRig.rotation.y, targetRotY, lerpFactor);
       this.leftArmRig.rotation.z = THREE.MathUtils.lerp(this.leftArmRig.rotation.z, targetRotZ, lerpFactor);
+    }
+
+    performPlayerPunch() {
+      if (!this.gameStarted || this.isGameOver || this.isPaused || this.isExaminingArt) return;
+      if (this.heldCrate) return; // Cannot punch while carrying a heavy milkcrate
+
+      // Cooldown between punches
+      const now = performance.now() / 1000;
+      if (this.lastPunchTime && (now - this.lastPunchTime) < 0.35) return;
+      this.lastPunchTime = now;
+
+      this.isPlayerDancing = false;
+      this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
+
+      // Calculate punch origin and direction
+      const cosPitch = Math.cos(this.playerPitch);
+      const sinPitch = Math.sin(this.playerPitch);
+      const cosYaw = Math.cos(this.playerYaw);
+      const sinYaw = Math.sin(this.playerYaw);
+      const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+
+      const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+      const punchOrigin = new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z);
+      const punchRange = 2.4; // Melee reach in meters
+      const punchDamage = 25;
+
+      const candidates = [];
+
+      // 1. Robot Dog hitbox
+      const dog = this.robotDog;
+      if (dog && dog.group && dog.floor === this.playerFloor) {
+        const dx = dog.x - punchOrigin.x;
+        const dz = dog.z - punchOrigin.z;
+        const dy = (dog.y + 0.45) - punchOrigin.y;
+        const dist = Math.hypot(dx, dy, dz);
+        if (dist <= punchRange + 0.6) {
+          const dirToDog = new THREE.Vector3(dx, dy, dz).normalize();
+          const dot = dirToDog.dot(fwd);
+          if (dot > 0.45) {
+            candidates.push({
+              dist,
+              type: 'dog',
+              hitPoint: new THREE.Vector3(dog.x, dog.y + 0.45, dog.z),
+              hit: () => this.damageRobotDog(punchDamage, fwd)
+            });
+          }
+        }
+      }
+
+      // 2. The Curator (Smitty)
+      if (this.smittyMesh && this.smittyState !== 'DEAD' && this.smittyFloor === this.playerFloor) {
+        const sx = this.smittyPos.x;
+        const sy = this.smittyPos.y + 1.2;
+        const sz = this.smittyPos.z;
+        const dist = punchOrigin.distanceTo(new THREE.Vector3(sx, sy, sz));
+        if (dist <= punchRange + 0.6) {
+          const toTarget = new THREE.Vector3(sx - punchOrigin.x, sy - punchOrigin.y, sz - punchOrigin.z).normalize();
+          if (toTarget.dot(fwd) > 0.45) {
+            const hitPoint = new THREE.Vector3(sx, sy, sz);
+            candidates.push({
+              dist,
+              type: 'smitty',
+              hitPoint,
+              hit: () => this.damageSmitty(punchDamage, hitPoint, fwd)
+            });
+          }
+        }
+      }
+
+      // 3. Statues
+      if (this.statues && this.statuesEnabled) {
+        this.statues.forEach(statue => {
+          if (statue.cfg.isSilverSmitty || !statue.group || !statue.group.visible || statue.floor !== this.playerFloor) return;
+          const sx = statue.x;
+          const sy = statue.y + 1.1;
+          const sz = statue.z;
+          const dist = punchOrigin.distanceTo(new THREE.Vector3(sx, sy, sz));
+          if (dist <= punchRange + 0.8) {
+            const toTarget = new THREE.Vector3(sx - punchOrigin.x, sy - punchOrigin.y, sz - punchOrigin.z).normalize();
+            if (toTarget.dot(fwd) > 0.45) {
+              const hitPoint = new THREE.Vector3(sx, sy, sz);
+              candidates.push({
+                dist,
+                type: 'statue',
+                hitPoint,
+                hit: () => this.hitStatue(statue, hitPoint, fwd)
+              });
+            }
+          }
+        });
+      }
+
+      // 4. Remote players in Multiplayer
+      if (this.mp && this.mp.remotePlayers) {
+        this.mp.remotePlayers.forEach((p, remoteId) => {
+          if (!p.group) return;
+          const rPos = p.group.position;
+          const dist = punchOrigin.distanceTo(new THREE.Vector3(rPos.x, rPos.y + 1.0, rPos.z));
+          if (dist <= punchRange + 0.6) {
+            const toTarget = new THREE.Vector3(rPos.x - punchOrigin.x, (rPos.y + 1.0) - punchOrigin.y, rPos.z - punchOrigin.z).normalize();
+            if (toTarget.dot(fwd) > 0.45) {
+              const hitPoint = new THREE.Vector3(rPos.x, rPos.y + 1.0, rPos.z);
+              candidates.push({
+                dist,
+                type: 'player',
+                hitPoint,
+                hit: () => {
+                  if (typeof this.mp.notifyPlayerHit === 'function') {
+                    this.mp.notifyPlayerHit(remoteId, hitPoint, fwd, punchDamage, 3.5);
+                  } else {
+                    this.spawnLiquidBlood(hitPoint, fwd, 28, rPos.y);
+                  }
+                }
+              });
+            }
+          }
+        });
+      }
+
+      candidates.sort((a, b) => a.dist - b.dist);
+
+      if (candidates.length > 0) {
+        this.audio.playPunchSound(true);
+        candidates[0].hit();
+      } else {
+        this.audio.playPunchSound(false);
+      }
+    }
+
+    damageRobotDog(damage, hitDir) {
+      const dog = this.robotDog;
+      if (!dog) return;
+
+      const hitPoint = new THREE.Vector3(dog.x, dog.y + 0.40, dog.z);
+      const sprayDir = hitDir ? hitDir.clone() : new THREE.Vector3(0, 0, 1);
+
+      // Black juice liquid spray and puddles
+      this.spawnLiquidBlood(hitPoint, sprayDir, 32, dog.y, true);
+
+      // Dog retaliates: attacks the player once with its attack animation and audio, hurts player, then runs away!
+      dog.aiState = "RETALIATE_PLAYER";
+      dog.aiTimer = 0.55;
+      dog.retaliated = false;
+      dog.retaliateDir = sprayDir.clone().negate();
     }
 
     shootPistol() {
@@ -20499,7 +20799,7 @@ window.game = this;
       this.spawnLiquidBlood(hitPoint, shotDir, 24, statue.y);
     }
 
-    spawnBloodPuddle(x, floorY, z, targetRadius = 0.38) {
+    spawnBloodPuddle(x, floorY, z, targetRadius = 0.38, isBlackJuice = false) {
       for (let i = 0; i < this.bloodPuddles.length; i++) {
         const p = this.bloodPuddles[i];
         if (Math.abs(p.floorY - floorY) < 0.2 && Math.hypot(p.x - x, p.z - z) < 0.45) {
@@ -20515,7 +20815,9 @@ window.game = this;
 
       const puddleFloor = Math.max(0, Math.min((CONFIG.NUM_FLOORS || 4) - 1, Math.floor((floorY + 0.35) / CONFIG.FLOOR_HEIGHT)));
       const puddleGeom = new THREE.CircleGeometry(1, 24);
-      const puddleMat = this.bloodPuddleMat.clone();
+      const puddleMat = (isBlackJuice && this.blackJuicePuddleMat)
+        ? this.blackJuicePuddleMat.clone()
+        : this.bloodPuddleMat.clone();
       const mesh = new THREE.Mesh(puddleGeom, puddleMat);
       mesh.rotation.x = -Math.PI / 2;
       mesh.rotation.z = Math.random() * Math.PI * 2;
@@ -20533,11 +20835,12 @@ window.game = this;
         currentRadius: 0.05,
         targetRadius,
         age: 0,
-        maxLife: 60.0
+        maxLife: 60.0,
+        isBlackJuice
       });
     }
 
-    spawnLiquidBlood(hitPoint, shotDir, count = 38, floorY = null) {
+    spawnLiquidBlood(hitPoint, shotDir, count = 38, floorY = null, isBlackJuice = false) {
       if (!this.bloodDropGeom || !this.bloodDropMat) return;
 
       const resolveBloodGroundY = (x, y, z) => {
@@ -20565,9 +20868,10 @@ window.game = this;
       }
 
       const dir = shotDir ? shotDir.clone().normalize() : new THREE.Vector3(0, 0, 1);
+      const dropMat = (isBlackJuice && this.blackJuiceDropMat) ? this.blackJuiceDropMat : this.bloodDropMat;
 
       for (let i = 0; i < count; i++) {
-        const mesh = new THREE.Mesh(this.bloodDropGeom, this.bloodDropMat);
+        const mesh = new THREE.Mesh(this.bloodDropGeom, dropMat);
         const radius = 0.018 + Math.random() * 0.028;
 
         const jitterX = (Math.random() - 0.5) * 0.22;
@@ -20599,7 +20903,8 @@ window.game = this;
           radius,
           floorY: bloodFloorY,
           floor: dropFloor,
-          life: 2.2
+          life: 2.2,
+          isBlackJuice
         });
       }
     }
@@ -20642,7 +20947,8 @@ window.game = this;
               d.mesh.position.x,
               d.floorY,
               d.mesh.position.z,
-              0.14 + d.radius * 5.2
+              0.14 + d.radius * 5.2,
+              !!d.isBlackJuice
             );
           }
           this.scene.remove(d.mesh);
@@ -22208,7 +22514,7 @@ window.game = this;
       dog.aiTimer -= delta;
 
       // Periodic Rest Behavior: Every 3 minutes (180s), lay down peacefully for 20 seconds
-      if (dog.aiState !== "LAY_DOWN") {
+      if (dog.aiState !== "LAY_DOWN" && dog.aiState !== "RETALIATE_PLAYER" && dog.aiState !== "RUN_AWAY") {
         dog.layDownIntervalTimer = (dog.layDownIntervalTimer !== undefined ? dog.layDownIntervalTimer : 180.0) - delta;
         if (dog.layDownIntervalTimer <= 0) {
           dog.layDownIntervalTimer = 180.0;
@@ -22300,6 +22606,69 @@ window.game = this;
 
       // STATE MACHINE: Hyperactive, fast transitions, full behaviors
       switch (dog.aiState) {
+        case "RETALIATE_PLAYER": {
+          this.playDogAction(dog, "Attack", 0.08);
+          // Face the player
+          const toPx = this.playerPos.x - dog.x;
+          const toPz = this.playerPos.z - dog.z;
+          dog.yaw = Math.atan2(toPx, toPz);
+          dog.group.rotation.y = dog.yaw;
+
+          if (!dog.retaliated) {
+            dog.retaliated = true;
+            this.playDogSound(dog.sfx.attack, dog);
+
+            // Hurt the player once!
+            if (this.dom.damageOverlay) {
+              this.dom.damageOverlay.style.opacity = '1';
+              setTimeout(() => {
+                if (this.dom.damageOverlay) this.dom.damageOverlay.style.opacity = '0';
+              }, 300);
+            }
+            this.health = Math.max(1, this.health - 12); // Dog bites back for 12 damage
+            this.updateHud();
+            this.playerPitch += (Math.random() - 0.5) * 0.18;
+            this.playerYaw += (Math.random() - 0.5) * 0.18;
+          }
+
+          if (dog.aiTimer <= 0) {
+            // Now run away rapidly! Pick a wander node far away
+            dog.aiState = "RUN_AWAY";
+            dog.aiTimer = 4.0;
+            const fleeNode = this.pickDogWanderNode(dog);
+            if (fleeNode) {
+              dog.navPath = this.findDogPath(dog, fleeNode.x, fleeNode.z, fleeNode.floor);
+              dog.navIndex = 0;
+            }
+          }
+          break;
+        }
+
+        case "RUN_AWAY": {
+          this.playDogAction(dog, "Run", 0.15);
+          dog.currentSpeed = dog.runSpeed * 1.25;
+
+          if (!dog.navPath || dog.navIndex >= dog.navPath.length || dog.aiTimer <= 0) {
+            dog.aiState = "IDLE";
+            dog.aiTimer = 1.0;
+            return;
+          }
+
+          const wp = dog.navPath[dog.navIndex];
+          const dist = Math.hypot(wp.x - dog.x, wp.z - dog.z);
+          if (dist < 0.8) {
+            dog.navIndex++;
+            if (dog.navIndex >= dog.navPath.length) {
+              dog.aiState = "IDLE";
+              dog.aiTimer = 1.0;
+              return;
+            }
+          }
+          const curWp = dog.navPath[dog.navIndex];
+          moveDogStep(curWp.x - dog.x, curWp.z - dog.z, dog.currentSpeed);
+          break;
+        }
+
         case "LAY_DOWN": {
           this.playDogAction(dog, "LayDown", 0.4);
           dog.currentSpeed = 0;
