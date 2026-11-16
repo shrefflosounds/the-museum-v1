@@ -7960,6 +7960,44 @@ window.game = this;
       plaqueFace.rotation.x = -0.15;
       counterGroup.add(plaqueBase, plaqueFace);
 
+      // Engraved lettering on the nameplate: "REem8"
+      const nameCanvas = document.createElement('canvas');
+      nameCanvas.width = 512;
+      nameCanvas.height = 200;
+      const nctx = nameCanvas.getContext('2d');
+      nctx.clearRect(0, 0, 512, 200);
+      nctx.textAlign = 'center';
+      nctx.textBaseline = 'middle';
+      nctx.font = 'bold 104px Caryn, Georgia, serif';
+      // Offset highlight first, then the dark cut, for an engraved look
+      nctx.fillStyle = 'rgba(222, 190, 132, 0.35)';
+      nctx.fillText('REem8', 258, 103);
+      nctx.fillStyle = '#1b1108';
+      nctx.fillText('REem8', 256, 100);
+
+      const nameTex = new THREE.CanvasTexture(nameCanvas);
+      if (typeof THREE.sRGBEncoding !== 'undefined') nameTex.encoding = THREE.sRGBEncoding;
+      else if (typeof THREE.SRGBColorSpace !== 'undefined') nameTex.colorSpace = THREE.SRGBColorSpace;
+      nameTex.anisotropy = 8;
+
+      const nameMat = new THREE.MeshStandardMaterial({
+        map: nameTex,
+        transparent: true,
+        roughness: 0.55,
+        metalness: 0.12,
+        depthWrite: false
+      });
+
+      // Parented to a group carrying the plaque's own tilt, so the lettering stays flush to the face
+      const namePlateGroup = new THREE.Group();
+      namePlateGroup.position.set(-0.85, 0.975, -0.05);
+      namePlateGroup.rotation.x = -0.15;
+      const namePlate = new THREE.Mesh(new THREE.PlaneGeometry(0.24, 0.094), nameMat);
+      namePlate.rotation.y = Math.PI; // face south, toward the customer side
+      namePlate.position.set(0, 0, -0.0075); // 1.5mm proud of the plaque face, clear of z-fighting
+      namePlateGroup.add(namePlate);
+      counterGroup.add(namePlateGroup);
+
       // 4. Ceramic mug / pen holder on the inner desk
       const mugMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3 });
       const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.09, 12), mugMat);
@@ -7973,29 +8011,105 @@ window.game = this;
       counterGroup.add(paperStack);
 
       // 6. Realistic Office Back Wall Decor & Room Furniture:
-      // Tall Oak Bookshelf along the back wall (x = -1.8, z = 13.8)
-      const shelfWoodMat = mats && mats.darkOak ? mats.darkOak : darkWoodMat;
-      const shelfGroup = new THREE.Group();
-      shelfGroup.position.set(-1.6, 0, 5.6); // relative to counter (z = 8.0 + 5.6 = 13.6)
-      const shelfFrame = new THREE.Mesh(new THREE.BoxGeometry(1.8, 2.4, 0.42), shelfWoodMat);
-      shelfFrame.position.set(0, 1.2, 0);
-      shelfFrame.castShadow = true;
-      shelfGroup.add(shelfFrame);
+      // Vending machine against the back wall (x = -1.6, z = 13.42)
+      // This spot used to hold a tall oak box whose shelves sat *inside* an opaque block, so it
+      // rendered as a detail-less brown slab. Replaced with a real machine using the supplied art.
+      const vendingGroup = new THREE.Group();
+      // Sits at z = 13.42: the 0.4m-thick back wall's inner face is z = 13.8, so a 0.70m-deep
+      // cabinet must stay south of 13.8 or it buries itself in the wall.
+      vendingGroup.position.set(-1.6, 0, 5.42);
 
-      // Shelves with archival binders & folders
-      for (let sy = 0.45; sy <= 2.1; sy += 0.48) {
-        const rowBooks = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.34, 0.32), darkWoodMat);
-        rowBooks.position.set(0, sy, 0.02);
-        shelfGroup.add(rowBooks);
+      // Dimensions derive from the artwork's own aspect (1793 x 2924 = 0.613) so nothing stretches
+      const VEND_W = 1.20;
+      const VEND_H = 1.96;
+      const VEND_D = 0.70;
+
+      const vendingShellMat = new THREE.MeshStandardMaterial({ color: 0x1e2226, roughness: 0.45, metalness: 0.7 });
+      const vendingBody = new THREE.Mesh(new THREE.BoxGeometry(VEND_W, VEND_H, VEND_D), vendingShellMat);
+      vendingBody.position.set(0, VEND_H / 2, 0);
+      vendingBody.castShadow = true;
+      vendingBody.receiveShadow = true;
+      vendingGroup.add(vendingBody);
+
+      // Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
+      const vendingRailMat = new THREE.MeshStandardMaterial({ color: 0x8b939b, roughness: 0.34, metalness: 0.85 });
+      [-1, 1].forEach((side) => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H, 0.035), vendingRailMat);
+        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2, -VEND_D / 2 + 0.018);
+        vendingGroup.add(rail);
+      });
+
+      const vendingTex = this.texLoader.load('assets/textures/vending_machine.png', (tx) => {
+        if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
+        else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
+        tx.anisotropy = 8;
+      });
+
+      // Low self-illumination keeps the artwork legible in this dim back office
+      const vendingFaceMat = new THREE.MeshStandardMaterial({
+        map: vendingTex,
+        emissive: 0xffffff,
+        emissiveMap: vendingTex,
+        emissiveIntensity: 0.22,
+        roughness: 0.35,
+        metalness: 0.2
+      });
+
+      // Front face. A plane (not a box face) so the artwork orientation is unambiguous.
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.03, VEND_H - 0.03), vendingFaceMat);
+      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.004);
+      vendingFace.rotation.y = Math.PI; // face south, out toward the counter
+      vendingGroup.add(vendingFace);
+      counterGroup.add(vendingGroup);
+
+      // Brushed-steel drawer cabinet on east side (x = 1.6, z = 13.45)
+      // Previously a single flat grey box; now built up with drawer fronts, pulls and label holders.
+      const cabinetGroup = new THREE.Group();
+      cabinetGroup.position.set(1.6, 0, 5.45); // 0.62m deep, clears the wall inner face at z = 13.8
+
+      const CAB_W = 0.70;
+      const CAB_H = 1.35;
+      const CAB_D = 0.62;
+
+      const cabinetSteel = new THREE.MeshStandardMaterial({ color: 0x767e86, roughness: 0.38, metalness: 0.82 });
+      const cabinetSteelDark = new THREE.MeshStandardMaterial({ color: 0x3f464c, roughness: 0.46, metalness: 0.78 });
+
+      const cabinetBody = new THREE.Mesh(new THREE.BoxGeometry(CAB_W, CAB_H, CAB_D), cabinetSteel);
+      cabinetBody.position.set(0, CAB_H / 2, 0);
+      cabinetBody.castShadow = true;
+      cabinetBody.receiveShadow = true;
+      cabinetGroup.add(cabinetBody);
+
+      // Three flush drawers, each with a shadow gap, a pull and a label holder
+      const CAB_FRONT = -CAB_D / 2 - 0.008;
+      const drawerH = 0.40;
+      for (let di = 0; di < 3; di++) {
+        const dy = CAB_H - 0.05 - drawerH / 2 - di * (drawerH + 0.02);
+
+        const drawerFace = new THREE.Mesh(new THREE.BoxGeometry(CAB_W - 0.075, drawerH, 0.014), cabinetSteel);
+        drawerFace.position.set(0, dy, CAB_FRONT);
+        drawerFace.castShadow = true;
+        cabinetGroup.add(drawerFace);
+
+        const shadowGap = new THREE.Mesh(new THREE.BoxGeometry(CAB_W - 0.075, 0.012, 0.006), cabinetSteelDark);
+        shadowGap.position.set(0, dy - drawerH / 2 - 0.006, CAB_FRONT - 0.007);
+        cabinetGroup.add(shadowGap);
+
+        const pull = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.024, 0.03), cabinetSteelDark);
+        pull.position.set(0, dy + 0.055, CAB_FRONT - 0.019);
+        cabinetGroup.add(pull);
+
+        const labelHolder = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.042, 0.006), cabinetSteelDark);
+        labelHolder.position.set(0, dy - 0.035, CAB_FRONT - 0.011);
+        cabinetGroup.add(labelHolder);
       }
-      counterGroup.add(shelfGroup);
 
-      // Metal filing cabinet on east side (x = 1.6, z = 13.6)
-      const filingMat = new THREE.MeshStandardMaterial({ color: 0x545b62, roughness: 0.45, metalness: 0.75 });
-      const filingCab = new THREE.Mesh(new THREE.BoxGeometry(0.70, 1.35, 0.65), filingMat);
-      filingCab.position.set(1.6, 0.675, 5.6);
-      filingCab.castShadow = true;
-      counterGroup.add(filingCab);
+      // Recessed kick plinth
+      const cabinetPlinth = new THREE.Mesh(new THREE.BoxGeometry(CAB_W - 0.05, 0.055, CAB_D - 0.05), cabinetSteelDark);
+      cabinetPlinth.position.set(0, 0.028, 0);
+      cabinetGroup.add(cabinetPlinth);
+
+      counterGroup.add(cabinetGroup);
 
       // Rolling swivel office chair behind the counter
       const chairMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.8 });
@@ -8030,10 +8144,10 @@ window.game = this;
         minY: y0,
         maxY: y0 + 1.15
       });
-      // Solid collision for rear bookshelf & filing cabinet
+      // Solid collision for the rear vending machine & drawer cabinet
       this.colliders.push(
-        { type: 'box', floor: 0, minX: x - 2.6, maxX: x - 0.6, minZ: z + 5.3, maxZ: z + 5.9, minY: y0, maxY: y0 + 2.5 },
-        { type: 'box', floor: 0, minX: x + 1.2, maxX: x + 2.0, minZ: z + 5.2, maxZ: z + 5.9, minY: y0, maxY: y0 + 1.4 }
+        { type: 'box', floor: 0, minX: x - 2.6, maxX: x - 0.6, minZ: z + 5.05, maxZ: z + 6.0, minY: y0, maxY: y0 + 2.0 },
+        { type: 'box', floor: 0, minX: x + 1.2, maxX: x + 2.0, minZ: z + 5.05, maxZ: z + 6.0, minY: y0, maxY: y0 + 1.4 }
       );
     }
 
@@ -19136,6 +19250,14 @@ window.game = this;
         ctx.strokeStyle = isStair ? '#38bdf8' : 'rgba(148, 163, 184, 0.45)';
         ctx.lineWidth = 1.2;
         ctx.strokeRect(px0, pz0, pw, ph);
+
+        if (label) {
+          ctx.fillStyle = 'rgba(226, 232, 240, 0.65)';
+          ctx.font = 'bold 8px Caryn, sans-serif';
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(label, px0 + pw / 2, pz0 + ph / 2);
+        }
       };
 
       drawRoomBox(-36, -6, -16, 18, T('map.label.west_museum', 'WEST MUSEUM'));
@@ -21333,7 +21455,47 @@ window.game = this;
     }
 
     trackCurrentRoom() {
-      // Room name labels removed per user request: only floor notification displays on floor changes.
+      if (!this.dom.roomIndicator) return;
+      if (this.exitUnlocked) return;
+      const px = this.playerPos.x;
+      const pz = this.playerPos.z;
+      const fl = this.playerFloor;
+      let areaKey = 'area.buffoon_gallery';
+      let defaultArea = 'BUFFOON GALLERY';
+
+      if (fl === 0 && px >= -4.0 && px <= 4.0 && pz >= 7.8 && pz <= 18.2) {
+        areaKey = 'area.clerks_stand';
+        defaultArea = "CLERK'S STAND";
+      } else if (px >= -36 && px <= -16 && pz >= -6 && pz <= 18) {
+        areaKey = 'area.west_room.floor' + (fl + 1);
+        defaultArea = fl === 0 ? 'CLASSICAL ANTIQUITIES' : (fl === 1 ? 'COOL DUDE CENTRAL' : (fl === 2 ? 'THE ART OF SCAMMING' : 'PROMOTIONAL ART VAULT'));
+      } else if (px >= -34 && px <= -24 && pz >= 18 && pz <= 28) {
+        areaKey = fl === 1 ? 'area.southwest_office.floor2' : 'area.southwest_office.other_floors';
+        defaultArea = fl === 1 ? 'SHREFFLO OFFICE' : 'SOUTH-WEST OFFICE';
+      } else if (px >= -4 && px <= 28 && pz >= -42 && pz <= -26) {
+        areaKey = fl === 3 ? 'area.north_room.floor4' : 'area.north_room.other_floors';
+        defaultArea = fl === 3 ? 'RESTRICTED RELIQUARY VAULT' : 'LOCAL HISTORY';
+      } else if (px >= 4 && px <= 28 && pz >= -26 && pz <= 18) {
+        areaKey = 'area.main_stacks';
+        defaultArea = 'ARTS & MUSIC MAIN STACKS';
+      } else if (px >= 19 && px <= 33 && pz >= 8 && pz <= 18) {
+        areaKey = 'area.arts_music_office';
+        defaultArea = 'ARTS & MUSIC OFFICE';
+      } else if (px >= 4 && px <= 28 && pz >= 18 && pz <= 28) {
+        areaKey = 'area.south_media_wing';
+        defaultArea = 'SOUTH MEDIA & REFERENCE WING';
+      } else if (px >= -4 && px <= 4 && pz >= -14 && pz <= 2) {
+        areaKey = pz < -6 ? 'area.restrooms' : 'area.study_room';
+        defaultArea = pz < -6 ? 'RESTROOMS' : 'STUDY ROOM';
+      }
+
+      const flName = [T('floor.1', '1ST FLOOR'), T('floor.2', '2ND FLOOR'), T('floor.3', '3RD FLOOR'), T('floor.4', '4TH FLOOR')][fl] || `FLOOR ${fl + 1}`;
+      const areaName = T(areaKey, defaultArea);
+      const roomFormatted = T('hud.room_format', '{floor} • {area}', { floor: flName, area: areaName });
+      if (this.currentRoom !== roomFormatted) {
+        this.currentRoom = roomFormatted;
+        this.dom.roomIndicator.textContent = roomFormatted;
+      }
     }
 
     updateWeaponViewmodel(delta, isMoving) {

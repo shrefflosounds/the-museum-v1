@@ -133,6 +133,7 @@ area.north_room.other_floors = LOCAL HISTORY
 area.north_room.floor4 = RESTRICTED RELIQUARY VAULT
 area.restrooms = RESTROOMS
 area.study_room = STUDY ROOM
+area.clerks_stand = CLERK'S STAND
 area.main_stacks = ARTS & MUSIC MAIN STACKS
 area.arts_music_office = ARTS & MUSIC OFFICE
 area.south_media_wing = SOUTH MEDIA & REFERENCE WING
