@@ -22,9 +22,9 @@
       this.redoStack = [];
       this.currentFloor = 0;
 
-      // Noclip Free-Flight Camera Controls
-      this.camPos = new THREE.Vector3(15, 2.0, -10);
-      this.camYaw = 0;
+      // Noclip Free-Flight Camera Controls (Spawns at Floor 1 center facing into the museum)
+      this.camPos = new THREE.Vector3(-10.0, 2.2, 16.0);
+      this.camYaw = Math.PI;
       this.camPitch = 0;
       this.camSpeed = 12.0;
       this.keys = {};
@@ -89,16 +89,31 @@
 
     // --- LOAD THE LIVE EXISTING GAME MUSEUM ---
     setupEditorScene() {
-      // Instantiate the actual Museum Game engine to build the authentic museum geometry
-      // We pass headless flag or configure it so it doesn't grab gameplay pointer lock
+      // Provide editor renderer to game engine
       window._IS_EDITOR_MODE = true;
-      if (typeof Game === 'function') {
-        this.gameInstance = new Game();
+      window._EDITOR_RENDERER = this.renderer;
+
+      const GameClass = window.MuseumGame || window.Game;
+      if (typeof GameClass === 'function') {
+        this.gameInstance = new GameClass(this.canvas);
         this.scene = this.gameInstance.scene;
       } else {
         console.error('The Museum Game class not found. Ensure game.js is loaded.');
         this.scene = new THREE.Scene();
       }
+
+      // Add prominent editor ambient and directional illumination so entire museum is clearly visible
+      const editorAmbient = new THREE.AmbientLight(0xffffff, 0.85);
+      editorAmbient.name = 'EditorAmbientLight';
+      this.scene.add(editorAmbient);
+
+      const editorSun = new THREE.DirectionalLight(0xffffff, 0.95);
+      editorSun.position.set(20, 50, 20);
+      editorSun.name = 'EditorSunLight';
+      this.scene.add(editorSun);
+
+      // Disable fog in editor mode so distant wings and corridors are never pitch black
+      if (this.scene) this.scene.fog = null;
 
       // Add selection highlight helper box
       this.highlightBox = new THREE.BoxHelper(new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.1, 0.1)), 0x58a6ff);

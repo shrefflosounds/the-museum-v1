@@ -4453,18 +4453,20 @@ window.game = this;
       if (this.renderer && this.scene && this.camera) {
         this.renderer.compile(this.scene, this.camera);
       }
-      this.setupEventListeners();
-      this.updateSmittyModeUI();
-      this.updateMusicModeUI();
-      this.updatePlayerViewUI();
-      if (this.dom.aboutBuildTag) {
-        this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
+      if (!window._IS_EDITOR_MODE) {
+        this.setupEventListeners();
+        this.updateSmittyModeUI();
+        this.updateMusicModeUI();
+        this.updatePlayerViewUI();
+        if (this.dom.aboutBuildTag) {
+          this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
+        }
+        this.audio.init();
+        if (this.musicEnabled) {
+          this.audio.playMenuMusic();
+        }
+        this.animate();
       }
-      this.audio.init();
-      if (this.musicEnabled) {
-        this.audio.playMenuMusic();
-      }
-      this.animate();
     }
 
     initThree() {
@@ -4476,17 +4478,21 @@ window.game = this;
       this.camera.position.copy(this.playerPos);
       this.scene.add(this.camera);
 
-      this.renderer = new THREE.WebGLRenderer({
-        canvas: this.canvas,
-        antialias: true,
-        alpha: true,
-        powerPreference: 'high-performance'
-      });
-      this.renderer.setSize(window.innerWidth, window.innerHeight);
-      this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
-      this.renderer.shadowMap.enabled = false;
-      this.renderer.toneMapping = THREE.LinearToneMapping;
-      this.renderer.toneMappingExposure = 1.0;
+      if (window._EDITOR_RENDERER) {
+        this.renderer = window._EDITOR_RENDERER;
+      } else if (this.canvas) {
+        this.renderer = new THREE.WebGLRenderer({
+          canvas: this.canvas,
+          antialias: true,
+          alpha: true,
+          powerPreference: 'high-performance'
+        });
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.setPixelRatio(Math.min(1.5, window.devicePixelRatio || 1));
+        this.renderer.shadowMap.enabled = false;
+        this.renderer.toneMapping = THREE.LinearToneMapping;
+        this.renderer.toneMappingExposure = 1.0;
+      }
 
       // WebGL context loss recovery (Option 3): prevents graphics stalls or canvas freezes
       this.canvas.addEventListener('webglcontextlost', (e) => {
@@ -25262,11 +25268,16 @@ window.game = this;
     }
   };
 
-  if (document.readyState === 'loading') {
-    window.addEventListener('DOMContentLoaded', () => {
+  window.MuseumGame = MuseumGame;
+  window.Game = MuseumGame;
+
+  if (!window._IS_EDITOR_MODE) {
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', () => {
+        window.gameInstance = new MuseumGame();
+      });
+    } else {
       window.gameInstance = new MuseumGame();
-    });
-  } else {
-    window.gameInstance = new MuseumGame();
+    }
   }
 })();
