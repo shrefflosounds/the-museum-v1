@@ -8030,13 +8030,13 @@ window.game = this;
       // This spot used to hold a tall oak box whose shelves sat *inside* an opaque block, so it
       // rendered as a detail-less brown slab. Replaced with a real machine using the supplied art.
       const vendingGroup = new THREE.Group();
-      // Sits at z = 13.42: the 0.4m-thick back wall's inner face is z = 13.8, so a 0.70m-deep
+      // Sits at z = 13.42: the 0.4m-thick back wall's inner face is z = 13.8, so a 1.4m-deep
       // cabinet must stay south of 13.8 or it buries itself in the wall.
       vendingGroup.position.set(-1.6, 0, 5.42);
 
-      // Dimensions derive from the artwork's own aspect (1793 x 2924 = 0.613) so nothing stretches
-      const VEND_W = 1.20;
-      const VEND_H = 1.96;
+      // Dimensions are now 2x: derived from artwork's own aspect (1793 x 2924 = 0.613) so nothing stretches
+      const VEND_W = 2.40;
+      const VEND_H = 3.92;
       const VEND_D = 0.70;
 
       const vendingShellMat = new THREE.MeshStandardMaterial({ color: 0x1e2226, roughness: 0.45, metalness: 0.7 });
@@ -8049,8 +8049,8 @@ window.game = this;
       // Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
       const vendingRailMat = new THREE.MeshStandardMaterial({ color: 0x8b939b, roughness: 0.34, metalness: 0.85 });
       [-1, 1].forEach((side) => {
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H, 0.035), vendingRailMat);
-        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2, -VEND_D / 2 + 0.018);
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H * 2, 0.035), vendingRailMat);
+        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2 * 2, -VEND_D / 2 + 0.018);
         vendingGroup.add(rail);
       });
 
@@ -8067,8 +8067,8 @@ window.game = this;
       });
 
       // Front face centered and facing toward the desk opening
-      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
-      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.006);
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W * 2 - 0.02, VEND_H * 2 - 0.02), vendingFaceMat);
+      vendingFace.position.set(0, VEND_H / 2 * 2, -VEND_D / 2 - 0.006);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
@@ -8078,8 +8078,9 @@ window.game = this;
       const cabinetGroup = new THREE.Group();
       cabinetGroup.position.set(1.6, 0, 5.45); // 0.62m deep, clears the wall inner face at z = 13.8
 
-      const CAB_W = 0.70;
-      const CAB_H = 1.35;
+      // Cabinet is now 2x bigger along with the vending machine
+      const CAB_W = 1.40;
+      const CAB_H = 2.70;
       const CAB_D = 0.62;
 
       const cabinetSteel = new THREE.MeshStandardMaterial({ color: 0x767e86, roughness: 0.38, metalness: 0.82 });
@@ -8093,7 +8094,7 @@ window.game = this;
 
       // Three flush drawers, each with a shadow gap, a pull and a label holder
       const CAB_FRONT = -CAB_D / 2 - 0.008;
-      const drawerH = 0.40;
+      const drawerH = 0.45; // Slightly increased to accommodate taller cabinet (2.70 height)
       for (let di = 0; di < 3; di++) {
         const dy = CAB_H - 0.05 - drawerH / 2 - di * (drawerH + 0.02);
 
@@ -8106,11 +8107,11 @@ window.game = this;
         shadowGap.position.set(0, dy - drawerH / 2 - 0.006, CAB_FRONT - 0.007);
         cabinetGroup.add(shadowGap);
 
-        const pull = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.024, 0.03), cabinetSteelDark);
+        const pull = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.035, 0.04), cabinetSteelDark);
         pull.position.set(0, dy + 0.055, CAB_FRONT - 0.019);
         cabinetGroup.add(pull);
 
-        const labelHolder = new THREE.Mesh(new THREE.BoxGeometry(0.13, 0.042, 0.006), cabinetSteelDark);
+        const labelHolder = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.048, 0.006), cabinetSteelDark);
         labelHolder.position.set(0, dy - 0.035, CAB_FRONT - 0.011);
         cabinetGroup.add(labelHolder);
       }
@@ -8141,6 +8142,102 @@ window.game = this;
       const officeLight = new THREE.PointLight(0xfff0dd, 0.95, 6.5, 1.2);
       officeLight.position.set(0, 2.75, 1.8);
       counterGroup.add(officeLight);
+
+      // 7. Drop Ceiling Tiles & Wall Liners for Clerk's Office
+      // Replace the interior ceiling and walls with the drop ceiling tile texture
+      const dropCeilingTex = this.texLoader.load('assets/textures/drop_ceiling_tiles.jpg', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 3);
+      });
+      const dropCeilingMat = new THREE.MeshStandardMaterial({
+        map: dropCeilingTex,
+        roughness: 0.85,
+        metalness: 0.05
+      });
+
+      // Suspended office drop ceiling slab (underneath the 4.0m floor slab at y = 3.65)
+      // Room spans x: -3.76..3.76 (width 7.52), z: 8.04..13.96 (depth 5.92)
+      const officeCeiling = new THREE.Mesh(
+        new THREE.PlaneGeometry(7.52, 5.92),
+        dropCeilingMat
+      );
+      officeCeiling.position.set(0, 3.65, 2.98);
+      officeCeiling.rotation.x = Math.PI / 2;
+      counterGroup.add(officeCeiling);
+
+      // Office interior wall liners using drop ceiling tile pattern
+      const wallTileTex = this.texLoader.load('assets/textures/drop_ceiling_tiles.jpg', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 2.5);
+      });
+      const officeWallMat = new THREE.MeshStandardMaterial({
+        map: wallTileTex,
+        roughness: 0.85,
+        metalness: 0.05
+      });
+
+      // Interior back wall (z = 13.78, facing -Z / into room)
+      const backWallLiner = new THREE.Mesh(
+        new THREE.PlaneGeometry(7.52, 3.65),
+        officeWallMat
+      );
+      backWallLiner.position.set(0, 1.825, 5.78);
+      backWallLiner.rotation.y = Math.PI;
+      counterGroup.add(backWallLiner);
+
+      // Interior west wall (x = -3.78, facing +X / into room)
+      const westWallLiner = new THREE.Mesh(
+        new THREE.PlaneGeometry(5.92, 3.65),
+        officeWallMat
+      );
+      westWallLiner.position.set(-3.78, 1.825, 2.98);
+      westWallLiner.rotation.y = Math.PI / 2;
+      counterGroup.add(westWallLiner);
+
+      // Interior east wall (x = 3.78, facing -X / into room)
+      const eastWallLiner = new THREE.Mesh(
+        new THREE.PlaneGeometry(5.92, 3.65),
+        officeWallMat
+      );
+      eastWallLiner.position.set(3.78, 1.825, 2.98);
+      eastWallLiner.rotation.y = -Math.PI / 2;
+      counterGroup.add(eastWallLiner);
+
+      // 8. Decorative Closed "EMPLOYEES ONLY" Door
+      // Mounted on the exterior west wall facing the main entrance concourse / grand hall
+      // Exterior west wall is at x = -4.0, z ~ 11.0, player views it from main entrance hall (x < -4)
+      const doorTex = this.texLoader.load('assets/textures/employees_only_door.jpg', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const doorMat = new THREE.MeshStandardMaterial({
+        map: doorTex,
+        roughness: 0.55,
+        metalness: 0.15
+      });
+      // Door aspect: ~1.05m wide, ~2.25m high
+      const employeesDoor = new THREE.Mesh(
+        new THREE.PlaneGeometry(1.05, 2.25),
+        doorMat
+      );
+      // Place at exterior west wall facing west (-X direction towards concourse):
+      // In counterGroup coordinates, x = -4.01 - 0 = -4.01, z = 11.0 - 8.0 = 3.0
+      employeesDoor.position.set(-4.015, 1.125, 3.0);
+      employeesDoor.rotation.y = -Math.PI / 2; // Faces west (-X) towards entrance hall
+      counterGroup.add(employeesDoor);
+
+      // Slim door frame trim
+      const frameMat = new THREE.MeshStandardMaterial({ color: 0xc8c3ba, roughness: 0.5 });
+      const doorFrameL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.30, 0.05), frameMat);
+      doorFrameL.position.set(-4.02, 1.15, 2.475);
+      const doorFrameR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.30, 0.05), frameMat);
+      doorFrameR.position.set(-4.02, 1.15, 3.525);
+      const doorFrameTop = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 1.10), frameMat);
+      doorFrameTop.position.set(-4.02, 2.275, 3.0);
+      counterGroup.add(doorFrameL, doorFrameR, doorFrameTop);
 
       this.scene.add(counterGroup);
 
@@ -8516,10 +8613,10 @@ window.game = this;
 
           // Neck & Head: tilt up slightly to maintain tired eye contact with player
           if (b['neck']) {
-            b['neck'].rotation.x -= 0.25 * lw;
+            b['neck'].rotation.x -= 0.20 * lw;
           }
           if (b['head']) {
-            b['head'].rotation.x -= 0.32 * lw;
+            b['head'].rotation.x -= 0.25 * lw;
           }
         }
 
@@ -8527,37 +8624,40 @@ window.game = this;
         // Upright, palms flat down on the mahogany slab, chest squared, unblinking hard eye contact
         if (sw > 0.01) {
           if (b['spine']) {
-            b['spine'].rotation.x += 0.12 * sw;
+            b['spine'].rotation.x += 0.28 * sw;
           }
           if (b['chest']) {
-            b['chest'].rotation.x += 0.10 * sw;
+            b['chest'].rotation.x += 0.22 * sw;
           }
           if (b['upperArm.L']) {
-            b['upperArm.L'].rotation.x += 0.55 * sw;
-            b['upperArm.L'].rotation.z += 0.25 * sw;
+            b['upperArm.L'].rotation.x += 0.65 * sw;
+            b['upperArm.L'].rotation.z += 0.30 * sw;
           }
           if (b['lowerArm.L']) {
-            b['lowerArm.L'].rotation.x += -0.75 * sw;
-            b['lowerArm.L'].rotation.y += 0.25 * sw;
+            b['lowerArm.L'].rotation.x += -0.85 * sw;
+            b['lowerArm.L'].rotation.y += 0.35 * sw;
           }
           if (b['hand.L']) {
-            b['hand.L'].rotation.x += 0.45 * sw;
+            b['hand.L'].rotation.x += 0.55 * sw;
           }
 
           if (b['upperArm.R']) {
-            b['upperArm.R'].rotation.x += 0.55 * sw;
-            b['upperArm.R'].rotation.z -= 0.25 * sw;
+            b['upperArm.R'].rotation.x += 0.65 * sw;
+            b['upperArm.R'].rotation.z -= 0.30 * sw;
           }
           if (b['lowerArm.R']) {
-            b['lowerArm.R'].rotation.x += -0.75 * sw;
-            b['lowerArm.R'].rotation.y -= 0.25 * sw;
+            b['lowerArm.R'].rotation.x += -0.85 * sw;
+            b['lowerArm.R'].rotation.y -= 0.35 * sw;
           }
           if (b['hand.R']) {
-            b['hand.R'].rotation.x += 0.45 * sw;
+            b['hand.R'].rotation.x += 0.55 * sw;
           }
 
+          if (b['neck']) {
+            b['neck'].rotation.x -= 0.28 * sw;
+          }
           if (b['head']) {
-            b['head'].rotation.x -= 0.15 * sw;
+            b['head'].rotation.x -= 0.25 * sw;
           }
         }
 
@@ -8569,6 +8669,16 @@ window.game = this;
           const trackingMult = clerk.state === 'STARE_DOWN' ? 0.95 : 0.65;
           const clampedYaw = Math.max(-0.65, Math.min(0.65, Math.atan2(Math.sin(relYaw), Math.cos(relYaw))));
           b['head'].rotation.y += clampedYaw * trackingMult;
+        }
+
+        // Strictly clamp head & neck pitch/roll so head NEVER spins upside down vertically
+        if (b['neck']) {
+          b['neck'].rotation.x = Math.max(-0.45, Math.min(0.40, b['neck'].rotation.x));
+          b['neck'].rotation.z = Math.max(-0.15, Math.min(0.15, b['neck'].rotation.z));
+        }
+        if (b['head']) {
+          b['head'].rotation.x = Math.max(-0.50, Math.min(0.35, b['head'].rotation.x));
+          b['head'].rotation.z = Math.max(-0.15, Math.min(0.15, b['head'].rotation.z));
         }
       }
     }
@@ -8589,12 +8699,14 @@ window.game = this;
 
       clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
 
-      // If he's already at counter and player rings 4+ times, trigger stare-down
-      if (clerk.bellPesterCount >= 4 && Math.abs(clerk.z - clerk.counterZ) < 0.35) {
+      // If player rings 3+ times, trigger the funny stare-down: plant hands flat on desk, lean in, and stare
+      if (clerk.bellPesterCount >= 3) {
         clerk.state = 'STARE_DOWN';
-        clerk.stateTimer = 10.0;
+        clerk.stateTimer = 14.0;
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = clerk.counterZ;
         clerk.targetRotY = Math.PI;
         return;
       }
