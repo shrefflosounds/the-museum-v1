@@ -11594,9 +11594,14 @@ window.game = this;
 
         // Restore real player model visibility and fade for the primary camera
         const isTheBeing = (this.selectedPlayerCharacter === 7);
-        const fadeDist = isTheBeing ? Math.max(3.2, this.thirdPersonCameraDistance * 1.8) : this.thirdPersonCameraDistance;
-        const fadeMin = isTheBeing ? 0.80 : 0.42;
-        const fade2 = THREE.MathUtils.clamp((fadeDist - fadeMin) / 0.18, 0, 1);
+        let fade2 = 1.0;
+        if (isTheBeing) {
+          const tZoom = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / (2.6 - 0.4), 0, 1);
+          const beingDist = THREE.MathUtils.lerp(0.0, 5.0, tZoom);
+          fade2 = THREE.MathUtils.clamp((beingDist - 0.35) / 0.25, 0, 1);
+        } else {
+          fade2 = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.42) / 0.18, 0, 1);
+        }
         if (this.playerModelRoot) {
           this.playerModelRoot.visible = isThirdPerson && (fade2 > 0.001) && !!this.playerModel;
         }
@@ -16792,14 +16797,32 @@ window.game = this;
     updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 7);
-      // For The Being (~4.15m tall), camera targets upper torso and sits back proportionally
-      const targetYOffset = isTheBeing ? 2.5 : 1.3;
+
+      // Camera target height and distance interpolation
+      let targetYOffset = 1.3;
+      let distance = this.thirdPersonCameraDistance;
+      let fade = 1.0;
+
+      if (isTheBeing) {
+        // The Being (~4.15m tall): eye height is at ~3.88m above foot elevation
+        // Zoom factor t: 0 = fully zoomed in (first person eyes), 1 = fully zoomed out
+        const t = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / (2.6 - 0.4), 0, 1);
+        // At t = 0 (first person), target is right at eye level (footY + 3.88); at full zoom out, upper torso (footY + 2.50)
+        targetYOffset = THREE.MathUtils.lerp(3.88, 2.50, t);
+        // Distance smoothly scales from 0.0 (right at the eyes) up to 5.0m (full body framing)
+        distance = THREE.MathUtils.lerp(0.0, 5.0, t);
+        fade = THREE.MathUtils.clamp((distance - 0.35) / 0.25, 0, 1);
+      } else {
+        targetYOffset = 1.3;
+        distance = this.thirdPersonCameraDistance;
+        fade = THREE.MathUtils.clamp((distance - 0.42) / 0.18, 0, 1);
+      }
+
       const target = new THREE.Vector3(
         this.playerPos.x,
         footY + targetYOffset,
         this.playerPos.z
       );
-      const distance = isTheBeing ? Math.max(3.2, this.thirdPersonCameraDistance * 1.8) : this.thirdPersonCameraDistance;
       const cosPitch = Math.cos(this.playerPitch);
       const sinPitch = Math.sin(this.playerPitch);
       const sinYaw = Math.sin(this.playerYaw);
@@ -16822,8 +16845,6 @@ window.game = this;
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       this.camera.lookAt(lookAhead);
-      const fadeMin = isTheBeing ? 0.80 : 0.42;
-      const fade = THREE.MathUtils.clamp((distance - fadeMin) / 0.18, 0, 1);
       if (this.playerModelRoot) {
         this.playerModelRoot.visible = (fade > 0.001);
       }
