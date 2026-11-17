@@ -8246,6 +8246,10 @@ window.game = this;
             }
             if (child.isBone) {
               clerk.bones[child.name] = child;
+              // Register a dotted alias (e.g. 'upperArmL' -> 'upperArm.L') so the pose
+              // code, which references bones with dots, resolves to the real bones.
+              const dotted = child.name.replace(/^(.*?)([LR])$/, '$1.$2');
+              if (dotted !== child.name && !clerk.bones[dotted]) clerk.bones[dotted] = child;
             }
           });
 
@@ -8576,25 +8580,30 @@ window.game = this;
           if (b['chest']) {
             b['chest'].rotation.x += 0.22 * sw;
           }
+          // Solved via CDP FK sweep so hands rest on the ledge (y≈0.93, z≈8.15).
           if (b['upperArm.L']) {
-            b['upperArm.L'].rotation.x += 0.65 * sw;
-            b['upperArm.L'].rotation.z += 0.30 * sw;
+            b['upperArm.L'].rotation.x += 1.0503 * sw;
+            b['upperArm.L'].rotation.y += -0.8391 * sw;
+            b['upperArm.L'].rotation.z += 1.2995 * sw;
           }
           if (b['lowerArm.L']) {
-            b['lowerArm.L'].rotation.x += -0.85 * sw;
-            b['lowerArm.L'].rotation.y += 0.35 * sw;
+            b['lowerArm.L'].rotation.x += -0.7111 * sw;
+            b['lowerArm.L'].rotation.y += -0.2710 * sw;
+            b['lowerArm.L'].rotation.z += -0.4710 * sw;
           }
           if (b['hand.L']) {
             b['hand.L'].rotation.x += 0.55 * sw;
           }
 
           if (b['upperArm.R']) {
-            b['upperArm.R'].rotation.x += 0.65 * sw;
-            b['upperArm.R'].rotation.z -= 0.30 * sw;
+            b['upperArm.R'].rotation.x += 1.0503 * sw;
+            b['upperArm.R'].rotation.y += 0.8391 * sw;
+            b['upperArm.R'].rotation.z += -1.2995 * sw;
           }
           if (b['lowerArm.R']) {
-            b['lowerArm.R'].rotation.x += -0.85 * sw;
-            b['lowerArm.R'].rotation.y -= 0.35 * sw;
+            b['lowerArm.R'].rotation.x += -0.7111 * sw;
+            b['lowerArm.R'].rotation.y += 0.2710 * sw;
+            b['lowerArm.R'].rotation.z += 0.4710 * sw;
           }
           if (b['hand.R']) {
             b['hand.R'].rotation.x += 0.55 * sw;
