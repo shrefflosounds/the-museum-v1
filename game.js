@@ -7912,13 +7912,14 @@ window.game = this;
 
       // Back work-counter surface behind the front ledge (height 0.72m).
       // Depth kept shallow (0.40m) so the clerk has clear floor to stand on behind it.
-      const deskSlab = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.04, 0.40),
-        darkWoodMat
-      );
-      deskSlab.position.set(0, 0.72, 0.54);
-      deskSlab.receiveShadow = true;
-      counterGroup.add(deskSlab);
+      // REMOVED: This deskSlab blocked the clerk from reaching the front ledge during bell animation
+      // const deskSlab = new THREE.Mesh(
+      //   new THREE.BoxGeometry(width - 0.2, 0.04, 0.40),
+      //   darkWoodMat
+      // );
+      // deskSlab.position.set(0, 0.72, 0.54);
+      // deskSlab.receiveShadow = true;
+      // counterGroup.add(deskSlab);
 
       // Counter cabinet base and support panels underneath desk
       const cabinetBase = new THREE.Mesh(
@@ -8069,8 +8070,13 @@ window.game = this;
       // Front face centered and facing toward the desk opening
       const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
+      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 + 0.005); // place at front of machine body
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
+
+      // Force texture update when loaded
+      vendingTex.wrapS = THREE.ClampToEdgeWrapping;
+      vendingTex.wrapT = THREE.ClampToEdgeWrapping;
 
       // Brushed-steel drawer cabinet on east side (x = 1.6, z = 13.45)
       // Previously a single flat grey box; now built up with drawer fronts, pulls and label holders.
@@ -8303,11 +8309,14 @@ window.game = this;
       if (clerk.state === 'STARE_DOWN') {
         // High alert: hands firmly planted up on the counter ledge, rigid spine, hard locked eye contact
         // Slowly lean in face toward player while maintaining eye contact
+        // Move forward to the front ledge (counterGroup z=0 = world z=8.0)
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
         clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.25);
         clerk.targetX = 0.0;
-        clerk.targetZ = clerk.counterZ - 0.04 - clerk.leanInWeight * 0.15; // lean in progressively
+        // Front ledge is at counterGroup z=0 (world z=8.0). Clerk starts at world z=9.02.
+        // Lean in progressively from current position to the front ledge.
+        clerk.targetZ = 8.0 - clerk.leanInWeight * 0.15; // lean in past the ledge slightly
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
