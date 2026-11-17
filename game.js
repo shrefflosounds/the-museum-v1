@@ -8046,11 +8046,11 @@ window.game = this;
       vendingBody.receiveShadow = true;
       vendingGroup.add(vendingBody);
 
-      // Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
+// Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
       const vendingRailMat = new THREE.MeshStandardMaterial({ color: 0x8b939b, roughness: 0.34, metalness: 0.85 });
       [-1, 1].forEach((side) => {
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H * 2, 0.035), vendingRailMat);
-        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2 * 2, -VEND_D / 2 + 0.018);
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H, 0.035), vendingRailMat);
+        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2, -VEND_D / 2 + 0.018);
         vendingGroup.add(rail);
       });
 
@@ -8067,7 +8067,7 @@ window.game = this;
       });
 
       // Front face centered and facing toward the desk opening
-      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H * 2 - 0.02), vendingFaceMat);
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
