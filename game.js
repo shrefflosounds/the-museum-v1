@@ -8055,7 +8055,7 @@ window.game = this;
         vendingGroup.add(rail);
       });
 
-      const vendingTex = this.texLoader.load('assets/textures/vending_machine.png', (tx) => {
+      const vendingTex = this.texLoader.load('assets/vending.png', (tx) => {
         if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
         else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
         tx.anisotropy = 8;
@@ -8070,7 +8070,7 @@ window.game = this;
       // Front face centered and facing toward the desk opening
       const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
       vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
-      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 + 0.005); // place at front of machine body
+      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.005); // sit just proud of the front (south) face so the body doesn't occlude the art
       vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
 
