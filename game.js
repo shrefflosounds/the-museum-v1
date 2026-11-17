@@ -8576,22 +8576,25 @@ window.game = this;
           // Neck & head pitch is handled by the look-at aiming below.
         }
 
-        // Clamp the neck first so the look-at below compensates for it.
-        if (b['neck']) {
+        // Only aim the head at the player when the clerk is stationed at the counter
+        // and facing roughly toward them. Applying lookAt() while he is turned away
+        // (WANDER / RETURN_COUNTER / SUMMONED_BELL) snaps the head 180° backwards.
+        const playerFacing = isPlayerNear &&
+          (clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER' || clerk.state === 'STARE_DOWN');
+
+        if (playerFacing && b['neck']) {
           b['neck'].rotation.x = Math.max(-0.25, Math.min(0.30, b['neck'].rotation.x));
           b['neck'].rotation.z = Math.max(-0.15, Math.min(0.15, b['neck'].rotation.z));
         }
 
         // Strong eye contact: point the head's face (local +Z) straight at the player's eyes.
         // lookAt() overrides the idle animation's head pitch, which otherwise tilts him too high.
-        if (isPlayerNear && b['head']) {
+        if (playerFacing && b['head']) {
           const playerEye = clerk._playerEye || (clerk._playerEye = new THREE.Vector3());
           playerEye.copy(pPos);
           b['head'].lookAt(playerEye);
-        }
 
-        // Keep the head from rolling; pitch clamp is wide so lookAt() is never undone.
-        if (b['head']) {
+          // Keep the head from rolling; pitch clamp is wide so lookAt() is never undone.
           b['head'].rotation.x = Math.max(-1.2, Math.min(1.2, b['head'].rotation.x));
           b['head'].rotation.z = Math.max(-0.15, Math.min(0.15, b['head'].rotation.z));
         }
@@ -8604,17 +8607,26 @@ window.game = this;
       }
 
       const bell = this.clerkDeskBell;
+      const now = performance.now();
+      // Detect rapid repeated ringing: was the previous ring within 1.5 s?
+      const rapidRing = bell ? (now - (bell.lastRingTime || 0) < 1500) : false;
       if (bell) {
-        bell.lastRingTime = performance.now();
+        bell.lastRingTime = now;
         bell.ringCount = (bell.ringCount || 0) + 1;
       }
 
       const clerk = this.museumClerk;
       if (!clerk) return;
 
-      clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
+      // Only count toward the stare-down threshold if the player is ringing rapidly.
+      // A slow ring resets the counter so a single occasional ring never triggers it.
+      if (rapidRing) {
+        clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
+      } else {
+        clerk.bellPesterCount = 1;
+      }
 
-      // If player rings 3+ times, trigger the stare-down: plant hands flat on the ledge, lean in, and stare.
+      // If player rings 3+ times rapidly, trigger the stare-down: plant hands flat on the ledge, lean in, and stare.
       // Do NOT reset leanInWeight here, so repeated rings keep him leaning in further instead of snapping upright.
       if (clerk.bellPesterCount >= 3) {
         clerk.state = 'STARE_DOWN';
