@@ -8304,9 +8304,10 @@ window.game = this;
         // High alert: hands firmly planted up on the counter ledge, rigid spine, hard locked eye contact
         // Slowly lean in face toward player while maintaining eye contact
         clerk.targetStareWeight = 1.0;
-        clerk.targetLeanWeight = Math.min(1.0, (clerk.targetLeanWeight || 0) + delta * 0.15);
+        clerk.targetLeanWeight = 0.0;
+        clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.25);
         clerk.targetX = 0.0;
-        clerk.targetZ = clerk.counterZ - 0.04 - clerk.targetLeanWeight * 0.12; // lean in progressively
+        clerk.targetZ = clerk.counterZ - 0.04 - clerk.leanInWeight * 0.15; // lean in progressively
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8319,7 +8320,7 @@ window.game = this;
           clerk.state = 'LEAN_COUNTER';
           clerk.stateTimer = 10.0 + Math.random() * 6.0;
           clerk.targetStareWeight = 0.0;
-          clerk.targetLeanWeight = 1.0;
+          clerk.leanInWeight = 0.0;
         }
       } else if (clerk.state === 'SUMMONED_BELL') {
         // Walk briskly directly to the front counter to face the player
@@ -8591,9 +8592,16 @@ window.game = this;
 
           if (b['neck']) {
             b['neck'].rotation.x -= 0.10 * sw;
+            // Additional progressive face lean-in during STARE_DOWN
+            if (clerk.leanInWeight > 0.01) {
+              b['neck'].rotation.x -= 0.35 * clerk.leanInWeight;
+            }
           }
           if (b['head']) {
             b['head'].rotation.x -= 0.12 * sw;
+            if (clerk.leanInWeight > 0.01) {
+              b['head'].rotation.x -= 0.45 * clerk.leanInWeight;
+            }
           }
         }
 
@@ -8641,6 +8649,7 @@ window.game = this;
         clerk.stateTimer = 14.0;
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
+        clerk.leanInWeight = 0.0; // progressive face lean-in
         clerk.targetX = 0.0;
         clerk.targetZ = clerk.counterZ;
         clerk.targetRotY = Math.PI;
@@ -21888,9 +21897,9 @@ window.game = this;
       // Black juice liquid spray and puddles (dog never dies, only bleeds and charges/retaliates)
       this.spawnLiquidBlood(hitPoint, sprayDir, 32, dog.y, true);
 
-      // Dog takes about 1.5 seconds to growl/charge up before lunging into an attack!
+      // Dog takes 0.5-1.0 seconds to charge up before lunging into an attack!
       dog.aiState = "CHARGE_PLAYER";
-      dog.aiTimer = 1.4; // 1.4s charge time before attack
+      dog.aiTimer = 0.5 + Math.random() * 0.5; // 0.5-1.0s charge time before attack
       dog.retaliated = false;
       dog.retaliateDir = sprayDir.clone().negate();
       dog.currentSpeed = 0;
