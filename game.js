@@ -8506,9 +8506,9 @@ window.game = this;
       clerk.rotY += rDiff * Math.min(1.0, delta * 6.0);
       clerk.group.rotation.y = clerk.rotY;
 
-      // Smooth lean and stare weight transitions
-      clerk.leanWeight += (clerk.targetLeanWeight - clerk.leanWeight) * Math.min(1.0, delta * 4.5);
-      clerk.stareWeight += (clerk.targetStareWeight - clerk.stareWeight) * Math.min(1.0, delta * 5.0);
+      // Smooth lean and stare weight transitions (slow so arms lift gradually to the ledge)
+      clerk.leanWeight += (clerk.targetLeanWeight - clerk.leanWeight) * Math.min(1.0, delta * 3.0);
+      clerk.stareWeight += (clerk.targetStareWeight - clerk.stareWeight) * Math.min(1.0, delta * 2.0);
 
       // Animation mixer update
       if (clerk.mixer) {
@@ -8522,50 +8522,14 @@ window.game = this;
 
       if (b) {
         // 1. Tired Elbows Resting Over Counter Pose:
-        // Torso tilts comfortably forward, shoulders rotate forward, upper arms angle down/forward,
-        // and lower arms / forearms bend resting flat onto the lowered counter ledge (height ~0.88m).
+        // Torso tilts comfortably forward. Arms hang naturally at animation base;
+        // the stare-down block below lifts and plants them on the ledge.
         if (lw > 0.01) {
           if (b['spine']) {
             b['spine'].rotation.x += 0.32 * lw;
           }
           if (b['chest']) {
             b['chest'].rotation.x += 0.25 * lw;
-          }
-
-          // Left Arm: elbow resting on counter ledge
-          if (b['shoulder.L']) {
-            b['shoulder.L'].rotation.z += 0.15 * lw;
-          }
-          if (b['upperArm.L']) {
-            b['upperArm.L'].rotation.x += 0.85 * lw;
-            b['upperArm.L'].rotation.y += -0.15 * lw;
-            b['upperArm.L'].rotation.z += 0.35 * lw;
-          }
-          if (b['lowerArm.L']) {
-            b['lowerArm.L'].rotation.x += -1.25 * lw;
-            b['lowerArm.L'].rotation.y += 0.45 * lw;
-            b['lowerArm.L'].rotation.z += -0.20 * lw;
-          }
-          if (b['hand.L']) {
-            b['hand.L'].rotation.x += 0.20 * lw;
-          }
-
-          // Right Arm: elbow resting on counter ledge
-          if (b['shoulder.R']) {
-            b['shoulder.R'].rotation.z -= 0.15 * lw;
-          }
-          if (b['upperArm.R']) {
-            b['upperArm.R'].rotation.x += 0.85 * lw;
-            b['upperArm.R'].rotation.y += 0.15 * lw;
-            b['upperArm.R'].rotation.z -= 0.35 * lw;
-          }
-          if (b['lowerArm.R']) {
-            b['lowerArm.R'].rotation.x += -1.25 * lw;
-            b['lowerArm.R'].rotation.y += -0.45 * lw;
-            b['lowerArm.R'].rotation.z += 0.20 * lw;
-          }
-          if (b['hand.R']) {
-            b['hand.R'].rotation.x += 0.20 * lw;
           }
 
           // Neck & head pitch is handled by the look-at aiming below (no fixed upward tilt).
