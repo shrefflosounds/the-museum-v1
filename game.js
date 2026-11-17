@@ -8051,7 +8051,6 @@ window.game = this;
       [-1, 1].forEach((side) => {
         const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H * 2, 0.035), vendingRailMat);
         rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2 * 2, -VEND_D / 2 + 0.018);
-      });
         vendingGroup.add(rail);
       });
 

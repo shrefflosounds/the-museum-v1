@@ -81,9 +81,7 @@
 
         // Store reference to Reem8 character for modifications below
         this.charactersReem8 = gltf.scene.children.find(c => c.name?.toLowerCase().includes('the arse') || c.userData?.charName === 'The Arse');
-      }, (err) => {
-        console.error('Failed to load FinalFight:', err);
-      });
+
         const model = gltf.scene;
         model.traverse((c) => {
           if (c.isMesh) {
