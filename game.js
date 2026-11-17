@@ -8141,70 +8141,6 @@ window.game = this;
       officeLight.position.set(0, 2.75, 1.8);
       counterGroup.add(officeLight);
 
-      // 7. Drop Ceiling Tiles & Wall Liners for Clerk's Office
-      // Replace the interior ceiling and walls with the drop ceiling tile texture
-      const dropCeilingTex = this.texLoader.load('assets/textures/drop_ceiling_tiles.jpg', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 3);
-      });
-      const dropCeilingMat = new THREE.MeshStandardMaterial({
-        map: dropCeilingTex,
-        roughness: 0.85,
-        metalness: 0.05
-      });
-
-      // Suspended office drop ceiling slab (underneath the 4.0m floor slab at y = 3.65)
-      // Room spans x: -3.76..3.76 (width 7.52), z: 8.04..13.96 (depth 5.92)
-      const officeCeiling = new THREE.Mesh(
-        new THREE.PlaneGeometry(7.52, 5.92),
-        dropCeilingMat
-      );
-      officeCeiling.position.set(0, 3.65, 2.98);
-      officeCeiling.rotation.x = Math.PI / 2;
-      counterGroup.add(officeCeiling);
-
-      // Office interior wall liners using drop ceiling tile pattern
-      const wallTileTex = this.texLoader.load('assets/textures/drop_ceiling_tiles.jpg', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 2.5);
-      });
-      const officeWallMat = new THREE.MeshStandardMaterial({
-        map: wallTileTex,
-        roughness: 0.85,
-        metalness: 0.05
-      });
-
-      // Interior back wall (z = 13.78, facing -Z / into room)
-      const backWallLiner = new THREE.Mesh(
-        new THREE.PlaneGeometry(7.52, 3.65),
-        officeWallMat
-      );
-      backWallLiner.position.set(0, 1.825, 5.78);
-      backWallLiner.rotation.y = Math.PI;
-      counterGroup.add(backWallLiner);
-
-      // Interior west wall (x = -3.78, facing +X / into room)
-      const westWallLiner = new THREE.Mesh(
-        new THREE.PlaneGeometry(5.92, 3.65),
-        officeWallMat
-      );
-      westWallLiner.position.set(-3.78, 1.825, 2.98);
-      westWallLiner.rotation.y = Math.PI / 2;
-      counterGroup.add(westWallLiner);
-
-      // Interior east wall (x = 3.78, facing -X / into room)
-      const eastWallLiner = new THREE.Mesh(
-        new THREE.PlaneGeometry(5.92, 3.65),
-        officeWallMat
-      );
-      eastWallLiner.position.set(3.78, 1.825, 2.98);
-      eastWallLiner.rotation.y = -Math.PI / 2;
-      counterGroup.add(eastWallLiner);
-
       // 8. Decorative Closed "EMPLOYEES ONLY" Door
       // Mounted on the exterior west wall facing the main entrance concourse / grand hall
       // Exterior west wall is at x = -4.0, z ~ 11.0, player views it from main entrance hall (x < -4)
@@ -8366,10 +8302,11 @@ window.game = this;
 
       if (clerk.state === 'STARE_DOWN') {
         // High alert: hands firmly planted up on the counter ledge, rigid spine, hard locked eye contact
-        clerk.targetLeanWeight = 0.0;
+        // Slowly lean in face toward player while maintaining eye contact
         clerk.targetStareWeight = 1.0;
+        clerk.targetLeanWeight = Math.min(1.0, (clerk.targetLeanWeight || 0) + delta * 0.15);
         clerk.targetX = 0.0;
-        clerk.targetZ = clerk.counterZ - 0.04; // leaned in tight, but still clear of the work-desk
+        clerk.targetZ = clerk.counterZ - 0.04 - clerk.targetLeanWeight * 0.12; // lean in progressively
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8382,6 +8319,7 @@ window.game = this;
           clerk.state = 'LEAN_COUNTER';
           clerk.stateTimer = 10.0 + Math.random() * 6.0;
           clerk.targetStareWeight = 0.0;
+          clerk.targetLeanWeight = 1.0;
         }
       } else if (clerk.state === 'SUMMONED_BELL') {
         // Walk briskly directly to the front counter to face the player
@@ -8611,10 +8549,10 @@ window.game = this;
 
           // Neck & Head: tilt up slightly to maintain tired eye contact with player
           if (b['neck']) {
-            b['neck'].rotation.x -= 0.20 * lw;
+            b['neck'].rotation.x -= 0.08 * lw;
           }
           if (b['head']) {
-            b['head'].rotation.x -= 0.25 * lw;
+            b['head'].rotation.x -= 0.10 * lw;
           }
         }
 
@@ -8652,10 +8590,10 @@ window.game = this;
           }
 
           if (b['neck']) {
-            b['neck'].rotation.x -= 0.28 * sw;
+            b['neck'].rotation.x -= 0.10 * sw;
           }
           if (b['head']) {
-            b['head'].rotation.x -= 0.25 * sw;
+            b['head'].rotation.x -= 0.12 * sw;
           }
         }
 
@@ -8671,11 +8609,11 @@ window.game = this;
 
         // Strictly clamp head & neck pitch/roll so head NEVER spins upside down vertically
         if (b['neck']) {
-          b['neck'].rotation.x = Math.max(-0.45, Math.min(0.40, b['neck'].rotation.x));
+          b['neck'].rotation.x = Math.max(-0.25, Math.min(0.30, b['neck'].rotation.x));
           b['neck'].rotation.z = Math.max(-0.15, Math.min(0.15, b['neck'].rotation.z));
         }
         if (b['head']) {
-          b['head'].rotation.x = Math.max(-0.50, Math.min(0.35, b['head'].rotation.x));
+          b['head'].rotation.x = Math.max(-0.30, Math.min(0.35, b['head'].rotation.x));
           b['head'].rotation.z = Math.max(-0.15, Math.min(0.15, b['head'].rotation.z));
         }
       }
