@@ -7921,13 +7921,8 @@ window.game = this;
       // deskSlab.receiveShadow = true;
       // counterGroup.add(deskSlab);
 
-      // Counter cabinet base and support panels underneath desk
-      const cabinetBase = new THREE.Mesh(
-        new THREE.BoxGeometry(width - 0.2, 0.70, 0.36),
-        darkWoodMat
-      );
-      cabinetBase.position.set(0, 0.35, 0.54);
-      counterGroup.add(cabinetBase);
+      // NOTE: The low rear work-counter (cabinetBase) was removed so the front ledge
+      // (topSlab, with the bell) is the only desk in front of the clerk and he can lean on it.
 
       // Front desk props:
       // 1. Classical solid brass service call bell, parked at the far-LEFT end of the counter
@@ -8014,11 +8009,7 @@ window.game = this;
       namePlateGroup.add(namePlate);
       counterGroup.add(namePlateGroup);
 
-      // 4. Ceramic mug / pen holder on the inner desk
-      const mugMat = new THREE.MeshStandardMaterial({ color: 0x2c3e50, roughness: 0.3 });
-      const mug = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.035, 0.09, 12), mugMat);
-      mug.position.set(-0.65, 0.78, 0.54);
-      counterGroup.add(mug);
+      // (Removed the ceramic mug/pen holder that sat on the old rear work-counter.)
 
       // 5. Stack of museum guide pamphlets / brochures on the counter
       const paperStack = new THREE.Mesh(new THREE.BoxGeometry(0.20, 0.035, 0.26), paperMat);
@@ -8205,8 +8196,7 @@ window.game = this;
 
       const clerkGroup = new THREE.Group();
       const startX = 0.0;
-      // The rear work-desk occupies z 8.34..8.74 at 0.70m tall, so he must stand clear of it.
-      // Standing any closer buried his legs inside the cabinet, which read as sinking into the desk.
+      // The old rear work-counter was removed, so he can stand right up behind the front ledge.
       const startZ = 9.02;
       clerkGroup.position.set(startX, y0, startZ);
       clerkGroup.rotation.y = Math.PI; // Face north towards counter and player
@@ -8307,29 +8297,46 @@ window.game = this;
       clerk.stateTimer -= delta;
 
       if (clerk.state === 'STARE_DOWN') {
-        // High alert: hands firmly planted up on the counter ledge, rigid spine, hard locked eye contact
-        // Slowly lean in face toward player while maintaining eye contact
-        // Move forward to the front ledge (counterGroup z=0 = world z=8.0)
+        // High alert: palms planted on the ledge, rigid spine, hard locked eye contact,
+        // slowly leaning his face in toward the player.
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
-        clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.25);
         clerk.targetX = 0.0;
-        // Front ledge is at counterGroup z=0 (world z=8.0). Clerk starts at world z=9.02.
-        // Lean in progressively from current position to the front ledge.
-        clerk.targetZ = 8.0 - clerk.leanInWeight * 0.15; // lean in past the ledge slightly
         clerk.targetRotY = Math.PI;
 
-        if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
-          if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
-          clerk.actions['idle'].reset().fadeIn(0.2).play();
-          clerk.currentAction = 'idle';
-        }
-
-        if (clerk.stateTimer <= 0) {
+        // End the stare-down once the player stops ringing the bell (or as a failsafe)
+        const sinceRing = performance.now() - (this.clerkDeskBell ? (this.clerkDeskBell.lastRingTime || 0) : 0);
+        if (sinceRing > 2500 || clerk.stateTimer <= 0) {
           clerk.state = 'LEAN_COUNTER';
-          clerk.stateTimer = 10.0 + Math.random() * 6.0;
+          clerk.stateTimer = 8.0 + Math.random() * 4.0;
           clerk.targetStareWeight = 0.0;
           clerk.leanInWeight = 0.0;
+        } else {
+          // Keep leaning in while the player keeps ringing, but stop if he gets too close
+          const toPx = pPos.x - clerk.x;
+          const toPz = pPos.z - clerk.z;
+          const horizDist = Math.hypot(toPx, toPz);
+          if (horizDist > 1.05) {
+            clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.22);
+          }
+          // Advance up to just behind the front ledge (never past it) so he can plant his hands on it
+          clerk.targetZ = clerk.counterZ - clerk.leanInWeight * 0.50; // 9.02 -> 8.52
+
+          // Physically move toward the ledge (the old code set targetZ but never moved him)
+          const dxT = clerk.targetX - clerk.x;
+          const dzT = clerk.targetZ - clerk.z;
+          const distT = Math.hypot(dxT, dzT);
+          if (distT > 0.001) {
+            const step = Math.min(distT, clerk.moveSpeed * 0.55 * delta);
+            clerk.x += (dxT / distT) * step;
+            clerk.z += (dzT / distT) * step;
+          }
+
+          if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+            clerk.actions['idle'].reset().fadeIn(0.2).play();
+            clerk.currentAction = 'idle';
+          }
         }
       } else if (clerk.state === 'SUMMONED_BELL') {
         // Walk briskly directly to the front counter to face the player
@@ -8376,7 +8383,7 @@ window.game = this;
         clerk.targetLeanWeight = 1.0;
         clerk.targetStareWeight = 0.0;
         clerk.targetX = 0.0;
-        clerk.targetZ = clerk.counterZ; // Snug behind the rear work-desk, elbows out over the ledge
+        clerk.targetZ = clerk.counterZ; // Back at the ledge, elbows out over it
         clerk.targetRotY = Math.PI;
 
         if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
@@ -8557,13 +8564,7 @@ window.game = this;
             b['hand.R'].rotation.x += 0.20 * lw;
           }
 
-          // Neck & Head: tilt up slightly to maintain tired eye contact with player
-          if (b['neck']) {
-            b['neck'].rotation.x -= 0.08 * lw;
-          }
-          if (b['head']) {
-            b['head'].rotation.x -= 0.10 * lw;
-          }
+          // Neck & head pitch is handled by the look-at aiming below (no fixed upward tilt).
         }
 
         // 2. Both Hands Firmly Planted on Counter (Stare Down Pose after repeated bell ringing):
@@ -8599,38 +8600,26 @@ window.game = this;
             b['hand.R'].rotation.x += 0.55 * sw;
           }
 
-          if (b['neck']) {
-            b['neck'].rotation.x -= 0.10 * sw;
-            // Additional progressive face lean-in during STARE_DOWN
-            if (clerk.leanInWeight > 0.01) {
-              b['neck'].rotation.x -= 0.35 * clerk.leanInWeight;
-            }
-          }
-          if (b['head']) {
-            b['head'].rotation.x -= 0.12 * sw;
-            if (clerk.leanInWeight > 0.01) {
-              b['head'].rotation.x -= 0.45 * clerk.leanInWeight;
-            }
-          }
+          // Neck & head pitch is handled by the look-at aiming below.
         }
 
-        // Head tracking toward player when player is near (unyielding eye contact)
-        if (isPlayerNear && b['head']) {
-          const toPx = pPos.x - clerk.x;
-          const toPz = pPos.z - clerk.z;
-          const relYaw = Math.atan2(toPx, toPz) - clerk.rotY;
-          const trackingMult = clerk.state === 'STARE_DOWN' ? 0.95 : 0.65;
-          const clampedYaw = Math.max(-0.65, Math.min(0.65, Math.atan2(Math.sin(relYaw), Math.cos(relYaw))));
-          b['head'].rotation.y += clampedYaw * trackingMult;
-        }
-
-        // Strictly clamp head & neck pitch/roll so head NEVER spins upside down vertically
+        // Clamp the neck first so the look-at below compensates for it.
         if (b['neck']) {
           b['neck'].rotation.x = Math.max(-0.25, Math.min(0.30, b['neck'].rotation.x));
           b['neck'].rotation.z = Math.max(-0.15, Math.min(0.15, b['neck'].rotation.z));
         }
+
+        // Strong eye contact: point the head's face (local +Z) straight at the player's eyes.
+        // lookAt() overrides the idle animation's head pitch, which otherwise tilts him too high.
+        if (isPlayerNear && b['head']) {
+          const playerEye = clerk._playerEye || (clerk._playerEye = new THREE.Vector3());
+          playerEye.copy(pPos);
+          b['head'].lookAt(playerEye);
+        }
+
+        // Keep the head from rolling; pitch clamp is wide so lookAt() is never undone.
         if (b['head']) {
-          b['head'].rotation.x = Math.max(-0.30, Math.min(0.35, b['head'].rotation.x));
+          b['head'].rotation.x = Math.max(-1.2, Math.min(1.2, b['head'].rotation.x));
           b['head'].rotation.z = Math.max(-0.15, Math.min(0.15, b['head'].rotation.z));
         }
       }
@@ -8652,13 +8641,13 @@ window.game = this;
 
       clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
 
-      // If player rings 3+ times, trigger the funny stare-down: plant hands flat on desk, lean in, and stare
+      // If player rings 3+ times, trigger the stare-down: plant hands flat on the ledge, lean in, and stare.
+      // Do NOT reset leanInWeight here, so repeated rings keep him leaning in further instead of snapping upright.
       if (clerk.bellPesterCount >= 3) {
         clerk.state = 'STARE_DOWN';
         clerk.stateTimer = 14.0;
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
-        clerk.leanInWeight = 0.0; // progressive face lean-in
         clerk.targetX = 0.0;
         clerk.targetZ = clerk.counterZ;
         clerk.targetRotY = Math.PI;
