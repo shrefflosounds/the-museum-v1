@@ -18086,81 +18086,81 @@ window.game = this;
         }
       }
 
-      // Procedural punch overlay on third-person character left arm
+      // Decrement attack timer in main character update loop so it never freezes while running or in 3rd person
+      if (this.leftHandPunchTimer > 0) {
+        this.leftHandPunchTimer = Math.max(0, this.leftHandPunchTimer - delta);
+      }
+
+      // Procedural realistic smack / strike overlay on third-person character
       if (this.leftHandPunchTimer > 0 && this.playerBones) {
         const dur = this.leftHandPunchDuration || 0.38;
-        const p = 1.0 - (this.leftHandPunchTimer / dur);
-        let punchW = 0;
-        if (p < 0.30) {
-          punchW = Math.sin((p / 0.30) * (Math.PI / 2));
-        } else if (p < 0.50) {
-          punchW = 1.0;
+        const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
+
+        // Realistic smack trajectory: windup (0.0->0.22), rapid whip swipe across (0.22->0.52), follow-through & return (0.52->1.0)
+        let smackWeight = 0;
+        let windup = 0;
+        if (p < 0.22) {
+          windup = Math.sin((p / 0.22) * (Math.PI / 2));
+        } else if (p < 0.52) {
+          smackWeight = Math.sin(((p - 0.22) / 0.30) * Math.PI);
         } else {
-          const ret = (p - 0.50) / 0.50;
-          punchW = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
+          const ret = (p - 0.52) / 0.48;
+          smackWeight = Math.max(0, (1.0 - ret) * 0.35);
         }
 
         const b = this.playerBones;
-        if (b['shoulder.L']) {
-          b['shoulder.L'].rotation.y += 0.35 * punchW;
-        }
-        if (b['upperArm.L']) {
-          // Drive arm forward into a punch thrust
-          b['upperArm.L'].rotation.x -= 1.35 * punchW;
-          b['upperArm.L'].rotation.z += 0.40 * punchW;
-          b['upperArm.L'].rotation.y += 0.25 * punchW;
-        }
-        if (b['lowerArm.L']) {
-          // Extend elbow into punch
-          b['lowerArm.L'].rotation.x -= 0.65 * punchW;
-          b['lowerArm.L'].rotation.y += 0.50 * punchW;
-        }
-        if (b['hand.L']) {
-          b['hand.L'].rotation.x -= 0.40 * punchW;
+        const isTheBeing = (this.selectedPlayerCharacter === 9);
+
+        // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
+        if (!isTheBeing) {
+          if (b['shoulder.L']) {
+            b['shoulder.L'].rotation.y += (0.20 * windup) - (0.45 * smackWeight);
+          }
+          if (b['upperArm.L']) {
+            // Windup lifts arm outward; smack swings across horizontally without collapsing into torso
+            b['upperArm.L'].rotation.z += (0.45 * windup) - (0.65 * smackWeight);
+            b['upperArm.L'].rotation.y += (-0.35 * windup) + (0.95 * smackWeight);
+            b['upperArm.L'].rotation.x += (-0.25 * windup) - (0.35 * smackWeight);
+          }
+          if (b['lowerArm.L']) {
+            // Elbow remains comfortably bent during swipe
+            b['lowerArm.L'].rotation.y += (0.30 * windup) + (0.60 * smackWeight);
+            b['lowerArm.L'].rotation.z += (-0.20 * smackWeight);
+          }
+          if (b['hand.L']) {
+            // Open-palm smack snap
+            b['hand.L'].rotation.y += (0.55 * smackWeight);
+            b['hand.L'].rotation.z += (-0.35 * smackWeight);
+          }
+          // Slight torso turn into the smack for momentum
+          if (b['spine']) {
+            b['spine'].rotation.y += (-0.15 * windup) + (0.25 * smackWeight);
+          }
         }
 
-        // Procedural snake arm strike for The Being / FinalFight (bones: snake.00 through snake.08)
+        // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
         const s00 = b['snake.00'] || b['snake00'];
-        if (s00) {
-          if (!s00.userData.restPos) {
-            s00.userData.restPos = s00.position.clone();
-            s00.userData.restQuat = s00.quaternion.clone();
-          }
-          s00.position.copy(s00.userData.restPos);
-          s00.quaternion.copy(s00.userData.restQuat);
+        if (s00 && isTheBeing) {
+          const snakeStrikeWeight = (p < 0.30)
+            ? Math.sin((p / 0.30) * (Math.PI / 2))
+            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
 
-          if (punchW > 0.001) {
-            // Swing snake root bone forward along the attack vector into +Z
-            const swingAngle = (Math.PI * 0.50) * punchW;
-            const qSwing = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), swingAngle);
-            s00.quaternion.premultiply(qSwing);
-
-            // Thrust snake forward along strike vector
-            s00.position.z += 0.85 * punchW;
-            s00.position.x -= 0.15 * punchW;
-            s00.position.y += 0.05 * punchW;
-
-            // Upper body pitches forward into the strike for athletic momentum
-            if (b['chest']) {
-              b['chest'].rotation.x += 0.22 * punchW;
-            }
+          if (snakeStrikeWeight > 0.001) {
+            // Strike outward forward without touching chest/spine/root rotations (which caused inverted torso)
+            s00.rotation.y += 0.85 * snakeStrikeWeight;
+            s00.rotation.x -= 0.45 * snakeStrikeWeight;
           }
         }
-        for (let sIdx = 1; sIdx <= 8; sIdx++) {
-          const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
-          if (snakeBone) {
-            if (!snakeBone.userData.restPos) {
-              snakeBone.userData.restPos = snakeBone.position.clone();
-              snakeBone.userData.restQuat = snakeBone.quaternion.clone();
-            }
-            snakeBone.position.copy(snakeBone.userData.restPos);
-            snakeBone.quaternion.copy(snakeBone.userData.restQuat);
+        if (isTheBeing) {
+          const snakeStrikeWeight = (p < 0.30)
+            ? Math.sin((p / 0.30) * (Math.PI / 2))
+            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
 
-            if (punchW > 0.001) {
-              // Uncoil and lash outward forward into a lunging strike
-              const qUncoil = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -0.08 * punchW);
-              snakeBone.quaternion.multiply(qUncoil);
-              snakeBone.position.y += 0.06 * punchW; // Extend segment length
+          for (let sIdx = 1; sIdx <= 8; sIdx++) {
+            const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
+            if (snakeBone && snakeStrikeWeight > 0.001) {
+              snakeBone.rotation.x -= 0.12 * snakeStrikeWeight;
+              snakeBone.rotation.y += (sIdx % 2 === 0 ? 0.08 : -0.08) * snakeStrikeWeight;
             }
           }
         }
@@ -22084,7 +22084,6 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
-        this.leftHandPunchTimer = Math.max(0, this.leftHandPunchTimer - delta);
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
