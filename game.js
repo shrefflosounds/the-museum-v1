@@ -8214,11 +8214,11 @@ window.game = this;
         baseY: y0,
         rotY: Math.PI,
         targetRotY: Math.PI,
-        state: 'LEAN_COUNTER', // 'LEAN_COUNTER', 'IDLE_COUNTER', 'WANDER', 'RETURN_COUNTER', 'SUMMONED_BELL', 'STARE_DOWN'
+        state: 'IDLE_COUNTER', // 'LEAN_COUNTER', 'IDLE_COUNTER', 'WANDER', 'RETURN_COUNTER', 'SUMMONED_BELL', 'STARE_DOWN'
         stateTimer: 8.0 + Math.random() * 6.0,
         moveSpeed: 1.5,
-        leanWeight: 1.0,
-        targetLeanWeight: 1.0,
+        leanWeight: 0.0,
+        targetLeanWeight: 0.0,
         stareWeight: 0.0,
         targetStareWeight: 0.0,
         mixer: null,
@@ -8301,45 +8301,47 @@ window.game = this;
       clerk.stateTimer -= delta;
 
       if (clerk.state === 'STARE_DOWN') {
-        // High alert: palms planted on the ledge, rigid spine, hard locked eye contact,
-        // slowly leaning his face in toward the player.
+        // Reacting to annoying bell ringing: step up to the counter and slowly lean in,
+        // using the counter ledge for support while staring down the player.
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
         clerk.targetX = 0.0;
         clerk.targetRotY = Math.PI;
 
-        // End the stare-down once the player stops ringing the bell (or as a failsafe)
+        // End the stare-down once the player stops ringing the bell for a while
         const sinceRing = performance.now() - (this.clerkDeskBell ? (this.clerkDeskBell.lastRingTime || 0) : 0);
-        if (sinceRing > 2500 || clerk.stateTimer <= 0) {
-          clerk.state = 'LEAN_COUNTER';
-          clerk.stateTimer = 8.0 + Math.random() * 4.0;
+        if (sinceRing > 5000 || clerk.stateTimer <= 0) {
+          clerk.state = 'IDLE_COUNTER';
+          clerk.stateTimer = 6.0 + Math.random() * 4.0;
           clerk.targetStareWeight = 0.0;
           clerk.leanInWeight = 0.0;
         } else {
-          // Keep leaning in while the player keeps ringing, but stop if he gets too close
-          const toPx = pPos.x - clerk.x;
-          const toPz = pPos.z - clerk.z;
-          const horizDist = Math.hypot(toPx, toPz);
-          if (horizDist > 1.05) {
-            clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.22);
-          }
-          // Advance up to just behind the front ledge (never past it) so he can plant his hands on it
-          clerk.targetZ = clerk.counterZ - clerk.leanInWeight * 0.50; // 9.02 -> 8.52
+          // Natural smooth progression: step forward to the counter edge (8.42), then lean in
+          clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.65);
+          // 9.02 -> 8.42 (firm stance right against the rear of the counter slab)
+          clerk.targetZ = clerk.counterZ - clerk.leanInWeight * 0.60;
 
-          // Physically move toward the ledge (the old code set targetZ but never moved him)
           const dxT = clerk.targetX - clerk.x;
           const dzT = clerk.targetZ - clerk.z;
           const distT = Math.hypot(dxT, dzT);
-          if (distT > 0.001) {
-            const step = Math.min(distT, clerk.moveSpeed * 0.55 * delta);
+          if (distT > 0.01) {
+            // Walk into position naturally
+            const step = Math.min(distT, clerk.moveSpeed * 0.85 * delta);
             clerk.x += (dxT / distT) * step;
             clerk.z += (dzT / distT) * step;
-          }
-
-          if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
-            if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
-            clerk.actions['idle'].reset().fadeIn(0.2).play();
-            clerk.currentAction = 'idle';
+            if (clerk.actions['walk'] && clerk.currentAction !== 'walk') {
+              if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.15);
+              clerk.actions['walk'].reset().fadeIn(0.15).play();
+              clerk.currentAction = 'walk';
+            }
+          } else {
+            clerk.x = clerk.targetX;
+            clerk.z = clerk.targetZ;
+            if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
+              if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
+              clerk.actions['idle'].reset().fadeIn(0.2).play();
+              clerk.currentAction = 'idle';
+            }
           }
         }
       } else if (clerk.state === 'SUMMONED_BELL') {
@@ -8367,10 +8369,11 @@ window.game = this;
         } else {
           // Arrived at counter
           clerk.targetRotY = Math.PI;
-          if (clerk.bellPesterCount >= 4) {
+          if (clerk.bellPesterCount >= 8) {
             clerk.state = 'STARE_DOWN';
-            clerk.stateTimer = 9.0;
+            clerk.stateTimer = 14.0;
             clerk.targetStareWeight = 1.0;
+            clerk.targetLeanWeight = 0.0;
           } else {
             clerk.state = 'LEAN_COUNTER';
             clerk.stateTimer = 8.0 + Math.random() * 6.0;
@@ -8535,45 +8538,47 @@ window.game = this;
           // Neck & head pitch is handled by the look-at aiming below (no fixed upward tilt).
         }
 
-        // 2. Both Hands Firmly Planted on Counter (Stare Down Pose after repeated bell ringing):
-        // Upright, palms flat down on the mahogany slab, chest squared, unblinking hard eye contact
+        // 2. Both Hands Firmly Planted on Counter (Stare Down Pose on 8th rapid bell ring):
+        // Torso leans forward over the counter, arms extend and lock flat with palms planted
+        // on the mahogany ledge (Y=0.905, Z=7.97), no jittering/jiggling fingers, unblinking glare.
         if (sw > 0.01) {
           if (b['spine']) {
-            b['spine'].rotation.x += 0.28 * sw;
+            b['spine'].rotation.x += 0.32 * sw;
           }
           if (b['chest']) {
-            b['chest'].rotation.x += 0.22 * sw;
+            b['chest'].rotation.x += 0.26 * sw;
           }
-          // Solved via CDP FK sweep so hands rest on the ledge (y≈0.93, z≈8.15).
+
+          // Direct FK solution: Wrists rest at (±0.309, Y=0.905, Z=7.97), fingers at Y=0.896, Z=7.73
           if (b['upperArm.L']) {
-            b['upperArm.L'].rotation.x += 1.0503 * sw;
-            b['upperArm.L'].rotation.y += -0.8391 * sw;
-            b['upperArm.L'].rotation.z += 1.2995 * sw;
+            b['upperArm.L'].rotation.set(1.12 * sw, 0.0, -0.85 * sw);
           }
           if (b['lowerArm.L']) {
-            b['lowerArm.L'].rotation.x += -0.7111 * sw;
-            b['lowerArm.L'].rotation.y += -0.2710 * sw;
-            b['lowerArm.L'].rotation.z += -0.4710 * sw;
+            b['lowerArm.L'].rotation.set(0.78 * sw, 0.0, 0.0);
           }
           if (b['hand.L']) {
-            b['hand.L'].rotation.x += 0.55 * sw;
+            // Lock wrist & hand orientation flat to eliminate idle animation finger jitter
+            b['hand.L'].rotation.set(0.35 * sw, 0.0, 0.0);
           }
 
           if (b['upperArm.R']) {
-            b['upperArm.R'].rotation.x += 1.0503 * sw;
-            b['upperArm.R'].rotation.y += 0.8391 * sw;
-            b['upperArm.R'].rotation.z += -1.2995 * sw;
+            b['upperArm.R'].rotation.set(1.12 * sw, 0.0, 0.85 * sw);
           }
           if (b['lowerArm.R']) {
-            b['lowerArm.R'].rotation.x += -0.7111 * sw;
-            b['lowerArm.R'].rotation.y += 0.2710 * sw;
-            b['lowerArm.R'].rotation.z += 0.4710 * sw;
+            b['lowerArm.R'].rotation.set(0.78 * sw, 0.0, 0.0);
           }
           if (b['hand.R']) {
-            b['hand.R'].rotation.x += 0.55 * sw;
+            // Lock wrist & hand orientation flat to eliminate idle animation finger jitter
+            b['hand.R'].rotation.set(0.35 * sw, 0.0, 0.0);
           }
+        }
 
-          // Neck & head pitch is handled by the look-at aiming below.
+        // Apply hurt reaction flinch if recently damaged
+        if (clerk.hitReactionTimer > 0) {
+          clerk.hitReactionTimer -= delta;
+          const flinch = Math.sin((clerk.hitReactionTimer / 0.45) * Math.PI);
+          if (b['chest']) b['chest'].rotation.x -= 0.35 * flinch;
+          if (b['head']) b['head'].rotation.x -= 0.45 * flinch;
         }
 
         // Only aim the head at the player when the clerk is stationed at the counter
@@ -8626,11 +8631,12 @@ window.game = this;
         clerk.bellPesterCount = 1;
       }
 
-      // If player rings 3+ times rapidly, trigger the stare-down: plant hands flat on the ledge, lean in, and stare.
-      // Do NOT reset leanInWeight here, so repeated rings keep him leaning in further instead of snapping upright.
-      if (clerk.bellPesterCount >= 3) {
+      // Only trigger the stare-down on the 8th rapid bell ring:
+      // Reacting to the player's annoying ringing of the bell, by slowly leaning in and staring at them,
+      // clearly bothered, using the counter ledge as support while leaning in.
+      if (clerk.bellPesterCount >= 8) {
         clerk.state = 'STARE_DOWN';
-        clerk.stateTimer = 14.0;
+        clerk.stateTimer = 16.0;
         clerk.targetStareWeight = 1.0;
         clerk.targetLeanWeight = 0.0;
         clerk.targetX = 0.0;
@@ -12429,10 +12435,11 @@ window.game = this;
       addBox(W + fw * 2 + 0.02, 0.02, 0.02, 0, bottom + H + fw + 0.01, 0.02, brassMat);
 
       // ---- Reflector ----
-      // Balanced high-clarity resolution (768px) that renders reflections crisply without 5.3M-pixel Retina frame freezes
-      const rtSize = 768;
+      // High-definition crystal-clear resolution (1536px) with linear filtering for sharp reflections
+      const rtSize = 1536;
       const renderTarget = new THREE.WebGLRenderTarget(rtSize, Math.round(rtSize * H / W), {
-        minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBFormat
+        minFilter: THREE.LinearFilter, magFilter: THREE.LinearFilter, format: THREE.RGBAFormat,
+        generateMipmaps: false
       });
       const textureMatrix = new THREE.Matrix4();
       const material = new THREE.ShaderMaterial({
@@ -21765,6 +21772,30 @@ window.game = this;
 
       const candidates = [];
 
+      // 0. REem8 Museum Clerk
+      const clerk = this.museumClerk;
+      if (clerk && clerk.group && clerk.floor === this.playerFloor) {
+        const cx = clerk.x;
+        const cy = clerk.y + 1.25;
+        const cz = clerk.z;
+        const dist = punchOrigin.distanceTo(new THREE.Vector3(cx, cy, cz));
+        // Clerk is behind the counter, so give reach across the counter ledge
+        if (dist <= punchRange + 1.35) {
+          const toTarget = new THREE.Vector3(cx - punchOrigin.x, cy - punchOrigin.y, cz - punchOrigin.z).normalize();
+          if (toTarget.dot(fwd) > 0.35) {
+            const hitPoint = new THREE.Vector3(cx, cy, cz);
+            candidates.push({
+              dist,
+              type: 'clerk',
+              hitPoint,
+              hit: () => {
+                this.damageMuseumClerk(punchDamage, hitPoint, fwd);
+              }
+            });
+          }
+        }
+      }
+
       // 1. Robot Dog hitbox
       const dog = this.robotDog;
       if (dog && dog.group && dog.floor === this.playerFloor) {
@@ -21871,6 +21902,31 @@ window.game = this;
       }
     }
 
+    damageMuseumClerk(amount, hitPoint = null, shotDir = null) {
+      const clerk = this.museumClerk;
+      if (!clerk) return;
+
+      clerk.hp = (clerk.hp !== undefined ? clerk.hp : 100) - amount;
+      clerk.hitReactionTimer = 0.45; // Flinch jerkback
+
+      // REem8 grunts/reacts with audio
+      if (this.audio && this.audio.playPunchSound) {
+        this.audio.playPunchSound(true);
+      }
+
+      // Spawn blood spray at hit point
+      const sprayOrigin = hitPoint || new THREE.Vector3(clerk.x, clerk.y + 1.35, clerk.z);
+      const sprayDir = shotDir ? shotDir.clone() : new THREE.Vector3(0, 0, 1);
+      this.spawnLiquidBlood(sprayOrigin, sprayDir, 32, clerk.y);
+
+      // Angered/alerted reaction: snap immediately to facing player and lock stare
+      clerk.bellPesterCount = 8; // Max pester
+      clerk.state = 'STARE_DOWN';
+      clerk.stateTimer = 16.0;
+      clerk.targetStareWeight = 1.0;
+      clerk.targetLeanWeight = 0.0;
+    }
+
     damageRobotDog(damage, hitDir) {
       const dog = this.robotDog;
       if (!dog) return;
@@ -21965,6 +22021,24 @@ window.game = this;
         }
       }
 
+      // REem8 Museum Clerk hitbox
+      const clerk = this.museumClerk;
+      if (clerk && clerk.group && clerk.floor === this.playerFloor) {
+        const hitPoint = new THREE.Vector3();
+        const hitBox = new THREE.Box3(
+          new THREE.Vector3(clerk.x - 0.45, clerk.y, clerk.z - 0.40),
+          new THREE.Vector3(clerk.x + 0.45, clerk.y + 2.05, clerk.z + 0.40)
+        );
+        if (raycaster.ray.intersectBox(hitBox, hitPoint)) {
+          candidates.push({
+            target: new THREE.Vector3(clerk.x, clerk.y + 1.3, clerk.z),
+            hitPoint,
+            isClerk: true,
+            hit: () => this.damageMuseumClerk(CONFIG.WEAPON.DAMAGE, hitPoint, raycaster.ray.direction)
+          });
+        }
+      }
+
       // Robot Dog hitbox
       const dog = this.robotDog;
       if (dog && dog.group && dog.floor === this.playerFloor) {
@@ -22043,8 +22117,12 @@ window.game = this;
               new THREE.Vector3(c.maxX, c.maxY, c.maxZ)
             );
             const obstructionPoint = raycaster.ray.intersectBox(colliderBox, new THREE.Vector3());
-            return obstructionPoint &&
-              this.camera.position.distanceTo(obstructionPoint) < candidate.distance - 0.05;
+            if (!obstructionPoint) return false;
+            // The front counter desk (z ~ 7.6..8.85, maxY ~ 1.15) should not block shots fired at REem8's exposed torso and head
+            if (candidate.isClerk && candidate.hitPoint.y >= 0.88 && c.maxY <= 1.20) {
+              return false;
+            }
+            return this.camera.position.distanceTo(obstructionPoint) < candidate.distance - 0.05;
           });
           return !blockedByCollider;
         })
