@@ -17937,68 +17937,60 @@ window.game = this;
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
-        // Realistic smack trajectory: windup (0.0->0.20), rapid whip swipe across (0.20->0.52), follow-through & return (0.52->1.0)
+        // Realistic smack trajectory:
+        // Windup (0.0 -> 0.20): arm pulls back and out to the left
+        // Swipe / Strike (0.20 -> 0.55): arm sweeps swiftly across chest at stomach/chest level
+        // Follow-through & return (0.55 -> 1.0): smoothly returns to running/walking/idle arm swing
         let smackWeight = 0;
         let windup = 0;
         if (p < 0.20) {
           windup = Math.sin((p / 0.20) * (Math.PI / 2));
-        } else if (p < 0.52) {
-          smackWeight = Math.sin(((p - 0.20) / 0.32) * Math.PI);
+        } else if (p < 0.55) {
+          smackWeight = Math.sin(((p - 0.20) / 0.35) * Math.PI);
         } else {
-          const ret = (p - 0.52) / 0.48;
-          smackWeight = Math.max(0, (1.0 - ret) * 0.25);
+          const ret = (p - 0.55) / 0.45;
+          smackWeight = Math.max(0, (1.0 - ret) * 0.20);
         }
 
         const b = this.playerBones;
         const isTheBeing = (this.selectedPlayerCharacter === 9);
 
-        // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
-        // Uses quaternion delta multiplication so rotations blend cleanly with Run/Walk/Idle without spin, inversion or gimbal locks
+        // Standard Humanoid Character Smack:
+        // Uses direct slerp blending between current animated pose and calibrated smack pose.
+        // This completely prevents additive rotation drift, gimbal flips, or any accidental upward salutes.
         if (!isTheBeing) {
-          if (!this._playerPunchQuats) {
-            this._playerPunchQuats = {
-              shoulderL: new THREE.Quaternion(),
-              upperArmL: new THREE.Quaternion(),
-              lowerArmL: new THREE.Quaternion(),
-              handL: new THREE.Quaternion()
+          if (!this._playerPunchTargets) {
+            this._playerPunchTargets = {
+              shoulderWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.12, 0.05, 'XYZ')),
+              shoulderStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -0.22, -0.10, 'XYZ')),
+              upperWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.20, 0.0, 0.45, 'XYZ')),
+              upperStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.25, 0.10, -0.45, 'XYZ')),
+              lowerWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.0, 0.15, -0.75, 'XYZ')),
+              lowerStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.10, 0.15, -0.65, 'XYZ')),
+              handWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0.05, 'XYZ')),
+              handStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.12, 'XYZ')),
+              tmpQuat: new THREE.Quaternion()
             };
-            this._playerPunchEuler = new THREE.Euler();
           }
-          const pq = this._playerPunchQuats;
-          const pe = this._playerPunchEuler;
+          const pt = this._playerPunchTargets;
 
-          if (b['shoulder.L']) {
-            pe.set(0, (0.15 * windup) - (0.35 * smackWeight), 0, 'XYZ');
-            pq.shoulderL.setFromEuler(pe);
-            b['shoulder.L'].quaternion.multiply(pq.shoulderL);
-          }
-          if (b['upperArm.L']) {
-            // Windup draws arm slightly back and out; slap swings across forward horizontally without collapsing into torso
-            pe.set(
-              (-0.20 * windup) - (0.25 * smackWeight),
-              (-0.25 * windup) + (0.75 * smackWeight),
-              (0.35 * windup) - (0.45 * smackWeight),
-              'XYZ'
-            );
-            pq.upperArmL.setFromEuler(pe);
-            b['upperArm.L'].quaternion.multiply(pq.upperArmL);
-          }
-          if (b['lowerArm.L']) {
-            // Forearm keeps a natural slight bend during slap
-            pe.set(0, (0.20 * windup) + (0.45 * smackWeight), (-0.15 * smackWeight), 'XYZ');
-            pq.lowerArmL.setFromEuler(pe);
-            b['lowerArm.L'].quaternion.multiply(pq.lowerArmL);
-          }
-          if (b['hand.L']) {
-            // Open palm maintains flat alignment with forearm, snapping cleanly through impact
-            pe.set(0, 0.35 * smackWeight, -0.20 * smackWeight, 'XYZ');
-            pq.handL.setFromEuler(pe);
-            b['hand.L'].quaternion.multiply(pq.handL);
-          }
-          // Note: Torso/spine/hips are intentionally preserved completely upright so running and strafing never spins or tilts the body!
+          const blendUpper = (targetWindup, targetStrike, bone, totalWeight) => {
+            if (!bone) return;
+            // Interpolate target pose between windup and strike
+            if (windup > 0) {
+              bone.quaternion.slerp(targetWindup, windup * 0.85);
+            } else if (smackWeight > 0) {
+              bone.quaternion.slerp(targetStrike, smackWeight * 0.90);
+            }
+          };
+
+          blendUpper(pt.shoulderWindup, pt.shoulderStrike, b['shoulder.L'], windup || smackWeight);
+          blendUpper(pt.upperWindup, pt.upperStrike, b['upperArm.L'], windup || smackWeight);
+          blendUpper(pt.lowerWindup, pt.lowerStrike, b['lowerArm.L'], windup || smackWeight);
+          blendUpper(pt.handWindup, pt.handStrike, b['hand.L'], windup || smackWeight);
         }
 
-        // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
+        // Procedural snake arm whip strike for The Being
         const s00 = b['snake.00'] || b['snake00'];
         if (s00 && isTheBeing) {
           const snakeStrikeWeight = (p < 0.30)
@@ -18026,7 +18018,7 @@ window.game = this;
       }
     }
 
-        updateThirdPersonCamera(delta) {
+            updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 9);
 
