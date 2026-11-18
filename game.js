@@ -4588,18 +4588,18 @@ window.game = this;
     }
 
     // =========================================================================
-    // LIGHTWEIGHT REAL-TIME CHARACTER CONTACT SHADOW SYSTEM
+    // LIGHTWEIGHT REAL-TIME CHARACTER & FLASHLIGHT SHADOW SYSTEM
     // =========================================================================
-    createCharacterContactShadow(radius = 0.45) {
+    createCharacterContactShadow(radius = 0.55) {
       if (!this._shadowBlobTexture) {
         const cvs = document.createElement('canvas');
         cvs.width = 128;
         cvs.height = 128;
         const ctx = cvs.getContext('2d');
         const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        grad.addColorStop(0.0, 'rgba(0, 0, 0, 0.72)');
-        grad.addColorStop(0.35, 'rgba(0, 0, 0, 0.55)');
-        grad.addColorStop(0.70, 'rgba(0, 0, 0, 0.22)');
+        grad.addColorStop(0.0, 'rgba(0, 0, 0, 0.95)');
+        grad.addColorStop(0.30, 'rgba(0, 0, 0, 0.85)');
+        grad.addColorStop(0.65, 'rgba(0, 0, 0, 0.45)');
         grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, 128, 128);
@@ -4612,18 +4612,72 @@ window.game = this;
       const mat = new THREE.MeshBasicMaterial({
         map: this._shadowBlobTexture,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.85,
         depthWrite: false,
-        depthTest: true,
+        depthTest: false, // Ensures shadow is NEVER clipped by floor tile coplanar precision
         polygonOffset: true,
-        polygonOffsetFactor: -1,
-        polygonOffsetUnits: -1
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
       });
 
       const geom = new THREE.PlaneGeometry(radius * 2, radius * 2);
       const mesh = new THREE.Mesh(geom, mat);
       mesh.rotation.x = -Math.PI / 2;
-      mesh.renderOrder = 2; // Render just above floor surfaces
+      mesh.renderOrder = 999; // Render visibly on top of floors
+      mesh.visible = false;
+      this.scene.add(mesh);
+      return mesh;
+    }
+
+    createWallSilhouetteShadow(w = 1.6, h = 2.4) {
+      if (!this._silhouetteShadowTexture) {
+        const cvs = document.createElement('canvas');
+        cvs.width = 128;
+        cvs.height = 256;
+        const ctx = cvs.getContext('2d');
+        // Soft rounded humanoid silhouette shadow cast onto walls
+        ctx.fillStyle = 'rgba(0,0,0,0)';
+        ctx.fillRect(0, 0, 128, 256);
+
+        // Body oval
+        const gradBody = ctx.createRadialGradient(64, 150, 10, 64, 150, 55);
+        gradBody.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
+        gradBody.addColorStop(0.7, 'rgba(0, 0, 0, 0.55)');
+        gradBody.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+        ctx.fillStyle = gradBody;
+        ctx.beginPath();
+        ctx.ellipse(64, 150, 48, 80, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Head circle
+        const gradHead = ctx.createRadialGradient(64, 60, 5, 64, 60, 45);
+        gradHead.addColorStop(0, 'rgba(0, 0, 0, 0.90)');
+        gradHead.addColorStop(0.65, 'rgba(0, 0, 0, 0.55)');
+        gradHead.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
+        ctx.fillStyle = gradHead;
+        ctx.beginPath();
+        ctx.arc(64, 60, 42, 0, Math.PI * 2);
+        ctx.fill();
+
+        this._silhouetteShadowTexture = new THREE.CanvasTexture(cvs);
+        this._silhouetteShadowTexture.minFilter = THREE.LinearFilter;
+        this._silhouetteShadowTexture.magFilter = THREE.LinearFilter;
+      }
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: this._silhouetteShadowTexture,
+        transparent: true,
+        opacity: 0.80,
+        depthWrite: false,
+        depthTest: false,
+        polygonOffset: true,
+        polygonOffsetFactor: -3,
+        polygonOffsetUnits: -3
+      });
+
+      const geom = new THREE.PlaneGeometry(w, h);
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.renderOrder = 998;
       mesh.visible = false;
       this.scene.add(mesh);
       return mesh;
@@ -4632,10 +4686,11 @@ window.game = this;
     updateCharacterShadows() {
       if (!this.characterShadows) {
         this.characterShadows = {
-          player: this.createCharacterContactShadow(0.50),
-          smitty: this.createCharacterContactShadow(0.65),
-          clerk: this.createCharacterContactShadow(0.52),
-          robotDog: this.createCharacterContactShadow(0.40),
+          player: this.createCharacterContactShadow(0.60),
+          smitty: this.createCharacterContactShadow(0.75),
+          clerk: this.createCharacterContactShadow(0.65),
+          clerkWall: this.createWallSilhouetteShadow(1.7, 2.6),
+          robotDog: this.createCharacterContactShadow(0.48),
           statues: []
         };
       }
@@ -4659,8 +4714,7 @@ window.game = this;
         const floorBaseY = typeof charFloor === 'number' ? charFloor * CONFIG.FLOOR_HEIGHT : getNearestFloorY(charPos.y);
         const distAboveFloor = Math.max(0, charPos.y - floorBaseY);
 
-        // Hide shadow if character has jumped too high or fallen into void
-        if (distAboveFloor > 2.5) {
+        if (distAboveFloor > 2.8) {
           shadowMesh.visible = false;
           return;
         }
@@ -4687,7 +4741,7 @@ window.game = this;
         let offsetZ = 0;
         let stretch = 1.0;
         let angle = 0;
-        let shadowIntensity = 0.58;
+        let shadowIntensity = 0.82; // High contrast visibility
 
         if (bestLight) {
           const ldx = charPos.x - bestLight.position.x;
@@ -4698,37 +4752,38 @@ window.game = this;
 
           // Light shines outwards from lamp; shadow projects away from light
           const lightH = Math.max(1.0, (bestLight.position.y - floorBaseY));
-          const projectionFactor = Math.min(0.65, lightDist / (lightH * 2.2));
+          const projectionFactor = Math.min(0.85, lightDist / (lightH * 1.8));
           offsetX = dirX * projectionFactor;
           offsetZ = dirZ * projectionFactor;
-          stretch = 1.0 + projectionFactor * 0.7;
+          stretch = 1.0 + projectionFactor * 0.9;
           angle = Math.atan2(dirX, dirZ);
         }
 
-        // Flashlight influence if active and pointing nearby
-        if (flashOn && flashPos && Math.abs(charPos.y - flashPos.y) < 4.0) {
+        // Flashlight influence: when flashlight is ON, cast sharp, stretched shadow in direction of beam
+        if (flashOn && flashPos && Math.abs(charPos.y - flashPos.y) < 4.5) {
           const fdx = charPos.x - flashPos.x;
           const fdz = charPos.z - flashPos.z;
           const fDist = Math.hypot(fdx, fdz);
-          if (fDist < 25.0) {
-            // Flashlight strengthens & deepens shadow cast away from player
-            const fDirX = fdx / Math.max(0.1, fDist);
-            const fDirZ = fdz / Math.max(0.1, fDist);
-            const flashWeight = Math.max(0, 1.0 - fDist / 25.0) * 0.6;
-            offsetX = offsetX * (1 - flashWeight) + (fDirX * 0.45) * flashWeight;
-            offsetZ = offsetZ * (1 - flashWeight) + (fDirZ * 0.45) * flashWeight;
-            shadowIntensity = Math.min(0.85, shadowIntensity + flashWeight * 0.25);
-            stretch = Math.max(stretch, 1.0 + flashWeight * 0.5);
+          if (fDist < 32.0 && fDist > 0.3) {
+            const fDirX = fdx / fDist;
+            const fDirZ = fdz / fDist;
+            // Flashlight dominates shadow angle and stretches it away from the player
+            const flashWeight = Math.max(0.2, 1.0 - fDist / 32.0);
+            const flashStretch = 1.0 + (1.0 - fDist / 35.0) * 1.6;
+            offsetX = offsetX * (1 - flashWeight) + (fDirX * 0.95) * flashWeight;
+            offsetZ = offsetZ * (1 - flashWeight) + (fDirZ * 0.95) * flashWeight;
+            shadowIntensity = Math.min(0.95, shadowIntensity + flashWeight * 0.30);
+            stretch = Math.max(stretch, flashStretch);
             angle = Math.atan2(fDirX, fDirZ);
           }
         }
 
-        // Height fade: when character jumps, shadow softens, expands and fades
-        const heightFade = Math.max(0.2, 1.0 - (distAboveFloor / 1.8));
+        // Height fade: when character jumps, shadow expands and softens slightly
+        const heightFade = Math.max(0.35, 1.0 - (distAboveFloor / 2.2));
         const currentOpacity = shadowIntensity * heightFade;
         const currentScale = (1.0 + distAboveFloor * 0.35) * baseRadius;
 
-        shadowMesh.position.set(charPos.x + offsetX * 0.7, floorBaseY + 0.014, charPos.z + offsetZ * 0.7);
+        shadowMesh.position.set(charPos.x + offsetX * 0.8, floorBaseY + 0.025, charPos.z + offsetZ * 0.8);
         shadowMesh.rotation.z = -angle;
         shadowMesh.scale.set(currentScale, currentScale * stretch, 1.0);
         shadowMesh.material.opacity = currentOpacity;
@@ -4738,38 +4793,69 @@ window.game = this;
       // 1. Third-Person Player
       const isThirdPerson = (typeof this.isThirdPersonView === 'function') ? this.isThirdPersonView() : false;
       const playerVis = isThirdPerson && this.playerModelRoot && this.playerModelRoot.visible;
-      updateShadowForCharacter(this.characterShadows.player, this.playerPos, this.playerFloor, 0.48, playerVis);
+      updateShadowForCharacter(this.characterShadows.player, this.playerPos, this.playerFloor, 0.55, playerVis);
 
       // 2. Smitty
       const smittyVis = this.smittyEnabled && this.smittyMesh && this.smittyMesh.visible;
-      updateShadowForCharacter(this.characterShadows.smitty, this.smittyPos, this.smittyFloor, 0.62, smittyVis);
+      updateShadowForCharacter(this.characterShadows.smitty, this.smittyPos, this.smittyFloor, 0.72, smittyVis);
 
       // 3. Museum Clerk (REem8)
       const clerk = this.museumClerk;
-      const clerkVis = clerk && clerk.group && clerk.group.visible;
-      const clerkPos = clerk ? clerk.group.position : null;
-      updateShadowForCharacter(this.characterShadows.clerk, clerkPos, 0, 0.50, clerkVis);
+      const clerkVis = clerk && clerk.group && clerk.group.visible && this.playerFloor === 0;
+      const clerkPos = clerk ? { x: clerk.x, y: clerk.y || 0, z: clerk.z } : null;
+      // Floor contact shadow
+      updateShadowForCharacter(this.characterShadows.clerk, clerkPos, 0, 0.58, clerkVis);
+
+      // 3b. REem8 Back-Wall Flashlight Shadow (cast directly onto the back wall behind him!)
+      if (this.characterShadows.clerkWall) {
+        const wallShadow = this.characterShadows.clerkWall;
+        if (clerkVis && clerkPos) {
+          const wallZ = 13.76; // Just in front of the coffered back wall (z = 13.78)
+          // Direction from player/flashlight to clerk
+          const dx = clerkPos.x - (flashPos ? flashPos.x : 0);
+          const dz = Math.max(0.5, clerkPos.z - (flashPos ? flashPos.z : 6.0));
+          const tWall = (wallZ - clerkPos.z) / dz;
+          const projX = clerkPos.x + dx * tWall;
+          const projY = Math.max(1.2, 1.45 + (1.45 - (flashPos ? flashPos.y : 1.72)) * tWall);
+
+          wallShadow.position.set(projX, projY, wallZ);
+          wallShadow.rotation.set(0, Math.PI, 0); // Face South toward player
+
+          if (flashOn && flashPos && Math.hypot(flashPos.x - clerkPos.x, flashPos.z - clerkPos.z) < 22.0) {
+            // Flashlight casts deep dramatic shadow on the wall behind REem8
+            wallShadow.material.opacity = 0.78;
+            wallShadow.scale.set(1.4, 1.4, 1.0);
+            wallShadow.visible = true;
+          } else {
+            // Soft ambient shadow from ceiling lamps
+            wallShadow.material.opacity = 0.38;
+            wallShadow.scale.set(1.15, 1.15, 1.0);
+            wallShadow.visible = true;
+          }
+        } else {
+          wallShadow.visible = false;
+        }
+      }
 
       // 4. Robot Dog
       const dog = this.robotDog;
-      const dogVis = dog && dog.group && dog.group.visible;
-      const dogPos = dog ? dog.group.position : null;
-      updateShadowForCharacter(this.characterShadows.robotDog, dogPos, 0, 0.38, dogVis);
+      const dogVis = dog && dog.group && dog.group.visible && this.playerFloor === 0;
+      const dogPos = dog ? (dog.group ? dog.group.position : { x: dog.x, y: dog.y, z: dog.z }) : null;
+      updateShadowForCharacter(this.characterShadows.robotDog, dogPos, 0, 0.45, dogVis);
 
       // 5. Living Statues
       if (this.statues && this.statues.length > 0) {
         while (this.characterShadows.statues.length < this.statues.length) {
-          this.characterShadows.statues.push(this.createCharacterContactShadow(0.50));
+          this.characterShadows.statues.push(this.createCharacterContactShadow(0.55));
         }
         for (let i = 0; i < this.statues.length; i++) {
           const s = this.statues[i];
-          const sVis = s && s.group && s.group.visible;
+          const sVis = s && s.group && s.group.visible && s.floor === this.playerFloor;
           const sPos = s && s.group ? s.group.position : (s ? { x: s.x, y: s.y, z: s.z } : null);
-          updateShadowForCharacter(this.characterShadows.statues[i], sPos, s ? s.floor : 0, 0.48, sVis);
+          updateShadowForCharacter(this.characterShadows.statues[i], sPos, s ? s.floor : 0, 0.55, sVis);
         }
       }
     }
-
     buildMuseum() {
       // Load photorealistic internet-sourced textures from assets/textures/
       const mats = {
