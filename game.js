@@ -4177,8 +4177,8 @@
       const savedViewMode = localStorage.getItem('the_museum_view_mode');
       this.viewMode = (savedViewMode === 'third-person') ? 'third-person' : 'first-person';
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
-      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 8 ? savedCharacter : 0;
-      if ((this.selectedPlayerCharacter === 7 || this.selectedPlayerCharacter === 8) && localStorage.getItem('the_museum_game_completed') !== 'true') {
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 9 ? savedCharacter : 0;
+      if ((this.selectedPlayerCharacter === 8 || this.selectedPlayerCharacter === 9) && localStorage.getItem('the_museum_game_completed') !== 'true') {
         this.selectedPlayerCharacter = 0;
       }
       this.playerModelRoot = null;
@@ -8230,7 +8230,7 @@ window.game = this;
 
       const gltfLoader = new THREE.GLTFLoader();
       gltfLoader.load(
-        'assets/playermodels/the-vendor.glb',
+        'assets/playermodels/REem8.glb',
         (gltf) => {
           const model = gltf.scene;
 
@@ -12565,7 +12565,7 @@ window.game = this;
         }
 
         // Restore real player model visibility and fade for the primary camera
-        const isTheBeing = (this.selectedPlayerCharacter === 7);
+        const isTheBeing = (this.selectedPlayerCharacter === 9);
         let fade2 = 1.0;
         if (isTheBeing) {
           const tZoom = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / (2.6 - 0.4), 0, 1);
@@ -17416,7 +17416,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'Sand', 'The Cook', 'The Arse', 'The Clown', 'The Student', 'The Being', 'REem8'];
+        const charNames = ['The Animal', 'The Earth', 'The Cook', 'The Arse', 'Sand', 'The Clown', 'The Student', 'Heknah', 'REem8', 'The Being'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -17477,15 +17477,16 @@ window.game = this;
 
     loadPlayerCharacter() {
       const characters = [
-        { name: 'The Animal', file: 'the-animal.glb' },
-        { name: 'The Earth', file: 'the-man.glb' },
-        { name: 'Sand', file: 'sand.glb' },
-        { name: 'The Cook', file: 'cook.glb' },
-        { name: 'The Arse', file: 'the-tundra.glb' },
-        { name: 'The Clown', file: 'the-clown.glb' },
-        { name: 'The Student', file: 'the-student.glb' },
-        { name: 'The Being', file: 'the-being.glb' },
-        { name: 'REem8', file: 'the-vendor.glb' }
+        { name: 'The Animal', file: 'The Animal.glb' },
+        { name: 'The Earth', file: 'The Earth.glb' },
+        { name: 'The Cook', file: 'The Cook.glb' },
+        { name: 'The Arse', file: 'The Arse.glb' },
+        { name: 'Sand', file: 'Sand.glb' },
+        { name: 'The Clown', file: 'The Clown.glb' },
+        { name: 'The Student', file: 'The Student.glb' },
+        { name: 'Heknah', file: 'Heknah.glb' },
+        { name: 'REem8', file: 'REem8.glb' },
+        { name: 'The Being', file: 'The Being.glb' }
       ];
       const character = characters[this.selectedPlayerCharacter];
       if (!character || !this.playerModelRoot) return;
@@ -17511,7 +17512,7 @@ window.game = this;
           this.playerModel = gltf.scene;
 
           // The Being is a towering character (~4.15m), just a little bit shorter than the NPC FinalFight (~4.64m)
-          const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 7);
+          const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 9);
           const targetHeight = isTheBeing ? 4.15 : 1.75;
           const scale = targetHeight / size.y;
           this.playerModel.scale.setScalar(scale);
@@ -17777,7 +17778,7 @@ window.game = this;
 
     updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
-      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      const isTheBeing = (this.selectedPlayerCharacter === 9);
 
       // Camera target height and distance interpolation
       let targetYOffset = 1.3;
@@ -20744,7 +20745,7 @@ window.game = this;
       }
 
       // The Being has 2.5x speed and 1.2x jump
-      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      const isTheBeing = (this.selectedPlayerCharacter === 9);
       const charSpeedMultiplier = isTheBeing ? 2.5 : 1.0;
 
       const baseSpeed = (isCrouching
@@ -21756,8 +21757,8 @@ window.game = this;
 
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const punchOrigin = new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z);
-      // The Being (character index 7) wields the deadly snake arm punch
-      const isTheBeing = (this.selectedPlayerCharacter === 7);
+      // The Being (character index 9) wields the deadly snake arm punch
+      const isTheBeing = (this.selectedPlayerCharacter === 9);
       const punchRange = isTheBeing ? 2.8 : 2.4; // Extended melee reach for snake arm
       const punchDamage = isTheBeing ? 99999 : 25;
       const playerKnockback = isTheBeing ? 10.0 : 3.5;

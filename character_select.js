@@ -4,15 +4,16 @@
     constructor(game) {
       this.game = game;
       this.characters = [
-        { id: 0, name: 'The Animal', file: 'the-animal.glb', portrait: 'assets/ui/portraits/char_0.png' },
-        { id: 1, name: 'The Earth', file: 'the-man.glb', portrait: 'assets/ui/portraits/char_1.png' },
-        { id: 2, name: 'Sand', file: 'sand.glb', portrait: 'assets/ui/portraits/char_2.png' },
-        { id: 3, name: 'The Cook', file: 'cook.glb', portrait: 'assets/ui/portraits/char_3.png' },
-        { id: 4, name: 'The Arse', file: 'the-tundra.glb', portrait: 'assets/ui/portraits/char_4.png' },
-        { id: 5, name: 'The Clown', file: 'the-clown.glb', portrait: 'assets/ui/portraits/char_5.png' },
-        { id: 6, name: 'The Student', file: 'the-student.glb', portrait: 'assets/ui/portraits/char_6.png' },
-        { id: 7, name: 'The Being', file: 'the-being.glb', portrait: 'assets/ui/portraits/char_7.png', isUnlockable: true },
-        { id: 8, name: 'REem8', file: 'the-vendor.glb', portrait: 'assets/ui/portraits/char_8.png', isUnlockable: true }
+        { id: 0, name: 'The Animal', file: 'The Animal.glb', portrait: 'assets/ui/portraits/1.png' },
+        { id: 1, name: 'The Earth', file: 'The Earth.glb', portrait: 'assets/ui/portraits/2.png' },
+        { id: 2, name: 'The Cook', file: 'The Cook.glb', portrait: 'assets/ui/portraits/3.png' },
+        { id: 3, name: 'The Arse', file: 'The Arse.glb', portrait: 'assets/ui/portraits/4.png' },
+        { id: 4, name: 'Sand', file: 'Sand.glb', portrait: 'assets/ui/portraits/5.png' },
+        { id: 5, name: 'The Clown', file: 'The Clown.glb', portrait: 'assets/ui/portraits/6.png' },
+        { id: 6, name: 'The Student', file: 'The Student.glb', portrait: 'assets/ui/portraits/7.png' },
+        { id: 7, name: 'Heknah', file: 'Heknah.glb', portrait: 'assets/ui/portraits/8.png' },
+        { id: 8, name: 'REem8', file: 'REem8.glb', portrait: 'assets/ui/portraits/9.png', isUnlockable: true },
+        { id: 9, name: 'The Being', file: 'The Being.glb', portrait: 'assets/ui/portraits/10.png', isUnlockable: true }
       ];
 
       this.selectedIndex = this.game.selectedPlayerCharacter || 0;

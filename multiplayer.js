@@ -18,14 +18,16 @@
       this.broadcastRate = 20; // 20Hz - optimal smooth rate avoiding MQTT WebSocket packet drop & buffer thrashing
       this.onPlayerJoined = null;
       this.characterData = [
-        { name: 'The Animal', file: 'the-animal.glb' },
-        { name: 'The Earth', file: 'the-man.glb' },
-        { name: 'Sand', file: 'sand.glb' },
-        { name: 'The Cook', file: 'cook.glb' },
-        { name: 'The Arse', file: 'the-tundra.glb' },
-        { name: 'The Clown', file: 'the-clown.glb' },
-        { name: 'The Student', file: 'the-student.glb' },
-        { name: 'The Being', file: 'the-being.glb' }
+        { name: 'The Animal', file: 'The Animal.glb' },
+        { name: 'The Earth', file: 'The Earth.glb' },
+        { name: 'The Cook', file: 'The Cook.glb' },
+        { name: 'The Arse', file: 'The Arse.glb' },
+        { name: 'Sand', file: 'Sand.glb' },
+        { name: 'The Clown', file: 'The Clown.glb' },
+        { name: 'The Student', file: 'The Student.glb' },
+        { name: 'Heknah', file: 'Heknah.glb' },
+        { name: 'REem8', file: 'REem8.glb' },
+        { name: 'The Being', file: 'The Being.glb' }
       ];
 
       // Free, high-speed, enterprise-grade public WebSocket brokers
