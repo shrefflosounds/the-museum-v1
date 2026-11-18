@@ -846,12 +846,14 @@
       tex.wrapS = THREE.RepeatWrapping;
       tex.wrapT = THREE.RepeatWrapping;
       tex.repeat.set(repeatX, repeatY);
-      return new THREE.MeshPhongMaterial({
+      const mat = new THREE.MeshPhongMaterial({
         map: tex,
         color: fallbackColor,
         shininess: 6,
         specular: 0x0a0a0a
       });
+      mat.userData = { texturePath: path };
+      return mat;
     }
 
     static createSignageTexture(title, subtitle = '') {
@@ -4612,7 +4614,9 @@ window.game = this;
 
       mats.floorDirt.userData = { isDirt: true };
       mats.ceiling.userData = { isCeiling: true };
-      mats.ceilingCofferedTile.userData = { isCofferedTile: true };
+      mats.ceilingCofferedTile.userData = { isCofferedTile: true, isCoffered: true };
+      mats.wallCofferedTile.userData = { isCofferedWall: true, isCoffered: true };
+      this._wallCofferedTile = mats.wallCofferedTile;
       mats.carpetMaroon.userData = { isCarpet: true };
 
       mats.ceiling.emissive = new THREE.Color(0x322f28);
@@ -5714,7 +5718,11 @@ window.game = this;
       const adjW = w;
       const adjD = d;
       const geometry = new THREE.BoxGeometry(adjW, h, adjD);
-      if (mat && (mat === this._wallCofferedTile || (mat.userData && mat.userData.isCofferedWall) || (mat.map && mat.map.image && String(mat.map.image.src).includes('coffered')))) {
+      if (mat && (
+        mat === this._wallCofferedTile ||
+        (mat.userData && (mat.userData.isCofferedWall || mat.userData.isCoffered || (mat.userData.texturePath && mat.userData.texturePath.includes('coffered')))) ||
+        (mat.map && ((mat.map.image && String(mat.map.image.src).includes('coffered')) || (mat.map.sourceFile && mat.map.sourceFile.includes('coffered'))))
+      )) {
         geometry.userData = { isCofferedWall: true };
       }
       this.applyContinuousWallUVs(geometry, w >= d ? 'x' : 'z', w >= d ? x : z, y - h / 2);
