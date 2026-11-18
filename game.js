@@ -4605,11 +4605,14 @@ window.game = this;
         carpetMaroon: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/carpet_maroon.jpg', 1, 1, 0x6e1b24),
         wallPaleWood: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/pale_wood_boards.png', 4, 2, 0xd0c8bc),
         wallDarkLibrary: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_wall_dark.png', 8, 2, 0x6e1b28),
-        ceilingLibraryCoffered: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_ceiling_coffered.png', 1, 1, 0x5a1420)
+        ceilingLibraryCoffered: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/library_ceiling_coffered.png', 1, 1, 0x5a1420),
+        ceilingCofferedTile: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/coffered_ceiling_tile.png', 1, 1, 0xf6f3eb),
+        wallCofferedTile: TextureFactory.loadPhotorealTexture(this.texLoader, 'assets/textures/coffered_ceiling_tile.png', 1, 1, 0xf2ece2)
       };
 
       mats.floorDirt.userData = { isDirt: true };
       mats.ceiling.userData = { isCeiling: true };
+      mats.ceilingCofferedTile.userData = { isCofferedTile: true };
       mats.carpetMaroon.userData = { isCarpet: true };
 
       mats.ceiling.emissive = new THREE.Color(0x322f28);
@@ -4728,7 +4731,16 @@ window.game = this;
         this.createCeiling(-15.90, y0 + ceilH, dz, 0.20, 3.0, ceilMat);
       }
       // 4. Central Core South of Stairwell N (x: -4..4, z: -13.80..28.00 stopping flush at the south face of the z = -14.0 wall)
-      this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, ceilMat, ceilH);
+      if (fl === 0) {
+        // North section up to clerk's front wall (z: -13.80..7.80)
+        this.createSlab(0, y0, -3.00, 8.0, 21.60, floorMat, ceilMat, ceilH);
+        // Clerk's room interior slab with coffered ceiling tile (z: 7.80..13.80, x: -3.8..3.8)
+        this.createSlab(0, y0, 10.80, 7.60, 6.00, floorMat, mats.ceilingCofferedTile, ceilH);
+        // South corridor section past clerk's back wall (z: 13.80..28.00)
+        this.createSlab(0, y0, 20.90, 8.0, 14.20, floorMat, ceilMat, ceilH);
+      } else {
+        this.createSlab(0, y0, 7.10, 8.0, 41.80, floorMat, ceilMat, ceilH);
+      }
       // 5. North Gallery Slab (x: -4..28, z: -40..-26) + North Bay (x: 6..18, z: -42..-40)
       this.createSlab(12, y0, -33, 32.0, 14.0, floorMat, ceilMat, ceilH);
 
@@ -4829,22 +4841,26 @@ window.game = this;
 
       // Elevator & Mechanical Core Block (x: -3.8..3.8, z: 8..18)
       // On Floor 0: "CLERK'S STAND" with customer counter & service ledge facing the corridor
+      const clerkWallMat = (fl === 0) ? mats.wallCofferedTile : accentWallMat;
       if (fl === 0) {
         // West side jamb wall: x: -3.8..-1.8 (width 2.0m)
-        this.createWall(-2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
+        this.createWall(-2.8, yc, 8.0, 2.0, wallH, t, clerkWallMat, true, fl);
         // East side jamb wall: x: 1.8..3.8 (width 2.0m)
-        this.createWall(2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
+        this.createWall(2.8, yc, 8.0, 2.0, wallH, t, clerkWallMat, true, fl);
         // Service opening (x: -1.8..1.8, width 3.6m):
         // Base wall below counter (height 0.88m)
-        this.createWall(0.0, y0 + 0.44, 8.0, 3.6, 0.88, t, accentWallMat, true, fl);
+        this.createWall(0.0, y0 + 0.44, 8.0, 3.6, 0.88, t, clerkWallMat, true, fl);
         // Arched lintel header above opening (open between 0.88m and 3.0m)
-        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, accentWallMat, 3.0);
+        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, clerkWallMat, 3.0);
+        // Interior side lining walls (West: x = -3.79, East: x = 3.79, z: 8.2..13.8)
+        this.createWall(-3.79, yc, 11.0, 0.02, wallH, 5.6, mats.wallCofferedTile, false, fl);
+        this.createWall(3.79, yc, 11.0, 0.02, wallH, 5.6, mats.wallCofferedTile, false, fl);
         // Create the Clerk's counter desk & ledge structure
         this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
       } else {
         this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
       }
-      this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
+      this.createWall(0.0, yc, 14.0, 7.6, wallH, t, clerkWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
       this.createWall(0.0, yc, 18.0, 7.6, wallH, t, mainWallMat, true, fl);       // -3.8..3.8
@@ -5588,7 +5604,7 @@ window.game = this;
       const geom = new THREE.PlaneGeometry(w, d);
 
       // Continuous world-space UV mapping for all ceilings across every room, doorway, and hall
-      const tileSize = 5.0; // 5.0-meter natural world-space repeat for plaster ceiling
+      const tileSize = (ceilMat && ceilMat.userData && ceilMat.userData.isCofferedTile) ? 0.90 : 5.0;
       const uvs = geom.getAttribute('uv');
       const pos = geom.getAttribute('position');
       for (let i = 0; i < pos.count; i++) {
@@ -5623,9 +5639,13 @@ window.game = this;
         const localAlong = axis === 'x' || isExtrudedArch
           ? positions.getX(i)
           : positions.getZ(i);
-        // The wall texture repeats ten times horizontally and twice vertically.
-        // World-aligned UVs keep the same plaster grain running across each seam.
-        uvs.setXY(i, (centerAlong + localAlong) / 20.0, (y0 + positions.getY(i)) / floorHeight);
+        // World-aligned UVs keep textures aligned across seams
+        if (geometry.userData && geometry.userData.isCofferedWall) {
+          const tileScale = 0.90; // 0.9m architectural coffered tile repeat
+          uvs.setXY(i, (centerAlong + localAlong) / tileScale, (y0 + positions.getY(i)) / tileScale);
+        } else {
+          uvs.setXY(i, (centerAlong + localAlong) / 20.0, (y0 + positions.getY(i)) / floorHeight);
+        }
       }
       uvs.needsUpdate = true;
     }
@@ -5684,6 +5704,9 @@ window.game = this;
       const adjW = w;
       const adjD = d;
       const geometry = new THREE.BoxGeometry(adjW, h, adjD);
+      if (mat && (mat === this._wallCofferedTile || (mat.userData && mat.userData.isCofferedWall) || (mat.map && mat.map.image && String(mat.map.image.src).includes('coffered')))) {
+        geometry.userData = { isCofferedWall: true };
+      }
       this.applyContinuousWallUVs(geometry, w >= d ? 'x' : 'z', w >= d ? x : z, y - h / 2);
       const mesh = new THREE.Mesh(geometry, mats6);
       mesh.position.set(x, y, z);
