@@ -17497,8 +17497,8 @@ window.game = this;
 
     setPlayerCharacter(index) {
       const next = Number(index);
-      if (!Number.isInteger(next) || next < 0 || next > 8) return;
-      if ((next === 7 || next === 8) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
+      if (!Number.isInteger(next) || next < 0 || next > 9) return;
+      if ((next === 8 || next === 9) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
