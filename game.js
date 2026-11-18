@@ -4587,6 +4587,189 @@ window.game = this;
       });
     }
 
+    // =========================================================================
+    // LIGHTWEIGHT REAL-TIME CHARACTER CONTACT SHADOW SYSTEM
+    // =========================================================================
+    createCharacterContactShadow(radius = 0.45) {
+      if (!this._shadowBlobTexture) {
+        const cvs = document.createElement('canvas');
+        cvs.width = 128;
+        cvs.height = 128;
+        const ctx = cvs.getContext('2d');
+        const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grad.addColorStop(0.0, 'rgba(0, 0, 0, 0.72)');
+        grad.addColorStop(0.35, 'rgba(0, 0, 0, 0.55)');
+        grad.addColorStop(0.70, 'rgba(0, 0, 0, 0.22)');
+        grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, 128, 128);
+
+        this._shadowBlobTexture = new THREE.CanvasTexture(cvs);
+        this._shadowBlobTexture.minFilter = THREE.LinearFilter;
+        this._shadowBlobTexture.magFilter = THREE.LinearFilter;
+      }
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: this._shadowBlobTexture,
+        transparent: true,
+        opacity: 0.55,
+        depthWrite: false,
+        depthTest: true,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
+      });
+
+      const geom = new THREE.PlaneGeometry(radius * 2, radius * 2);
+      const mesh = new THREE.Mesh(geom, mat);
+      mesh.rotation.x = -Math.PI / 2;
+      mesh.renderOrder = 2; // Render just above floor surfaces
+      mesh.visible = false;
+      this.scene.add(mesh);
+      return mesh;
+    }
+
+    updateCharacterShadows() {
+      if (!this.characterShadows) {
+        this.characterShadows = {
+          player: this.createCharacterContactShadow(0.50),
+          smitty: this.createCharacterContactShadow(0.65),
+          clerk: this.createCharacterContactShadow(0.52),
+          robotDog: this.createCharacterContactShadow(0.40),
+          statues: []
+        };
+      }
+
+      const getNearestFloorY = (y) => {
+        const fh = CONFIG.FLOOR_HEIGHT;
+        const fl = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.round(y / fh)));
+        return fl * fh;
+      };
+
+      const flashOn = !!this.flashlightOn;
+      const flashPos = this.camera ? this.camera.position : null;
+
+      const updateShadowForCharacter = (shadowMesh, charPos, charFloor, baseRadius, isVisible) => {
+        if (!shadowMesh) return;
+        if (!isVisible || !charPos) {
+          shadowMesh.visible = false;
+          return;
+        }
+
+        const floorBaseY = typeof charFloor === 'number' ? charFloor * CONFIG.FLOOR_HEIGHT : getNearestFloorY(charPos.y);
+        const distAboveFloor = Math.max(0, charPos.y - floorBaseY);
+
+        // Hide shadow if character has jumped too high or fallen into void
+        if (distAboveFloor > 2.5) {
+          shadowMesh.visible = false;
+          return;
+        }
+
+        // Find closest light affecting this character
+        let bestLight = null;
+        let bestDistSq = Infinity;
+        const currentFloorLights = (this.floorLights && typeof charFloor === 'number') ? this.floorLights[charFloor] : null;
+
+        if (currentFloorLights && currentFloorLights.length > 0) {
+          for (let i = 0; i < currentFloorLights.length; i++) {
+            const pl = currentFloorLights[i];
+            if (!pl || pl.intensity <= 0.01) continue;
+            const d2 = (charPos.x - pl.position.x) ** 2 + (charPos.z - pl.position.z) ** 2;
+            if (d2 < bestDistSq) {
+              bestDistSq = d2;
+              bestLight = pl;
+            }
+          }
+        }
+
+        // Compute horizontal light offset vector
+        let offsetX = 0;
+        let offsetZ = 0;
+        let stretch = 1.0;
+        let angle = 0;
+        let shadowIntensity = 0.58;
+
+        if (bestLight) {
+          const ldx = charPos.x - bestLight.position.x;
+          const ldz = charPos.z - bestLight.position.z;
+          const lightDist = Math.max(0.1, Math.hypot(ldx, ldz));
+          const dirX = ldx / lightDist;
+          const dirZ = ldz / lightDist;
+
+          // Light shines outwards from lamp; shadow projects away from light
+          const lightH = Math.max(1.0, (bestLight.position.y - floorBaseY));
+          const projectionFactor = Math.min(0.65, lightDist / (lightH * 2.2));
+          offsetX = dirX * projectionFactor;
+          offsetZ = dirZ * projectionFactor;
+          stretch = 1.0 + projectionFactor * 0.7;
+          angle = Math.atan2(dirX, dirZ);
+        }
+
+        // Flashlight influence if active and pointing nearby
+        if (flashOn && flashPos && Math.abs(charPos.y - flashPos.y) < 4.0) {
+          const fdx = charPos.x - flashPos.x;
+          const fdz = charPos.z - flashPos.z;
+          const fDist = Math.hypot(fdx, fdz);
+          if (fDist < 25.0) {
+            // Flashlight strengthens & deepens shadow cast away from player
+            const fDirX = fdx / Math.max(0.1, fDist);
+            const fDirZ = fdz / Math.max(0.1, fDist);
+            const flashWeight = Math.max(0, 1.0 - fDist / 25.0) * 0.6;
+            offsetX = offsetX * (1 - flashWeight) + (fDirX * 0.45) * flashWeight;
+            offsetZ = offsetZ * (1 - flashWeight) + (fDirZ * 0.45) * flashWeight;
+            shadowIntensity = Math.min(0.85, shadowIntensity + flashWeight * 0.25);
+            stretch = Math.max(stretch, 1.0 + flashWeight * 0.5);
+            angle = Math.atan2(fDirX, fDirZ);
+          }
+        }
+
+        // Height fade: when character jumps, shadow softens, expands and fades
+        const heightFade = Math.max(0.2, 1.0 - (distAboveFloor / 1.8));
+        const currentOpacity = shadowIntensity * heightFade;
+        const currentScale = (1.0 + distAboveFloor * 0.35) * baseRadius;
+
+        shadowMesh.position.set(charPos.x + offsetX * 0.7, floorBaseY + 0.014, charPos.z + offsetZ * 0.7);
+        shadowMesh.rotation.z = -angle;
+        shadowMesh.scale.set(currentScale, currentScale * stretch, 1.0);
+        shadowMesh.material.opacity = currentOpacity;
+        shadowMesh.visible = true;
+      };
+
+      // 1. Third-Person Player
+      const isThirdPerson = (typeof this.isThirdPersonView === 'function') ? this.isThirdPersonView() : false;
+      const playerVis = isThirdPerson && this.playerModelRoot && this.playerModelRoot.visible;
+      updateShadowForCharacter(this.characterShadows.player, this.playerPos, this.playerFloor, 0.48, playerVis);
+
+      // 2. Smitty
+      const smittyVis = this.smittyEnabled && this.smittyMesh && this.smittyMesh.visible;
+      updateShadowForCharacter(this.characterShadows.smitty, this.smittyPos, this.smittyFloor, 0.62, smittyVis);
+
+      // 3. Museum Clerk (REem8)
+      const clerk = this.museumClerk;
+      const clerkVis = clerk && clerk.group && clerk.group.visible;
+      const clerkPos = clerk ? clerk.group.position : null;
+      updateShadowForCharacter(this.characterShadows.clerk, clerkPos, 0, 0.50, clerkVis);
+
+      // 4. Robot Dog
+      const dog = this.robotDog;
+      const dogVis = dog && dog.group && dog.group.visible;
+      const dogPos = dog ? dog.group.position : null;
+      updateShadowForCharacter(this.characterShadows.robotDog, dogPos, 0, 0.38, dogVis);
+
+      // 5. Living Statues
+      if (this.statues && this.statues.length > 0) {
+        while (this.characterShadows.statues.length < this.statues.length) {
+          this.characterShadows.statues.push(this.createCharacterContactShadow(0.50));
+        }
+        for (let i = 0; i < this.statues.length; i++) {
+          const s = this.statues[i];
+          const sVis = s && s.group && s.group.visible;
+          const sPos = s && s.group ? s.group.position : (s ? { x: s.x, y: s.y, z: s.z } : null);
+          updateShadowForCharacter(this.characterShadows.statues[i], sPos, s ? s.floor : 0, 0.48, sVis);
+        }
+      }
+    }
+
     buildMuseum() {
       // Load photorealistic internet-sourced textures from assets/textures/
       const mats = {
@@ -23738,6 +23921,11 @@ window.game = this;
       // Keep existing blood droplets falling even if local player is paused/downed in multiplayer so drops never freeze mid-air
       if (this.bloodDroplets && this.bloodDroplets.length > 0 && (this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt)) {
         this.updateLiquidBlood(delta);
+      }
+
+      // Real-time lighting-reactive character contact shadows
+      if (this.updateCharacterShadows) {
+        this.updateCharacterShadows();
       }
 
       // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
