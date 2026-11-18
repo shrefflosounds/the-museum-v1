@@ -71,6 +71,7 @@ ctrl.shoot = **Left Click**: Fire
 ctrl.aim = **Right Click**: Aim
 ctrl.map = **Tab**: Inventory & Map
 ctrl.dance = **X**: Dance
+ctrl.smack = **Q**: Smack / Strike
 
 settings.spectator_heading = SPECTATOR MODE
 spec.toggle = **` or F2**: Toggle Spectator

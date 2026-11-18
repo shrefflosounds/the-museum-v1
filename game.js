@@ -4187,6 +4187,7 @@
       this.playerModel = null;
       this.playerMixer = null;
       this.playerBones = {};
+      this.playerRestQuats = {};
       this.playerActions = {};
       this.playerCurrentAction = null;
       this.playerModelLoadId = 0;
@@ -17939,69 +17940,65 @@ window.game = this;
       }
 
       // Procedural realistic smack / strike overlay on third-person character
-      // Follows a smooth, complete sine-curve slap cycle that always returns 100% back to 0 (the base run/walk pose)
+      // Uses rest-relative strike poses blended via spherical linear interpolation (slerp)
+      // from the current locomotion (run/walk/idle) pose to the clean forward strike and back to 0.
+      // This completely eliminates additive compounding, gimbal flips, salute angles, and torso inversions!
       if (this.leftHandPunchTimer > 0 && this.playerBones) {
         const dur = this.leftHandPunchDuration || 0.38;
         const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0); // 0.0 -> 1.0
         const b = this.playerBones;
+        const rq = this.playerRestQuats || {};
         const isTheBeing = (this.selectedPlayerCharacter === 9);
 
         // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
         if (!isTheBeing) {
-          // Trajectory:
-          // 0.0 -> 0.20: Windup pulls arm slightly back and out
-          // 0.20 -> 0.55: Forward smack swipes horizontally across stomach/chest level
-          // 0.55 -> 1.0: Full smooth return curve strictly decaying to 0.00
-          let windup = 0;
-          let smackWeight = 0;
-          if (p < 0.20) {
-            windup = Math.sin((p / 0.20) * (Math.PI / 2));
-          } else if (p < 0.55) {
-            smackWeight = Math.sin(((p - 0.20) / 0.35) * Math.PI);
+          // Trajectory blend weight w:
+          // 0.0 -> 0.18: Windup (pulls arm slightly back and out)
+          // 0.18 -> 0.50: Strike (sweeps swiftly across chest / stomach level)
+          // 0.50 -> 1.00: Smooth return to locomotion arm swing, strictly reaching 0.0 at p = 1.0
+          let strikeWeight = 0;
+          let windupWeight = 0;
+          if (p < 0.18) {
+            windupWeight = Math.sin((p / 0.18) * (Math.PI / 2));
+          } else if (p < 0.50) {
+            strikeWeight = Math.sin(((p - 0.18) / 0.32) * Math.PI);
           } else {
-            const ret = (p - 0.55) / 0.45; // 0.0 -> 1.0
-            smackWeight = Math.max(0, (1.0 - ret) * (1.0 - ret) * 0.25);
+            const ret = (p - 0.50) / 0.50; // 0.0 -> 1.0
+            strikeWeight = Math.max(0, (1.0 - ret) * (1.0 - ret) * 0.35);
           }
 
-          if (!this._playerPunchDeltaQuats) {
-            this._playerPunchDeltaQuats = {
-              shoulder: new THREE.Quaternion(),
-              upperArm: new THREE.Quaternion(),
-              lowerArm: new THREE.Quaternion(),
-              hand: new THREE.Quaternion()
+          if (!this._playerPunchStrikeQuats) {
+            this._playerPunchStrikeQuats = {
+              shoulderWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.12, 0.05, 'XYZ')),
+              shoulderStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -0.22, -0.10, 'XYZ')),
+              upperWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.18, 0.0, 0.40, 'XYZ')),
+              upperStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.25, 0.10, -0.45, 'XYZ')),
+              lowerWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.0, 0.15, -0.65, 'XYZ')),
+              lowerStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.10, 0.15, -0.60, 'XYZ')),
+              handWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0.05, 'XYZ')),
+              handStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.10, 'XYZ')),
+              targetQuat: new THREE.Quaternion()
             };
-            this._playerPunchEuler = new THREE.Euler();
           }
-          const dq = this._playerPunchDeltaQuats;
-          const euler = this._playerPunchEuler;
+          const sq = this._playerPunchStrikeQuats;
 
-          if (b['shoulder.L']) {
-            euler.set(0, (0.12 * windup) - (0.25 * smackWeight), 0, 'XYZ');
-            dq.shoulder.setFromEuler(euler);
-            b['shoulder.L'].quaternion.multiply(dq.shoulder);
-          }
-          if (b['upperArm.L']) {
-            // Outward windup, followed by horizontal sweep across chest/stomach without raising arm high
-            euler.set(
-              (-0.15 * windup) - (0.20 * smackWeight),
-              (-0.20 * windup) + (0.55 * smackWeight),
-              (0.30 * windup) - (0.35 * smackWeight),
-              'XYZ'
-            );
-            dq.upperArm.setFromEuler(euler);
-            b['upperArm.L'].quaternion.multiply(dq.upperArm);
-          }
-          if (b['lowerArm.L']) {
-            // Elbow remains comfortably bent during horizontal swipe
-            euler.set(0, (0.15 * windup) + (0.35 * smackWeight), (-0.12 * smackWeight), 'XYZ');
-            dq.lowerArm.setFromEuler(euler);
-            b['lowerArm.L'].quaternion.multiply(dq.lowerArm);
-          }
-          if (b['hand.L']) {
-            euler.set(0, 0.25 * smackWeight, -0.15 * smackWeight, 'XYZ');
-            dq.hand.setFromEuler(euler);
-            b['hand.L'].quaternion.multiply(dq.hand);
-          }
+          const applyBlend = (boneName, qWindupOffset, qStrikeOffset) => {
+            const bone = b[boneName];
+            if (!bone) return;
+            const baseRest = rq[boneName] || bone.quaternion;
+            if (windupWeight > 0.001) {
+              sq.targetQuat.copy(baseRest).multiply(qWindupOffset);
+              bone.quaternion.slerp(sq.targetQuat, windupWeight * 0.85);
+            } else if (strikeWeight > 0.001) {
+              sq.targetQuat.copy(baseRest).multiply(qStrikeOffset);
+              bone.quaternion.slerp(sq.targetQuat, strikeWeight * 0.90);
+            }
+          };
+
+          applyBlend('shoulder.L', sq.shoulderWindup, sq.shoulderStrike);
+          applyBlend('upperArm.L', sq.upperWindup, sq.upperStrike);
+          applyBlend('lowerArm.L', sq.lowerWindup, sq.lowerStrike);
+          applyBlend('hand.L', sq.handWindup, sq.handStrike);
         }
 
         // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
