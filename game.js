@@ -17785,58 +17785,6 @@ window.game = this;
             else if (name.includes('idle') || name.includes('slither')) this.playerActions.Idle = action;
           });
 
-          // Synthesize an official isolated Punch AnimationClip on the left arm tracks.
-          // This allows Three.js's AnimationMixer to handle the entire slap cycle, blending, and return natively!
-          const idleClip = gltf.animations.find(c => c.name.toLowerCase().includes('idle'));
-          if (idleClip) {
-            const slapDuration = 0.38;
-            const punchTracks = [];
-            const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 9);
-
-            if (!isTheBeing) {
-              const armBoneNames = ['shoulder.L', 'upperArm.L', 'lowerArm.L', 'hand.L'];
-              armBoneNames.forEach(bname => {
-                const idleTrack = idleClip.tracks.find(t => t.name.includes(bname) && t.name.includes('.quaternion'));
-                if (idleTrack && idleTrack.values && idleTrack.values.length >= 4) {
-                  const qRest = new THREE.Quaternion(idleTrack.values[0], idleTrack.values[1], idleTrack.values[2], idleTrack.values[3]);
-                  let qWindup = qRest.clone();
-                  let qStrike = qRest.clone();
-
-                  if (bname === 'upperArm.L') {
-                    // Windup draws arm outward and back; strike whips across stomach/chest horizontally
-                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.20, 0.0, 0.45, 'XYZ')));
-                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.25, 0.10, -0.45, 'XYZ')));
-                  } else if (bname === 'lowerArm.L') {
-                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.0, 0.15, -0.65, 'XYZ')));
-                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.10, 0.15, -0.60, 'XYZ')));
-                  } else if (bname === 'shoulder.L') {
-                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.10, 0.05, 'XYZ')));
-                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -0.18, -0.08, 'XYZ')));
-                  } else if (bname === 'hand.L') {
-                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.10, 'XYZ')));
-                  }
-
-                  const times = [0.0, 0.08, 0.20, slapDuration];
-                  const values = [
-                    qRest.x, qRest.y, qRest.z, qRest.w,
-                    qWindup.x, qWindup.y, qWindup.z, qWindup.w,
-                    qStrike.x, qStrike.y, qStrike.z, qStrike.w,
-                    qRest.x, qRest.y, qRest.z, qRest.w
-                  ];
-                  punchTracks.push(new THREE.QuaternionKeyframeTrack(idleTrack.name, times, values));
-                }
-              });
-
-              if (punchTracks.length > 0) {
-                const punchClip = new THREE.AnimationClip('Punch', slapDuration, punchTracks);
-                const punchAction = this.playerMixer.clipAction(punchClip);
-                punchAction.setLoop(THREE.LoopOnce, 1);
-                punchAction.clampWhenFinished = false; // Relinquishes control back to walk/run upon completion
-                this.playerActions.Punch = punchAction;
-              }
-            }
-          }
-
           this.playerCurrentAction = null;
           this.playPlayerAnimation('Idle');
           this.playerModelRoot.visible = this.isThirdPersonView();
@@ -17990,13 +17938,73 @@ window.game = this;
         this.leftHandPunchTimer = Math.max(0, this.leftHandPunchTimer - delta);
       }
 
-      // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
+      // Procedural realistic smack / strike overlay on third-person character
+      // Follows a smooth, complete sine-curve slap cycle that always returns 100% back to 0 (the base run/walk pose)
       if (this.leftHandPunchTimer > 0 && this.playerBones) {
         const dur = this.leftHandPunchDuration || 0.38;
-        const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0);
+        const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0); // 0.0 -> 1.0
         const b = this.playerBones;
         const isTheBeing = (this.selectedPlayerCharacter === 9);
 
+        // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
+        if (!isTheBeing) {
+          // Trajectory:
+          // 0.0 -> 0.20: Windup pulls arm slightly back and out
+          // 0.20 -> 0.55: Forward smack swipes horizontally across stomach/chest level
+          // 0.55 -> 1.0: Full smooth return curve strictly decaying to 0.00
+          let windup = 0;
+          let smackWeight = 0;
+          if (p < 0.20) {
+            windup = Math.sin((p / 0.20) * (Math.PI / 2));
+          } else if (p < 0.55) {
+            smackWeight = Math.sin(((p - 0.20) / 0.35) * Math.PI);
+          } else {
+            const ret = (p - 0.55) / 0.45; // 0.0 -> 1.0
+            smackWeight = Math.max(0, (1.0 - ret) * (1.0 - ret) * 0.25);
+          }
+
+          if (!this._playerPunchDeltaQuats) {
+            this._playerPunchDeltaQuats = {
+              shoulder: new THREE.Quaternion(),
+              upperArm: new THREE.Quaternion(),
+              lowerArm: new THREE.Quaternion(),
+              hand: new THREE.Quaternion()
+            };
+            this._playerPunchEuler = new THREE.Euler();
+          }
+          const dq = this._playerPunchDeltaQuats;
+          const euler = this._playerPunchEuler;
+
+          if (b['shoulder.L']) {
+            euler.set(0, (0.12 * windup) - (0.25 * smackWeight), 0, 'XYZ');
+            dq.shoulder.setFromEuler(euler);
+            b['shoulder.L'].quaternion.multiply(dq.shoulder);
+          }
+          if (b['upperArm.L']) {
+            // Outward windup, followed by horizontal sweep across chest/stomach without raising arm high
+            euler.set(
+              (-0.15 * windup) - (0.20 * smackWeight),
+              (-0.20 * windup) + (0.55 * smackWeight),
+              (0.30 * windup) - (0.35 * smackWeight),
+              'XYZ'
+            );
+            dq.upperArm.setFromEuler(euler);
+            b['upperArm.L'].quaternion.multiply(dq.upperArm);
+          }
+          if (b['lowerArm.L']) {
+            // Elbow remains comfortably bent during horizontal swipe
+            euler.set(0, (0.15 * windup) + (0.35 * smackWeight), (-0.12 * smackWeight), 'XYZ');
+            dq.lowerArm.setFromEuler(euler);
+            b['lowerArm.L'].quaternion.multiply(dq.lowerArm);
+          }
+          if (b['hand.L']) {
+            euler.set(0, 0.25 * smackWeight, -0.15 * smackWeight, 'XYZ');
+            dq.hand.setFromEuler(euler);
+            b['hand.L'].quaternion.multiply(dq.hand);
+          }
+        }
+
+        // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
         const s00 = b['snake.00'] || b['snake00'];
         if (s00 && isTheBeing) {
           const snakeStrikeWeight = (p < 0.30)
@@ -18024,7 +18032,7 @@ window.game = this;
       }
     }
 
-                    updateThirdPersonCamera(delta) {
+                        updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 9);
 
@@ -21995,13 +22003,6 @@ window.game = this;
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
-      if (this.playerActions && this.playerActions.Punch) {
-        this.playerActions.Punch.stop();
-        this.playerActions.Punch.reset();
-        this.playerActions.Punch.setEffectiveWeight(1);
-        this.playerActions.Punch.fadeIn(0.04);
-        this.playerActions.Punch.play();
-      }
 
       // Calculate punch origin and direction
       const cosPitch = Math.cos(this.playerPitch);
