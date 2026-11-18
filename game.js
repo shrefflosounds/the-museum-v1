@@ -4841,26 +4841,36 @@ window.game = this;
 
       // Elevator & Mechanical Core Block (x: -3.8..3.8, z: 8..18)
       // On Floor 0: "CLERK'S STAND" with customer counter & service ledge facing the corridor
-      const clerkWallMat = (fl === 0) ? mats.wallCofferedTile : accentWallMat;
       if (fl === 0) {
+        // Exterior front facade walls and counter base use standard exterior museum material (accentWallMat)
         // West side jamb wall: x: -3.8..-1.8 (width 2.0m)
-        this.createWall(-2.8, yc, 8.0, 2.0, wallH, t, clerkWallMat, true, fl);
+        this.createWall(-2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
         // East side jamb wall: x: 1.8..3.8 (width 2.0m)
-        this.createWall(2.8, yc, 8.0, 2.0, wallH, t, clerkWallMat, true, fl);
+        this.createWall(2.8, yc, 8.0, 2.0, wallH, t, accentWallMat, true, fl);
         // Service opening (x: -1.8..1.8, width 3.6m):
-        // Base wall below counter (height 0.88m)
-        this.createWall(0.0, y0 + 0.44, 8.0, 3.6, 0.88, t, clerkWallMat, true, fl);
-        // Arched lintel header above opening (open between 0.88m and 3.0m)
-        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, clerkWallMat, 3.0);
-        // Interior side lining walls (West: x = -3.79, East: x = 3.79, z: 8.2..13.8)
+        // Base wall below counter (height 0.88m) facing hallway
+        this.createWall(0.0, y0 + 0.44, 8.0, 3.6, 0.88, t, accentWallMat, true, fl);
+        // Arched lintel header above opening (open between 0.88m and 3.0m) facing hallway
+        this.createLintel(0.0, y0, 8.0, 3.6, t, ceilH, accentWallMat, 3.0);
+
+        // REem8's room INTERIOR walls (coffered tile design applied strictly to the room's interior):
+        // 1. Interior West wall lining (x = -3.79, z: 8.2..13.8)
         this.createWall(-3.79, yc, 11.0, 0.02, wallH, 5.6, mats.wallCofferedTile, false, fl);
+        // 2. Interior East wall lining (x = 3.79, z: 8.2..13.8)
         this.createWall(3.79, yc, 11.0, 0.02, wallH, 5.6, mats.wallCofferedTile, false, fl);
-        // Create the Clerk's counter desk & ledge structure
+        // 3. Interior North-facing return walls of front jambs (facing back into room from z = 8.0):
+        this.createWall(-2.8, yc, 8.21, 2.0, wallH, 0.02, mats.wallCofferedTile, false, fl);
+        this.createWall(2.8, yc, 8.21, 2.0, wallH, 0.02, mats.wallCofferedTile, false, fl);
+        // 4. Interior Back (North) wall lining facing South into room (at z = 13.79, x: -3.8..3.8)
+        this.createWall(0.0, yc, 13.79, 7.6, wallH, 0.02, mats.wallCofferedTile, false, fl);
+
+        // Create the Clerk's counter desk & ledge structure (original wood & brass materials untouched)
         this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
       } else {
         this.createWall(0.0, yc, 8.0, 7.6, wallH, t, accentWallMat, true, fl);      // -3.8..3.8
       }
-      this.createWall(0.0, yc, 14.0, 7.6, wallH, t, clerkWallMat, true, fl);     // -3.8..3.8
+      // Structural back partition wall at z = 14.0 (accentWallMat for exterior hallway behind it)
+      this.createWall(0.0, yc, 14.0, 7.6, wallH, t, accentWallMat, true, fl);     // -3.8..3.8
       this.createWall(-2.0, yc, 16.0, t, wallH, 3.6, accentWallMat, true, fl);    // 14.2..17.8
       // Fully wall off the South corridor opening at z = 18 with a continuous gallery wall (no dead-end void)
       this.createWall(0.0, yc, 18.0, 7.6, wallH, t, mainWallMat, true, fl);       // -3.8..3.8
@@ -5604,7 +5614,7 @@ window.game = this;
       const geom = new THREE.PlaneGeometry(w, d);
 
       // Continuous world-space UV mapping for all ceilings across every room, doorway, and hall
-      const tileSize = (ceilMat && ceilMat.userData && ceilMat.userData.isCofferedTile) ? 0.90 : 5.0;
+      const tileSize = (ceilMat && ceilMat.userData && ceilMat.userData.isCofferedTile) ? 0.42 : 5.0;
       const uvs = geom.getAttribute('uv');
       const pos = geom.getAttribute('position');
       for (let i = 0; i < pos.count; i++) {
@@ -5641,7 +5651,7 @@ window.game = this;
           : positions.getZ(i);
         // World-aligned UVs keep textures aligned across seams
         if (geometry.userData && geometry.userData.isCofferedWall) {
-          const tileScale = 0.90; // 0.9m architectural coffered tile repeat
+          const tileScale = 0.42; // ~0.42m architectural coffered tile repeat
           uvs.setXY(i, (centerAlong + localAlong) / tileScale, (y0 + positions.getY(i)) / tileScale);
         } else {
           uvs.setXY(i, (centerAlong + localAlong) / 20.0, (y0 + positions.getY(i)) / floorHeight);
