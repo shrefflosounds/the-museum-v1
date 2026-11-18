@@ -4587,275 +4587,6 @@ window.game = this;
       });
     }
 
-    // =========================================================================
-    // LIGHTWEIGHT REAL-TIME CHARACTER & FLASHLIGHT SHADOW SYSTEM
-    // =========================================================================
-    createCharacterContactShadow(radius = 0.55) {
-      if (!this._shadowBlobTexture) {
-        const cvs = document.createElement('canvas');
-        cvs.width = 128;
-        cvs.height = 128;
-        const ctx = cvs.getContext('2d');
-        const grad = ctx.createRadialGradient(64, 64, 0, 64, 64, 64);
-        grad.addColorStop(0.0, 'rgba(0, 0, 0, 0.95)');
-        grad.addColorStop(0.30, 'rgba(0, 0, 0, 0.85)');
-        grad.addColorStop(0.65, 'rgba(0, 0, 0, 0.45)');
-        grad.addColorStop(1.0, 'rgba(0, 0, 0, 0.0)');
-        ctx.fillStyle = grad;
-        ctx.fillRect(0, 0, 128, 128);
-
-        this._shadowBlobTexture = new THREE.CanvasTexture(cvs);
-        this._shadowBlobTexture.minFilter = THREE.LinearFilter;
-        this._shadowBlobTexture.magFilter = THREE.LinearFilter;
-      }
-
-      const mat = new THREE.MeshBasicMaterial({
-        map: this._shadowBlobTexture,
-        transparent: true,
-        opacity: 0.85,
-        depthWrite: false,
-        depthTest: false, // Ensures shadow is NEVER clipped by floor tile coplanar precision
-        polygonOffset: true,
-        polygonOffsetFactor: -3,
-        polygonOffsetUnits: -3
-      });
-
-      const geom = new THREE.PlaneGeometry(radius * 2, radius * 2);
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.rotation.x = -Math.PI / 2;
-      mesh.renderOrder = 999; // Render visibly on top of floors
-      mesh.visible = false;
-      this.scene.add(mesh);
-      return mesh;
-    }
-
-    createWallSilhouetteShadow(w = 1.6, h = 2.4) {
-      if (!this._silhouetteShadowTexture) {
-        const cvs = document.createElement('canvas');
-        cvs.width = 128;
-        cvs.height = 256;
-        const ctx = cvs.getContext('2d');
-        // Soft rounded humanoid silhouette shadow cast onto walls
-        ctx.fillStyle = 'rgba(0,0,0,0)';
-        ctx.fillRect(0, 0, 128, 256);
-
-        // Body oval
-        const gradBody = ctx.createRadialGradient(64, 150, 10, 64, 150, 55);
-        gradBody.addColorStop(0, 'rgba(0, 0, 0, 0.85)');
-        gradBody.addColorStop(0.7, 'rgba(0, 0, 0, 0.55)');
-        gradBody.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
-        ctx.fillStyle = gradBody;
-        ctx.beginPath();
-        ctx.ellipse(64, 150, 48, 80, 0, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Head circle
-        const gradHead = ctx.createRadialGradient(64, 60, 5, 64, 60, 45);
-        gradHead.addColorStop(0, 'rgba(0, 0, 0, 0.90)');
-        gradHead.addColorStop(0.65, 'rgba(0, 0, 0, 0.55)');
-        gradHead.addColorStop(1, 'rgba(0, 0, 0, 0.0)');
-        ctx.fillStyle = gradHead;
-        ctx.beginPath();
-        ctx.arc(64, 60, 42, 0, Math.PI * 2);
-        ctx.fill();
-
-        this._silhouetteShadowTexture = new THREE.CanvasTexture(cvs);
-        this._silhouetteShadowTexture.minFilter = THREE.LinearFilter;
-        this._silhouetteShadowTexture.magFilter = THREE.LinearFilter;
-      }
-
-      const mat = new THREE.MeshBasicMaterial({
-        map: this._silhouetteShadowTexture,
-        transparent: true,
-        opacity: 0.80,
-        depthWrite: false,
-        depthTest: false,
-        polygonOffset: true,
-        polygonOffsetFactor: -3,
-        polygonOffsetUnits: -3
-      });
-
-      const geom = new THREE.PlaneGeometry(w, h);
-      const mesh = new THREE.Mesh(geom, mat);
-      mesh.renderOrder = 998;
-      mesh.visible = false;
-      this.scene.add(mesh);
-      return mesh;
-    }
-
-    updateCharacterShadows() {
-      if (!this.characterShadows) {
-        this.characterShadows = {
-          player: this.createCharacterContactShadow(0.60),
-          smitty: this.createCharacterContactShadow(0.75),
-          clerk: this.createCharacterContactShadow(0.65),
-          clerkWall: this.createWallSilhouetteShadow(1.7, 2.6),
-          robotDog: this.createCharacterContactShadow(0.48),
-          statues: []
-        };
-      }
-
-      const getNearestFloorY = (y) => {
-        const fh = CONFIG.FLOOR_HEIGHT;
-        const fl = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.round(y / fh)));
-        return fl * fh;
-      };
-
-      const flashOn = !!this.flashlightOn;
-      const flashPos = this.camera ? this.camera.position : null;
-
-      const updateShadowForCharacter = (shadowMesh, charPos, charFloor, baseRadius, isVisible) => {
-        if (!shadowMesh) return;
-        if (!isVisible || !charPos) {
-          shadowMesh.visible = false;
-          return;
-        }
-
-        const floorBaseY = typeof charFloor === 'number' ? charFloor * CONFIG.FLOOR_HEIGHT : getNearestFloorY(charPos.y);
-        const distAboveFloor = Math.max(0, charPos.y - floorBaseY);
-
-        if (distAboveFloor > 2.8) {
-          shadowMesh.visible = false;
-          return;
-        }
-
-        // Find closest light affecting this character
-        let bestLight = null;
-        let bestDistSq = Infinity;
-        const currentFloorLights = (this.floorLights && typeof charFloor === 'number') ? this.floorLights[charFloor] : null;
-
-        if (currentFloorLights && currentFloorLights.length > 0) {
-          for (let i = 0; i < currentFloorLights.length; i++) {
-            const pl = currentFloorLights[i];
-            if (!pl || pl.intensity <= 0.01) continue;
-            const d2 = (charPos.x - pl.position.x) ** 2 + (charPos.z - pl.position.z) ** 2;
-            if (d2 < bestDistSq) {
-              bestDistSq = d2;
-              bestLight = pl;
-            }
-          }
-        }
-
-        // Compute horizontal light offset vector
-        let offsetX = 0;
-        let offsetZ = 0;
-        let stretch = 1.0;
-        let angle = 0;
-        let shadowIntensity = 0.82; // High contrast visibility
-
-        if (bestLight) {
-          const ldx = charPos.x - bestLight.position.x;
-          const ldz = charPos.z - bestLight.position.z;
-          const lightDist = Math.max(0.1, Math.hypot(ldx, ldz));
-          const dirX = ldx / lightDist;
-          const dirZ = ldz / lightDist;
-
-          // Light shines outwards from lamp; shadow projects away from light
-          const lightH = Math.max(1.0, (bestLight.position.y - floorBaseY));
-          const projectionFactor = Math.min(0.85, lightDist / (lightH * 1.8));
-          offsetX = dirX * projectionFactor;
-          offsetZ = dirZ * projectionFactor;
-          stretch = 1.0 + projectionFactor * 0.9;
-          angle = Math.atan2(dirX, dirZ);
-        }
-
-        // Flashlight influence: when flashlight is ON, cast sharp, stretched shadow in direction of beam
-        if (flashOn && flashPos && Math.abs(charPos.y - flashPos.y) < 4.5) {
-          const fdx = charPos.x - flashPos.x;
-          const fdz = charPos.z - flashPos.z;
-          const fDist = Math.hypot(fdx, fdz);
-          if (fDist < 32.0 && fDist > 0.3) {
-            const fDirX = fdx / fDist;
-            const fDirZ = fdz / fDist;
-            // Flashlight dominates shadow angle and stretches it away from the player
-            const flashWeight = Math.max(0.2, 1.0 - fDist / 32.0);
-            const flashStretch = 1.0 + (1.0 - fDist / 35.0) * 1.6;
-            offsetX = offsetX * (1 - flashWeight) + (fDirX * 0.95) * flashWeight;
-            offsetZ = offsetZ * (1 - flashWeight) + (fDirZ * 0.95) * flashWeight;
-            shadowIntensity = Math.min(0.95, shadowIntensity + flashWeight * 0.30);
-            stretch = Math.max(stretch, flashStretch);
-            angle = Math.atan2(fDirX, fDirZ);
-          }
-        }
-
-        // Height fade: when character jumps, shadow expands and softens slightly
-        const heightFade = Math.max(0.35, 1.0 - (distAboveFloor / 2.2));
-        const currentOpacity = shadowIntensity * heightFade;
-        const currentScale = (1.0 + distAboveFloor * 0.35) * baseRadius;
-
-        shadowMesh.position.set(charPos.x + offsetX * 0.8, floorBaseY + 0.025, charPos.z + offsetZ * 0.8);
-        shadowMesh.rotation.z = -angle;
-        shadowMesh.scale.set(currentScale, currentScale * stretch, 1.0);
-        shadowMesh.material.opacity = currentOpacity;
-        shadowMesh.visible = true;
-      };
-
-      // 1. Third-Person Player
-      const isThirdPerson = (typeof this.isThirdPersonView === 'function') ? this.isThirdPersonView() : false;
-      const playerVis = isThirdPerson && this.playerModelRoot && this.playerModelRoot.visible;
-      updateShadowForCharacter(this.characterShadows.player, this.playerPos, this.playerFloor, 0.55, playerVis);
-
-      // 2. Smitty
-      const smittyVis = this.smittyEnabled && this.smittyMesh && this.smittyMesh.visible;
-      updateShadowForCharacter(this.characterShadows.smitty, this.smittyPos, this.smittyFloor, 0.72, smittyVis);
-
-      // 3. Museum Clerk (REem8)
-      const clerk = this.museumClerk;
-      const clerkVis = clerk && clerk.group && clerk.group.visible && this.playerFloor === 0;
-      const clerkPos = clerk ? { x: clerk.x, y: clerk.y || 0, z: clerk.z } : null;
-      // Floor contact shadow
-      updateShadowForCharacter(this.characterShadows.clerk, clerkPos, 0, 0.58, clerkVis);
-
-      // 3b. REem8 Back-Wall Flashlight Shadow (cast directly onto the back wall behind him!)
-      if (this.characterShadows.clerkWall) {
-        const wallShadow = this.characterShadows.clerkWall;
-        if (clerkVis && clerkPos) {
-          const wallZ = 13.76; // Just in front of the coffered back wall (z = 13.78)
-          // Direction from player/flashlight to clerk
-          const dx = clerkPos.x - (flashPos ? flashPos.x : 0);
-          const dz = Math.max(0.5, clerkPos.z - (flashPos ? flashPos.z : 6.0));
-          const tWall = (wallZ - clerkPos.z) / dz;
-          const projX = clerkPos.x + dx * tWall;
-          const projY = Math.max(1.2, 1.45 + (1.45 - (flashPos ? flashPos.y : 1.72)) * tWall);
-
-          wallShadow.position.set(projX, projY, wallZ);
-          wallShadow.rotation.set(0, Math.PI, 0); // Face South toward player
-
-          if (flashOn && flashPos && Math.hypot(flashPos.x - clerkPos.x, flashPos.z - clerkPos.z) < 22.0) {
-            // Flashlight casts deep dramatic shadow on the wall behind REem8
-            wallShadow.material.opacity = 0.78;
-            wallShadow.scale.set(1.4, 1.4, 1.0);
-            wallShadow.visible = true;
-          } else {
-            // Soft ambient shadow from ceiling lamps
-            wallShadow.material.opacity = 0.38;
-            wallShadow.scale.set(1.15, 1.15, 1.0);
-            wallShadow.visible = true;
-          }
-        } else {
-          wallShadow.visible = false;
-        }
-      }
-
-      // 4. Robot Dog
-      const dog = this.robotDog;
-      const dogVis = dog && dog.group && dog.group.visible && this.playerFloor === 0;
-      const dogPos = dog ? (dog.group ? dog.group.position : { x: dog.x, y: dog.y, z: dog.z }) : null;
-      updateShadowForCharacter(this.characterShadows.robotDog, dogPos, 0, 0.45, dogVis);
-
-      // 5. Living Statues
-      if (this.statues && this.statues.length > 0) {
-        while (this.characterShadows.statues.length < this.statues.length) {
-          this.characterShadows.statues.push(this.createCharacterContactShadow(0.55));
-        }
-        for (let i = 0; i < this.statues.length; i++) {
-          const s = this.statues[i];
-          const sVis = s && s.group && s.group.visible && s.floor === this.playerFloor;
-          const sPos = s && s.group ? s.group.position : (s ? { x: s.x, y: s.y, z: s.z } : null);
-          updateShadowForCharacter(this.characterShadows.statues[i], sPos, s ? s.floor : 0, 0.55, sVis);
-        }
-      }
-    }
     buildMuseum() {
       // Load photorealistic internet-sourced textures from assets/textures/
       const mats = {
@@ -18206,46 +17937,65 @@ window.game = this;
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
-        // Realistic smack trajectory: windup (0.0->0.22), rapid whip swipe across (0.22->0.52), follow-through & return (0.52->1.0)
+        // Realistic smack trajectory: windup (0.0->0.20), rapid whip swipe across (0.20->0.52), follow-through & return (0.52->1.0)
         let smackWeight = 0;
         let windup = 0;
-        if (p < 0.22) {
-          windup = Math.sin((p / 0.22) * (Math.PI / 2));
+        if (p < 0.20) {
+          windup = Math.sin((p / 0.20) * (Math.PI / 2));
         } else if (p < 0.52) {
-          smackWeight = Math.sin(((p - 0.22) / 0.30) * Math.PI);
+          smackWeight = Math.sin(((p - 0.20) / 0.32) * Math.PI);
         } else {
           const ret = (p - 0.52) / 0.48;
-          smackWeight = Math.max(0, (1.0 - ret) * 0.35);
+          smackWeight = Math.max(0, (1.0 - ret) * 0.25);
         }
 
         const b = this.playerBones;
         const isTheBeing = (this.selectedPlayerCharacter === 9);
 
         // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
+        // Uses quaternion delta multiplication so rotations blend cleanly with Run/Walk/Idle without spin, inversion or gimbal locks
         if (!isTheBeing) {
+          if (!this._playerPunchQuats) {
+            this._playerPunchQuats = {
+              shoulderL: new THREE.Quaternion(),
+              upperArmL: new THREE.Quaternion(),
+              lowerArmL: new THREE.Quaternion(),
+              handL: new THREE.Quaternion()
+            };
+            this._playerPunchEuler = new THREE.Euler();
+          }
+          const pq = this._playerPunchQuats;
+          const pe = this._playerPunchEuler;
+
           if (b['shoulder.L']) {
-            b['shoulder.L'].rotation.y += (0.20 * windup) - (0.45 * smackWeight);
+            pe.set(0, (0.15 * windup) - (0.35 * smackWeight), 0, 'XYZ');
+            pq.shoulderL.setFromEuler(pe);
+            b['shoulder.L'].quaternion.multiply(pq.shoulderL);
           }
           if (b['upperArm.L']) {
-            // Windup lifts arm outward; smack swings across horizontally without collapsing into torso
-            b['upperArm.L'].rotation.z += (0.45 * windup) - (0.65 * smackWeight);
-            b['upperArm.L'].rotation.y += (-0.35 * windup) + (0.95 * smackWeight);
-            b['upperArm.L'].rotation.x += (-0.25 * windup) - (0.35 * smackWeight);
+            // Windup draws arm slightly back and out; slap swings across forward horizontally without collapsing into torso
+            pe.set(
+              (-0.20 * windup) - (0.25 * smackWeight),
+              (-0.25 * windup) + (0.75 * smackWeight),
+              (0.35 * windup) - (0.45 * smackWeight),
+              'XYZ'
+            );
+            pq.upperArmL.setFromEuler(pe);
+            b['upperArm.L'].quaternion.multiply(pq.upperArmL);
           }
           if (b['lowerArm.L']) {
-            // Elbow remains comfortably bent during swipe
-            b['lowerArm.L'].rotation.y += (0.30 * windup) + (0.60 * smackWeight);
-            b['lowerArm.L'].rotation.z += (-0.20 * smackWeight);
+            // Forearm keeps a natural slight bend during slap
+            pe.set(0, (0.20 * windup) + (0.45 * smackWeight), (-0.15 * smackWeight), 'XYZ');
+            pq.lowerArmL.setFromEuler(pe);
+            b['lowerArm.L'].quaternion.multiply(pq.lowerArmL);
           }
           if (b['hand.L']) {
-            // Open-palm smack snap
-            b['hand.L'].rotation.y += (0.55 * smackWeight);
-            b['hand.L'].rotation.z += (-0.35 * smackWeight);
+            // Open palm maintains flat alignment with forearm, snapping cleanly through impact
+            pe.set(0, 0.35 * smackWeight, -0.20 * smackWeight, 'XYZ');
+            pq.handL.setFromEuler(pe);
+            b['hand.L'].quaternion.multiply(pq.handL);
           }
-          // Slight torso turn into the smack for momentum
-          if (b['spine']) {
-            b['spine'].rotation.y += (-0.15 * windup) + (0.25 * smackWeight);
-          }
+          // Note: Torso/spine/hips are intentionally preserved completely upright so running and strafing never spins or tilts the body!
         }
 
         // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
@@ -18256,7 +18006,6 @@ window.game = this;
             : Math.max(0, (1.0 - (p - 0.30) / 0.70));
 
           if (snakeStrikeWeight > 0.001) {
-            // Strike outward forward without touching chest/spine/root rotations (which caused inverted torso)
             s00.rotation.y += 0.85 * snakeStrikeWeight;
             s00.rotation.x -= 0.45 * snakeStrikeWeight;
           }
@@ -18277,7 +18026,7 @@ window.game = this;
       }
     }
 
-    updateThirdPersonCamera(delta) {
+        updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 9);
 
@@ -24117,11 +23866,6 @@ window.game = this;
       // Keep existing blood droplets falling even if local player is paused/downed in multiplayer so drops never freeze mid-air
       if (this.bloodDroplets && this.bloodDroplets.length > 0 && (this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt)) {
         this.updateLiquidBlood(delta);
-      }
-
-      // Real-time lighting-reactive character contact shadows
-      if (this.updateCharacterShadows) {
-        this.updateCharacterShadows();
       }
 
       // Hallway mirror renders itself via onBeforeRender (see createHallwayMirror)
