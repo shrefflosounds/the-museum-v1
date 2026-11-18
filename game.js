@@ -17784,6 +17784,59 @@ window.game = this;
             else if (name.includes('walk')) this.playerActions.Walk = action;
             else if (name.includes('idle') || name.includes('slither')) this.playerActions.Idle = action;
           });
+
+          // Synthesize an official isolated Punch AnimationClip on the left arm tracks.
+          // This allows Three.js's AnimationMixer to handle the entire slap cycle, blending, and return natively!
+          const idleClip = gltf.animations.find(c => c.name.toLowerCase().includes('idle'));
+          if (idleClip) {
+            const slapDuration = 0.38;
+            const punchTracks = [];
+            const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 9);
+
+            if (!isTheBeing) {
+              const armBoneNames = ['shoulder.L', 'upperArm.L', 'lowerArm.L', 'hand.L'];
+              armBoneNames.forEach(bname => {
+                const idleTrack = idleClip.tracks.find(t => t.name.includes(bname) && t.name.includes('.quaternion'));
+                if (idleTrack && idleTrack.values && idleTrack.values.length >= 4) {
+                  const qRest = new THREE.Quaternion(idleTrack.values[0], idleTrack.values[1], idleTrack.values[2], idleTrack.values[3]);
+                  let qWindup = qRest.clone();
+                  let qStrike = qRest.clone();
+
+                  if (bname === 'upperArm.L') {
+                    // Windup draws arm outward and back; strike whips across stomach/chest horizontally
+                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.20, 0.0, 0.45, 'XYZ')));
+                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.25, 0.10, -0.45, 'XYZ')));
+                  } else if (bname === 'lowerArm.L') {
+                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.0, 0.15, -0.65, 'XYZ')));
+                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.10, 0.15, -0.60, 'XYZ')));
+                  } else if (bname === 'shoulder.L') {
+                    qWindup.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.10, 0.05, 'XYZ')));
+                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -0.18, -0.08, 'XYZ')));
+                  } else if (bname === 'hand.L') {
+                    qStrike.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.10, 'XYZ')));
+                  }
+
+                  const times = [0.0, 0.08, 0.20, slapDuration];
+                  const values = [
+                    qRest.x, qRest.y, qRest.z, qRest.w,
+                    qWindup.x, qWindup.y, qWindup.z, qWindup.w,
+                    qStrike.x, qStrike.y, qStrike.z, qStrike.w,
+                    qRest.x, qRest.y, qRest.z, qRest.w
+                  ];
+                  punchTracks.push(new THREE.QuaternionKeyframeTrack(idleTrack.name, times, values));
+                }
+              });
+
+              if (punchTracks.length > 0) {
+                const punchClip = new THREE.AnimationClip('Punch', slapDuration, punchTracks);
+                const punchAction = this.playerMixer.clipAction(punchClip);
+                punchAction.setLoop(THREE.LoopOnce, 1);
+                punchAction.clampWhenFinished = false; // Relinquishes control back to walk/run upon completion
+                this.playerActions.Punch = punchAction;
+              }
+            }
+          }
+
           this.playerCurrentAction = null;
           this.playPlayerAnimation('Idle');
           this.playerModelRoot.visible = this.isThirdPersonView();
@@ -17937,94 +17990,41 @@ window.game = this;
         this.leftHandPunchTimer = Math.max(0, this.leftHandPunchTimer - delta);
       }
 
-      // Procedural realistic smack / strike overlay on third-person character
-      // Guarantees a 100% complete slap cycle that always returns fully to the base walking/running animation pose,
-      // preventing arm drift or freeze even while holding the W key or spamming punches!
-      if (this.playerBones) {
+      // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
+      if (this.leftHandPunchTimer > 0 && this.playerBones) {
         const dur = this.leftHandPunchDuration || 0.38;
+        const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0);
         const b = this.playerBones;
         const isTheBeing = (this.selectedPlayerCharacter === 9);
 
-        if (this.leftHandPunchTimer > 0) {
-          const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0);
+        const s00 = b['snake.00'] || b['snake00'];
+        if (s00 && isTheBeing) {
+          const snakeStrikeWeight = (p < 0.30)
+            ? Math.sin((p / 0.30) * (Math.PI / 2))
+            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
 
-          // Calibrated smack trajectory cycle:
-          // Phase 1 (0.0 -> 0.22): Quick windup - pulls left arm outward and back
-          // Phase 2 (0.22 -> 0.58): Forward slap swipe - whips across chest/stomach horizontally
-          // Phase 3 (0.58 -> 1.0): Complete return - seamlessly blends from 1.0 back to 0.0 (full rest/walk pose)
-          let windup = 0;
-          let smackWeight = 0;
-          if (p < 0.22) {
-            windup = Math.sin((p / 0.22) * (Math.PI / 2));
-          } else if (p < 0.58) {
-            smackWeight = Math.sin(((p - 0.22) / 0.36) * Math.PI);
-          } else {
-            // Full return curve ending strictly at 0.0 when p reaches 1.0
-            const ret = (p - 0.58) / 0.42; // 0.0 -> 1.0
-            smackWeight = Math.max(0, Math.sin((1.0 - ret) * (Math.PI / 2)) * 0.45);
+          if (snakeStrikeWeight > 0.001) {
+            s00.rotation.y += 0.85 * snakeStrikeWeight;
+            s00.rotation.x -= 0.45 * snakeStrikeWeight;
           }
+        }
+        if (isTheBeing) {
+          const snakeStrikeWeight = (p < 0.30)
+            ? Math.sin((p / 0.30) * (Math.PI / 2))
+            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
 
-          if (!isTheBeing) {
-            if (!this._playerPunchTargets) {
-              this._playerPunchTargets = {
-                shoulderWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0.12, 0.05, 'XYZ')),
-                shoulderStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, -0.22, -0.10, 'XYZ')),
-                upperWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.20, 0.0, 0.45, 'XYZ')),
-                upperStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(-0.25, 0.10, -0.45, 'XYZ')),
-                lowerWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.0, 0.15, -0.75, 'XYZ')),
-                lowerStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0.10, 0.15, -0.65, 'XYZ')),
-                handWindup: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, 0.05, 'XYZ')),
-                handStrike: new THREE.Quaternion().setFromEuler(new THREE.Euler(0, 0, -0.12, 'XYZ'))
-              };
-            }
-            const pt = this._playerPunchTargets;
-
-            const applySmackBone = (boneName, targetWindup, targetStrike) => {
-              const bone = b[boneName];
-              if (!bone) return;
-              if (windup > 0.001) {
-                bone.quaternion.slerp(targetWindup, windup * 0.85);
-              } else if (smackWeight > 0.001) {
-                bone.quaternion.slerp(targetStrike, smackWeight * 0.90);
-              }
-            };
-
-            applySmackBone('shoulder.L', pt.shoulderWindup, pt.shoulderStrike);
-            applySmackBone('upperArm.L', pt.upperWindup, pt.upperStrike);
-            applySmackBone('lowerArm.L', pt.lowerWindup, pt.lowerStrike);
-            applySmackBone('hand.L', pt.handWindup, pt.handStrike);
-          }
-
-          // Procedural snake arm whip strike for The Being
-          const s00 = b['snake.00'] || b['snake00'];
-          if (s00 && isTheBeing) {
-            const snakeStrikeWeight = (p < 0.30)
-              ? Math.sin((p / 0.30) * (Math.PI / 2))
-              : Math.max(0, (1.0 - (p - 0.30) / 0.70));
-
-            if (snakeStrikeWeight > 0.001) {
-              s00.rotation.y += 0.85 * snakeStrikeWeight;
-              s00.rotation.x -= 0.45 * snakeStrikeWeight;
-            }
-          }
-          if (isTheBeing) {
-            const snakeStrikeWeight = (p < 0.30)
-              ? Math.sin((p / 0.30) * (Math.PI / 2))
-              : Math.max(0, (1.0 - (p - 0.30) / 0.70));
-
-            for (let sIdx = 1; sIdx <= 8; sIdx++) {
-              const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
-              if (snakeBone && snakeStrikeWeight > 0.001) {
-                snakeBone.rotation.x -= 0.12 * snakeStrikeWeight;
-                snakeBone.rotation.y += (sIdx % 2 === 0 ? 0.08 : -0.08) * snakeStrikeWeight;
-              }
+          for (let sIdx = 1; sIdx <= 8; sIdx++) {
+            const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
+            if (snakeBone && snakeStrikeWeight > 0.001) {
+              snakeBone.rotation.x -= 0.12 * snakeStrikeWeight;
+              snakeBone.rotation.y += (sIdx % 2 === 0 ? 0.08 : -0.08) * snakeStrikeWeight;
             }
           }
         }
       }
     }
 
-                updateThirdPersonCamera(delta) {
+                    updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 9);
 
@@ -21995,6 +21995,13 @@ window.game = this;
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
+      if (this.playerActions && this.playerActions.Punch) {
+        this.playerActions.Punch.stop();
+        this.playerActions.Punch.reset();
+        this.playerActions.Punch.setEffectiveWeight(1);
+        this.playerActions.Punch.fadeIn(0.04);
+        this.playerActions.Punch.play();
+      }
 
       // Calculate punch origin and direction
       const cosPitch = Math.cos(this.playerPitch);
