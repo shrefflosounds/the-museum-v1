@@ -8649,7 +8649,65 @@ window.game = this;
       // Update state timer
       clerk.stateTimer -= delta;
 
-      if (clerk.state === 'STARE_DOWN') {
+      if (clerk.state === 'SMACK_ATTACK') {
+        clerk.targetStareWeight = 0.0;
+        clerk.targetLeanWeight = 1.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = clerk.counterZ - 0.55;
+        clerk.targetRotY = Math.PI;
+
+        if (clerk.smackTimer > 0) {
+          clerk.smackTimer = Math.max(0, clerk.smackTimer - delta);
+
+          // Deliver the slap impact at the peak of the forward swipe (~0.35s in)
+          if (!clerk.hasDeliveredSmack && clerk.smackTimer <= 0.35) {
+            clerk.hasDeliveredSmack = true;
+            const pDist = Math.hypot(pPos.x - clerk.x, pPos.z - clerk.z);
+            // If player is close to the desk, smack hits and damages player
+            if (this.playerFloor === 0 && pDist < 3.2) {
+              const smackDmg = 20;
+              this.health = Math.max(0, this.health - smackDmg);
+              this.updateHud();
+
+              if (this.audio && this.audio.playPunchSound) {
+                this.audio.playPunchSound(true);
+              }
+
+              if (this.dom.damageOverlay) {
+                this.dom.damageOverlay.style.background = 'radial-gradient(ellipse at center, rgba(220, 38, 38, 0.45) 0%, rgba(180, 20, 20, 0.90) 80%)';
+                this.dom.damageOverlay.style.opacity = '1';
+                setTimeout(() => {
+                  if (this.dom.damageOverlay) {
+                    this.dom.damageOverlay.style.opacity = '0';
+                    this.dom.damageOverlay.style.background = 'radial-gradient(ellipse at center, transparent 0%, rgba(220, 38, 38, 0.85) 75%)';
+                  }
+                }, 350);
+              }
+
+              // Disorienting camera jolt / knockback from smack
+              this.playerPitch += (Math.random() - 0.5) * 0.30;
+              this.playerYaw += 0.35; // Head turned by the slap
+              this.showSystemNotification('REem8: "That is enough."', 3500);
+
+              if (this.health <= 0) {
+                this.triggerGameOver();
+              }
+            } else {
+              // Whiff sound if player backed up in time
+              if (this.audio && this.audio.playPunchSound) {
+                this.audio.playPunchSound(false);
+              }
+            }
+          }
+        }
+
+        if (clerk.stateTimer <= 0) {
+          // Return to staring them down angrily
+          clerk.state = 'STARE_DOWN';
+          clerk.stateTimer = 10.0;
+          clerk.targetStareWeight = 1.0;
+        }
+      } else if (clerk.state === 'STARE_DOWN') {
         // Reacting to annoying bell ringing: step up to the counter and slowly lean in,
         // using the counter ledge for support while staring down the player.
         clerk.targetStareWeight = 1.0;
@@ -8957,6 +9015,43 @@ window.game = this;
           }
         }
 
+        // 3. REem8 Counter Smack Attack Animation (Right Arm horizontal strike across counter):
+        if (clerk.smackTimer > 0) {
+          const smackDur = 0.70;
+          const sp = 1.0 - (clerk.smackTimer / smackDur); // 0.0 -> 1.0
+          let sWeight = 0;
+          let sWindup = 0;
+          if (sp < 0.28) {
+            sWindup = Math.sin((sp / 0.28) * (Math.PI / 2));
+          } else if (sp < 0.60) {
+            sWeight = Math.sin(((sp - 0.28) / 0.32) * Math.PI);
+          } else {
+            const ret = (sp - 0.60) / 0.40;
+            sWeight = Math.max(0, (1.0 - ret) * 0.25);
+          }
+
+          if (b['chest']) {
+            b['chest'].rotation.x += 0.35 * (sWindup + sWeight);
+            b['chest'].rotation.y += (-0.25 * sWindup) + (0.45 * sWeight);
+          }
+          if (b['shoulder.R']) {
+            b['shoulder.R'].rotation.y += (0.30 * sWindup) - (0.50 * sWeight);
+          }
+          if (b['upperArm.R']) {
+            // Windup lifts arm high and back; strike whips across the counter
+            b['upperArm.R'].rotation.z += (0.65 * sWindup) - (0.75 * sWeight);
+            b['upperArm.R'].rotation.y += (-0.45 * sWindup) + (1.10 * sWeight);
+            b['upperArm.R'].rotation.x += (-0.35 * sWindup) - (0.40 * sWeight);
+          }
+          if (b['lowerArm.R']) {
+            b['lowerArm.R'].rotation.y += (0.40 * sWindup) + (0.70 * sWeight);
+          }
+          if (b['hand.R']) {
+            b['hand.R'].rotation.y += (0.60 * sWeight);
+            b['hand.R'].rotation.z += (-0.40 * sWeight);
+          }
+        }
+
         // Apply hurt reaction flinch if recently damaged
         if (clerk.hitReactionTimer > 0) {
           clerk.hitReactionTimer -= delta;
@@ -8969,7 +9064,7 @@ window.game = this;
         // and facing roughly toward them. Applying lookAt() while he is turned away
         // (WANDER / RETURN_COUNTER / SUMMONED_BELL) snaps the head 180° backwards.
         const playerFacing = isPlayerNear &&
-          (clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER' || clerk.state === 'STARE_DOWN');
+          (clerk.state === 'LEAN_COUNTER' || clerk.state === 'IDLE_COUNTER' || clerk.state === 'STARE_DOWN' || clerk.state === 'SMACK_ATTACK');
 
         if (playerFacing && b['neck']) {
           b['neck'].rotation.x = Math.max(-0.25, Math.min(0.30, b['neck'].rotation.x));
@@ -9013,6 +9108,21 @@ window.game = this;
         clerk.bellPesterCount = (clerk.bellPesterCount || 0) + 1;
       } else {
         clerk.bellPesterCount = 1;
+      }
+
+      // 30th rapid ring: REem8 snaps and delivers a heavy smack across the counter!
+      if (clerk.bellPesterCount >= 30) {
+        clerk.bellPesterCount = 8; // Reset down to stare-down threshold after smacking
+        clerk.state = 'SMACK_ATTACK';
+        clerk.stateTimer = 1.10;
+        clerk.smackTimer = 0.70;
+        clerk.hasDeliveredSmack = false;
+        clerk.targetStareWeight = 0.0;
+        clerk.targetLeanWeight = 1.0;
+        clerk.targetX = 0.0;
+        clerk.targetZ = clerk.counterZ - 0.55; // Step right up to the ledge
+        clerk.targetRotY = Math.PI;
+        return;
       }
 
       // Only trigger the stare-down on the 8th rapid bell ring:
