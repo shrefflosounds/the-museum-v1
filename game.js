@@ -8256,12 +8256,17 @@ window.game = this;
           clerkGroup.add(model);
           clerk.model = model;
 
-          // Animations: idle, walk, run, jump
+          // Animations: idle, walk, run, jump (e.g. idle_Armature, walk_Armature)
           if (gltf.animations && gltf.animations.length > 0) {
             clerk.mixer = new THREE.AnimationMixer(model);
             gltf.animations.forEach((clip) => {
               const action = clerk.mixer.clipAction(clip);
-              clerk.actions[clip.name.toLowerCase()] = action;
+              const raw = clip.name.toLowerCase();
+              clerk.actions[raw] = action;
+              if (raw.includes('idle')) clerk.actions['idle'] = action;
+              if (raw.includes('walk')) clerk.actions['walk'] = action;
+              if (raw.includes('run')) clerk.actions['run'] = action;
+              if (raw.includes('jump')) clerk.actions['jump'] = action;
             });
 
             if (clerk.actions['idle']) {
@@ -8308,35 +8313,37 @@ window.game = this;
         clerk.targetX = 0.0;
         clerk.targetRotY = Math.PI;
 
-        // End the stare-down once the player stops ringing the bell for a while
         const sinceRing = performance.now() - (this.clerkDeskBell ? (this.clerkDeskBell.lastRingTime || 0) : 0);
-        if (sinceRing > 5000 || clerk.stateTimer <= 0) {
-          clerk.state = 'IDLE_COUNTER';
-          clerk.stateTimer = 6.0 + Math.random() * 4.0;
+        if (sinceRing > 5500 || clerk.stateTimer <= 0) {
+          // Finished stare down: smoothly back away to default counter stance (z = 9.02)
+          clerk.state = 'RETURN_COUNTER';
+          clerk.stateTimer = 5.0 + Math.random() * 4.0;
           clerk.targetStareWeight = 0.0;
-          clerk.leanInWeight = 0.0;
+          clerk.targetLeanWeight = 0.0;
+          clerk.targetX = 0.0;
+          clerk.targetZ = clerk.counterZ;
         } else {
-          // Natural smooth progression: step forward to the counter edge (8.42), then lean in
-          clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.65);
-          // 9.02 -> 8.42 (firm stance right against the rear of the counter slab)
+          // Advance to counter edge (9.02 -> 8.42)
+          clerk.leanInWeight = Math.min(1.0, (clerk.leanInWeight || 0) + delta * 0.85);
           clerk.targetZ = clerk.counterZ - clerk.leanInWeight * 0.60;
 
           const dxT = clerk.targetX - clerk.x;
           const dzT = clerk.targetZ - clerk.z;
           const distT = Math.hypot(dxT, dzT);
-          if (distT > 0.01) {
-            // Walk into position naturally
+          if (distT > 0.02) {
+            // Natural walking steps toward counter
             const step = Math.min(distT, clerk.moveSpeed * 0.85 * delta);
             clerk.x += (dxT / distT) * step;
             clerk.z += (dzT / distT) * step;
             if (clerk.actions['walk'] && clerk.currentAction !== 'walk') {
-              if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.15);
-              clerk.actions['walk'].reset().fadeIn(0.15).play();
+              if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.18);
+              clerk.actions['walk'].reset().fadeIn(0.18).play();
               clerk.currentAction = 'walk';
             }
           } else {
             clerk.x = clerk.targetX;
             clerk.z = clerk.targetZ;
+            // Arrived at counter: switch to idle
             if (clerk.actions['idle'] && clerk.currentAction !== 'idle') {
               if (clerk.actions[clerk.currentAction]) clerk.actions[clerk.currentAction].fadeOut(0.2);
               clerk.actions['idle'].reset().fadeIn(0.2).play();
@@ -8540,36 +8547,69 @@ window.game = this;
 
         // 2. Both Hands Firmly Planted on Counter (Stare Down Pose on 8th rapid bell ring):
         // Torso leans forward over the counter, arms extend and lock flat with palms planted
-        // on the mahogany ledge (Y=0.905, Z=7.97), no jittering/jiggling fingers, unblinking glare.
-        if (sw > 0.01) {
+        // on the mahogany ledge (Y=0.905, Z=7.97), no jittering fingers, unblinking glare.
+        // Uses quaternion multiplication on top of the running animation track so that when
+        // sw fades down to 0 it blends smoothly back to the idle/walk pose with ZERO T-pose glitch!
+        if (sw > 0.005) {
+          if (!clerk._deltaQuats) {
+            clerk._deltaQuats = {
+              spine: new THREE.Quaternion(),
+              chest: new THREE.Quaternion(),
+              upperArmL: new THREE.Quaternion(),
+              lowerArmL: new THREE.Quaternion(),
+              handL: new THREE.Quaternion(),
+              upperArmR: new THREE.Quaternion(),
+              lowerArmR: new THREE.Quaternion(),
+              handR: new THREE.Quaternion()
+            };
+          }
+          const dq = clerk._deltaQuats;
+          const euler = clerk._tmpEuler || (clerk._tmpEuler = new THREE.Euler());
+
+          // Torso tilt forward
           if (b['spine']) {
-            b['spine'].rotation.x += 0.32 * sw;
+            euler.set(0.32 * sw, 0, 0, 'XYZ');
+            dq.spine.setFromEuler(euler);
+            b['spine'].quaternion.multiply(dq.spine);
           }
           if (b['chest']) {
-            b['chest'].rotation.x += 0.26 * sw;
+            euler.set(0.26 * sw, 0, 0, 'XYZ');
+            dq.chest.setFromEuler(euler);
+            b['chest'].quaternion.multiply(dq.chest);
           }
 
-          // Direct FK solution: Wrists rest at (±0.309, Y=0.905, Z=7.97), fingers at Y=0.896, Z=7.73
+          // Left Arm -> Palm planted on counter ledge (Y=0.905, Z=7.97)
           if (b['upperArm.L']) {
-            b['upperArm.L'].rotation.set(1.12 * sw, 0.0, -0.85 * sw);
+            euler.set(0.95 * sw, -0.15 * sw, -0.05 * sw, 'XYZ');
+            dq.upperArmL.setFromEuler(euler);
+            b['upperArm.L'].quaternion.multiply(dq.upperArmL);
           }
           if (b['lowerArm.L']) {
-            b['lowerArm.L'].rotation.set(0.78 * sw, 0.0, 0.0);
+            euler.set(0.55 * sw, 0, 0, 'XYZ');
+            dq.lowerArmL.setFromEuler(euler);
+            b['lowerArm.L'].quaternion.multiply(dq.lowerArmL);
           }
           if (b['hand.L']) {
-            // Lock wrist & hand orientation flat to eliminate idle animation finger jitter
-            b['hand.L'].rotation.set(0.35 * sw, 0.0, 0.0);
+            euler.set(0.20 * sw, -0.20 * sw, 0, 'XYZ');
+            dq.handL.setFromEuler(euler);
+            b['hand.L'].quaternion.multiply(dq.handL);
           }
 
+          // Right Arm -> Symmetrical palm planted on counter ledge (Y=0.905, Z=7.97)
           if (b['upperArm.R']) {
-            b['upperArm.R'].rotation.set(1.12 * sw, 0.0, 0.85 * sw);
+            euler.set(0.95 * sw, 0.15 * sw, 0.05 * sw, 'XYZ');
+            dq.upperArmR.setFromEuler(euler);
+            b['upperArm.R'].quaternion.multiply(dq.upperArmR);
           }
           if (b['lowerArm.R']) {
-            b['lowerArm.R'].rotation.set(0.78 * sw, 0.0, 0.0);
+            euler.set(0.55 * sw, 0, 0, 'XYZ');
+            dq.lowerArmR.setFromEuler(euler);
+            b['lowerArm.R'].quaternion.multiply(dq.lowerArmR);
           }
           if (b['hand.R']) {
-            // Lock wrist & hand orientation flat to eliminate idle animation finger jitter
-            b['hand.R'].rotation.set(0.35 * sw, 0.0, 0.0);
+            euler.set(0.20 * sw, 0.20 * sw, 0, 'XYZ');
+            dq.handR.setFromEuler(euler);
+            b['hand.R'].quaternion.multiply(dq.handR);
           }
         }
 
