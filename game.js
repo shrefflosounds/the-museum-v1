@@ -4871,27 +4871,34 @@ window.game = this;
         // Shrefflo back-wall decal emblem (facing South towards player & counter)
         {
           const logoAspect = 1000 / 922; // 1.0846
-          const logoW = 2.65;
-          const logoH = logoW / logoAspect; // ~2.44m
+          const logoW = 3.20; // enlarged from 2.65 to 3.20
+          const logoH = logoW / logoAspect; // ~2.95m
           const logoTex = this.texLoader.load('assets/textures/shrefflo_logo.png', (tx) => {
             if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
             else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
             tx.anisotropy = 8;
             tx.needsUpdate = true;
           });
-          const logoMat = new THREE.MeshBasicMaterial({
+          // Uses MeshStandardMaterial with appropriate roughness & normal so it responds realistically
+          // to scene lighting, gallery lamps, and player flashlight
+          const logoMat = new THREE.MeshStandardMaterial({
             map: logoTex,
             transparent: true,
-            alphaTest: 0.01,
+            alphaTest: 0.02,
+            roughness: 0.75,
+            metalness: 0.05,
             side: THREE.FrontSide,
             polygonOffset: true,
             polygonOffsetFactor: -2,
             polygonOffsetUnits: -2
           });
           const logoMesh = new THREE.Mesh(new THREE.PlaneGeometry(logoW, logoH), logoMat);
+          logoMesh.castShadow = false;
+          logoMesh.receiveShadow = true;
           // Wall is at z = 13.79 (front surface at 13.79 - 0.01 = 13.78). Facing south (-Z).
           logoMesh.rotation.y = Math.PI;
-          logoMesh.position.set(0.0, y0 + 3.85, 13.77);
+          // Raised Y from 3.85 to 4.25 so the hands and text sit higher on the back wall
+          logoMesh.position.set(0.0, y0 + 4.25, 13.77);
           this.scene.add(logoMesh);
         }
 
@@ -8700,16 +8707,39 @@ window.game = this;
           b['neck'].rotation.z = Math.max(-0.15, Math.min(0.15, b['neck'].rotation.z));
         }
 
-        // Strong eye contact: point the head's face (local +Z) straight at the player's eyes.
-        // lookAt() overrides the idle animation's head pitch, which otherwise tilts him too high.
+        // Natural head aim toward player without deforming or stretching the box mesh:
+        // Raw lookAt() in world space causes severe gimbal axis misalignment and inverse-bind-pose
+        // shear against the neck/torso vertices, warping the lower jaw/hoodie.
+        // Instead, compute relative yaw & pitch in clerk local space and smoothly clamp angles.
         if (playerFacing && b['head']) {
-          const playerEye = clerk._playerEye || (clerk._playerEye = new THREE.Vector3());
-          playerEye.copy(pPos);
-          b['head'].lookAt(playerEye);
+          const dx = pPos.x - clerk.x;
+          const dz = pPos.z - clerk.z;
+          const dy = (pPos.y + 0.1) - (clerk.y + 1.85); // vector from head level to player eyes
+          const horizontalDist = Math.max(0.1, Math.hypot(dx, dz));
 
-          // Keep the head from rolling; pitch clamp is wide so lookAt() is never undone.
-          b['head'].rotation.x = Math.max(-1.2, Math.min(1.2, b['head'].rotation.x));
-          b['head'].rotation.z = Math.max(-0.15, Math.min(0.15, b['head'].rotation.z));
+          // In clerk space (facing -Z when rotY=PI, or relative to clerk.rotY):
+          const angleToPlayer = Math.atan2(dx, dz);
+          let relYaw = angleToPlayer - clerk.rotY;
+          while (relYaw > Math.PI) relYaw -= Math.PI * 2;
+          while (relYaw < -Math.PI) relYaw += Math.PI * 2;
+          // Invert yaw because clerk looks along -Z in world when rotation.y = PI
+          relYaw = -relYaw;
+
+          // Pitch: positive is looking upward, negative is looking downward
+          const relPitch = Math.atan2(dy, horizontalDist);
+
+          // Clamp to realistic head turn limits to preserve rigid box proportions
+          const clampedYaw = Math.max(-0.65, Math.min(0.65, relYaw));
+          const clampedPitch = Math.max(-0.35, Math.min(0.40, relPitch));
+
+          if (b['neck']) {
+            b['neck'].rotation.y = clampedYaw * 0.35;
+            b['neck'].rotation.x = clampedPitch * 0.25;
+            b['neck'].rotation.z = 0;
+          }
+          b['head'].rotation.y = clampedYaw * 0.65;
+          b['head'].rotation.x = clampedPitch * 0.75;
+          b['head'].rotation.z = 0;
         }
       }
     }
