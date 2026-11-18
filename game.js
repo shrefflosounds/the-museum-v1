@@ -20567,22 +20567,24 @@ window.game = this;
         }
       }
 
-      // Clerk's Stand: clerk takes precedence; the bell is a small, deliberate hotspot only.
+      // Clerk's Stand: clerk takes precedence; the bell is accessible whenever the player character is near the counter
       const bell = this.clerkDeskBell;
       const clerk = this.museumClerk;
 
       let aimingAtBell = false;
       if (bell && this.playerFloor === 0) {
-        const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (bellDist < 1.6) {
+        // Measure distance from the player character position (not the pulled-back 3rd-person camera)
+        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (charBellDist < 2.5) {
           const cosPitch = Math.cos(this.playerPitch);
           const sinPitch = Math.sin(this.playerPitch);
           const cosYaw = Math.cos(this.playerYaw);
           const sinYaw = Math.sin(this.playerYaw);
           const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-          const camPos = this.camera ? this.camera.position : this.playerPos;
-          const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
-          aimingAtBell = toBell.dot(fwd) > 0.90;
+          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
+          // In 3rd person or 1st person, facing generally toward the bell activates it without needing to zoom in
+          aimingAtBell = toBell.dot(fwd) > 0.45;
         }
       }
 
@@ -21612,24 +21614,23 @@ window.game = this;
         }
       }
 
-      // Clerk's Stand: the clerk owns the counter. The bell only surfaces when the player is
-      // standing on top of it at the far-left end AND aiming straight down at it, so the
-      // "talk to REem8" prompt is no longer crowded out whenever the player approaches the desk.
+      // Clerk's Stand: the bell surfaces whenever the player character is standing near the counter
+      // facing the bell, measured from character position rather than camera distance
       const bell = this.clerkDeskBell;
       const clerk = this.museumClerk;
 
       let aimingAtBell = false;
       if (bell && this.playerFloor === 0) {
-        const bellDist = this.camera ? this.camera.position.distanceTo(bell.worldPos) : Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (bellDist < 1.6) {
+        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (charBellDist < 2.5) {
           const cosPitch = Math.cos(this.playerPitch);
           const sinPitch = Math.sin(this.playerPitch);
           const cosYaw = Math.cos(this.playerYaw);
           const sinYaw = Math.sin(this.playerYaw);
           const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-          const camPos = this.camera ? this.camera.position : this.playerPos;
-          const toBell = new THREE.Vector3().subVectors(bell.worldPos, camPos).normalize();
-          aimingAtBell = toBell.dot(fwd) > 0.90;
+          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
+          aimingAtBell = toBell.dot(fwd) > 0.45;
         }
       }
 
