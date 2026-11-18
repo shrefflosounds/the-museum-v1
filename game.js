@@ -4868,6 +4868,33 @@ window.game = this;
         // 4. Interior Back (North) wall lining facing South into room (at z = 13.79, x: -3.8..3.8)
         this.createWall(0.0, yc, 13.79, 7.6, wallH, 0.02, mats.wallCofferedTile, false, fl);
 
+        // Shrefflo back-wall decal emblem (facing South towards player & counter)
+        {
+          const logoAspect = 1000 / 922; // 1.0846
+          const logoW = 2.65;
+          const logoH = logoW / logoAspect; // ~2.44m
+          const logoTex = this.texLoader.load('assets/textures/shrefflo_logo.png', (tx) => {
+            if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
+            else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
+            tx.anisotropy = 8;
+            tx.needsUpdate = true;
+          });
+          const logoMat = new THREE.MeshBasicMaterial({
+            map: logoTex,
+            transparent: true,
+            alphaTest: 0.01,
+            side: THREE.FrontSide,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2
+          });
+          const logoMesh = new THREE.Mesh(new THREE.PlaneGeometry(logoW, logoH), logoMat);
+          // Wall is at z = 13.79 (front surface at 13.79 - 0.01 = 13.78). Facing south (-Z).
+          logoMesh.rotation.y = Math.PI;
+          logoMesh.position.set(0.0, y0 + 3.85, 13.77);
+          this.scene.add(logoMesh);
+        }
+
         // Create the Clerk's counter desk & ledge structure (original wood & brass materials untouched)
         this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
       } else {
