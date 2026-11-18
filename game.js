@@ -18001,29 +18001,78 @@ window.game = this;
           applyBlend('hand.L', sq.handWindup, sq.handStrike);
         }
 
-        // Procedural snake arm whip strike for The Being (preserving upright torso orientation)
-        const s00 = b['snake.00'] || b['snake00'];
-        if (s00 && isTheBeing) {
-          const snakeStrikeWeight = (p < 0.30)
-            ? Math.sin((p / 0.30) * (Math.PI / 2))
-            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
-
-          if (snakeStrikeWeight > 0.001) {
-            s00.rotation.y += 0.85 * snakeStrikeWeight;
-            s00.rotation.x -= 0.45 * snakeStrikeWeight;
-          }
-        }
+        // Procedural overhead whip thwack attack for The Being
+        // The Being hoists the entire snake arm high overhead coiled like a whip (windup),
+        // then violently lashes downward and forward to thwack victims over the head (strike),
+        // followed by a smooth elastic recoil return strictly resetting to locomotion at p = 1.0.
         if (isTheBeing) {
-          const snakeStrikeWeight = (p < 0.30)
-            ? Math.sin((p / 0.30) * (Math.PI / 2))
-            : Math.max(0, (1.0 - (p - 0.30) / 0.70));
+          let whipWindup = 0;
+          let whipThwack = 0;
+          if (p < 0.28) {
+            // Windup: arm arches straight up and slightly back over shoulder
+            whipWindup = Math.sin((p / 0.28) * (Math.PI / 2));
+          } else if (p < 0.54) {
+            // Thwack: lightning downward and forward whip-crack across victim head height
+            const tp = (p - 0.28) / 0.26;
+            whipWindup = Math.cos(tp * (Math.PI / 2));
+            whipThwack = Math.sin(tp * Math.PI);
+          } else {
+            // Recoil and smooth settling back to base idle/run/walk
+            const ret = (p - 0.54) / 0.46;
+            whipThwack = Math.max(0, (1.0 - ret) * (1.0 - ret) * 0.35);
+          }
 
-          for (let sIdx = 1; sIdx <= 8; sIdx++) {
-            const snakeBone = b[`snake.0${sIdx}`] || b[`snake0${sIdx}`];
-            if (snakeBone && snakeStrikeWeight > 0.001) {
-              snakeBone.rotation.x -= 0.12 * snakeStrikeWeight;
-              snakeBone.rotation.y += (sIdx % 2 === 0 ? 0.08 : -0.08) * snakeStrikeWeight;
+          // Cache Euler and Quaternion helpers for snake whip
+          if (!this._beingWhipQuats) {
+            this._beingWhipQuats = {
+              euler: new THREE.Euler(),
+              targetQuat: new THREE.Quaternion(),
+              offsets: {}
+            };
+          }
+          const wq = this._beingWhipQuats;
+
+          // Helper to slerp snake bone toward rest-anchored whip offset
+          const applySnakeBone = (boneName, eulerWindup, eulerThwack) => {
+            const bone = b[boneName];
+            if (!bone) return;
+            const baseRest = rq[boneName] || bone.quaternion;
+            if (whipWindup > 0.001) {
+              wq.targetQuat.copy(baseRest).multiply(new THREE.Quaternion().setFromEuler(eulerWindup));
+              bone.quaternion.slerp(wq.targetQuat, whipWindup * 0.88);
+            } else if (whipThwack > 0.001) {
+              wq.targetQuat.copy(baseRest).multiply(new THREE.Quaternion().setFromEuler(eulerThwack));
+              bone.quaternion.slerp(wq.targetQuat, whipThwack * 0.95);
             }
+          };
+
+          // Root shoulder joint (snake.00):
+          // Windup hoists the base arm upward and backward (+Z/+Y).
+          // Thwack drives the arm violently downward and forward (-X/-Z) right into the target.
+          applySnakeBone('snake.00',
+            new THREE.Euler(0.40, 0.65, 0.85, 'XYZ'),
+            new THREE.Euler(-0.85, -0.30, -0.90, 'XYZ')
+          );
+
+          // Mid-sections (snake.01 -> snake.04):
+          // Form the arching whip curve overhead during windup, and the heavy downward snap during thwack
+          for (let sIdx = 1; sIdx <= 4; sIdx++) {
+            const bName = `snake.0${sIdx}`;
+            applySnakeBone(bName,
+              new THREE.Euler(0.18 + sIdx * 0.06, 0.08, 0.12, 'XYZ'),
+              new THREE.Euler(-0.35 - sIdx * 0.08, (sIdx % 2 === 0 ? 0.05 : -0.05), -0.15, 'XYZ')
+            );
+          }
+
+          // Tip / lash sections (snake.05 -> snake.08):
+          // Coil backward like a poised cobra whip, then violently snap forward and downward for the skull thwack
+          for (let sIdx = 5; sIdx <= 8; sIdx++) {
+            const bName = `snake.0${sIdx}`;
+            const tipFactor = (sIdx - 4) / 4.0;
+            applySnakeBone(bName,
+              new THREE.Euler(0.35 + tipFactor * 0.25, 0.10, 0.15),
+              new THREE.Euler(-0.65 - tipFactor * 0.35, (sIdx % 2 === 0 ? 0.08 : -0.08), -0.22)
+            );
           }
         }
       }
