@@ -8271,15 +8271,6 @@ window.game = this;
       deadbolt.position.set(-4.216, 1.15, (13.75 - 8.0) - doorWidth * 0.36);
       counterGroup.add(escutcheon, leverStem, leverBar, deadbolt);
 
-      // Register door hotspot for examine / locked door interaction prompt
-      this.employeesOnlyDoor = {
-        x: -4.20,
-        y: doorHeight / 2,
-        z: 13.75,
-        width: doorWidth,
-        height: doorHeight
-      };
-
       this.scene.add(counterGroup);
 
       // Solid collision for the front counter and internal service desk
@@ -20552,15 +20543,6 @@ window.game = this;
         return;
       }
 
-      // Check Employees Only unopenable door interaction on Floor 0 outside REem8's room
-      if (this.focusedEmployeesOnlyDoor) {
-        if (this.audio && this.audio.playEmptyClick) {
-          this.audio.playEmptyClick();
-        }
-        this.showSystemNotification(T('hud.notify_locked_door', 'LOCKED — EMPLOYEES ONLY'), 2500);
-        return;
-      }
-
       // 4. Check Paintings
       if (this.focusedPainting) {
         this.openArtModal(this.focusedPainting);
@@ -21601,30 +21583,8 @@ window.game = this;
       if (aimingAtBell) {
         this.setInteractPrompt('[E] RING BELL');
         this.focusedPainting = null;
-        this.focusedEmployeesOnlyDoor = null;
         return;
       }
-
-      // Check looking at the unopenable "EMPLOYEES ONLY" door on Floor 0 outside REem8's room
-      const empDoor = this.employeesOnlyDoor;
-      if (empDoor && this.playerFloor === 0) {
-        const dDoor = Math.hypot(this.playerPos.x - empDoor.x, this.playerPos.z - empDoor.z);
-        if (dDoor < 3.8 && this.playerPos.x < empDoor.x) { // Standing in gallery facing east toward wall
-          const cosPitch = Math.cos(this.playerPitch);
-          const sinPitch = Math.sin(this.playerPitch);
-          const cosYaw = Math.cos(this.playerYaw);
-          const sinYaw = Math.sin(this.playerYaw);
-          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-          const toDoor = new THREE.Vector3(empDoor.x - this.playerPos.x, (empDoor.y || 1.25) - this.playerPos.y, empDoor.z - this.playerPos.z).normalize();
-          if (fwd.dot(toDoor) > 0.65) {
-            this.focusedEmployeesOnlyDoor = empDoor;
-            this.focusedPainting = null;
-            this.setInteractPrompt(T('hud.prompt_locked_door', '[E] EMPLOYEES ONLY (LOCKED)'));
-            return;
-          }
-        }
-      }
-      this.focusedEmployeesOnlyDoor = null;
 
       _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
       let bestPainting = null;
