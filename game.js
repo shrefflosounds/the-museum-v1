@@ -22613,6 +22613,7 @@ window.game = this;
       const now = performance.now() / 1000;
       if (this.lastPunchTime && (now - this.lastPunchTime) < 0.35) return;
       this.lastPunchTime = now;
+      console.log('Punch triggered!');
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
