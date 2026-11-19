@@ -9758,7 +9758,7 @@ window.game = this;
           centerY: y0,
           centerZ: 13.0,
           radius: 3.20,
-          dangerRadius: 3.80,
+          dangerRadius: 4.50,
           mountainHeight: 3.50,
           ashFloor: ashFloor,
           mountainGroup: mountainGroup,
