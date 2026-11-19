@@ -22579,13 +22579,13 @@ window.game = this;
           punchWeight = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
         }
 
-        // Left arm thrusts forward, creating a wide, aggressive scratch/swipe motion
-        const punchPoseX = -1.0;
-        const punchPoseY = 1.0;
-        const punchPoseZ = -2.0;
-        const punchRotX = -2.0;
-        const punchRotY = 2.0;
-        const punchRotZ = -2.0;
+        // Left arm thrusts forward, slightly inward towards center of screen with aggressive punch/swipe angle
+        const punchPoseX = -0.08;
+        const punchPoseY = -0.18;
+        const punchPoseZ = -0.72;
+        const punchRotX = -0.92;
+        const punchRotY = 0.65;
+        const punchRotZ = -1.15;
 
         targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
         targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
@@ -22617,7 +22617,6 @@ window.game = this;
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
-      alert('Punch Triggered!');
 
       // Calculate punch origin and direction
       const cosPitch = Math.cos(this.playerPitch);
