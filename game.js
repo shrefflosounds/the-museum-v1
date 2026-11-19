@@ -40,6 +40,13 @@
       this.roomToneGain = null;
       this.waterfallSource = null;
       this.waterfallGain = null;
+      this.etherealAmbienceActive = false;
+      this.etherealBreezeSource = null;
+      this.etherealBreezeGain = null;
+      this.etherealBreezeFilter = null;
+      this.etherealBreezeLFO = null;
+      this._chimeTimer = null;
+      this._chimeInterval = null;
       this.musicEnabled = (localStorage.getItem('the_museum_music') !== 'false');
     }
 
@@ -241,27 +248,42 @@
         src.buffer = this.noiseBuffer;
         src.loop = true;
 
-        // Warm, soothing mountain water rush (no harsh white noise hiss)
+        // Rich, dual-layer mountain cascade rush: deep roaring body + crystalline spray froth
         const lp = this.ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.frequency.value = 420;
+        lp.frequency.value = 460;
+        lp.Q.value = 1.1;
 
         const hp = this.ctx.createBiquadFilter();
         hp.type = 'highpass';
-        hp.frequency.value = 140;
+        hp.frequency.value = 110;
 
-        const gain = this.ctx.createGain();
-        gain.gain.value = 0.0001;
+        // Higher frequency spray and foam band
+        const sprayFilter = this.ctx.createBiquadFilter();
+        sprayFilter.type = 'bandpass';
+        sprayFilter.frequency.value = 980;
+        sprayFilter.Q.value = 1.6;
+
+        const sprayGain = this.ctx.createGain();
+        sprayGain.gain.value = 0.38;
+
+        const mainGain = this.ctx.createGain();
+        mainGain.gain.value = 0.0001;
 
         src.connect(hp);
         hp.connect(lp);
-        lp.connect(gain);
-        gain.connect(this.masterGain);
-        if (this.reverbNode) gain.connect(this.reverbNode);
+        lp.connect(mainGain);
+
+        src.connect(sprayFilter);
+        sprayFilter.connect(sprayGain);
+        sprayGain.connect(mainGain);
+
+        mainGain.connect(this.masterGain);
+        if (this.reverbNode) mainGain.connect(this.reverbNode);
 
         src.start();
         this.waterfallSource = src;
-        this.waterfallGain = gain;
+        this.waterfallGain = mainGain;
       }
 
       if (this.waterfallGain) {
@@ -269,6 +291,110 @@
         this.waterfallGain.gain.cancelScheduledValues(now);
         this.waterfallGain.gain.setValueAtTime(this.waterfallGain.gain.value, now);
         this.waterfallGain.gain.linearRampToValueAtTime(targetVol, now + fadeDuration);
+      }
+    }
+
+    startEtherealNatureAmbience() {
+      if (!this.ctx || this.etherealAmbienceActive) return;
+      this.etherealAmbienceActive = true;
+
+      // 1. Alpine Mountain Breeze (Gentle harmonic pink noise breathing with slow LFO)
+      if (this.noiseBuffer && !this.etherealBreezeSource) {
+        const breezeSrc = this.ctx.createBufferSource();
+        breezeSrc.buffer = this.noiseBuffer;
+        breezeSrc.loop = true;
+
+        const breezeFilter = this.ctx.createBiquadFilter();
+        breezeFilter.type = 'bandpass';
+        breezeFilter.frequency.value = 240;
+        breezeFilter.Q.value = 2.2;
+
+        const breezeGain = this.ctx.createGain();
+        breezeGain.gain.value = 0.0001;
+
+        breezeSrc.connect(breezeFilter);
+        breezeFilter.connect(breezeGain);
+        breezeGain.connect(this.masterGain);
+        if (this.reverbNode) breezeGain.connect(this.reverbNode);
+
+        breezeSrc.start();
+        this.etherealBreezeSource = breezeSrc;
+        this.etherealBreezeGain = breezeGain;
+        this.etherealBreezeFilter = breezeFilter;
+
+        const now = this.ctx.currentTime;
+        breezeGain.gain.cancelScheduledValues(now);
+        breezeGain.gain.setValueAtTime(0.0001, now);
+        breezeGain.gain.linearRampToValueAtTime(0.09, now + 2.0);
+
+        // Slow LFO for breeze modulation
+        const lfo = this.ctx.createOscillator();
+        lfo.type = 'sine';
+        lfo.frequency.value = 0.12;
+        const lfoGain = this.ctx.createGain();
+        lfoGain.gain.value = 90;
+        lfo.connect(lfoGain);
+        lfoGain.connect(breezeFilter.frequency);
+        lfo.start();
+        this.etherealBreezeLFO = lfo;
+      }
+
+      // 2. Periodic Celestial Nature Chimes (Ethereal pentatonic harmonic tones)
+      const celestialScale = [659.25, 830.61, 987.77, 1244.51, 1479.98, 1661.22];
+      const playChime = () => {
+        if (!this.etherealAmbienceActive || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freq = celestialScale[Math.floor(Math.random() * celestialScale.length)];
+
+        const osc1 = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        osc1.type = 'sine';
+        osc2.type = 'sine';
+        osc1.frequency.value = freq;
+        osc2.frequency.value = freq * 1.0025;
+
+        const chimeGain = this.ctx.createGain();
+        chimeGain.gain.setValueAtTime(0.0001, now);
+        chimeGain.gain.linearRampToValueAtTime(0.035, now + 0.35);
+        chimeGain.gain.exponentialRampToValueAtTime(0.00005, now + 4.8);
+
+        osc1.connect(chimeGain);
+        osc2.connect(chimeGain);
+        chimeGain.connect(this.masterGain);
+        if (this.reverbNode) chimeGain.connect(this.reverbNode);
+
+        osc1.start(now);
+        osc2.start(now);
+        osc1.stop(now + 5.0);
+        osc2.stop(now + 5.0);
+      };
+
+      this._chimeTimer = setTimeout(() => {
+        playChime();
+        this._chimeInterval = setInterval(playChime, 4500 + Math.random() * 2500);
+      }, 1200);
+    }
+
+    stopEtherealNatureAmbience() {
+      this.etherealAmbienceActive = false;
+      if (this._chimeTimer) clearTimeout(this._chimeTimer);
+      if (this._chimeInterval) clearInterval(this._chimeInterval);
+
+      if (this.etherealBreezeGain && this.ctx) {
+        const now = this.ctx.currentTime;
+        this.etherealBreezeGain.gain.cancelScheduledValues(now);
+        this.etherealBreezeGain.gain.setValueAtTime(this.etherealBreezeGain.gain.value, now);
+        this.etherealBreezeGain.gain.linearRampToValueAtTime(0.0001, now + 1.2);
+        setTimeout(() => {
+          if (!this.etherealAmbienceActive && this.etherealBreezeSource) {
+            try { this.etherealBreezeSource.stop(); } catch (e) {}
+            try { if (this.etherealBreezeLFO) this.etherealBreezeLFO.stop(); } catch (e) {}
+            this.etherealBreezeSource = null;
+            this.etherealBreezeGain = null;
+            this.etherealBreezeFilter = null;
+            this.etherealBreezeLFO = null;
+          }
+        }, 1300);
       }
     }
 
@@ -10223,15 +10349,15 @@ getSafeRoomGroundY(wx, wz) {
       // 1. Natural rolling alpine meadow undulations
       h += Math.sin(lx * 0.12) * 0.20 + Math.cos(lz * 0.14) * 0.18 + Math.sin(lx * 0.06 - lz * 0.08) * 0.12;
 
-      // 2. Rolling hills on the west (left of path)
-      if (lx < -4.5) {
-        const hillDist = Math.abs(lx + 4.5);
-        h += Math.min(8.5, Math.pow(hillDist * 0.085, 1.35) * 2.4 + Math.sin(lz * 0.15) * 0.45);
+      // 2. Rolling hills on the far west (beyond spawn & glade)
+      if (lx < -26.0) {
+        const hillDist = Math.abs(lx + 26.0);
+        h += Math.min(9.0, Math.pow(hillDist * 0.085, 1.35) * 2.6 + Math.sin(lz * 0.15) * 0.45);
       }
-      // Southern background gentle slopes
-      if (lz > 6.0) {
-        const backHill = lz - 6.0;
-        h += Math.min(7.0, Math.pow(backHill * 0.085, 1.3) * 2.1);
+      // Southern background gentle slopes (far behind spawn)
+      if (lz > 24.0) {
+        const backHill = lz - 24.0;
+        h += Math.min(8.0, Math.pow(backHill * 0.085, 1.3) * 2.3);
       }
 
       // 3. Plunge Pool Basin (center at lx ~ 7.8, lz ~ -13.0)
@@ -10443,22 +10569,58 @@ getSafeRoomGroundY(wx, wz) {
       groundMesh.position.set(0, 0, 0);
       group.add(groundMesh);
 
-      // 4. Natural Winding Dirt Path Spline
-      const pathPts = [
-        new THREE.Vector2(-6.8, -8.2), // Portal base
-        new THREE.Vector2(-3.6, -5.2),
-        new THREE.Vector2(-0.2, -1.8), // Player spawn
-        new THREE.Vector2(1.8, 1.2),
-        new THREE.Vector2(3.8, 0.2),
-        new THREE.Vector2(4.8, -3.2),  // Curving toward lake shore
-        new THREE.Vector2(5.5, -7.5)
-      ];
-      const pathSpline = new THREE.SplineCurve(pathPts);
-      const pathSteps = 44;
-      const pathWidth = 2.8;
+      // 4. Natural Winding Dirt Path & Expansive Meadow Glades
       const pVerts = [];
       const pUvs = [];
       const pIndices = [];
+
+      // Helper to generate natural organic earthen clearings / glades
+      const addEarthenGlade = (cx, cz, baseR, segs = 32) => {
+        const centerIdx = pVerts.length / 3;
+        const cGndY = (this.getSafeRoomGroundY(originX + cx, originZ + cz) - originY) + 0.035;
+        pVerts.push(cx, cGndY, cz);
+        pUvs.push(cx / 5.0, cz / 5.0);
+
+        const rimStart = pVerts.length / 3;
+        for (let k = 0; k < segs; k++) {
+          const th = (k / segs) * Math.PI * 2;
+          const r = baseR * (1.0 + Math.sin(th * 3) * 0.12 + Math.cos(th * 5) * 0.08);
+          const px = cx + Math.cos(th) * r;
+          const pz = cz + Math.sin(th) * r;
+          const py = (this.getSafeRoomGroundY(originX + px, originZ + pz) - originY) + 0.035;
+          pVerts.push(px, py, pz);
+          pUvs.push(px / 5.0, pz / 5.0);
+        }
+        for (let k = 0; k < segs; k++) {
+          const nextK = (k + 1) % segs;
+          pIndices.push(centerIdx, rimStart + k, rimStart + nextK);
+        }
+      };
+
+      // (A) Spawn & Return Portal Earthen Glade (Wide open clearing around spawn & portal)
+      addEarthenGlade(-18.5, 9.5, 8.5, 36);
+
+      // (B) Scenic Lake Overlook Clearing (Bluff overlooking lagoon & waterfall)
+      addEarthenGlade(6.5, -6.5, 5.8, 32);
+
+      // (C) Scattered Open Meadow Dirt Clearings (Spreading out dirt to make the area feel open)
+      addEarthenGlade(-8.5, 15.0, 4.5, 28);
+      addEarthenGlade(-3.0, 8.5, 4.8, 28);
+      addEarthenGlade(-12.5, -2.5, 3.8, 24);
+
+      // (D) Broad Meandering Walking Trail connecting Spawn Glade to Lake Overlook
+      const trailPts = [
+        new THREE.Vector2(-18.5, 9.5),
+        new THREE.Vector2(-13.0, 6.0),
+        new THREE.Vector2(-6.5, 2.5),
+        new THREE.Vector2(0.0, 0.0),
+        new THREE.Vector2(4.5, -3.0),
+        new THREE.Vector2(6.5, -6.5)
+      ];
+      const pathSpline = new THREE.SplineCurve(trailPts);
+      const pathSteps = 44;
+      const pathWidth = 4.4;
+      const trailStartIdx = pVerts.length / 3;
 
       for (let st = 0; st <= pathSteps; st++) {
         const t = st / pathSteps;
@@ -10474,13 +10636,13 @@ getSafeRoomGroundY(wx, wz) {
           const ly = (this.getSafeRoomGroundY(wx, wz) - originY) + 0.035;
 
           pVerts.push(lx, ly, lz);
-          pUvs.push((side + 1) * 0.5, t * 6.5);
+          pUvs.push(lx / 5.0, lz / 5.0);
         }
       }
       for (let st = 0; st < pathSteps; st++) {
-        const i0 = st * 2;
+        const i0 = trailStartIdx + st * 2;
         const i1 = i0 + 1;
-        const i2 = (st + 1) * 2;
+        const i2 = trailStartIdx + (st + 1) * 2;
         const i3 = i2 + 1;
         pIndices.push(i0, i1, i2);
         pIndices.push(i1, i3, i2);
@@ -10502,14 +10664,14 @@ getSafeRoomGroundY(wx, wz) {
       pathMesh.position.set(0, 0, 0);
       group.add(pathMesh);
 
-      // 5. Ethereal Return Portal Vortex (Screen Left: lx = -6.8, lz = -8.2)
+      // 5. Ethereal Return Portal Vortex (Placed in Glade: lx = -20.5, lz = 7.5, far from mountain)
       const retPortalGroup = new THREE.Group();
-      const retPortalLocalX = -6.8;
-      const retPortalLocalZ = -8.2;
+      const retPortalLocalX = -20.5;
+      const retPortalLocalZ = 7.5;
       const retPortalGroundY = this.getSafeRoomGroundY(originX + retPortalLocalX, originZ + retPortalLocalZ) - originY;
       const retPortalLocalY = retPortalGroundY + 2.5;
       retPortalGroup.position.set(retPortalLocalX, retPortalLocalY, retPortalLocalZ);
-      retPortalGroup.lookAt(0.0, CONFIG.PLAYER.CAMERA_HEIGHT, 0.0);
+      retPortalGroup.lookAt(-17.0, retPortalLocalY, 12.0);
 
       const retRingMat = new THREE.MeshBasicMaterial({
         map: portalRingTex,
@@ -10624,13 +10786,14 @@ getSafeRoomGroundY(wx, wz) {
       const pz = -1.0;
 
       // Fully Enclosed Watertight 3D Solid Mountain Massif Polyhedron
-      // Front cliff face + summit gorge cleft + solid sloped back descending deep into ground + solid left/right side walls sealing the mountain completely. Zero open holes!
+      // Majestic multi-peak alpine massif: cradles waterfall in deep rock gorge cleft, towering alpine crest behind spring,
+      // sculpted back with stepped crags and shelves, and rugged granite side flanks with planar UVs (zero radial distortion).
       const segsS = 40;
-      const segsFront = 18;
-      const segsBack = 18;
-      const segsBot = 4;
+      const segsFront = 20;
+      const segsBack = 22;
+      const segsBot = 6;
       const loopPts = segsFront + segsBack + segsBot;
-      const spanS = 26.0;
+      const spanS = 28.0;
 
       const amphiPositions = [];
       const amphiUvs = [];
@@ -10638,25 +10801,31 @@ getSafeRoomGroundY(wx, wz) {
 
       for (let i = 0; i <= segsS; i++) {
         const si = -spanS + (i / segsS) * (spanS * 2.0);
-        const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 16.0), 1.4) * 8.5;
+        const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
         const baseX = cliffLocalX + px * si + nx * canyonCurv;
         const baseZ = cliffLocalZ + pz * si + nz * canyonCurv;
         const frontGndY = this.getSafeRoomGroundY(originX + baseX, originZ + baseZ) - originY;
 
-        let summitH;
+        let summitH = 26.5;
+        let frontLipH;
         if (Math.abs(si) < 4.2) {
-          const gorgeT = 1.0 - Math.abs(si) / 4.2;
-          summitH = THREE.MathUtils.lerp(23.5, 19.2, Math.pow(gorgeT, 1.2));
+          // Gorge notch cleft: Front lip where the waterfall begins cascading
+          frontLipH = 19.3;
         } else if (si > 0) {
           const t = (si - 4.2) / (spanS - 4.2);
-          summitH = 23.5 + Math.sin(t * Math.PI) * 2.5 - t * 4.5;
+          summitH = 24.5 + Math.sin(t * Math.PI) * 3.5 - t * 4.5;
+          frontLipH = summitH;
         } else {
           const t = (-si - 4.2) / (spanS - 4.2);
-          summitH = 25.5 + Math.sin(t * Math.PI) * 3.0 - t * 5.0;
+          summitH = 25.5 + Math.sin(t * Math.PI) * 3.8 - t * 5.0;
+          frontLipH = summitH;
         }
-        summitH += (Math.sin(si * 0.65) * 1.0 + Math.cos(si * 1.3) * 0.6);
+        summitH += (Math.sin(si * 0.55) * 1.2 + Math.cos(si * 1.1) * 0.6);
+        if (Math.abs(si) >= 4.2) {
+          frontLipH = summitH;
+        }
 
-        const backDist = 34.0;
+        const backDist = 38.0;
         const backBaseX = baseX + backDist;
         const backBaseZ = baseZ;
         const backGndY = this.getSafeRoomGroundY(originX + backBaseX, originZ + backBaseZ) - originY;
@@ -10664,48 +10833,61 @@ getSafeRoomGroundY(wx, wz) {
         // 1. Front cliff face (k = 0 .. segsFront - 1)
         for (let k = 0; k < segsFront; k++) {
           const yNorm = k / segsFront;
-          const strata = Math.sin(yNorm * summitH * 0.75) * 0.40 + Math.sin(si * 0.5 + yNorm * 3.8) * 0.35;
-          const cliffRecess = Math.pow(yNorm, 1.3) * 1.4;
+          const strata = Math.sin(yNorm * frontLipH * 0.75) * 0.35 + Math.sin(si * 0.5 + yNorm * 3.8) * 0.30;
+          const cliffRecess = Math.pow(yNorm, 1.3) * 1.3;
           let cragShelf = 0.0;
           if (Math.abs(si) < 8.0) {
             const cragS = Math.max(0.0, 1.0 - Math.pow(si / 8.0, 2.0));
             const cragY = Math.sin(yNorm * Math.PI);
-            cragShelf = cragS * cragY * 1.6;
+            cragShelf = cragS * cragY * 1.5;
           }
           const x = baseX + nx * (cragShelf - cliffRecess + strata);
           const z = baseZ + nz * (cragShelf - cliffRecess + strata);
-          const y = (k === 0) ? (frontGndY - 1.2) : (frontGndY + yNorm * summitH + Math.sin(si * 0.4) * 0.3);
+          const y = (k === 0) ? (frontGndY - 1.2) : (frontGndY + yNorm * frontLipH + Math.sin(si * 0.4) * 0.25);
           amphiPositions.push(x, y, z);
-          amphiUvs.push((si + spanS) / 8.0, y / 8.0);
+          amphiUvs.push((si + spanS) / 6.5, y / 6.5);
         }
 
         // 2. Solid sloping mountain back descending firmly into terrain (k = 0 .. segsBack - 1)
         for (let k = 0; k < segsBack; k++) {
           const t = k / segsBack;
-          const strataBack = Math.sin(si * 0.5 + t * 3.0) * 0.5;
+          const strataBack = Math.sin(si * 0.45 + t * 3.2) * 0.45;
           const x = baseX + t * backDist + px * strataBack;
           const z = baseZ + pz * strataBack;
           const summitY = frontGndY + summitH;
+
+          // Behind the waterfall cleft (|si| < 4.2), the rock rises into an alpine crest behind the spring
           let h;
           if (Math.abs(si) < 4.2) {
-            h = THREE.MathUtils.lerp(summitY, backGndY - 1.2, Math.pow(t, 1.3));
+            if (t < 0.18) {
+              const u = t / 0.18;
+              h = frontLipH * (1.0 - u) + 27.8 * u;
+            } else {
+              const u = (t - 0.18) / (1.0 - 0.18);
+              h = 27.8 * (1.0 - Math.pow(u, 1.25)) + (backGndY - 1.2) * Math.pow(u, 1.25);
+            }
           } else {
-            const arch = Math.sin(t * Math.PI) * 3.5 * (1.0 - t * 0.5);
-            h = THREE.MathUtils.lerp(summitY + arch, backGndY - 1.2, Math.pow(t, 1.15));
+            const arch = Math.sin(t * Math.PI) * 3.4 * (1.0 - t * 0.4);
+            h = summitY * (1.0 - Math.pow(t, 1.2)) + (backGndY - 1.2) * Math.pow(t, 1.2) + arch;
           }
-          const y = (k === 0) ? summitY : h;
+
+          // Stepped ridges and multi-harmonic crag contours
+          const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
+          h += ridgeRelief;
+
+          const y = (k === 0) ? (Math.abs(si) < 4.2 ? frontLipH : summitY) : h;
           amphiPositions.push(x, y, z);
-          amphiUvs.push((si + spanS) / 8.0, (y + t * backDist) / 8.0);
+          amphiUvs.push((si + spanS) / 6.5, (y + t * backDist * 0.4) / 6.5);
         }
 
         // 3. Sealed underground bottom base (k = 0 .. segsBot - 1)
         for (let k = 0; k < segsBot; k++) {
           const t = k / segsBot;
-          const x = THREE.MathUtils.lerp(backBaseX, baseX, t);
+          const x = backBaseX * (1.0 - t) + baseX * t;
           const z = baseZ;
           const y = Math.min(frontGndY, backGndY) - 1.5;
           amphiPositions.push(x, y, z);
-          amphiUvs.push((si + spanS) / 8.0, 0.0);
+          amphiUvs.push((si + spanS) / 6.5, 0.0);
         }
       }
 
@@ -10724,37 +10906,86 @@ getSafeRoomGroundY(wx, wz) {
         }
       }
 
-      // South solid rock end cap (si = -spanS, normal pointing +Z)
-      let sX = 0, sY = 0, sZ = 0;
-      for (let k = 0; k < loopPts; k++) {
-        sX += amphiPositions[k * 3];
-        sY += amphiPositions[k * 3 + 1];
-        sZ += amphiPositions[k * 3 + 2];
-      }
-      const c0Idx = amphiPositions.length / 3;
-      amphiPositions.push(sX / loopPts, sY / loopPts, sZ / loopPts);
-      amphiUvs.push((sX / loopPts) / 8.0, (sY / loopPts) / 8.0);
-      for (let k = 0; k < loopPts; k++) {
-        const nextK = (k + 1) % loopPts;
-        amphiIndices.push(c0Idx, nextK, k);
-      }
+      // Helper to generate natural rugged granite side flanks with concentric 3D crag relief and planar UVs
+      const buildFlankMesh = (startIdx, isNorth) => {
+        let cx = 0.0, cy = 0.0, cz = 0.0;
+        for (let k = 0; k < loopPts; k++) {
+          const idx = startIdx + k;
+          cx += amphiPositions[idx * 3];
+          cy += amphiPositions[idx * 3 + 1];
+          cz += amphiPositions[idx * 3 + 2];
+        }
+        cx /= loopPts;
+        cy /= loopPts;
+        cz /= loopPts;
 
-      // North solid rock end cap (si = +spanS, normal pointing -Z)
-      const nBase = segsS * loopPts;
-      let nX = 0, nY = 0, nZ = 0;
-      for (let k = 0; k < loopPts; k++) {
-        const idx = nBase + k;
-        nX += amphiPositions[idx * 3];
-        nY += amphiPositions[idx * 3 + 1];
-        nZ += amphiPositions[idx * 3 + 2];
-      }
-      const cNIdx = amphiPositions.length / 3;
-      amphiPositions.push(nX / loopPts, nY / loopPts, nZ / loopPts);
-      amphiUvs.push((nX / loopPts) / 8.0, (nY / loopPts) / 8.0);
-      for (let k = 0; k < loopPts; k++) {
-        const nextK = (k + 1) % loopPts;
-        amphiIndices.push(cNIdx, nBase + k, nBase + nextK);
-      }
+        const ringRatios = [0.45, 0.75];
+        let prevRingIndices = [];
+        for (let k = 0; k < loopPts; k++) {
+          prevRingIndices.push(startIdx + k);
+        }
+
+        for (let r = 0; r < ringRatios.length; r++) {
+          const ringRatio = ringRatios[r];
+          const curRingIndices = [];
+          for (let k = 0; k < loopPts; k++) {
+            const idx0 = startIdx + k;
+            const bx = amphiPositions[idx0 * 3];
+            const by = amphiPositions[idx0 * 3 + 1];
+            const bz = amphiPositions[idx0 * 3 + 2];
+
+            const rx = bx * (1.0 - ringRatio) + cx * ringRatio;
+            const ry = by * (1.0 - ringRatio) + cy * ringRatio;
+            const normSign = isNorth ? -1.0 : 1.0;
+            const cragRelief = (Math.sin(rx * 0.45) * 1.2 + Math.cos(ry * 0.4) * 0.95 + Math.sin(rx * 0.9 + ry * 0.7) * 0.5) * Math.sin(ringRatio * Math.PI);
+            const rz = bz * (1.0 - ringRatio) + cz * ringRatio + normSign * cragRelief;
+
+            const newIdx = amphiPositions.length / 3;
+            amphiPositions.push(rx, ry, rz);
+            amphiUvs.push(rx / 6.5, ry / 6.5);
+            curRingIndices.push(newIdx);
+          }
+
+          for (let k = 0; k < loopPts; k++) {
+            const nextK = (k + 1) % loopPts;
+            const p0 = prevRingIndices[k];
+            const p1 = prevRingIndices[nextK];
+            const c0 = curRingIndices[k];
+            const c1 = curRingIndices[nextK];
+
+            if (!isNorth) {
+              amphiIndices.push(p1, p0, c0);
+              amphiIndices.push(p1, c0, c1);
+            } else {
+              amphiIndices.push(p0, p1, c0);
+              amphiIndices.push(p1, c1, c0);
+            }
+          }
+          prevRingIndices = curRingIndices;
+        }
+
+        const centerIdx = amphiPositions.length / 3;
+        const centerZRelief = (isNorth ? -1.0 : 1.0) * 1.4;
+        amphiPositions.push(cx, cy, cz + centerZRelief);
+        amphiUvs.push(cx / 6.5, cy / 6.5);
+
+        for (let k = 0; k < loopPts; k++) {
+          const nextK = (k + 1) % loopPts;
+          const p0 = prevRingIndices[k];
+          const p1 = prevRingIndices[nextK];
+          if (!isNorth) {
+            amphiIndices.push(centerIdx, p1, p0);
+          } else {
+            amphiIndices.push(centerIdx, p0, p1);
+          }
+        }
+      };
+
+      // South solid granite flank (si = -spanS, normal pointing +Z)
+      buildFlankMesh(0, false);
+
+      // North solid granite flank (si = +spanS, normal pointing -Z)
+      buildFlankMesh(segsS * loopPts, true);
 
       const amphiGeo = new THREE.BufferGeometry();
       amphiGeo.setAttribute('position', new THREE.Float32BufferAttribute(amphiPositions, 3));
@@ -10974,30 +11205,21 @@ getSafeRoomGroundY(wx, wz) {
       const wfVeilMesh = new THREE.Mesh(wfVeilGeo, wfMatVeil);
       wfGroup.add(wfVeilMesh);
 
-      // (A) Upper Canyon River Rapids feeding directly into the summit gorge cleft
-      const streamGeo = new THREE.PlaneGeometry(7.0, 14.0, 10, 16);
-      streamGeo.rotateX(-Math.PI / 2);
-      const sPos = streamGeo.attributes.position;
-      for (let i = 0; i < sPos.count; i++) {
-        const sx = sPos.getX(i);
-        const sz = sPos.getZ(i);
-        const sNormZ = (sz + 7.0) / 14.0;
-        const sy = (1.0 - sNormZ) * 4.5 - (Math.sin((sx + 3.5) / 7.0 * Math.PI) * 0.45);
-        sPos.setY(i, sy);
+      // (A) Natural Alpine Spring Basin nestled securely inside the mountain gorge cleft
+      // Cradled by stone walls on the left and right, and a towering 28m crest behind it. Zero protrusion!
+      const springPoolGeo = new THREE.PlaneGeometry(6.6, 2.6, 8, 6);
+      springPoolGeo.rotateX(-Math.PI / 2);
+      const spPos = springPoolGeo.attributes.position;
+      for (let i = 0; i < spPos.count; i++) {
+        const sx = spPos.getX(i);
+        const sz = spPos.getZ(i);
+        const sy = -Math.pow((sz + 1.3) / 2.6, 1.5) * 0.12 - (Math.sin((sx + 3.3) / 6.6 * Math.PI) * 0.08);
+        spPos.setY(i, sy);
       }
-      streamGeo.computeVertexNormals();
-      const streamMesh = new THREE.Mesh(streamGeo, wfMatCore);
-      streamMesh.position.set(cliffLocalX + 5.5, 19.4, cliffLocalZ);
-      streamMesh.rotation.y = -Math.PI / 2;
-      wfGroup.add(streamMesh);
-
-      // (B) Waterfall Summit Lip Crest
-      const lipGeo = new THREE.CylinderGeometry(1.4, 1.4, 7.2, 20, 4, true, 0, Math.PI * 0.55);
-      lipGeo.rotateZ(Math.PI / 2);
-      const lipMesh = new THREE.Mesh(lipGeo, wfMatCore);
-      lipMesh.position.set(cliffLocalX - 0.5, 19.3, cliffLocalZ);
-      lipMesh.rotation.y = -Math.PI / 2;
-      wfGroup.add(lipMesh);
+      springPoolGeo.computeVertexNormals();
+      const springPoolMesh = new THREE.Mesh(springPoolGeo, wfMatCore);
+      springPoolMesh.position.set(10.6, 19.38, cliffLocalZ);
+      wfGroup.add(springPoolMesh);
 
       // (C) Lagoon Base Heavy Impact Foaming Splash Apron
       const poolFoamGeo1 = new THREE.CircleGeometry(4.5, 36);
@@ -11153,14 +11375,14 @@ getSafeRoomGroundY(wx, wz) {
         isWall: true
       });
 
-      // (B) Perimeter Fence Boundary (44m radius circle around glade)
-      for (let a = 0; a < 24; a++) {
-        const th = (a / 24) * Math.PI * 2;
+      // (B) Perimeter Fence Boundary (52m radius circle around glade)
+      for (let a = 0; a < 28; a++) {
+        const th = (a / 28) * Math.PI * 2;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
-          x: originX + Math.cos(th) * 44.0,
-          z: originZ + Math.sin(th) * 44.0,
+          x: originX + Math.cos(th) * 52.0,
+          z: originZ + Math.sin(th) * 52.0,
           radius: 3.5,
           minY: originY - 2.0,
           maxY: originY + 30.0,
@@ -11209,23 +11431,34 @@ getSafeRoomGroundY(wx, wz) {
       const mistPoints = new THREE.Points(mistGeo, mistMat);
       group.add(mistPoints);
 
-      // 10. Natural Balanced Sunlight & Glade Illumination (Calibrated to avoid washed out / neon look)
-      const sunLight = new THREE.DirectionalLight(0xfffaed, 1.05);
+      // 10. Ethereal Dreamlike Glade Illumination
+      const sunLight = new THREE.DirectionalLight(0xfffbf0, 1.15);
       sunLight.position.set(16.0, 48.0, 18.0);
       sunLight.target.position.set(6.0, 0, -10.0);
       group.add(sunLight);
       group.add(sunLight.target);
 
-      const hemiLight = new THREE.HemisphereLight(0xbfe3ff, 0x3f6212, 0.48);
+      // Mountain rim light: Casts a soft luminous ethereal glow along the mountain ridge silhouette
+      const sunRimLight = new THREE.DirectionalLight(0xe9d5ff, 0.45);
+      sunRimLight.position.set(-25.0, 36.0, -28.0);
+      group.add(sunRimLight);
+
+      const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x365314, 0.52);
       hemiLight.position.set(0, 40.0, 0);
       group.add(hemiLight);
 
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.22);
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.24);
       group.add(ambLight);
 
-      const poolLight = new THREE.PointLight(0x38bdf8, 0.65, 14.0, 1.5);
+      // Radiant turquoise lagoon glow
+      const poolLight = new THREE.PointLight(0x38bdf8, 1.15, 18.0, 1.4);
       poolLight.position.set(poolLocalCenter.x, 2.5, poolLocalCenter.z);
       group.add(poolLight);
+
+      // Celestial return portal aura light
+      const portalLight = new THREE.PointLight(0xa78bfa, 0.95, 12.0, 1.3);
+      portalLight.position.set(retPortalLocalX, retPortalLocalY + 0.5, retPortalLocalZ);
+      group.add(portalLight);
 
       // 11. Botanical Wildflowers & Foliage (Merged single draw call)
       const floraGroup = new THREE.Group();
@@ -11310,26 +11543,27 @@ getSafeRoomGroundY(wx, wz) {
       floraGroup.add(floraMesh);
       group.add(floraGroup);
 
-      // 12. Floating Glowing Pastel Motes & Sparkles
+      // 12. Floating Ethereal Hazy Particles & Multi-Hued Atmospheric Motes
       const motePalette = [
-        new THREE.Color(0x2dd4bf),
-        new THREE.Color(0x38bdf8),
-        new THREE.Color(0x4ade80),
-        new THREE.Color(0xfacc15),
-        new THREE.Color(0xf472b6),
-        new THREE.Color(0xc084fc)
+        new THREE.Color(0x67e8f9), // Shimmering Cyan
+        new THREE.Color(0xc084fc), // Soft Lavender
+        new THREE.Color(0xfde047), // Celestial Gold
+        new THREE.Color(0xf472b6), // Wild Rose Pink
+        new THREE.Color(0x5eead4), // Ethereal Mint
+        new THREE.Color(0x93c5fd), // Periwinkle Azure
+        new THREE.Color(0xfdba74)  // Soft Peach
       ];
 
-      const orbCount = 45;
+      const orbCount = 70;
       const orbGeo = new THREE.BufferGeometry();
       const orbPos = new Float32Array(orbCount * 3);
       const orbColors = new Float32Array(orbCount * 3);
       const orbData = [];
 
       for (let i = 0; i < orbCount; i++) {
-        const ox = (Math.random() - 0.5) * 50.0;
-        const oy = 0.8 + Math.random() * 8.0;
-        const oz = (Math.random() - 0.5) * 50.0;
+        const ox = -28.0 + Math.random() * 56.0;
+        const oy = 0.8 + Math.random() * 8.5;
+        const oz = -28.0 + Math.random() * 56.0;
 
         orbPos[i * 3]     = ox;
         orbPos[i * 3 + 1] = oy;
@@ -11344,20 +11578,25 @@ getSafeRoomGroundY(wx, wz) {
           baseX: ox,
           baseY: oy,
           baseZ: oz,
-          speed: 0.25 + Math.random() * 0.40,
-          radius: 0.6 + Math.random() * 1.5,
-          phase: Math.random() * Math.PI * 2
+          speedX: 0.18 + Math.random() * 0.28,
+          speedY: 0.25 + Math.random() * 0.35,
+          speedZ: 0.16 + Math.random() * 0.26,
+          radiusX: 1.2 + Math.random() * 2.4,
+          radiusZ: 1.2 + Math.random() * 2.4,
+          phaseX: Math.random() * Math.PI * 2,
+          phaseY: Math.random() * Math.PI * 2,
+          phaseZ: Math.random() * Math.PI * 2
         });
       }
       orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
       orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
 
       const orbMat = new THREE.PointsMaterial({
-        size: 0.70,
+        size: 1.15,
         map: moteTex,
         vertexColors: true,
         transparent: true,
-        opacity: 0.94,
+        opacity: 0.90,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -18367,8 +18606,8 @@ getSafeRoomGroundY(wx, wz) {
         const dz = z - 28.0;
         if (dx * dx + dz * dz <= 6.46 * 6.46) return true;
       }
-      // 11. Nature Safe Room Sanctuary (x: 282..328, z: 282..328)
-      if (x >= 282.0 && x <= 328.0 && z >= 282.0 && z <= 328.0) return true;
+      // 11. Nature Safe Room Sanctuary (x: 250..350, z: 250..350)
+      if (x >= 250.0 && x <= 350.0 && z >= 250.0 && z <= 350.0) return true;
       return false;
     }
 
@@ -18518,11 +18757,13 @@ getSafeRoomGroundY(wx, wz) {
         const sr = this.safeRoomSanctuary;
         if (sr) {
           this.isSafeRoomActive = true;
-          // Spawn player safely on the natural sanctuary ground facing forward towards the sunny meadow, portal, and waterfall
-          const spawnGndY = this.getSafeRoomGroundY(sr.originX, sr.originZ);
-          this.playerPos.set(sr.originX, spawnGndY + CONFIG.PLAYER.CAMERA_HEIGHT, sr.originZ);
-          this.playerYaw = 0.0; // Facing -Z into the sunny glade, with portal on left and waterfall on right
-          this.playerPitch = 0.05;
+          // Spawn player safely on the natural sanctuary glade facing towards the mountain waterfall and scenic lake
+          const spawnLocalX = -17.0;
+          const spawnLocalZ = 12.0;
+          const spawnGndY = this.getSafeRoomGroundY(sr.originX + spawnLocalX, sr.originZ + spawnLocalZ);
+          this.playerPos.set(sr.originX + spawnLocalX, spawnGndY + CONFIG.PLAYER.CAMERA_HEIGHT, sr.originZ + spawnLocalZ);
+          this.playerYaw = 0.85; // Facing Northeast directly toward mountain waterfall and scenic lake
+          this.playerPitch = 0.04;
           this.camera.position.copy(this.playerPos);
           if (this.camera) {
             this.camera.far = 250;
@@ -18534,9 +18775,10 @@ getSafeRoomGroundY(wx, wz) {
           if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
             this.safeRoomSanctuary.group.visible = true;
           }
-          if (this.audio && this.audio.setWaterfallVolume) {
+          if (this.audio) {
             if (this.audio.pauseGameplayAudio) this.audio.pauseGameplayAudio();
-            this.audio.setWaterfallVolume(0.032, 1.5);
+            if (this.audio.setWaterfallVolume) this.audio.setWaterfallVolume(0.35, 1.5);
+            if (this.audio.startEtherealNatureAmbience) this.audio.startEtherealNatureAmbience();
           }
           if (this.scene && this.scene.fog) {
             this._preSafeRoomFog = { color: this.scene.fog.color.getHex(), density: this.scene.fog.density };
@@ -18640,19 +18882,24 @@ getSafeRoomGroundY(wx, wz) {
         posAttr.needsUpdate = true;
       }
 
-      // Animate floating ethereal pastel motes
+      // Animate floating ethereal multi-hued hazy motes (calming 3D multi-frequency wafting drift)
       if (sr.orbPoints && sr.orbData) {
         const posAttr = sr.orbPoints.geometry.attributes.position;
         const arr = posAttr.array;
         const count = sr.orbData.length;
         for (let i = 0; i < count; i++) {
           const d = sr.orbData[i];
-          const t = sr.time * d.speed + d.phase;
-          arr[i * 3]     = d.baseX + Math.cos(t) * d.radius;
-          arr[i * 3 + 1] = d.baseY + Math.sin(t * 1.5) * 0.65;
-          arr[i * 3 + 2] = d.baseZ + Math.sin(t) * d.radius;
+          const tx = sr.time * d.speedX + d.phaseX;
+          const ty = sr.time * d.speedY + d.phaseY;
+          const tz = sr.time * d.speedZ + d.phaseZ;
+          arr[i * 3]     = d.baseX + Math.sin(tx) * d.radiusX + Math.sin(sr.time * 0.12) * 1.8;
+          arr[i * 3 + 1] = d.baseY + Math.sin(ty) * 0.75 + Math.cos(sr.time * 0.18) * 0.35;
+          arr[i * 3 + 2] = d.baseZ + Math.cos(tz) * d.radiusZ + Math.cos(sr.time * 0.14) * 1.8;
         }
         posAttr.needsUpdate = true;
+        if (sr.orbPoints.material) {
+          sr.orbPoints.material.opacity = 0.86 + Math.sin(sr.time * 0.6) * 0.08;
+        }
       }
     }
 
@@ -18688,8 +18935,9 @@ getSafeRoomGroundY(wx, wz) {
         if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
           this.safeRoomSanctuary.group.visible = false;
         }
-        if (this.audio && this.audio.setWaterfallVolume) {
-          this.audio.setWaterfallVolume(0.0, 0.8);
+        if (this.audio) {
+          if (this.audio.setWaterfallVolume) this.audio.setWaterfallVolume(0.0, 0.8);
+          if (this.audio.stopEtherealNatureAmbience) this.audio.stopEtherealNatureAmbience();
           if (this.audio.resumeGameplayAudio) this.audio.resumeGameplayAudio();
         }
         if (this.scene) {
