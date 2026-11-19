@@ -22563,6 +22563,7 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
+        console.log('Punch animation active, timer:', this.leftHandPunchTimer);
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
@@ -22579,12 +22580,12 @@ window.game = this;
         }
 
         // Left arm thrusts forward, creating a wide, aggressive scratch/swipe motion
-        const punchPoseX = -0.35;
-        const punchPoseY = -0.05;
-        const punchPoseZ = -0.65;
-        const punchRotX = -0.85;
-        const punchRotY = 0.85;
-        const punchRotZ = -1.45;
+        const punchPoseX = -1.0;
+        const punchPoseY = 1.0;
+        const punchPoseZ = -2.0;
+        const punchRotX = -2.0;
+        const punchRotY = 2.0;
+        const punchRotZ = -2.0;
 
         targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
         targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
@@ -22616,6 +22617,7 @@ window.game = this;
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
+      alert('Punch Triggered!');
 
       // Calculate punch origin and direction
       const cosPitch = Math.cos(this.playerPitch);
