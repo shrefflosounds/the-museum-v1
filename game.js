@@ -22563,7 +22563,6 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
-        console.log('Punch timer > 0:', this.leftHandPunchTimer);
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
@@ -22614,7 +22613,6 @@ window.game = this;
       const now = performance.now() / 1000;
       if (this.lastPunchTime && (now - this.lastPunchTime) < 0.35) return;
       this.lastPunchTime = now;
-      console.log('Punch triggered!');
 
       this.isPlayerDancing = false;
       this.leftHandPunchTimer = this.leftHandPunchDuration || 0.38;
