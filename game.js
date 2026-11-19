@@ -22563,36 +22563,11 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
-        const dur = this.leftHandPunchDuration || 0.38;
-        const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
-
-        let punchWeight = 0;
-        if (p < 0.32) {
-          // Swift forward swipe/jab forward into the center
-          punchWeight = Math.sin((p / 0.32) * (Math.PI / 2));
-        } else if (p < 0.50) {
-          punchWeight = 1.0;
-        } else {
-          // Return smoothly to idle stance
-          const ret = (p - 0.50) / 0.50;
-          punchWeight = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
-        }
-
-        // Left arm thrusts forward and down in a strong scratch motion
-        // Making the pose significantly offset from the idle -0.32, -0.28, -0.41
-        const punchPoseX = 0.25; 
-        const punchPoseY = -0.80;
-        const punchPoseZ = -0.20;
-        const punchRotX = -1.8;
-        const punchRotY = 0.0;
-        const punchRotZ = -1.2;
-
-        targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
-        targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
-        targetZ = THREE.MathUtils.lerp(targetZ, punchPoseZ, punchWeight);
-        targetRotX = THREE.MathUtils.lerp(targetRotX, punchRotX, punchWeight);
-        targetRotY = THREE.MathUtils.lerp(targetRotY, punchRotY, punchWeight);
-        targetRotZ = THREE.MathUtils.lerp(targetRotZ, punchRotZ, punchWeight);
+        // Forced Override: If this doesn't move the hand, the update loop is broken.
+        targetX = -1.5; 
+        targetY = -1.5;
+        targetZ = -1.5;
+        this.leftHandPunchTimer -= delta; // Manually decrement to keep it alive
       }
 
       // Smooth physical interpolation towards target transforms
