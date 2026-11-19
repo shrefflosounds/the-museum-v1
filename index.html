@@ -443,6 +443,19 @@
   </div>
 
   <!-- Three.js and Loaders -->
+  <script>
+    // Show non-blocking mobile notice on phone devices
+    (function() {
+      var ua = navigator.userAgent || '';
+      var isPhone = /iPhone|iPod|Android.*Mobile|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+      if (isPhone) {
+        window.addEventListener('DOMContentLoaded', function() {
+          var blockEl = document.getElementById('mobile-block-screen');
+          if (blockEl) blockEl.style.display = 'flex';
+        });
+      }
+    })();
+  </script>
   <script src="https://www.youtube.com/iframe_api"></script>
   <script src="libs/three.min.js"></script>
   <script src="libs/GLTFLoader.js"></script>
@@ -453,26 +466,11 @@
     <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1794184800"></script>
   <script type="module">
-    // Block mobile phones / devices from running the game
-    const isMobileDevice = (() => {
-      const ua = navigator.userAgent || navigator.vendor || window.opera || '';
-      const mobileRegex = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|Silk/i;
-      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 1);
-      const isNarrow = Math.min(window.screen.width, window.screen.height) < 768;
-      // Dedicated detection for phone devices (excluding standard desktop browsers)
-      return mobileRegex.test(ua) || (isTouch && isNarrow);
-    })();
-
-    if (isMobileDevice) {
-      const blockEl = document.getElementById('mobile-block-screen');
-      if (blockEl) blockEl.style.display = 'flex';
-    } else {
-      import * as CANNON from './libs/cannon-es.js';
-      window.CANNON = CANNON;
-      const gameScript = document.createElement('script');
-      gameScript.src = 'game.js?v=2.9.1795050550';
-      document.body.appendChild(gameScript);
-    }
+    import * as CANNON from './libs/cannon-es.js';
+    window.CANNON = CANNON;
+    const gameScript = document.createElement('script');
+    gameScript.src = 'game.js?v=2.9.1795050800';
+    document.body.appendChild(gameScript);
   </script>
 </body>
 </html>
