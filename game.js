@@ -23726,18 +23726,25 @@ window.game = this;
       this.isGameOver = true;
       this.releaseNativeOrBrowserLock();
 
-      this.dom.jumpscareOverlay.classList.add('active');
+      // Smoothly fade the screen to pure black
+      if (this.dom.jumpscareOverlay) {
+        this.dom.jumpscareOverlay.classList.add('active');
+      }
       this.audio.playJumpscareStinger();
 
       setTimeout(() => {
-        this.dom.jumpscareOverlay.classList.remove('active');
         this.dom.deathKeys.textContent = this.relicsCollected;
         const totalEl = document.querySelector('[data-text="gameover.relics_out_of"]');
         if (totalEl) totalEl.textContent = `/ ${CONFIG.TOTAL_RELICS}`;
         this.dom.deathShots.textContent = this.shotsFired;
         this.dom.deathHits.textContent = this.shotsHit;
         this.dom.gameOverModal.classList.remove('hidden');
-      }, 1300);
+
+        // Keep jumpscareOverlay active behind game-over modal until restart, or smoothly clean it up
+        setTimeout(() => {
+          if (this.dom.jumpscareOverlay) this.dom.jumpscareOverlay.classList.remove('active');
+        }, 500);
+      }, 950);
     }
 
     triggerVictory() {
