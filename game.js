@@ -17623,7 +17623,7 @@ window.game = this;
     }
 
     keepPlayerInsideMuseumBounds(pos, floorIdx, lastValidPos) {
-      if (this.isNoClipMode || this.isSpectatorMode) return;
+      if (this.isNoClipMode || this.isSpectatorMode || this.isSafeRoomActive) return;
       if (this.isPointInsideWalkableFootprint(pos.x, pos.z, floorIdx)) {
         if (lastValidPos) {
           lastValidPos.x = pos.x;
@@ -17902,61 +17902,6 @@ window.game = this;
           }, 850);
         }, 300);
       }, 700);
-    }
-
-    updateSafeRoomSanctuary(delta) {
-      const sr = this.safeRoomSanctuary;
-      if (!sr || !sr.group || !this.isSafeRoomActive) return;
-
-      sr.time += delta;
-
-      // Animate rushing waterfall shader
-      if (sr.wfUniforms) {
-        sr.wfUniforms.uTime.value = sr.time;
-      }
-
-      // Animate return portal shader
-      if (sr.retPortalUniforms) {
-        sr.retPortalUniforms.uTime.value = sr.time;
-      }
-      if (sr.retBurst) {
-        sr.retBurst.rotation.x += delta * 0.18;
-      }
-
-      // Animate waterfall mist particles rising and drifting
-      if (sr.mistPoints && sr.mistVel) {
-        const posAttr = sr.mistPoints.geometry.attributes.position;
-        const arr = posAttr.array;
-        const count = sr.mistVel.length;
-        for (let i = 0; i < count; i++) {
-          const v = sr.mistVel[i];
-          arr[i * 3]     += v.vx * delta;
-          arr[i * 3 + 1] += v.vy * delta;
-          arr[i * 3 + 2] += v.vz * delta;
-
-          if (arr[i * 3 + 1] > sr.originY + 4.2) {
-            arr[i * 3]     = sr.originX + 8.5 + (Math.random() - 0.5) * 5.5;
-            arr[i * 3 + 1] = sr.originY + 0.2;
-            arr[i * 3 + 2] = sr.originZ - 7.5 + (Math.random() - 0.5) * 4.5;
-          }
-        }
-        posAttr.needsUpdate = true;
-      }
-
-      // Animate floating ethereal pastel motes (teal, blue, green, yellow, pink, purple)
-      if (sr.orbPoints && sr.orbData) {
-        const posAttr = sr.orbPoints.geometry.attributes.position;
-        const arr = posAttr.array;
-        const count = sr.orbData.length;
-        for (let i = 0; i < count; i++) {
-          const d = sr.orbData[i];
-          const t = sr.time * d.speed + d.phase;
-          arr[i * 3]     = d.baseX + Math.cos(t) * d.radius;
-          arr[i * 3 + 1] = d.baseY + Math.sin(t * 1.5) * 0.65;
-          arr[i * 3 + 2] = d.baseZ + Math.sin(t) * d.radius;
-        }
-        posAttr.needsUpdate = true;
-      }
     }
 
     isInBathroom(pos, floor = this.playerFloor) {
@@ -22042,35 +21987,45 @@ window.game = this;
       }
 
       const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
-      const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor, currentFootElevation);
-      
-      // Strict floor transition protection: Player can only change floors if their physical foot elevation
-      // is genuinely within 1.4m of the target floor elevation plane
-      const targetFloorBaseY = elev.floor * CONFIG.FLOOR_HEIGHT;
-      if (elev.floor !== this.playerFloor && Math.abs(currentFootElevation - targetFloorBaseY) < 1.4) {
-        this.playerFloor = elev.floor;
-        this.showFloorNotification(this.playerFloor);
-      } else if (elev.floor === this.playerFloor) {
-        this.playerFloor = elev.floor;
-      }
+      let groundY;
 
-      // Re-resolve collisions on the updated floor and enforce strict outer building footprint containment
-      this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation, this.currentCamHeight);
-      this.keepPlayerInsideMuseumBounds(this.playerPos, this.playerFloor, this._lastValidPlayerPos);
+      if (this.isSafeRoomActive) {
+        // Player is safe in the sanctuary grotto: Ground level is firmly at sanctuary basin originY (50.0)
+        const sr = this.safeRoomSanctuary;
+        const srBaseY = sr ? sr.originY : 50.0;
+        groundY = srBaseY;
+        this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, 'all', currentFootElevation, this.currentCamHeight);
+      } else {
+        const elev = this.updateStairwellElevation(this.playerPos, this.playerStairState, this.playerFloor, currentFootElevation);
+        
+        // Strict floor transition protection: Player can only change floors if their physical foot elevation
+        // is genuinely within 1.4m of the target floor elevation plane
+        const targetFloorBaseY = elev.floor * CONFIG.FLOOR_HEIGHT;
+        if (elev.floor !== this.playerFloor && Math.abs(currentFootElevation - targetFloorBaseY) < 1.4) {
+          this.playerFloor = elev.floor;
+          this.showFloorNotification(this.playerFloor);
+        } else if (elev.floor === this.playerFloor) {
+          this.playerFloor = elev.floor;
+        }
 
-      // Check platform standing surface (benches, plinths, desks, crates, consoles, stands)
-      const platformSurfaceY = this.getPlatformSurfaceY(
-        this.playerPos.x,
-        this.playerPos.z,
-        this.playerFloor,
-        currentFootElevation,
-        this.isGrounded ? 0.85 : 0.45
-      );
-      let groundY = Math.max(elev.y, platformSurfaceY);
+        // Re-resolve collisions on the updated floor and enforce strict outer building footprint containment
+        this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor, currentFootElevation, this.currentCamHeight);
+        this.keepPlayerInsideMuseumBounds(this.playerPos, this.playerFloor, this._lastValidPlayerPos);
 
-      // Antigravity Step Protection (outside stairwells): Prevent sudden vertical launch > 0.85m above current feet
-      if (this.isGrounded && !this.playerStairState.active && groundY > (currentFootElevation + 0.85)) {
-        groundY = currentFootElevation;
+        // Check platform standing surface (benches, plinths, desks, crates, consoles, stands)
+        const platformSurfaceY = this.getPlatformSurfaceY(
+          this.playerPos.x,
+          this.playerPos.z,
+          this.playerFloor,
+          currentFootElevation,
+          this.isGrounded ? 0.85 : 0.45
+        );
+        groundY = Math.max(elev.y, platformSurfaceY);
+
+        // Antigravity Step Protection (outside stairwells): Prevent sudden vertical launch > 0.85m above current feet
+        if (this.isGrounded && !this.playerStairState.active && groundY > (currentFootElevation + 0.85)) {
+          groundY = currentFootElevation;
+        }
       }
 
       const targetEyeH = isCrouching ? CONFIG.PLAYER.CROUCH_HEIGHT : CONFIG.PLAYER.CAMERA_HEIGHT;
@@ -22511,6 +22466,12 @@ window.game = this;
     }
 
     showFloorNotification(floor) {
+      if (this.isSafeRoomActive) {
+        if (this.dom.floorIndicator) {
+          this.dom.floorIndicator.style.opacity = '0';
+        }
+        return;
+      }
       this.updateRelicFloorVisibility();
       if (!this.dom.floorIndicator) return;
       if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
@@ -24732,7 +24693,7 @@ window.game = this;
           this.updateFloorGroupVisibility();
 
           // Animate top-floor low-to-mid level curvy fog shader & upper staircase trickle
-          if (this.scene && this.scene.fog) {
+          if (this.scene && this.scene.fog && !this.isSafeRoomActive) {
             const targetFogDensity = (this.playerFloor === 3 && !this.isSpectatorMode) ? 0.036 : 0.032;
             this.scene.fog.density += (targetFogDensity - this.scene.fog.density) * Math.min(1, delta * 3.5);
           }
