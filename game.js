@@ -10204,19 +10204,58 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Natural Grass and Earth Basin Floor
-      const basinGeo = new THREE.PlaneGeometry(36.0, 36.0, 24, 24);
-      const dirtTex = this.texLoader.load('assets/textures/floor_dirt.jpg', (tx) => {
+      // Load curated sanctuary textures
+      const groundTex = this.texLoader.load('assets/textures/sanctuary/meadow_ground.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
         tx.repeat.set(6, 6);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
+      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 3);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const barkTex = this.texLoader.load('assets/textures/sanctuary/gnarled_bark.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(2, 6);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const flowerTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_flowers.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(1, 2);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+
+      // 1. Natural Contoured Meadow Basin Floor
+      const basinWidth = 44.0;
+      const basinSegs = 36;
+      const basinGeo = new THREE.PlaneGeometry(basinWidth, basinWidth, basinSegs, basinSegs);
+      const bPos = basinGeo.attributes.position;
+      for (let i = 0; i < bPos.count; i++) {
+        const vx = bPos.getX(i);
+        const vy = bPos.getY(i);
+        const distFromCenter = Math.hypot(vx, vy);
+        // Subtle natural rolling hollow basin, slightly elevated near the rocky rim
+        const hollow = Math.sin(distFromCenter * 0.18) * 0.45;
+        const roll = Math.sin(vx * 0.35) * Math.cos(vy * 0.35) * 0.22;
+        bPos.setZ(i, hollow + roll);
+      }
+      basinGeo.computeVertexNormals();
+
       const groundMat = new THREE.MeshStandardMaterial({
-        map: dirtTex,
-        color: 0x3d4a2d, // lush mossy forest loam
-        roughness: 0.92,
-        metalness: 0.05
+        map: groundTex,
+        roughness: 0.88,
+        metalness: 0.04
       });
       const basinFloor = new THREE.Mesh(basinGeo, groundMat);
       basinFloor.rotation.x = -Math.PI / 2;
@@ -10227,75 +10266,143 @@ window.game = this;
       this.colliders.push({
         type: 'box',
         floor: 'all',
-        minX: originX - 18.0,
-        maxX: originX + 18.0,
-        minZ: originZ - 18.0,
-        maxZ: originZ + 18.0,
+        minX: originX - 22.0,
+        maxX: originX + 22.0,
+        minZ: originZ - 22.0,
+        maxZ: originZ + 22.0,
         minY: originY - 1.0,
         maxY: originY,
         isWall: false
       });
 
-      // 2. Surrounding Grotto Mossy Rock Cliffs (Enclosing the smallish natural area)
-      const stoneTex = this.texLoader.load('assets/textures/stone_tiles.jpg', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 2);
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const rockMat = new THREE.MeshStandardMaterial({
-        map: stoneTex,
-        color: 0x475544, // moss-covered cavernous stone
-        roughness: 0.88,
-        metalness: 0.12
+      // 2. Sculpted Organic Cavern Walls with Natural Overhang Arch
+      // Instead of square checkerboard box walls, build a sculpted organic cavern
+      const caveMat = new THREE.MeshStandardMaterial({
+        map: rockTex,
+        roughness: 0.90,
+        metalness: 0.08,
+        side: THREE.DoubleSide
       });
 
-      const cliffH = 14.0;
-      const addCliffWall = (x, z, w, d, rotY = 0) => {
-        const cMesh = new THREE.Mesh(new THREE.BoxGeometry(w, cliffH, d), rockMat);
-        cMesh.position.set(x, originY + cliffH * 0.5, z);
-        cMesh.rotation.y = rotY;
-        group.add(cMesh);
+      const caveSegmentsU = 48; // around the circle
+      const caveSegmentsV = 20; // vertical slices
+      const caveGeo = new THREE.BufferGeometry();
+      const cavePositions = [];
+      const caveUvs = [];
+      const caveIndices = [];
 
+      const caveHeight = 16.5;
+      for (let j = 0; j <= caveSegmentsV; j++) {
+        const v = j / caveSegmentsV; // 0..1 from floor to ceiling
+        const y = originY + v * caveHeight;
+
+        for (let i = 0; i <= caveSegmentsU; i++) {
+          const u = i / caveSegmentsU;
+          const theta = u * Math.PI * 2;
+
+          // Natural organic cave outline with alcoves
+          // Opening facing east/northeast for the radiant sun and waterfall
+          let baseR = 17.5 + Math.sin(theta * 3.0) * 2.2 + Math.cos(theta * 5.0) * 1.2;
+
+          // The cavern arches overhead at the top to frame the open sky
+          if (v > 0.45) {
+            const roofProgress = (v - 0.45) / 0.55;
+            // Overhang inward like the rocky cave ceiling in the mockup
+            baseR *= (1.0 - 0.42 * Math.sin(roofProgress * Math.PI * 0.5));
+          }
+
+          // Indent west side alcove where the return portal sits nestled inside cave rock
+          const portalAngle = Math.PI; // West is theta = PI
+          const angleDiff = Math.abs(theta - portalAngle);
+          if (angleDiff < 0.65) {
+            baseR -= (0.65 - angleDiff) * 3.5;
+          }
+
+          const px = originX + Math.cos(theta) * baseR;
+          const pz = originZ + Math.sin(theta) * baseR;
+
+          cavePositions.push(px, y, pz);
+          caveUvs.push(u * 6.0, v * 3.0);
+        }
+      }
+
+      for (let j = 0; j < caveSegmentsV; j++) {
+        for (let i = 0; i < caveSegmentsU; i++) {
+          const a = j * (caveSegmentsU + 1) + i;
+          const b = (j + 1) * (caveSegmentsU + 1) + i;
+          const c = (j + 1) * (caveSegmentsU + 1) + (i + 1);
+          const d = j * (caveSegmentsU + 1) + (i + 1);
+          caveIndices.push(a, b, d);
+          caveIndices.push(d, b, c);
+        }
+      }
+
+      caveGeo.setIndex(caveIndices);
+      caveGeo.setAttribute('position', new THREE.Float32BufferAttribute(cavePositions, 3));
+      caveGeo.setAttribute('uv', new THREE.Float32BufferAttribute(caveUvs, 2));
+      caveGeo.computeVertexNormals();
+
+      const caveMesh = new THREE.Mesh(caveGeo, caveMat);
+      group.add(caveMesh);
+
+      // Boundary colliders preventing falling out of the cavern
+      const addCavernBarrier = (x, z, r) => {
         this.colliders.push({
-          type: 'box',
+          type: 'cylinder',
           floor: 'all',
-          minX: x - (w * 0.5 + 0.3),
-          maxX: x + (w * 0.5 + 0.3),
-          minZ: z - (d * 0.5 + 0.3),
-          maxZ: z + (d * 0.5 + 0.3),
+          x: x,
+          z: z,
+          radius: r,
           minY: originY,
-          maxY: originY + cliffH,
-          isWall: true
+          maxY: originY + caveHeight
         });
       };
+      // Place surrounding safety boundary colliders along the cavern perimeter
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * Math.PI * 2;
+        const dist = 18.0;
+        addCavernBarrier(originX + Math.cos(th) * dist, originZ + Math.sin(th) * dist, 2.5);
+      }
 
-      // North cliff wall (behind waterfall)
-      addCliffWall(originX, originZ - 14.5, 32.0, 3.0);
-      // South cliff wall (back grotto behind player)
-      addCliffWall(originX, originZ + 14.5, 32.0, 3.0);
-      // West cliff wall (beside the return portal arch)
-      addCliffWall(originX - 14.5, originZ, 3.0, 32.0);
-      // East cliff wall
-      addCliffWall(originX + 14.5, originZ, 3.0, 32.0);
-
-      // Curved rocky boulders framing the grotto opening
+      // 3. Natural Sculpted Boulders Framing Plunge Pool and Cavern
       const boulderMat = new THREE.MeshStandardMaterial({
-        color: 0x3e473b,
-        roughness: 0.85
+        map: rockTex,
+        roughness: 0.88,
+        metalness: 0.08
       });
-      const boulderCoords = [
-        { x: originX - 8.0, z: originZ - 9.0, s: 2.4 },
-        { x: originX - 3.5, z: originZ - 8.5, s: 1.8 },
-        { x: originX + 7.5, z: originZ - 9.2, s: 2.2 },
-        { x: originX + 9.5, z: originZ - 5.0, s: 2.8 },
-        { x: originX - 10.5, z: originZ + 5.0, s: 2.1 },
-        { x: originX + 8.5, z: originZ + 8.0, s: 2.5 }
+      const boulderPlacements = [
+        // Boulders framing the waterfall pool
+        { x: originX + 7.0, z: originZ - 4.5, s: 2.2, ry: 0.4 },
+        { x: originX + 9.5, z: originZ - 4.0, s: 2.8, ry: 1.1 },
+        { x: originX + 11.5, z: originZ - 7.5, s: 3.2, ry: 2.3 },
+        { x: originX + 5.5, z: originZ - 7.0, s: 2.0, ry: 1.8 },
+        { x: originX + 4.2, z: originZ - 9.0, s: 1.8, ry: 0.6 },
+        { x: originX + 10.0, z: originZ - 11.5, s: 3.5, ry: 1.5 },
+        // Stepping stones and mossy rocks across the center
+        { x: originX - 0.5, z: originZ - 3.5, s: 1.3, ry: 0.5 },
+        { x: originX + 1.2, z: originZ - 4.8, s: 1.5, ry: 2.1 },
+        { x: originX + 2.8, z: originZ - 3.2, s: 1.4, ry: 1.2 },
+        // Portal grotto alcove framing boulders
+        { x: originX - 10.5, z: originZ - 4.2, s: 2.4, ry: 0.8 },
+        { x: originX - 11.5, z: originZ + 3.8, s: 2.6, ry: 2.7 },
+        { x: originX - 8.2, z: originZ + 4.5, s: 1.9, ry: 1.4 }
       ];
-      boulderCoords.forEach(b => {
-        const bMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(b.s, 1), boulderMat);
-        bMesh.position.set(b.x, originY + b.s * 0.45, b.z);
-        bMesh.rotation.set(Math.random(), Math.random(), Math.random());
+      boulderPlacements.forEach(b => {
+        const bGeo = new THREE.DodecahedronGeometry(b.s, 2);
+        // Distort vertices slightly for organic natural rock asymmetry
+        const bAttr = bGeo.attributes.position;
+        for (let k = 0; k < bAttr.count; k++) {
+          const vx = bAttr.getX(k);
+          const vy = bAttr.getY(k);
+          const vz = bAttr.getZ(k);
+          const disp = 1.0 + Math.sin(vx * 3.0 + vy * 2.0) * 0.12;
+          bAttr.setXYZ(k, vx * disp, vy * disp * 0.85, vz * disp);
+        }
+        bGeo.computeVertexNormals();
+
+        const bMesh = new THREE.Mesh(bGeo, boulderMat);
+        bMesh.position.set(b.x, originY + b.s * 0.42, b.z);
+        bMesh.rotation.set(0.2, b.ry, 0.15);
         group.add(bMesh);
 
         this.colliders.push({
@@ -10303,47 +10410,295 @@ window.game = this;
           floor: 'all',
           x: b.x,
           z: b.z,
-          radius: b.s * 0.85,
+          radius: b.s * 0.75,
           minY: originY,
-          maxY: originY + b.s * 1.2
+          maxY: originY + b.s * 1.3
         });
       });
 
-      // 3. Ancient Gnarled Tree Roots & Vines framing the cavern arch (matching 2nd photo)
+      // 4. Massive Ancient Gnarled Tree Roots Framing the Cavern Arch and Portal (Mockup centerpiece)
       const woodMat = new THREE.MeshStandardMaterial({
-        color: 0x452f1e,
-        roughness: 0.78
+        map: barkTex,
+        roughness: 0.82,
+        metalness: 0.04
       });
-      // Arching overhead branch spanning across the cavern skylight opening
-      const archCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 12.0, originY + 2.0, originZ - 4.0),
-        new THREE.Vector3(originX - 6.0, originY + 9.5, originZ - 6.0),
-        new THREE.Vector3(originX + 2.0, originY + 11.2, originZ - 8.0),
-        new THREE.Vector3(originX + 11.0, originY + 6.0, originZ - 9.0)
-      ]);
-      const branchGeo = new THREE.TubeGeometry(archCurve, 32, 0.95, 12, false);
-      const branchMesh = new THREE.Mesh(branchGeo, woodMat);
-      group.add(branchMesh);
 
-      // Second twisted arch root framing the portal grotto alcove
-      const portalRootCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 10.5, originY, originZ - 3.5),
-        new THREE.Vector3(originX - 8.5, originY + 4.2, originZ - 1.0),
-        new THREE.Vector3(originX - 7.5, originY + 5.4, originZ + 2.0),
-        new THREE.Vector3(originX - 9.5, originY + 1.2, originZ + 4.5)
+      // Root 1: Massive overhead arch spanning across the cavern ceiling opening
+      const overheadRootCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 13.0, originY + 0.5, originZ - 6.0),
+        new THREE.Vector3(originX - 9.5, originY + 6.0, originZ - 7.5),
+        new THREE.Vector3(originX - 4.0, originY + 11.5, originZ - 8.0),
+        new THREE.Vector3(originX + 3.0, originY + 12.2, originZ - 9.2),
+        new THREE.Vector3(originX + 9.5, originY + 8.5, originZ - 10.5),
+        new THREE.Vector3(originX + 13.5, originY + 2.0, originZ - 11.0)
       ]);
-      const portalRootGeo = new THREE.TubeGeometry(portalRootCurve, 24, 0.65, 10, false);
-      const portalRootMesh = new THREE.Mesh(portalRootGeo, woodMat);
-      group.add(portalRootMesh);
+      const overheadRootMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(overheadRootCurve, 40, 1.45, 14, false),
+        woodMat
+      );
+      group.add(overheadRootMesh);
 
-      // 4. Beautiful Open Blue Sky & Sunny Atmosphere above the cavern opening
-      // Huge celestial sky dome
+      // Root 2: Secondary branching twisting limb intertwined with Root 1
+      const overheadBranchCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 5.0, originY + 10.5, originZ - 7.5),
+        new THREE.Vector3(originX - 1.0, originY + 13.0, originZ - 6.5),
+        new THREE.Vector3(originX + 5.0, originY + 11.8, originZ - 7.0),
+        new THREE.Vector3(originX + 11.0, originY + 7.0, originZ - 8.5)
+      ]);
+      const overheadBranchMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(overheadBranchCurve, 28, 0.85, 10, false),
+        woodMat
+      );
+      group.add(overheadBranchMesh);
+
+      // Root 3: Dramatic gnarled trunk framing the portal entrance (identical to left side of mockup)
+      const portalArchRootCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 12.0, originY, originZ - 3.8),
+        new THREE.Vector3(originX - 10.5, originY + 3.2, originZ - 2.5),
+        new THREE.Vector3(originX - 9.5, originY + 5.5, originZ + 0.0),
+        new THREE.Vector3(originX - 8.8, originY + 5.2, originZ + 2.2),
+        new THREE.Vector3(originX - 9.8, originY + 2.8, originZ + 4.2),
+        new THREE.Vector3(originX - 11.8, originY, originZ + 5.0)
+      ]);
+      const portalArchMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(portalArchRootCurve, 36, 1.15, 12, false),
+        woodMat
+      );
+      group.add(portalArchMesh);
+
+      // Root 4: Inner twisted vine looping around the portal frame
+      const innerPortalVine = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 11.2, originY + 0.2, originZ - 3.0),
+        new THREE.Vector3(originX - 9.8, originY + 3.8, originZ - 1.8),
+        new THREE.Vector3(originX - 8.6, originY + 4.8, originZ + 0.4),
+        new THREE.Vector3(originX - 9.2, originY + 2.5, originZ + 3.2),
+        new THREE.Vector3(originX - 11.0, originY + 0.1, originZ + 3.8)
+      ]);
+      const innerVineMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(innerPortalVine, 28, 0.55, 8, false),
+        woodMat
+      );
+      group.add(innerVineMesh);
+
+      // Root 5: Heavy shelf root flanking the waterfall on the right
+      const waterfallRootCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX + 12.5, originY + 11.0, originZ - 12.0),
+        new THREE.Vector3(originX + 11.0, originY + 7.5, originZ - 9.5),
+        new THREE.Vector3(originX + 8.5, originY + 3.2, originZ - 7.5),
+        new THREE.Vector3(originX + 7.2, originY + 0.2, originZ - 6.0)
+      ]);
+      const waterfallRootMesh = new THREE.Mesh(
+        new THREE.TubeGeometry(waterfallRootCurve, 28, 1.10, 12, false),
+        woodMat
+      );
+      group.add(waterfallRootMesh);
+
+      // 5. Wildflowers, Ferns, and Forest Foliage (Matching vibrant meadow foreground in mockup)
+      const flowerMat = new THREE.MeshStandardMaterial({
+        map: flowerTex,
+        transparent: true,
+        alphaTest: 0.35,
+        roughness: 0.85,
+        metalness: 0.02,
+        side: THREE.DoubleSide
+      });
+
+      function createFoliageMesh(uMin, uMax, width, height) {
+        const geom = new THREE.PlaneGeometry(width, height);
+        geom.translate(0, height / 2, 0);
+        const uvs = geom.getAttribute('uv');
+        uvs.setXY(0, uMin, 1);
+        uvs.setXY(1, uMax, 1);
+        uvs.setXY(2, uMin, 0);
+        uvs.setXY(3, uMax, 0);
+        uvs.needsUpdate = true;
+
+        // Two crossed angled planes for full 3D parallax foliage
+        const g2 = geom.clone();
+        g2.rotateY(Math.PI / 2);
+        return mergeBufferGeometries([geom, g2]);
+      }
+
+      const folVariants = [
+        createFoliageMesh(0.00, 0.25, 0.85, 1.15), // Fern
+        createFoliageMesh(0.25, 0.50, 0.65, 0.95), // Magenta Wildflowers
+        createFoliageMesh(0.50, 0.75, 0.65, 0.90), // Azure Bellflowers
+        createFoliageMesh(0.75, 1.00, 0.60, 0.85)  // Golden Buttercups
+      ];
+
+      // Scatter dense wildflower clusters across the meadow basin floor (especially foreground)
+      const plantClusterCount = 55;
+      for (let p = 0; p < plantClusterCount; p++) {
+        const pAngle = Math.random() * Math.PI * 2;
+        const pDist = 2.5 + Math.random() * 11.5;
+        const px = originX + Math.cos(pAngle) * pDist;
+        const pz = originZ + Math.sin(pAngle) * pDist;
+
+        // Don't spawn inside the pool or portal
+        if (Math.hypot(px - (originX + 8.5), pz - (originZ - 7.5)) < 4.5) continue;
+        if (Math.hypot(px - (originX - 9.2), pz - originZ) < 3.2) continue;
+
+        const vIdx = Math.floor(Math.random() * folVariants.length);
+        const plantMesh = new THREE.Mesh(folVariants[vIdx], flowerMat);
+        const pScale = 0.8 + Math.random() * 0.5;
+        plantMesh.scale.set(pScale, pScale, pScale);
+        plantMesh.position.set(px, originY, pz);
+        plantMesh.rotation.y = Math.random() * Math.PI * 2;
+        group.add(plantMesh);
+      }
+
+      // 6. Brilliant Azure Plunge Pool and Majestic Animated Waterfall
+      // Plunge pool water disc
+      const poolGeo = new THREE.CircleGeometry(5.8, 36);
+      const poolMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.12,
+        metalness: 0.35,
+        transparent: true,
+        opacity: 0.85
+      });
+      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+      poolMesh.rotation.x = -Math.PI / 2;
+      poolMesh.position.set(originX + 8.5, originY + 0.12, originZ - 7.5);
+      group.add(poolMesh);
+
+      // Waterfall Shader & Meshes
+      const wfUniforms = {
+        uTime: { value: 0 },
+        uColorTop: { value: new THREE.Color(0xffffff) },
+        uColorBot: { value: new THREE.Color(0x38bdf8) }
+      };
+
+      const wfMat = new THREE.ShaderMaterial({
+        uniforms: wfUniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          uniform float uTime;
+          void main() {
+            vUv = uv;
+            vec3 pos = position;
+            // Billowing rushing wave displacement
+            pos.z += sin(pos.y * 2.2 - uTime * 8.0) * 0.18 * (1.0 - uv.y);
+            pos.x += cos(pos.y * 2.8 - uTime * 5.0) * 0.10;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColorTop;
+          uniform vec3 uColorBot;
+          varying vec2 vUv;
+          void main() {
+            // High-speed rushing water streaks
+            float rush = sin(vUv.y * 55.0 - uTime * 15.0) * 0.5 + 0.5;
+            rush += sin(vUv.x * 32.0 + vUv.y * 22.0 - uTime * 11.0) * 0.35;
+            rush = clamp(rush, 0.0, 1.0);
+            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.45);
+            float alpha = 0.82 + rush * 0.18;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+
+      // Main waterfall sheet falling from cliff ledge
+      const wfMesh1 = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 14.5, 20, 28), wfMat);
+      wfMesh1.position.set(originX + 8.5, originY + 7.25, originZ - 10.8);
+      group.add(wfMesh1);
+
+      // Front secondary water drape for lush volumetric depth
+      const wfMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 13.0, 16, 20), wfMat);
+      wfMesh2.position.set(originX + 8.5, originY + 6.5, originZ - 10.3);
+      group.add(wfMesh2);
+
+      // 7. Soft Waterfall Mist and Splash Particles
+      const mistCount = 80;
+      const mistGeo = new THREE.BufferGeometry();
+      const mistPos = new Float32Array(mistCount * 3);
+      const mistVel = [];
+      for (let i = 0; i < mistCount; i++) {
+        mistPos[i * 3]     = originX + 8.5 + (Math.random() - 0.5) * 6.5;
+        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
+        mistPos[i * 3 + 2] = originZ - 7.5 + (Math.random() - 0.5) * 5.0;
+        mistVel.push({
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: 0.35 + Math.random() * 0.65,
+          vz: (Math.random() - 0.5) * 0.35
+        });
+      }
+      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
+      const mistMat = new THREE.PointsMaterial({
+        size: 0.85,
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.45,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const mistPoints = new THREE.Points(mistGeo, mistMat);
+      group.add(mistPoints);
+
+      // 8. Floating Multicolored Pastel Motes (Matching mockup's subtle floating glowing lights)
+      const motePalette = [
+        new THREE.Color(0x2dd4bf), // Teal
+        new THREE.Color(0x38bdf8), // Blue
+        new THREE.Color(0x4ade80), // Green
+        new THREE.Color(0xfacc15), // Yellow
+        new THREE.Color(0xf472b6), // Pink
+        new THREE.Color(0xc084fc)  // Purple
+      ];
+
+      const orbCount = 110;
+      const orbGeo = new THREE.BufferGeometry();
+      const orbPos = new Float32Array(orbCount * 3);
+      const orbColors = new Float32Array(orbCount * 3);
+      const orbData = [];
+
+      for (let i = 0; i < orbCount; i++) {
+        const ox = originX + (Math.random() - 0.5) * 26.0;
+        const oy = originY + 0.6 + Math.random() * 7.5;
+        const oz = originZ + (Math.random() - 0.5) * 26.0;
+
+        orbPos[i * 3]     = ox;
+        orbPos[i * 3 + 1] = oy;
+        orbPos[i * 3 + 2] = oz;
+
+        const col = motePalette[i % motePalette.length];
+        orbColors[i * 3]     = col.r;
+        orbColors[i * 3 + 1] = col.g;
+        orbColors[i * 3 + 2] = col.b;
+
+        orbData.push({
+          baseX: ox,
+          baseY: oy,
+          baseZ: oz,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.35 + Math.random() * 0.65,
+          radius: 0.8 + Math.random() * 1.8
+        });
+      }
+      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
+      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
+
+      const orbMat = new THREE.PointsMaterial({
+        size: 0.26,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const orbPoints = new THREE.Points(orbGeo, orbMat);
+      group.add(orbPoints);
+
+      // 9. Celestial Sky Dome & Radiant Sunbeams
       const skyGeo = new THREE.SphereGeometry(65.0, 32, 24);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
-          uTopColor: { value: new THREE.Color(0x2563eb) },    // vibrant deep blue sky
-          uHorizonColor: { value: new THREE.Color(0x93c5fd) },// bright sunny light blue
-          uSunColor: { value: new THREE.Color(0xfffbeb) }    // brilliant shining sun
+          uTopColor: { value: new THREE.Color(0x1d4ed8) },     // pure cobalt sky
+          uHorizonColor: { value: new THREE.Color(0x93c5fd) }, // bright azure horizon
+          uSunColor: { value: new THREE.Color(0xfffbeb) }      // bright radiant sun
         },
         vertexShader: `
           varying vec3 vWorldPos;
@@ -10361,12 +10716,11 @@ window.game = this;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.65));
-            // Brilliant sun disc at azimuth
-            vec3 sunDir = normalize(vec3(0.35, 0.75, -0.55));
+            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.55));
+            vec3 sunDir = normalize(vec3(0.28, 0.82, -0.50));
             float sunDot = max(0.0, dot(dir, sunDir));
-            sky += uSunColor * pow(sunDot, 120.0) * 1.8;
-            sky += vec3(1.0, 0.95, 0.8) * pow(sunDot, 8.0) * 0.45;
+            sky += uSunColor * pow(sunDot, 120.0) * 1.9;
+            sky += vec3(1.0, 0.95, 0.82) * pow(sunDot, 8.0) * 0.45;
             gl_FragColor = vec4(sky, 1.0);
           }
         `,
@@ -10377,19 +10731,19 @@ window.game = this;
       skyDome.position.set(originX, originY, originZ);
       group.add(skyDome);
 
-      // Direct shining sunlight and radiant ambient lighting inside the sanctuary
-      const sunLight = new THREE.DirectionalLight(0xfff7d6, 2.8);
-      sunLight.position.set(originX + 10.0, originY + 28.0, originZ - 16.0);
+      // Direct shining sunlight streaming through the cavern roof
+      const sunLight = new THREE.DirectionalLight(0xfffae0, 2.9);
+      sunLight.position.set(originX + 8.0, originY + 30.0, originZ - 15.0);
       sunLight.target.position.set(originX, originY, originZ);
       group.add(sunLight);
       group.add(sunLight.target);
 
-      const sanctuaryHemiLight = new THREE.HemisphereLight(0x93c5fd, 0x3d4a2d, 1.35);
+      const sanctuaryHemiLight = new THREE.HemisphereLight(0xbae6fd, 0x47553b, 1.45);
       sanctuaryHemiLight.position.set(originX, originY + 20.0, originZ);
       group.add(sanctuaryHemiLight);
 
-      // Volumetric Sunbeams streaming through the cavern roof
-      const sunbeamGeo = new THREE.CylinderGeometry(4.8, 1.2, 22.0, 16, 1, true);
+      // Angled sunbeams pouring down through the archway opening (matching mockup)
+      const sunbeamGeo = new THREE.CylinderGeometry(5.2, 1.4, 22.0, 16, 1, true);
       const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
@@ -10397,181 +10751,29 @@ window.game = this;
         map: beamTex,
         color: 0xfffde8,
         transparent: true,
-        opacity: 0.35,
+        opacity: 0.38,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
       const sunbeamMesh = new THREE.Mesh(sunbeamGeo, sunbeamMat);
-      sunbeamMesh.position.set(originX + 2.0, originY + 11.0, originZ - 3.0);
-      sunbeamMesh.rotation.x = 0.25;
-      sunbeamMesh.rotation.z = -0.15;
+      sunbeamMesh.position.set(originX + 1.5, originY + 11.5, originZ - 3.5);
+      sunbeamMesh.rotation.x = 0.28;
+      sunbeamMesh.rotation.z = -0.18;
       group.add(sunbeamMesh);
 
-      // 5. Gorgeous Rushing Waterfall & Plunge Pool (matching 2nd photo on the right)
-      // Plunge pool water plane
-      const poolGeo = new THREE.CircleGeometry(6.5, 32);
-      const poolMat = new THREE.MeshStandardMaterial({
-        color: 0x0ea5e9, // crystal clear azure-teal water
-        roughness: 0.15,
-        metalness: 0.25,
-        transparent: true,
-        opacity: 0.85
-      });
-      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
-      poolMesh.rotation.x = -Math.PI / 2;
-      poolMesh.position.set(originX + 8.5, originY + 0.05, originZ - 6.5);
-      group.add(poolMesh);
-
-      // Vertical rushing waterfall sheets
-      const wfGeo = new THREE.PlaneGeometry(5.2, 13.5, 16, 24);
-      const wfUniforms = {
-        uTime: { value: 0 },
-        uColorTop: { value: new THREE.Color(0xffffff) },
-        uColorBot: { value: new THREE.Color(0x38bdf8) }
-      };
-      const wfMat = new THREE.ShaderMaterial({
-        uniforms: wfUniforms,
-        vertexShader: `
-          varying vec2 vUv;
-          uniform float uTime;
-          void main() {
-            vUv = uv;
-            vec3 pos = position;
-            // Billowing rushing wave displacement
-            pos.z += sin(pos.y * 2.5 - uTime * 9.0) * 0.14 * (1.0 - uv.y);
-            pos.x += cos(pos.y * 3.0 - uTime * 6.0) * 0.08;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float uTime;
-          uniform vec3 uColorTop;
-          uniform vec3 uColorBot;
-          varying vec2 vUv;
-          void main() {
-            // High-speed rushing water streaks
-            float rush = sin(vUv.y * 45.0 - uTime * 14.0) * 0.5 + 0.5;
-            rush += sin(vUv.x * 28.0 + vUv.y * 18.0 - uTime * 10.0) * 0.35;
-            rush = clamp(rush, 0.0, 1.0);
-            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.35);
-            // Frothy edge foam
-            float foam = smoothstep(0.0, 0.15, vUv.y);
-            float alpha = 0.82 + rush * 0.18;
-            gl_FragColor = vec4(col, alpha);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide
-      });
-      const wfMesh1 = new THREE.Mesh(wfGeo, wfMat);
-      wfMesh1.position.set(originX + 8.5, originY + 6.75, originZ - 10.5);
-      group.add(wfMesh1);
-
-      // Offset front splash layer for dense volumetric volume
-      const wfMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 12.0, 12, 16), wfMat);
-      wfMesh2.position.set(originX + 8.5, originY + 6.0, originZ - 10.1);
-      group.add(wfMesh2);
-
-      // 6. Waterfall Mist & Plunge Pool Foam (billowing soft particles)
-      const mistCount = 65;
-      const mistGeo = new THREE.BufferGeometry();
-      const mistPos = new Float32Array(mistCount * 3);
-      const mistVel = [];
-      for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 8.5 + (Math.random() - 0.5) * 5.5;
-        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 2.8;
-        mistPos[i * 3 + 2] = originZ - 7.5 + (Math.random() - 0.5) * 4.5;
-        mistVel.push({
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: 0.3 + Math.random() * 0.6,
-          vz: (Math.random() - 0.5) * 0.3
-        });
-      }
-      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
-      const mistMat = new THREE.PointsMaterial({
-        size: 0.75,
-        color: 0xe0f2fe,
-        transparent: true,
-        opacity: 0.42,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const mistPoints = new THREE.Points(mistGeo, mistMat);
-      group.add(mistPoints);
-
-      // 7. Floating Ethereal Pastel Color Lights (Teal, Blue, Green, Yellow, Pink, Purple)
-      const motePalette = [
-        new THREE.Color(0x2dd4bf), // Teal
-        new THREE.Color(0x38bdf8), // Blue
-        new THREE.Color(0x4ade80), // Green
-        new THREE.Color(0xfacc15), // Yellow
-        new THREE.Color(0xf472b6), // Pink
-        new THREE.Color(0xc084fc)  // Purple
-      ];
-
-      const orbCount = 85;
-      const orbGeo = new THREE.BufferGeometry();
-      const orbPos = new Float32Array(orbCount * 3);
-      const orbColors = new Float32Array(orbCount * 3);
-      const orbData = [];
-
-      for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 22.0;
-        const oy = originY + 0.8 + Math.random() * 5.5;
-        const oz = originZ + (Math.random() - 0.5) * 22.0;
-
-        orbPos[i * 3]     = ox;
-        orbPos[i * 3 + 1] = oy;
-        orbPos[i * 3 + 2] = oz;
-
-        const col = motePalette[i % motePalette.length];
-        orbColors[i * 3]     = col.r;
-        orbColors[i * 3 + 1] = col.g;
-        orbColors[i * 3 + 2] = col.b;
-
-        orbData.push({
-          baseX: ox,
-          baseY: oy,
-          baseZ: oz,
-          phase: Math.random() * Math.PI * 2,
-          speed: 0.4 + Math.random() * 0.6,
-          radius: 0.6 + Math.random() * 1.4
-        });
-      }
-      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
-      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
-
-      const orbMat = new THREE.PointsMaterial({
-        size: 0.22,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const orbPoints = new THREE.Points(orbGeo, orbMat);
-      group.add(orbPoints);
-
-      // 8. Return Portal to Museum (matching left side of 2nd photo)
+      // 10. Ethereal Swirling Return Portal (Matching exact portal swirl in mockup)
       const retPortalGroup = new THREE.Group();
-      const retPortalX = originX - 9.0;
-      const retPortalY = originY + 2.4;
+      const retPortalX = originX - 9.2;
+      const retPortalY = originY + 2.5;
       const retPortalZ = originZ;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
 
-      // Beautiful swirling vortex disk facing east into the sanctuary
-      const burstTex = this.texLoader.load('assets/textures/portal_burst_flow.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
       const retPortalUniforms = {
-        uTime: { value: 0 },
-        uColorHot: { value: new THREE.Color(0xa7f3d0) }, // ethereal seafoam/teal center
-        uColorMid: { value: new THREE.Color(0x38bdf8) }, // bright azure
-        uColorOuter: { value: new THREE.Color(0xc084fc) } // mystic purple
+        uTime: { value: 0 }
       };
 
-      const retShaderMat = new THREE.ShaderMaterial({
+      const retPortalShaderMat = new THREE.ShaderMaterial({
         uniforms: retPortalUniforms,
         vertexShader: `
           varying vec2 vUv;
@@ -10582,22 +10784,27 @@ window.game = this;
         `,
         fragmentShader: `
           uniform float uTime;
-          uniform vec3 uColorHot;
-          uniform vec3 uColorMid;
-          uniform vec3 uColorOuter;
           varying vec2 vUv;
           void main() {
-            vec2 centered = (vUv - 0.5) * 2.0;
-            float r = length(centered);
+            vec2 p = (vUv - 0.5) * 2.0;
+            float r = length(p);
             if (r > 1.0) discard;
-            float angle = atan(centered.y, centered.x);
-            float swirl = angle + r * 4.0 - uTime * 2.2;
-            float rays = sin(angle * 8.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
+            float angle = atan(p.y, p.x);
+            float swirl = angle + r * 5.2 - uTime * 2.4;
+            float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.8) * 0.5 + 0.5;
             float smoothEdge = cos(r * 1.5707963);
-            vec3 col = mix(uColorOuter, uColorMid, smoothstep(0.8, 0.25, r));
-            col = mix(col, uColorHot, smoothstep(0.45, 0.0, r));
-            col += uColorHot * (rays * 0.45);
-            float alpha = smoothEdge * 0.95;
+            
+            // Beautiful multi-color gradient matching mockup:
+            // Pale mint/turquoise center -> Azure blue mid -> Mystic violet outer rim
+            vec3 cOuter = vec3(0.75, 0.52, 0.98); // violet
+            vec3 cMid = vec3(0.22, 0.74, 0.97);   // cyan/azure
+            vec3 cCenter = vec3(0.85, 1.0, 0.92); // radiant mint core
+
+            vec3 col = mix(cOuter, cMid, smoothstep(0.82, 0.28, r));
+            col = mix(col, cCenter, smoothstep(0.40, 0.0, r));
+            col += cCenter * (rays * 0.42);
+
+            float alpha = smoothEdge * 0.96;
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -10607,25 +10814,24 @@ window.game = this;
         side: THREE.DoubleSide
       });
 
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2, 24, 24), retShaderMat);
-      retDisc.rotation.y = Math.PI / 2; // Facing +X into sanctuary
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8, 32, 32), retPortalShaderMat);
+      retDisc.rotation.y = Math.PI / 2; // Facing +X towards player in sanctuary
       retPortalGroup.add(retDisc);
 
       const retBurstMat = new THREE.MeshBasicMaterial({
-        map: burstTex,
-        color: 0xa5f3fc,
+        map: vortexTex,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.92,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 6.2), retBurstMat);
+      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), retBurstMat);
       retBurst.rotation.y = Math.PI / 2;
       retPortalGroup.add(retBurst);
 
-      const retLight = new THREE.PointLight(0x5eead4, 3.8, 14.0, 1.2);
-      retLight.position.set(0.2, 0, 0);
+      const retLight = new THREE.PointLight(0x5eead4, 3.8, 16.0, 1.2);
+      retLight.position.set(0.3, 0, 0);
       retPortalGroup.add(retLight);
 
       group.add(retPortalGroup);
@@ -17741,12 +17947,33 @@ window.game = this;
           this.updateHud();
         }
 
-        // Check proximity to the Return Portal (located at retPortalX: originX - 9.0, retPortalZ: originZ)
+        // Check proximity to the Return Portal (located at retPortalX: originX - 9.2, retPortalZ: originZ)
         const distToRetPortal = Math.hypot(this.playerPos.x - sr.retPortalX, this.playerPos.z - sr.retPortalZ);
-        if (distToRetPortal < 2.2 && !this._isTeleportingPortal) {
-          // Step into the portal: fades into the ethereal portal color, then teleports back in front of east office
-          this._isTeleportingPortal = true;
-          this.teleportFromNatureSafeRoom();
+        if (distToRetPortal < 3.2 && !this._isTeleportingPortal) {
+          // Vision slowly builds up an ethereal portal color fade over 2 seconds (just like entering the portal originally)
+          this._returnPortalFade = (this._returnPortalFade || 0.0) + delta * 0.55;
+          const overlay = this.dom.portalFadeOverlay;
+          if (overlay) {
+            overlay.style.background = 'radial-gradient(ellipse at center, #a7f3d0 0%, #38bdf8 45%, #c084fc 100%)';
+            overlay.style.opacity = Math.min(1.0, this._returnPortalFade).toFixed(3);
+            overlay.style.pointerEvents = 'auto';
+          }
+          if (this._returnPortalFade >= 1.0) {
+            this._isTeleportingPortal = true;
+            this._returnPortalFade = 0.0;
+            this.teleportFromNatureSafeRoom();
+          }
+        } else if (!this._isTeleportingPortal && this._returnPortalFade > 0.0) {
+          // If the player steps away before the fade completes, gently fade it back out
+          this._returnPortalFade = Math.max(0.0, this._returnPortalFade - delta * 0.85);
+          const overlay = this.dom.portalFadeOverlay;
+          if (overlay) {
+            overlay.style.opacity = this._returnPortalFade.toFixed(3);
+            if (this._returnPortalFade <= 0.01) {
+              overlay.style.pointerEvents = 'none';
+              overlay.style.background = '#ffffff';
+            }
+          }
         }
       }
     }
@@ -21859,14 +22086,20 @@ window.game = this;
           this.playerPos.z += (moveZ / moveLen) * flySpeed * delta;
         }
 
-        // Keep no-clip movement within the full museum height, including the fourth floor.
-        const maxMuseumY = CONFIG.NUM_FLOORS * CONFIG.FLOOR_HEIGHT;
-        this.playerPos.y = Math.max(-1.0, Math.min(maxMuseumY, this.playerPos.y));
+        // Keep no-clip movement within bounds depending on whether player is in safe room or museum
+        if (this.isSafeRoomActive) {
+          const sr = this.safeRoomSanctuary;
+          const srBaseY = sr ? sr.originY : 50.0;
+          this.playerPos.y = Math.max(srBaseY - 2.0, Math.min(srBaseY + 35.0, this.playerPos.y));
+        } else {
+          const maxMuseumY = CONFIG.NUM_FLOORS * CONFIG.FLOOR_HEIGHT;
+          this.playerPos.y = Math.max(-1.0, Math.min(maxMuseumY, this.playerPos.y));
 
-        const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
-        if (approxFloor !== this.playerFloor) {
-          this.playerFloor = approxFloor;
-          this.showFloorNotification(this.playerFloor);
+          const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
+          if (approxFloor !== this.playerFloor) {
+            this.playerFloor = approxFloor;
+            this.showFloorNotification(this.playerFloor);
+          }
         }
 
         const thirdPerson = this.isThirdPersonView();
@@ -22653,14 +22886,23 @@ window.game = this;
         );
       } else {
         // Seamless drop to ground like Garry's Mod
-        const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
-        let groundFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
-        this.playerFloor = groundFloor;
-        this.playerStairState = { active: null, baseFloor: groundFloor };
+        if (this.isSafeRoomActive) {
+          const sr = this.safeRoomSanctuary;
+          const srBaseY = sr ? sr.originY : 50.0;
+          this.playerPos.y = srBaseY + CONFIG.PLAYER.CAMERA_HEIGHT;
+          this.isGrounded = true;
+          this.fallVelocity = 0;
+          this.isFalling = false;
+        } else {
+          const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
+          let groundFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
+          this.playerFloor = groundFloor;
+          this.playerStairState = { active: null, baseFloor: groundFloor };
 
-        this.isGrounded = false;
-        this.fallVelocity = 0;
-        this.isFalling = true;
+          this.isGrounded = false;
+          this.fallVelocity = 0;
+          this.isFalling = true;
+        }
 
         this.showSystemNotification(
           T('hud.noclip_disabled', 'NO-CLIP DISABLED')
