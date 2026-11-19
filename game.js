@@ -4426,6 +4426,7 @@
         jumpscareOverlay: document.getElementById('jumpscare-overlay'),
         interactPrompt: document.getElementById('interact-prompt'),
         deathKeys: document.getElementById('death-keys'),
+        deathTime: document.getElementById('death-time'),
         deathShots: document.getElementById('death-shots'),
         deathHits: document.getElementById('death-hits'),
         winTime: document.getElementById('win-time')
@@ -23736,8 +23737,18 @@ window.game = this;
         this.dom.deathKeys.textContent = this.relicsCollected;
         const totalEl = document.querySelector('[data-text="gameover.relics_out_of"]');
         if (totalEl) totalEl.textContent = `/ ${CONFIG.TOTAL_RELICS}`;
-        this.dom.deathShots.textContent = this.shotsFired;
-        this.dom.deathHits.textContent = this.shotsHit;
+        
+        // Calculate playtime formatted as m:ss
+        const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
+        const mins = Math.floor(elapsedSec / 60);
+        const secs = elapsedSec % 60;
+        const formattedTime = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        if (this.dom.deathTime) {
+          this.dom.deathTime.textContent = formattedTime;
+        }
+
+        if (this.dom.deathShots) this.dom.deathShots.textContent = this.shotsFired;
+        if (this.dom.deathHits) this.dom.deathHits.textContent = this.shotsHit;
         this.dom.gameOverModal.classList.remove('hidden');
 
         // Keep jumpscareOverlay active behind game-over modal until restart, or smoothly clean it up

@@ -246,16 +246,15 @@ gameover.title = EXHIBIT CASUALTY
 gameover.text = You were beaten to death
 gameover.relics_label = Relics Recovered:
 gameover.relics_out_of = / {total}
-gameover.shots_label = Shots Fired:
-gameover.hits_label = Smitty Hits:
+gameover.time_label = Playtime:
 gameover.button = TRY AGAIN
 
 
 [ VICTORY SCREEN ]
 victory.title = YOU ESCAPED
-victory.text = You escaped
+victory.text = You unsealed the museum's emergency doors and fled into the night.
 victory.all_relics = All {total} Relics Recovered
-victory.time_label = Time Survived:
+victory.time_label = Playtime:
 victory.button = PLAY AGAIN
 
 
