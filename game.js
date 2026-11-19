@@ -21395,6 +21395,14 @@ window.game = this;
               pos.z += (dz / dist) * overlap;
             }
           } else if (c.type === 'cylinder') {
+            // Dog cannot push the player around unless currently performing an attack lunge!
+            if (c.isRobotDog && pos === this.playerPos) {
+              const dog = this.robotDog;
+              if (!dog || !dog.isAttackingPlayer) {
+                continue;
+              }
+            }
+
             const dx = pos.x - c.x;
             const dz = pos.z - c.z;
             const rTotal = radius + c.radius;
@@ -22258,14 +22266,21 @@ window.game = this;
       // Black juice liquid spray and puddles (dog never dies, only bleeds and charges/retaliates)
       this.spawnLiquidBlood(hitPoint, sprayDir, 32, dog.y, true);
 
-      // Dog takes 0.5-1.0 seconds to charge up before lunging into an attack!
+      // Hurt reaction: dog whimpers audibly when shot or damaged
+      if (dog.sfx && dog.sfx.whimper) {
+        this.playDogSound(dog.sfx.whimper, dog);
+      } else {
+        this.playDogSound(dog.sfx.bark, dog);
+      }
+
+      // Dog takes 0.4-0.8 seconds to charge up before lunging into an attack!
       dog.aiState = "CHARGE_PLAYER";
-      dog.aiTimer = 0.5 + Math.random() * 0.5; // 0.5-1.0s charge time before attack
+      dog.aiTimer = 0.4 + Math.random() * 0.4;
       dog.retaliated = false;
       dog.retaliateDir = sprayDir.clone().negate();
       dog.currentSpeed = 0;
       dog.navPath = null;
-      this.playDogSound(dog.sfx.bark, dog);
+      dog.isAttackingPlayer = false;
     }
 
     shootPistol() {
@@ -24023,6 +24038,7 @@ window.game = this;
         currentActionName: "Idle",
         stepTimer: 0,
         layDownIntervalTimer: 180.0, // Every 3 minutes (180s), dog lays down for ~20s
+        baseY: y0,
         sfx: {
           steps: [
             new Audio(encodeURI("assets/audio/robotdog/servo_step_1.wav")),
@@ -24035,7 +24051,9 @@ window.game = this;
             new Audio(encodeURI("assets/audio/robotdog/robot_bark_2.wav")),
             new Audio(encodeURI("assets/audio/robotdog/robot_bark_3.wav"))
           ],
-          attack: new Audio(encodeURI("assets/audio/robotdog/robot_attack.wav"))
+          attack: new Audio(encodeURI("assets/audio/robotdog/robot_attack.wav")),
+          angryAttack: new Audio(encodeURI("assets/audio/robotdog/robot_angry_attack.wav")),
+          whimper: new Audio(encodeURI("assets/audio/robotdog/robot_whimper.wav"))
         }
       };
 
@@ -24043,6 +24061,8 @@ window.game = this;
       dogObj.sfx.steps.forEach(a => { a.volume = 0.22; a.preload = "auto"; });
       dogObj.sfx.barks.forEach(a => { a.volume = 0.45; a.preload = "auto"; });
       dogObj.sfx.attack.volume = 0.40; dogObj.sfx.attack.preload = "auto";
+      dogObj.sfx.angryAttack.volume = 0.55; dogObj.sfx.angryAttack.preload = "auto";
+      dogObj.sfx.whimper.volume = 0.52; dogObj.sfx.whimper.preload = "auto";
 
       const gltfLoader = new THREE.GLTFLoader();
       const dogModelPath = "assets/RobotDog.glb";
@@ -24331,7 +24351,7 @@ window.game = this;
       // STATE MACHINE: Hyperactive, fast transitions, full behaviors
       switch (dog.aiState) {
         case "CHARGE_PLAYER": {
-          // Play menacing bark/idle stance and lock eyes on player for 1.4s while charging up
+          // Play menacing bark/idle stance and lock eyes on player while charging up
           this.playDogAction(dog, "Bark", 0.15);
           const toPx = this.playerPos.x - dog.x;
           const toPz = this.playerPos.z - dog.z;
@@ -24339,27 +24359,71 @@ window.game = this;
           dog.group.rotation.y = dog.yaw;
 
           if (dog.aiTimer <= 0) {
-            // Charge phase complete, now lunge into the attack
+            // Charge phase complete, now trigger an angry jump attack towards player!
             dog.aiState = "RETALIATE_PLAYER";
-            dog.aiTimer = 0.55;
+            dog.aiTimer = 0.65;
+            dog.attackDuration = 0.65;
             dog.retaliated = false;
+            dog.isAttackingPlayer = true;
+            dog.attackStartX = dog.x;
+            dog.attackStartZ = dog.z;
+            dog.attackBaseY = dog.y;
+            // Target leap vector straight toward player's current position
+            const pDistH = Math.max(0.1, Math.hypot(toPx, toPz));
+            const leapDist = Math.min(pDistH, 4.2);
+            dog.attackTargetX = dog.x + (toPx / pDistH) * leapDist;
+            dog.attackTargetZ = dog.z + (toPz / pDistH) * leapDist;
+            // Play angry attack sound
+            if (dog.sfx && dog.sfx.angryAttack) {
+              this.playDogSound(dog.sfx.angryAttack, dog);
+            } else {
+              this.playDogSound(dog.sfx.attack, dog);
+            }
           }
           break;
         }
 
         case "RETALIATE_PLAYER": {
           this.playDogAction(dog, "Attack", 0.08);
+          dog.isAttackingPlayer = true;
+
+          const progress = Math.max(0, Math.min(1, 1 - (dog.aiTimer / (dog.attackDuration || 0.65))));
+          
+          // Physical jump trajectory: high dynamic leap towards player
+          const jumpArc = Math.sin(progress * Math.PI);
+          const jumpY = (dog.attackBaseY !== undefined ? dog.attackBaseY : dog.y) + jumpArc * 0.95;
+          dog.y = jumpY;
+
+          // Forward jump lunge interpolation
+          const curTargetX = (dog.attackStartX !== undefined && dog.attackTargetX !== undefined) 
+            ? THREE.MathUtils.lerp(dog.attackStartX, dog.attackTargetX, Math.min(1, progress * 1.15))
+            : dog.x;
+          const curTargetZ = (dog.attackStartZ !== undefined && dog.attackTargetZ !== undefined)
+            ? THREE.MathUtils.lerp(dog.attackStartZ, dog.attackTargetZ, Math.min(1, progress * 1.15))
+            : dog.z;
+
+          const stepX = curTargetX - dog.x;
+          const stepZ = curTargetZ - dog.z;
+          moveDogStep(stepX, stepZ, dog.runSpeed * 2.2);
+
+          // Tilt pitch during jump: pounce upward then downward
+          if (dog.dogRoot) {
+            dog.dogRoot.rotation.x = -Math.sin(progress * Math.PI) * 0.45;
+          }
+
           // Face the player
           const toPx = this.playerPos.x - dog.x;
           const toPz = this.playerPos.z - dog.z;
           dog.yaw = Math.atan2(toPx, toPz);
           dog.group.rotation.y = dog.yaw;
 
-          if (!dog.retaliated) {
+          const curDistToPlayer = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
+
+          if (!dog.retaliated && (curDistToPlayer < 1.6 || progress >= 0.45)) {
             dog.retaliated = true;
             this.playDogSound(dog.sfx.attack, dog);
 
-            // Hurt the player once!
+            // Hurt the player and push/knock them back on impact!
             if (this.dom.damageOverlay) {
               this.dom.damageOverlay.style.opacity = '1';
               setTimeout(() => {
@@ -24368,11 +24432,23 @@ window.game = this;
             }
             this.health = Math.max(1, this.health - 12); // Dog bites back for 12 damage
             this.updateHud();
-            this.playerPitch += (Math.random() - 0.5) * 0.18;
-            this.playerYaw += (Math.random() - 0.5) * 0.18;
+            this.playerPitch += (Math.random() - 0.5) * 0.25;
+            this.playerYaw += (Math.random() - 0.5) * 0.25;
+
+            // Attack knockback impulse pushing the player away from the leaping dog
+            const pushLen = Math.max(0.1, curDistToPlayer);
+            const pushDirX = (this.playerPos.x - dog.x) / pushLen;
+            const pushDirZ = (this.playerPos.z - dog.z) / pushLen;
+            this.playerPos.x += pushDirX * 1.25;
+            this.playerPos.z += pushDirZ * 1.25;
+            this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor);
           }
 
           if (dog.aiTimer <= 0) {
+            dog.isAttackingPlayer = false;
+            if (dog.dogRoot) dog.dogRoot.rotation.x = 0;
+            if (dog.attackBaseY !== undefined) dog.y = dog.attackBaseY;
+            dog.group.position.y = dog.y;
             // Now run away rapidly! Pick a wander node far away
             dog.aiState = "RUN_AWAY";
             dog.aiTimer = 4.0;
@@ -24434,6 +24510,14 @@ window.game = this;
               dog.aiTimer = 5.0 + Math.random() * 3.0;
               dog.navPath = this.findDogPath(dog, this.playerPos.x, this.playerPos.z, this.playerFloor);
               dog.navIndex = 0;
+            } else if (dog.floor === 0 && Math.random() < 0.28) {
+              // Dedicated behavior: Patrol the perimeter of the Petting Zoo, guarding it
+              dog.aiState = "PATROL_PETTING_ZOO";
+              dog.aiTimer = 14.0 + Math.random() * 8.0;
+              dog.pzPatrolIndex = 0;
+              dog.pzBarkTimer = 2.0 + Math.random() * 3.0;
+              dog.navPath = null;
+              this.playDogAction(dog, "Walk", 0.2);
             } else if (roll < 0.55) {
               // Playful zoomies: circle spin!
               const freeSpace = !this.gridBlocked(dog.floor, dog.x + 1.5, dog.z) && !this.gridBlocked(dog.floor, dog.x - 1.5, dog.z);
@@ -24756,6 +24840,60 @@ window.game = this;
             dog.barkSoundPlayed = false;
             dog.aiState = "IDLE";
             dog.aiTimer = 0.5;
+          }
+          break;
+        }
+
+        case "PATROL_PETTING_ZOO": {
+          // Patrol and guard the perimeter outside the Petting Zoo fence on Floor 0
+          if (dog.floor !== 0) {
+            dog.aiState = "IDLE";
+            dog.aiTimer = 1.0;
+            break;
+          }
+
+          const patrolWaypoints = [
+            { x: 17.5, z: 8.8 },   // Northwest corner of fence
+            { x: 17.2, z: 12.0 },  // North side of petting zoo gate
+            { x: 17.2, z: 14.0 },  // South side of petting zoo gate
+            { x: 17.5, z: 17.2 },  // Southwest corner of fence
+            { x: 17.2, z: 13.0 }   // Directly guarding the open entrance gate
+          ];
+
+          if (dog.pzPatrolIndex === undefined || dog.pzPatrolIndex >= patrolWaypoints.length) {
+            dog.pzPatrolIndex = 0;
+          }
+
+          // If the player or a statue comes close to the petting zoo entrance, the dog turns and barks defensively to protect it
+          dog.pzBarkTimer = (dog.pzBarkTimer || 0) - delta;
+          if (dog.pzBarkTimer <= 0) {
+            dog.pzBarkTimer = 3.5 + Math.random() * 4.0;
+            if (isPlayerSameFloor && pDist < 7.0) {
+              this.playDogSound(dog.sfx.barks, dog);
+              this.playDogAction(dog, "Bark", 0.12);
+            }
+          }
+
+          const targetWp = patrolWaypoints[dog.pzPatrolIndex];
+          const distToWp = Math.hypot(targetWp.x - dog.x, targetWp.z - dog.z);
+
+          if (distToWp < 0.65) {
+            // Reached waypoint: briefly pause, sniff/inspect fence, face the enclosure, then proceed to next waypoint
+            dog.pzPatrolIndex = (dog.pzPatrolIndex + 1) % patrolWaypoints.length;
+            // Face inward toward the petting zoo interior (East, +X) as if guarding/monitoring the animals
+            const guardYaw = Math.PI / 2;
+            dog.yaw = this.lerpStatueAngle(dog.yaw, guardYaw, Math.min(1, delta * 8.0));
+            dog.group.rotation.y = dog.yaw;
+            this.playDogAction(dog, Math.random() < 0.5 ? "Curious" : "Idle", 0.2);
+          } else {
+            this.playDogAction(dog, "Walk", 0.2);
+            dog.currentSpeed = dog.walkSpeed * 1.1;
+            moveDogStep(targetWp.x - dog.x, targetWp.z - dog.z, dog.currentSpeed);
+          }
+
+          if (dog.aiTimer <= 0) {
+            dog.aiState = "IDLE";
+            dog.aiTimer = 1.0;
           }
           break;
         }
