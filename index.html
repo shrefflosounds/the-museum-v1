@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.4.3">
+  <link rel="stylesheet" href="style.css?v=2.4.4">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -29,6 +29,14 @@
 
   <!-- Fullscreen Cinematic Fade-to-Black Overlay -->
   <div id="cinema-fade-overlay"></div>
+
+  <!-- Mobile / Phone Block Overlay -->
+  <div id="mobile-block-screen">
+    <div class="mobile-block-box">
+      <h1 class="mobile-block-title">THE MUSEUM</h1>
+      <p class="mobile-block-message">The Museum is not available on phones, desktop only</p>
+    </div>
+  </div>
 
   <!-- Intro Fullscreen Cutscene -->
   <div id="intro-cutscene" class="hidden">
@@ -419,11 +427,26 @@
     <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1794184800"></script>
   <script type="module">
-    import * as CANNON from './libs/cannon-es.js';
-    window.CANNON = CANNON;
-    const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795047899';
-    document.body.appendChild(gameScript);
+    // Block mobile phones / devices from running the game
+    const isMobileDevice = (() => {
+      const ua = navigator.userAgent || navigator.vendor || window.opera || '';
+      const mobileRegex = /Android|webOS|iPhone|iPod|BlackBerry|IEMobile|Opera Mini|Mobile|mobile|Silk/i;
+      const isTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 1);
+      const isNarrow = Math.min(window.screen.width, window.screen.height) < 768;
+      // Dedicated detection for phone devices (excluding standard desktop browsers)
+      return mobileRegex.test(ua) || (isTouch && isNarrow);
+    })();
+
+    if (isMobileDevice) {
+      const blockEl = document.getElementById('mobile-block-screen');
+      if (blockEl) blockEl.style.display = 'flex';
+    } else {
+      import * as CANNON from './libs/cannon-es.js';
+      window.CANNON = CANNON;
+      const gameScript = document.createElement('script');
+      gameScript.src = 'game.js?v=2.9.1795048705';
+      document.body.appendChild(gameScript);
+    }
   </script>
 </body>
 </html>
