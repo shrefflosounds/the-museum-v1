@@ -10197,21 +10197,21 @@ window.game = this;
     }
 
     buildSafeRoomSanctuary() {
-      if (this.safeRoomGroup) return;
+      if (this.safeRoomSanctuary) return;
 
       const group = new THREE.Group();
       const originX = 300.0;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // Load high-resolution photographic backdrop and organic textures
+      // 1. Load textures
       const backdropTex = this.texLoader.load('assets/textures/sanctuary/nature_sanctuary_backdrop.jpg', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const earthTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_earth.png', (tx) => {
+      const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(12, 12);
+        tx.repeat.set(10, 10);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
       const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png', (tx) => {
@@ -10221,39 +10221,39 @@ window.game = this;
         tx.colorSpace = THREE.SRGBColorSpace;
       });
 
-      // 1. Photographic 3D Horizon Grotto Backdrop (Direct match of reference image)
-      // Large panoramic cylinder curved around the player's view (+X eastward towards waterfall and open sky)
-      const panoramaRadius = 38.0;
-      const panoramaHeight = 36.0;
-      const panoramaGeo = new THREE.CylinderGeometry(
-        panoramaRadius,
-        panoramaRadius,
-        panoramaHeight,
-        48,
-        1,
-        true,
-        -Math.PI * 0.45,
-        Math.PI * 0.90
-      );
-      // Ensure normals and texture face inward towards the player
-      panoramaGeo.scale(-1, 1, 1);
+      // 2. High-Fidelity Curved Panoramic Backdrop directly matching the reference painting
+      // Player spawns at (originX - 5.5, 51.65, originZ) and looks towards +X (yaw = -Math.PI / 2).
+      // We place the backdrop 26.5m in front of the player (X = originX + 21.0), centered on originZ.
+      const bgW = 56.0;
+      const bgH = 31.0;
+      const bgSegs = 36;
+      const bgGeo = new THREE.PlaneGeometry(bgW, bgH, bgSegs, 1);
+      const bgPos = bgGeo.attributes.position;
+      // Gently curve the left and right wings forward towards the player (local +Z) like an amphitheater
+      for (let i = 0; i < bgPos.count; i++) {
+        const lx = bgPos.getX(i);
+        const normX = lx / (bgW * 0.5); // -1.0 to +1.0
+        const curveZ = (1.0 - Math.cos(normX * Math.PI * 0.44)) * 7.5;
+        bgPos.setZ(i, curveZ);
+      }
+      bgGeo.computeVertexNormals();
 
-      const panoramaMat = new THREE.MeshBasicMaterial({
+      const bgMat = new THREE.MeshBasicMaterial({
         map: backdropTex,
-        side: THREE.DoubleSide,
-        depthWrite: false
+        side: THREE.DoubleSide
       });
-      const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMat);
-      // Position center of cylinder slightly behind player so the panoramic view wraps naturally
-      panoramaMesh.position.set(originX - 10.0, originY + panoramaHeight * 0.38, originZ);
-      group.add(panoramaMesh);
+      const bgMesh = new THREE.Mesh(bgGeo, bgMat);
+      // Rotation -PI/2 points default +Z normal towards -X (straight at the player at spawn)
+      bgMesh.rotation.y = -Math.PI / 2;
+      bgMesh.position.set(originX + 21.0, originY + bgH * 0.46, originZ);
+      group.add(bgMesh);
 
-      // Complete 360 Sky and Ambient Horizon Dome for full view freedom
-      const skyGeo = new THREE.SphereGeometry(75.0, 32, 24);
+      // Sky hemisphere behind and above to create a boundless sunny atmosphere
+      const skyGeo = new THREE.SphereGeometry(65.0, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.52);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
-          uTopColor: { value: new THREE.Color(0x38bdf8) },     // radiant sky blue
-          uHorizonColor: { value: new THREE.Color(0xcbebfd) }  // soft warm sunny horizon
+          uTopColor: { value: new THREE.Color(0x38bdf8) },
+          uHorizonColor: { value: new THREE.Color(0xcbebfd) }
         },
         vertexShader: `
           varying vec3 vWorldPos;
@@ -10270,23 +10270,22 @@ window.game = this;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.70));
+            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.65));
             gl_FragColor = vec4(sky, 1.0);
           }
         `,
         side: THREE.BackSide,
         depthWrite: false
       });
-      const skyDome = new THREE.Mesh(skyGeo, skyMat);
-      skyDome.position.set(originX, originY, originZ);
-      group.add(skyDome);
+      const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+      skyMesh.position.set(originX, originY, originZ);
+      group.add(skyMesh);
 
-      // 2. Wide Natural Walkable Ground (Flat at originY = 50.0, NO foot sinking, NO invisible walls in the clearing)
+      // 3. Wide Natural Walkable Ground (Flat at originY = 50.0, zero sinking, NO invisible walls in the clearing)
       const floorRadius = 45.0;
       const groundGeo = new THREE.PlaneGeometry(floorRadius * 2, floorRadius * 2, 2, 2);
       const groundMat = new THREE.MeshStandardMaterial({
-        map: earthTex,
-        color: 0x5a4836, // warm mossy earth tone matching the painting's bank
+        map: floorTex,
         roughness: 0.88,
         metalness: 0.02
       });
@@ -10308,10 +10307,10 @@ window.game = this;
         isWall: false
       });
 
-      // Distant safety boundary set far away (36m) so the whole clearing has zero invisible walls
+      // Distant perimeter boundary (34m out) so player has 100% freedom inside the clearing
       for (let a = 0; a < 16; a++) {
         const th = (a / 16) * Math.PI * 2;
-        const bDist = 36.0;
+        const bDist = 34.0;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
@@ -10323,61 +10322,29 @@ window.game = this;
         });
       }
 
-      // 3. Dynamic Rushing Waterfall Spray & Water Shimmer in Front of the Waterfall
-      const poolGeo = new THREE.CircleGeometry(8.5, 32);
+      // 4. Subtle Shimmering Plunge Pool Surface on the right bank near waterfall
+      const poolGeo = new THREE.CircleGeometry(7.2, 32);
       const poolMat = new THREE.MeshStandardMaterial({
         color: 0x38bdf8,
         roughness: 0.12,
         metalness: 0.40,
         transparent: true,
-        opacity: 0.65
+        opacity: 0.60
       });
       const poolMesh = new THREE.Mesh(poolGeo, poolMat);
       poolMesh.rotation.x = -Math.PI / 2;
-      poolMesh.position.set(originX + 18.0, originY + 0.02, originZ - 6.5);
+      poolMesh.position.set(originX + 17.5, originY + 0.03, originZ + 16.0);
       group.add(poolMesh);
 
-      // Flowing waterfall spray overlay
-      const wfUniforms = {
-        uTime: { value: 0 }
-      };
-      const wfSplashMat = new THREE.ShaderMaterial({
-        uniforms: wfUniforms,
-        vertexShader: `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float uTime;
-          varying vec2 vUv;
-          void main() {
-            float stream = sin(vUv.y * 30.0 - uTime * 12.0) * 0.5 + 0.5;
-            float shimmer = sin(vUv.x * 20.0 + vUv.y * 15.0 - uTime * 8.0) * 0.35;
-            float alpha = (stream * 0.45 + shimmer * 0.25) * smoothstep(0.0, 0.2, vUv.y);
-            gl_FragColor = vec4(0.85, 0.95, 1.0, alpha);
-          }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const wfSplash = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 16.0), wfSplashMat);
-      wfSplash.position.set(originX + 22.0, originY + 9.5, originZ - 10.0);
-      group.add(wfSplash);
-
-      // Fine rising waterfall mist
-      const mistCount = 45;
+      // Subtle rising waterfall mist
+      const mistCount = 35;
       const mistGeo = new THREE.BufferGeometry();
       const mistPos = new Float32Array(mistCount * 3);
       const mistVel = [];
       for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 18.0 + (Math.random() - 0.5) * 7.0;
+        mistPos[i * 3]     = originX + 17.5 + (Math.random() - 0.5) * 6.0;
         mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
-        mistPos[i * 3 + 2] = originZ - 7.0 + (Math.random() - 0.5) * 6.0;
+        mistPos[i * 3 + 2] = originZ + 16.0 + (Math.random() - 0.5) * 6.0;
         mistVel.push({
           vx: (Math.random() - 0.5) * 0.25,
           vy: 0.25 + Math.random() * 0.45,
@@ -10386,40 +10353,20 @@ window.game = this;
       }
       mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
       const mistMat = new THREE.PointsMaterial({
-        size: 2.2,
+        size: 2.4,
         map: moteTex,
         color: 0xe0f2fe,
         transparent: true,
-        opacity: 0.28,
+        opacity: 0.26,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
       const mistPoints = new THREE.Points(mistGeo, mistMat);
       group.add(mistPoints);
 
-      // 4. Natural Sunbeams Streaming Downward (Matching the sun rays in the reference image)
-      const sunbeamGeo = new THREE.CylinderGeometry(5.5, 1.5, 26.0, 16, 1, true);
-      const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const sunbeamMat = new THREE.MeshBasicMaterial({
-        map: beamTex,
-        color: 0xfffde8,
-        transparent: true,
-        opacity: 0.32,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const sunbeamMesh = new THREE.Mesh(sunbeamGeo, sunbeamMat);
-      sunbeamMesh.position.set(originX + 6.0, originY + 13.0, originZ - 4.0);
-      sunbeamMesh.rotation.x = 0.25;
-      sunbeamMesh.rotation.z = -0.22;
-      group.add(sunbeamMesh);
-
-      // Warm directional sunlight and radiant ambient lighting
+      // 5. Warm Directional Sunlight & Ambient Glade Illumination
       const sunLight = new THREE.DirectionalLight(0xfffae6, 2.2);
-      sunLight.position.set(originX + 12.0, originY + 40.0, originZ - 18.0);
+      sunLight.position.set(originX + 10.0, originY + 35.0, originZ - 10.0);
       sunLight.target.position.set(originX, originY, originZ);
       group.add(sunLight);
       group.add(sunLight.target);
@@ -10428,7 +10375,7 @@ window.game = this;
       hemiLight.position.set(originX, originY + 25.0, originZ);
       group.add(hemiLight);
 
-      // 5. Floating Glowing Pastel Motes (Matching reference image: elegant, subtle, floating lights)
+      // 6. Floating Glowing Pastel Motes (Matching reference image: elegant, subtle, floating lights)
       const motePalette = [
         new THREE.Color(0x2dd4bf), // Teal
         new THREE.Color(0x38bdf8), // Blue
@@ -10445,8 +10392,8 @@ window.game = this;
       const orbData = [];
 
       for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 28.0;
-        const oy = originY + 0.6 + Math.random() * 5.5;
+        const ox = originX + (Math.random() - 0.5) * 26.0;
+        const oy = originY + 0.6 + Math.random() * 5.0;
         const oz = originZ + (Math.random() - 0.5) * 24.0;
 
         orbPos[i * 3]     = ox;
@@ -10482,13 +10429,14 @@ window.game = this;
       const orbPoints = new THREE.Points(orbGeo, orbMat);
       group.add(orbPoints);
 
-      // 6. Ethereal Swirling Return Portal (Matching the left portal in the reference image)
+      // 7. Ethereal Swirling Return Portal (Aligned with the portal grotto archway on left side of concept art)
       const retPortalGroup = new THREE.Group();
-      // Sit on the left side of the sanctuary, aligned with the grotto archway
-      const retPortalX = originX - 12.0;
-      const retPortalY = originY + 2.5;
-      const retPortalZ = originZ - 2.0;
+      const retPortalX = originX + 11.0;
+      const retPortalY = originY + 2.8;
+      const retPortalZ = originZ - 14.5;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
+      // Face towards the player's spawn clearing (-48.7 degrees)
+      retPortalGroup.rotation.y = -0.85;
 
       const retPortalUniforms = {
         uTime: { value: 0 }
@@ -10534,7 +10482,6 @@ window.game = this;
       });
 
       const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2, 24, 24), retPortalShaderMat);
-      retDisc.rotation.y = Math.PI / 2; // Facing +X into sanctuary
       retPortalGroup.add(retDisc);
 
       const retBurstMat = new THREE.MeshBasicMaterial({
@@ -10546,11 +10493,10 @@ window.game = this;
         side: THREE.DoubleSide
       });
       const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 6.8), retBurstMat);
-      retBurst.rotation.y = Math.PI / 2;
       retPortalGroup.add(retBurst);
 
       const retLight = new THREE.PointLight(0x5eead4, 3.8, 16.0, 1.2);
-      retLight.position.set(0.3, 0, 0);
+      retLight.position.set(0, 0, 0.3);
       retPortalGroup.add(retLight);
 
       group.add(retPortalGroup);
@@ -10572,8 +10518,6 @@ window.game = this;
         retPortalZ: retPortalZ,
         retDisc: retDisc,
         retBurst: retBurst,
-        wfSplash: wfSplash,
-        wfUniforms: wfUniforms,
         retPortalUniforms: retPortalUniforms,
         mistPoints: mistPoints,
         mistVel: mistVel,
@@ -10582,6 +10526,7 @@ window.game = this;
         time: 0
       };
     }
+
 
     buildEastOfficeSign(x, y, z, rotY, w, h) {
       const group = new THREE.Group();
@@ -17711,9 +17656,13 @@ window.game = this;
           this.isSafeRoomActive = true;
           // Spawn player safely on the natural sanctuary ground facing east towards the waterfall and sunny glade
           this.playerPos.set(sr.originX - 5.5, sr.originY + CONFIG.PLAYER.CAMERA_HEIGHT, sr.originZ);
-          this.playerYaw = Math.PI / 2; // Facing +X into the sun and waterfall
+          this.playerYaw = -Math.PI / 2; // Facing +X into the sun, grotto opening, and waterfall
           this.playerPitch = 0.05;
           this.camera.position.copy(this.playerPos);
+          if (this.camera) {
+            this.camera.far = 400;
+            this.camera.updateProjectionMatrix();
+          }
 
           // Update floor visibility & audio
           this.updateFloorGroupVisibility();
@@ -17822,6 +17771,10 @@ window.game = this;
         this.playerYaw = -Math.PI / 2; // Facing east towards the portal room doorway
         this.playerPitch = 0.0;
         this.camera.position.copy(this.playerPos);
+        if (this.camera) {
+          this.camera.far = 150;
+          this.camera.updateProjectionMatrix();
+        }
 
         // Restore museum fog, background, audio, and visibility
         this.updateFloorGroupVisibility();
