@@ -10204,72 +10204,45 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Load textures
-      const grassTex = this.texLoader.load('assets/textures/sanctuary/meadow_ground.png', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 4);
-      });
-      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png');
-      const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png');
-      const waterfallTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png');
-      const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
-      const portalTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
+      // 1. Ground Plane (Flat, walkable)
+      const floorGeo = new THREE.PlaneGeometry(100, 100);
+      floorGeo.rotateX(-Math.PI / 2);
+      const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png');
+      floorTex.wrapS = floorTex.wrapT = THREE.RepeatWrapping;
+      floorTex.repeat.set(10, 10);
+      const floorMat = new THREE.MeshStandardMaterial({ map: floorTex, color: 0x5a7a50 });
+      const floorMesh = new THREE.Mesh(floorGeo, floorMat);
+      floorMesh.position.set(originX, originY, originZ);
+      floorMesh.receiveShadow = true;
+      group.add(floorMesh);
 
-      // 2. Sky Dome
-      const skyGeo = new THREE.SphereGeometry(150.0, 32, 32);
-      const skyMat = new THREE.MeshBasicMaterial({ color: 0x87ceeb, side: THREE.BackSide });
-      const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-      group.add(skyMesh);
+      // 2. Ambient Atmosphere (Soft Lighting)
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+      group.add(ambientLight);
 
-      // 3. Ground
-      const groundGeo = new THREE.SphereGeometry(40, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
-      groundGeo.scale(1.2, 0.5, 1.2);
-      const groundMat = new THREE.MeshStandardMaterial({ map: grassTex, color: 0x4a6e3e });
-      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-      groundMesh.position.set(originX, originY - 15, originZ);
-      group.add(groundMesh);
+      const spotLight = new THREE.SpotLight(0xffffff, 1.2);
+      spotLight.position.set(originX, originY + 50, originZ);
+      spotLight.target.position.set(originX, originY, originZ);
+      group.add(spotLight);
+      group.add(spotLight.target);
 
-      // 4. Cliffs
-      const cliffGeo = new THREE.DodecahedronGeometry(12, 1);
-      const cliffMat = new THREE.MeshStandardMaterial({ map: cliffTex });
-      for(let i=0; i<6; i++) {
-        const c = new THREE.Mesh(cliffGeo, cliffMat);
-        const th = (i/6) * Math.PI * 2;
-        c.position.set(originX + Math.cos(th)*35, originY + 5, originZ + Math.sin(th)*35);
-        c.rotation.set(Math.random(), Math.random(), 0);
-        group.add(c);
-      }
-
-      // 5. Waterfall
-      const wfGeo = new THREE.PlaneGeometry(12, 20);
-      const wfMat = new THREE.MeshBasicMaterial({ map: waterfallTex, transparent: true, side: THREE.DoubleSide });
+      // 3. Waterfall (Right side)
+      const wfGeo = new THREE.PlaneGeometry(15, 25);
+      const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png');
+      wfTex.wrapT = THREE.RepeatWrapping;
+      const wfMat = new THREE.MeshBasicMaterial({ map: wfTex, transparent: true, side: THREE.DoubleSide });
       const wfMesh = new THREE.Mesh(wfGeo, wfMat);
-      wfMesh.position.set(originX + 25, originY + 10, originZ);
+      wfMesh.position.set(originX + 40, originY + 12, originZ + 10);
       wfMesh.rotation.y = -Math.PI / 2;
       group.add(wfMesh);
 
-      // 6. Portal
-      const pGeo = new THREE.TorusGeometry(5, 1, 16, 32);
-      const pMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true });
-      const pMesh = new THREE.Mesh(pGeo, pMat);
-      pMesh.position.set(originX - 25, originY + 5, originZ);
-      pMesh.rotation.y = Math.PI / 2;
-      group.add(pMesh);
-
-      // 7. Motes
-      const moteGeo = new THREE.BufferGeometry();
-      const count = 100;
-      const positions = new Float32Array(count * 3);
-      for(let i=0; i<count; i++) {
-        positions[i*3] = originX + (Math.random()-0.5)*50;
-        positions[i*3+1] = originY + Math.random()*20;
-        positions[i*3+2] = originZ + (Math.random()-0.5)*50;
-      }
-      moteGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      const moteMat = new THREE.PointsMaterial({ size: 1.5, map: moteTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
-      const motes = new THREE.Points(moteGeo, moteMat);
-      group.add(motes);
+      // 4. Portal (Left side)
+      const portalGeo = new THREE.TorusGeometry(8, 0.5, 32, 64);
+      const portalTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
+      const portalMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true });
+      const portalMesh = new THREE.Mesh(portalGeo, portalMat);
+      portalMesh.position.set(originX - 40, originY + 8, originZ);
+      group.add(portalMesh);
 
       // Final Setup & Teleport Logic
       if (this._rootSceneAdd) this._rootSceneAdd(group); else this.scene.add(group);
@@ -10277,7 +10250,7 @@ window.game = this;
       
       this.safeRoomSanctuary = {
         group, originX, originY, originZ,
-        retPortalX: originX - 25,
+        retPortalX: originX - 40,
         retPortalZ: originZ,
         time: 0
       };
