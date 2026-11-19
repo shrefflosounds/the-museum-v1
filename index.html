@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.4.7">
+  <link rel="stylesheet" href="style.css?v=2.4.8">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -29,6 +29,9 @@
 
   <!-- Fullscreen Cinematic Fade-to-Black Overlay -->
   <div id="cinema-fade-overlay"></div>
+
+  <!-- Fullscreen Portal / Saferoom Fade Overlay -->
+  <div id="portal-fade-overlay"></div>
 
   <!-- Mobile / Phone Block Overlay -->
   <div id="mobile-block-screen">
@@ -468,7 +471,7 @@
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795052000';
+    gameScript.src = 'game.js?v=2.9.1795053000';
     document.body.appendChild(gameScript);
   </script>
 </body>

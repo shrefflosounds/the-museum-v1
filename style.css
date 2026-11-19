@@ -148,6 +148,25 @@ body.cutscene-playing *,
   pointer-events: auto;
 }
 
+/* Fullscreen Portal & Saferoom Flash/Fade Overlay */
+#portal-fade-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #ffffff;
+  z-index: 99997;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+#portal-fade-overlay.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 /* All Relics Found & Intro Cutscene Modals */
 #all-relics-cutscene,
 #intro-cutscene {

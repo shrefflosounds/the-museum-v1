@@ -38,6 +38,8 @@
       this.menuMusicGain = null;
       this.roomToneSource = null;
       this.roomToneGain = null;
+      this.waterfallSource = null;
+      this.waterfallGain = null;
       this.musicEnabled = (localStorage.getItem('the_museum_music') !== 'false');
     }
 
@@ -227,6 +229,46 @@
         this.roomToneGain.gain.cancelScheduledValues(now);
         this.roomToneGain.gain.setValueAtTime(this.roomToneGain.gain.value, now);
         this.roomToneGain.gain.linearRampToValueAtTime(targetVol, now + 0.3);
+      }
+    }
+
+    setWaterfallVolume(vol, fadeDuration = 0.5) {
+      if (!this.ctx) return;
+      const targetVol = Math.max(0, Math.min(1.0, vol));
+      if (!this.waterfallSource && targetVol > 0.001) {
+        if (!this.noiseBuffer) return;
+        const src = this.ctx.createBufferSource();
+        src.buffer = this.noiseBuffer;
+        src.loop = true;
+
+        // Rich rushing water bandpass / lowpass combo
+        const lp = this.ctx.createBiquadFilter();
+        lp.type = 'lowpass';
+        lp.frequency.value = 1100;
+
+        const hp = this.ctx.createBiquadFilter();
+        hp.type = 'highpass';
+        hp.frequency.value = 180;
+
+        const gain = this.ctx.createGain();
+        gain.gain.value = 0.0001;
+
+        src.connect(hp);
+        hp.connect(lp);
+        lp.connect(gain);
+        gain.connect(this.masterGain);
+        if (this.reverbNode) gain.connect(this.reverbNode);
+
+        src.start();
+        this.waterfallSource = src;
+        this.waterfallGain = gain;
+      }
+
+      if (this.waterfallGain) {
+        const now = this.ctx.currentTime;
+        this.waterfallGain.gain.cancelScheduledValues(now);
+        this.waterfallGain.gain.setValueAtTime(this.waterfallGain.gain.value, now);
+        this.waterfallGain.gain.linearRampToValueAtTime(targetVol, now + fadeDuration);
       }
     }
 
@@ -4408,6 +4450,7 @@
         spectatorIndicator: document.getElementById('spectator-indicator'),
         relicNotification: document.getElementById('relic-notification'),
         cinemaFadeOverlay: document.getElementById('cinema-fade-overlay'),
+        portalFadeOverlay: document.getElementById('portal-fade-overlay'),
         allRelicsCutscene: document.getElementById('all-relics-cutscene'),
         allRelicsVideo: document.getElementById('all-relics-video'),
         allRelicsSkipPrompt: document.getElementById('all-relics-skip-prompt'),
@@ -4674,6 +4717,23 @@ window.game = this;
     }
 
     updateFloorGroupVisibility() {
+      if (this.isSafeRoomActive) {
+        if (this.floorGroups) {
+          for (let f = 0; f < this.floorGroups.length; f++) {
+            if (this.floorGroups[f]) this.floorGroups[f].visible = false;
+          }
+        }
+        if (this.topFloorFogGroup) this.topFloorFogGroup.visible = false;
+        if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = false;
+        if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
+          this.safeRoomSanctuary.group.visible = true;
+        }
+        return;
+      }
+      if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
+        this.safeRoomSanctuary.group.visible = false;
+      }
+
       if (!this.floorGroups || this.floorGroups.length === 0) return;
       if (this.isSpectatorMode) {
         for (let f = 0; f < this.floorGroups.length; f++) {
@@ -9730,6 +9790,7 @@ window.game = this;
       } else if (fl === 2) {
         // Floor 3 (fl = 2, "3RD FLOOR"): East Office with Ethereal Shining Portal Light
         this.buildEtherealPortal(y0, mats);
+        this.buildSafeRoomSanctuary();
       } else {
         // Floor 4 (fl = 3, "4TH FLOOR"): DUNGEON REWORK WITH WINDOWS ON ALL SIDES & BONES
         this.buildDungeonEastOffice(y0, mats);
@@ -9745,22 +9806,7 @@ window.game = this;
       const portalGroup = new THREE.Group();
       portalGroup.position.set(portalX, portalY, portalZ);
 
-      // 1. Center Pedestal (matching reference photo: dark plinth in center of room)
-      const pedestalMat = mats.darkWood || mats.mahogany || new THREE.MeshStandardMaterial({ color: 0x2b1d14, roughness: 0.6 });
-      const pedestal = new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 1.4), pedestalMat);
-      pedestal.position.set(portalX, y0 + 0.45, portalZ);
-      this.scene.add(pedestal);
-
-      this.colliders.push({
-        type: 'box',
-        floor: fl,
-        minX: portalX - 0.75,
-        maxX: portalX + 0.75,
-        minZ: portalZ - 0.75,
-        maxZ: portalZ + 0.75,
-        minY: y0,
-        maxY: y0 + 0.95
-      });
+      // (Pedestal / box in the center has been completely removed per request)
 
       // 2. Texture loaders for flowing portal flare & beams
       const burstTex = this.texLoader.load('assets/textures/portal_burst_flow.png', (tx) => {
@@ -9774,9 +9820,9 @@ window.game = this;
       // Procedurally animated swirl, chromatic energy flow, distortion & luminous corona
       const portalUniforms = {
         uTime: { value: 0 },
-        uColorHot: { value: new THREE.Color(0xfff7d0) },
-        uColorMid: { value: new THREE.Color(0x38d9f5) },
-        uColorOuter: { value: new THREE.Color(0x7c3aed) }
+        uColorHot: { value: new THREE.Color(0xffffff) },
+        uColorMid: { value: new THREE.Color(0xa5f3fc) },
+        uColorOuter: { value: new THREE.Color(0xc084fc) }
       };
 
       const portalVertexShader = `
@@ -9845,25 +9891,25 @@ window.game = this;
           float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.2) * 0.5 + 0.5;
           rays = pow(rays, 2.0);
 
-          // Smooth radial falloff (completely eliminates any square borders or image seam artifacts)
+          // Smooth radial falloff
           float smoothEdge = cos(r * 1.5707963);
-          smoothEdge = pow(max(0.0, smoothEdge), 2.2);
+          smoothEdge = pow(max(0.0, smoothEdge), 1.6);
 
-          // Luminous color blending
-          vec3 col = mix(uColorOuter, uColorMid, smoothstep(0.7, 0.25, r));
-          col = mix(col, uColorHot, smoothstep(0.35, 0.0, r));
+          // Ultra bright luminous color blending
+          vec3 col = mix(uColorOuter, uColorMid, smoothstep(0.8, 0.25, r));
+          col = mix(col, uColorHot, smoothstep(0.45, 0.0, r));
 
           // Plasma energy modulation
-          col += uColorMid * (plasma * 0.45);
-          col += uColorHot * (rays * 0.35 * smoothstep(0.9, 0.1, r));
+          col += uColorMid * (plasma * 0.65);
+          col += uColorHot * (rays * 0.55 * smoothstep(0.9, 0.1, r));
 
-          float alpha = smoothEdge * (0.85 + 0.25 * plasma);
+          float alpha = smoothEdge * (0.92 + 0.35 * plasma);
 
           gl_FragColor = vec4(col, alpha);
         }
       `;
 
-      // 4. Central Portal Vortex Disk (Facing the room entrance)
+      // 4. Central Portal Vortex Disk (Large & bright)
       const portalShaderMat = new THREE.ShaderMaterial({
         uniforms: portalUniforms,
         vertexShader: portalVertexShader,
@@ -9874,7 +9920,7 @@ window.game = this;
         side: THREE.DoubleSide
       });
 
-      const portalDiscGeo = new THREE.PlaneGeometry(3.6, 3.6, 32, 32);
+      const portalDiscGeo = new THREE.PlaneGeometry(5.2, 5.2, 32, 32);
       const portalDisc = new THREE.Mesh(portalDiscGeo, portalShaderMat);
       portalDisc.rotation.y = -Math.PI / 2; // Facing west towards the main arched doorway
       portalGroup.add(portalDisc);
@@ -9884,11 +9930,11 @@ window.game = this;
       portalGroup.add(portalDiscCross);
 
       // 5. Silky Flowing Halo Corona Layers (Soft rotating celestial nebula)
-      const burstGeo = new THREE.PlaneGeometry(5.8, 5.8);
+      const burstGeo = new THREE.PlaneGeometry(8.5, 8.5);
       const burstMat1 = new THREE.MeshBasicMaterial({
         map: burstTex,
         transparent: true,
-        opacity: 0.88,
+        opacity: 0.95,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
@@ -9900,18 +9946,18 @@ window.game = this;
       const burstMat2 = new THREE.MeshBasicMaterial({
         map: burstTex,
         transparent: true,
-        opacity: 0.72,
+        opacity: 0.88,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const burstMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.6), burstMat2);
+      const burstMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(10.5, 10.5), burstMat2);
       burstMesh2.rotation.y = -Math.PI / 2;
       burstMesh2.rotation.z = Math.PI / 3;
       portalGroup.add(burstMesh2);
 
       // Spherical core essence
-      const coreSphereGeo = new THREE.SphereGeometry(0.38, 24, 24);
+      const coreSphereGeo = new THREE.SphereGeometry(0.85, 24, 24);
       const coreSphereMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
@@ -9920,11 +9966,11 @@ window.game = this;
       const coreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
       portalGroup.add(coreSphere);
 
-      const outerSphereGeo = new THREE.SphereGeometry(1.0, 24, 24);
+      const outerSphereGeo = new THREE.SphereGeometry(1.8, 24, 24);
       const outerSphereMat = new THREE.MeshBasicMaterial({
-        color: 0x44ddff,
+        color: 0xe0f2fe,
         transparent: true,
-        opacity: 0.38,
+        opacity: 0.65,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -9932,11 +9978,11 @@ window.game = this;
       portalGroup.add(outerSphere);
 
       // Concentric spinning energy rings
-      const ringGeo1 = new THREE.RingGeometry(1.3, 1.55, 48);
+      const ringGeo1 = new THREE.RingGeometry(1.8, 2.2, 48);
       const ringMat1 = new THREE.MeshBasicMaterial({
-        color: 0xffe270,
+        color: 0xfff3b0,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.75,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
@@ -9945,11 +9991,11 @@ window.game = this;
       ring1.rotation.y = -Math.PI / 2;
       portalGroup.add(ring1);
 
-      const ringGeo2 = new THREE.RingGeometry(1.9, 2.18, 48);
+      const ringGeo2 = new THREE.RingGeometry(2.6, 3.1, 48);
       const ringMat2 = new THREE.MeshBasicMaterial({
         color: 0x38bdf8,
         transparent: true,
-        opacity: 0.40,
+        opacity: 0.65,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
@@ -9958,29 +10004,51 @@ window.game = this;
       ring2.rotation.y = -Math.PI / 2;
       portalGroup.add(ring2);
 
-      // 6. Dynamic Ethereal Point Lights
-      const portalPointLight = new THREE.PointLight(0xfff1aa, 3.4, 24.0, 1.2);
+      // 6. Dynamic Ethereal Point Lights (Intensely boosted illumination)
+      const portalPointLight = new THREE.PointLight(0xffffff, 8.5, 34.0, 1.1);
       portalPointLight.position.set(0, 0, 0);
       portalGroup.add(portalPointLight);
 
-      const cyanPointLight = new THREE.PointLight(0x38bdf8, 2.2, 18.0, 1.4);
+      const cyanPointLight = new THREE.PointLight(0x7dd3fc, 5.5, 28.0, 1.2);
       cyanPointLight.position.set(0, 0, 0);
       portalGroup.add(cyanPointLight);
 
-      const violetPointLight = new THREE.PointLight(0x9333ea, 1.6, 12.0, 1.5);
+      const violetPointLight = new THREE.PointLight(0xd8b4fe, 4.0, 22.0, 1.3);
       violetPointLight.position.set(0, 0, 0);
       portalGroup.add(violetPointLight);
 
       this.scene.add(portalGroup);
 
-      // 7. Flowing Volumetric Light Cones / Shafts (Radial multi-fin cylinder/cone geometry)
-      // Using feathered flowing texture with zero intersecting line seams
+      // 7. Volumetric Room Fog / Light Atmosphere filling the whole room (so player cannot see room geometry)
+      const roomFogGroup = new THREE.Group();
+      roomFogGroup.position.set(portalX, y0 + 1.85, portalZ);
+      const fogPlanes = [];
+      const fogPlMat = new THREE.MeshBasicMaterial({
+        map: burstTex,
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+
+      for (let fp = 0; fp < 7; fp++) {
+        const pMesh = new THREE.Mesh(new THREE.PlaneGeometry(12.0, 5.8), fogPlMat.clone());
+        pMesh.rotation.y = (fp / 7) * Math.PI;
+        pMesh.position.y = (fp % 2 === 0 ? 0.2 : -0.2);
+        roomFogGroup.add(pMesh);
+        fogPlanes.push(pMesh);
+      }
+      this.scene.add(roomFogGroup);
+
+      // 8. Flowing Volumetric Light Cones / Shafts (Radial multi-fin cylinder/cone geometry)
       const beamsGroup = new THREE.Group();
       this.scene.add(beamsGroup);
 
       const beamMeshes = [];
 
-      const createDoorwayLightTunnel = (startX, startY, startZ, targetX, targetY, targetZ, radiusStart, radiusEnd, finCount = 8, colorHex = 0xffebaa) => {
+      const createDoorwayLightTunnel = (startX, startY, startZ, targetX, targetY, targetZ, radiusStart, radiusEnd, finCount = 10, colorHex = 0xfff7d6) => {
         const dx = targetX - startX;
         const dy = targetY - startY;
         const dz = targetZ - startZ;
@@ -10001,34 +10069,32 @@ window.game = this;
           map: beamTex,
           color: colorHex,
           transparent: true,
-          opacity: 0.55,
+          opacity: 0.78,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
         });
 
-        // Multi-angle radial fins spanning through the 3D doorway volume
         for (let i = 0; i < finCount; i++) {
           const finAngle = (i / finCount) * Math.PI;
-          const finGeo = new THREE.PlaneGeometry(radiusStart * 2.2, length, 1, 4);
+          const finGeo = new THREE.PlaneGeometry(radiusStart * 2.4, length, 1, 4);
           const finMesh = new THREE.Mesh(finGeo, mat.clone());
           finMesh.rotation.y = finAngle;
           tunnelGroup.add(finMesh);
           beamMeshes.push({
             mesh: finMesh,
-            baseOpacity: 0.42,
+            baseOpacity: 0.72,
             phase: i * 0.7,
-            rotSpeed: (i % 2 === 0 ? 1 : -1) * 0.15
+            rotSpeed: (i % 2 === 0 ? 1 : -1) * 0.18
           });
         }
 
-        // Tapered cylinder / cone hull for rich volumetric body
         const coneGeo = new THREE.CylinderGeometry(radiusEnd, radiusStart, length, 16, 4, true);
         const coneMat = new THREE.MeshBasicMaterial({
           map: beamTex,
           color: colorHex,
           transparent: true,
-          opacity: 0.35,
+          opacity: 0.62,
           blending: THREE.AdditiveBlending,
           depthWrite: false,
           side: THREE.DoubleSide
@@ -10037,7 +10103,7 @@ window.game = this;
         tunnelGroup.add(coneMesh);
         beamMeshes.push({
           mesh: coneMesh,
-          baseOpacity: 0.32,
+          baseOpacity: 0.58,
           phase: Math.random() * Math.PI,
           rotSpeed: 0.08
         });
@@ -10046,48 +10112,48 @@ window.game = this;
       };
 
       // West Arched Entrance: Volumetric Light Tunnel projecting through the archway into the main hall
-      createDoorwayLightTunnel(26.0, portalY, 13.0, 14.5, portalY - 0.25, 13.0, 1.2, 3.2, 8, 0xfff0b8);
-      createDoorwayLightTunnel(26.0, portalY, 13.0, 15.0, portalY - 0.15, 13.0, 1.5, 3.8, 6, 0x5ce6ff);
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 14.0, portalY - 0.25, 13.0, 1.8, 4.2, 10, 0xfffbeb);
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 14.5, portalY - 0.15, 13.0, 2.0, 4.8, 8, 0xbae6fd);
 
       // North Doorway: Volumetric Light Tunnel pointing towards North doorway (z = 8.0, x = 23.0)
-      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 4.5, 1.0, 2.6, 6, 0xffeab0);
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 4.0, 1.4, 3.4, 8, 0xfff7d6);
 
       // South Doorway: Volumetric Light Tunnel pointing towards South doorway (z = 18.0, x = 23.0)
-      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 21.5, 1.0, 2.6, 6, 0x88e6ff);
+      createDoorwayLightTunnel(26.0, portalY, 13.0, 23.0, portalY - 0.2, 22.0, 1.4, 3.4, 8, 0xa5f3fc);
 
-      // 8. Swirling Cosmic Light Motes & Stardust
-      const moteCount = 90;
+      // 9. Swirling Cosmic Light Motes & Stardust
+      const moteCount = 140;
       const moteGeo = new THREE.BufferGeometry();
       const motePos = new Float32Array(moteCount * 3);
       const moteColors = new Float32Array(moteCount * 3);
       const moteVel = [];
 
       for (let m = 0; m < moteCount; m++) {
-        const mx = 26.0 + (Math.random() - 0.6) * 11.0;
+        const mx = 26.0 + (Math.random() - 0.6) * 12.0;
         const my = y0 + 0.3 + Math.random() * 3.6;
-        const mz = 13.0 + (Math.random() - 0.5) * 7.0;
+        const mz = 13.0 + (Math.random() - 0.5) * 8.0;
         motePos[m * 3]     = mx;
         motePos[m * 3 + 1] = my;
         motePos[m * 3 + 2] = mz;
 
-        const isGold = Math.random() < 0.55;
+        const isGold = Math.random() < 0.45;
         if (isGold) {
           moteColors[m * 3]     = 1.0;
-          moteColors[m * 3 + 1] = 0.92;
-          moteColors[m * 3 + 2] = 0.65;
+          moteColors[m * 3 + 1] = 0.98;
+          moteColors[m * 3 + 2] = 0.82;
         } else {
-          moteColors[m * 3]     = 0.40;
-          moteColors[m * 3 + 1] = 0.88;
+          moteColors[m * 3]     = 0.70;
+          moteColors[m * 3 + 1] = 0.95;
           moteColors[m * 3 + 2] = 1.0;
         }
 
         moteVel.push({
-          vx: (Math.random() - 0.65) * 0.35,
-          vy: 0.12 + Math.random() * 0.35,
-          vz: (Math.random() - 0.5) * 0.35,
+          vx: (Math.random() - 0.65) * 0.45,
+          vy: 0.16 + Math.random() * 0.45,
+          vz: (Math.random() - 0.5) * 0.45,
           orbitAngle: Math.random() * Math.PI * 2,
-          orbitSpeed: 0.8 + Math.random() * 1.4,
-          orbitRadius: 1.0 + Math.random() * 3.5
+          orbitSpeed: 0.9 + Math.random() * 1.6,
+          orbitRadius: 1.0 + Math.random() * 4.2
         });
       }
 
@@ -10095,10 +10161,10 @@ window.game = this;
       moteGeo.setAttribute('color', new THREE.BufferAttribute(moteColors, 3));
 
       const moteMat = new THREE.PointsMaterial({
-        size: 0.09,
+        size: 0.14,
         vertexColors: true,
         transparent: true,
-        opacity: 0.90,
+        opacity: 0.95,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -10109,7 +10175,8 @@ window.game = this;
         floor: fl,
         portalGroup: portalGroup,
         beamsGroup: beamsGroup,
-        pedestal: pedestal,
+        roomFogGroup: roomFogGroup,
+        fogPlanes: fogPlanes,
         portalUniforms: portalUniforms,
         portalDisc: portalDisc,
         portalDiscCross: portalDiscCross,
@@ -10125,6 +10192,464 @@ window.game = this;
         pointLight3: violetPointLight,
         motePoints: motePoints,
         moteVel: moteVel,
+        time: 0
+      };
+    }
+
+    buildSafeRoomSanctuary() {
+      if (this.safeRoomGroup) return;
+
+      const group = new THREE.Group();
+      const originX = 300.0;
+      const originY = 50.0;
+      const originZ = 300.0;
+
+      // 1. Natural Grass and Earth Basin Floor
+      const basinGeo = new THREE.PlaneGeometry(36.0, 36.0, 24, 24);
+      const dirtTex = this.texLoader.load('assets/textures/floor_dirt.jpg', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(6, 6);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const groundMat = new THREE.MeshStandardMaterial({
+        map: dirtTex,
+        color: 0x3d4a2d, // lush mossy forest loam
+        roughness: 0.92,
+        metalness: 0.05
+      });
+      const basinFloor = new THREE.Mesh(basinGeo, groundMat);
+      basinFloor.rotation.x = -Math.PI / 2;
+      basinFloor.position.set(originX, originY, originZ);
+      group.add(basinFloor);
+
+      // Solid floor collider so player stands firmly on the sanctuary ground
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: originX - 18.0,
+        maxX: originX + 18.0,
+        minZ: originZ - 18.0,
+        maxZ: originZ + 18.0,
+        minY: originY - 1.0,
+        maxY: originY,
+        isWall: false
+      });
+
+      // 2. Surrounding Grotto Mossy Rock Cliffs (Enclosing the smallish natural area)
+      const stoneTex = this.texLoader.load('assets/textures/stone_tiles.jpg', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 2);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const rockMat = new THREE.MeshStandardMaterial({
+        map: stoneTex,
+        color: 0x475544, // moss-covered cavernous stone
+        roughness: 0.88,
+        metalness: 0.12
+      });
+
+      const cliffH = 14.0;
+      const addCliffWall = (x, z, w, d, rotY = 0) => {
+        const cMesh = new THREE.Mesh(new THREE.BoxGeometry(w, cliffH, d), rockMat);
+        cMesh.position.set(x, originY + cliffH * 0.5, z);
+        cMesh.rotation.y = rotY;
+        group.add(cMesh);
+
+        this.colliders.push({
+          type: 'box',
+          floor: 'all',
+          minX: x - (w * 0.5 + 0.3),
+          maxX: x + (w * 0.5 + 0.3),
+          minZ: z - (d * 0.5 + 0.3),
+          maxZ: z + (d * 0.5 + 0.3),
+          minY: originY,
+          maxY: originY + cliffH,
+          isWall: true
+        });
+      };
+
+      // North cliff wall (behind waterfall)
+      addCliffWall(originX, originZ - 14.5, 32.0, 3.0);
+      // South cliff wall (back grotto behind player)
+      addCliffWall(originX, originZ + 14.5, 32.0, 3.0);
+      // West cliff wall (beside the return portal arch)
+      addCliffWall(originX - 14.5, originZ, 3.0, 32.0);
+      // East cliff wall
+      addCliffWall(originX + 14.5, originZ, 3.0, 32.0);
+
+      // Curved rocky boulders framing the grotto opening
+      const boulderMat = new THREE.MeshStandardMaterial({
+        color: 0x3e473b,
+        roughness: 0.85
+      });
+      const boulderCoords = [
+        { x: originX - 8.0, z: originZ - 9.0, s: 2.4 },
+        { x: originX - 3.5, z: originZ - 8.5, s: 1.8 },
+        { x: originX + 7.5, z: originZ - 9.2, s: 2.2 },
+        { x: originX + 9.5, z: originZ - 5.0, s: 2.8 },
+        { x: originX - 10.5, z: originZ + 5.0, s: 2.1 },
+        { x: originX + 8.5, z: originZ + 8.0, s: 2.5 }
+      ];
+      boulderCoords.forEach(b => {
+        const bMesh = new THREE.Mesh(new THREE.DodecahedronGeometry(b.s, 1), boulderMat);
+        bMesh.position.set(b.x, originY + b.s * 0.45, b.z);
+        bMesh.rotation.set(Math.random(), Math.random(), Math.random());
+        group.add(bMesh);
+
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 'all',
+          x: b.x,
+          z: b.z,
+          radius: b.s * 0.85,
+          minY: originY,
+          maxY: originY + b.s * 1.2
+        });
+      });
+
+      // 3. Ancient Gnarled Tree Roots & Vines framing the cavern arch (matching 2nd photo)
+      const woodMat = new THREE.MeshStandardMaterial({
+        color: 0x452f1e,
+        roughness: 0.78
+      });
+      // Arching overhead branch spanning across the cavern skylight opening
+      const archCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 12.0, originY + 2.0, originZ - 4.0),
+        new THREE.Vector3(originX - 6.0, originY + 9.5, originZ - 6.0),
+        new THREE.Vector3(originX + 2.0, originY + 11.2, originZ - 8.0),
+        new THREE.Vector3(originX + 11.0, originY + 6.0, originZ - 9.0)
+      ]);
+      const branchGeo = new THREE.TubeGeometry(archCurve, 32, 0.95, 12, false);
+      const branchMesh = new THREE.Mesh(branchGeo, woodMat);
+      group.add(branchMesh);
+
+      // Second twisted arch root framing the portal grotto alcove
+      const portalRootCurve = new THREE.CatmullRomCurve3([
+        new THREE.Vector3(originX - 10.5, originY, originZ - 3.5),
+        new THREE.Vector3(originX - 8.5, originY + 4.2, originZ - 1.0),
+        new THREE.Vector3(originX - 7.5, originY + 5.4, originZ + 2.0),
+        new THREE.Vector3(originX - 9.5, originY + 1.2, originZ + 4.5)
+      ]);
+      const portalRootGeo = new THREE.TubeGeometry(portalRootCurve, 24, 0.65, 10, false);
+      const portalRootMesh = new THREE.Mesh(portalRootGeo, woodMat);
+      group.add(portalRootMesh);
+
+      // 4. Beautiful Open Blue Sky & Sunny Atmosphere above the cavern opening
+      // Huge celestial sky dome
+      const skyGeo = new THREE.SphereGeometry(65.0, 32, 24);
+      const skyMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTopColor: { value: new THREE.Color(0x2563eb) },    // vibrant deep blue sky
+          uHorizonColor: { value: new THREE.Color(0x93c5fd) },// bright sunny light blue
+          uSunColor: { value: new THREE.Color(0xfffbeb) }    // brilliant shining sun
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldPos = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTopColor;
+          uniform vec3 uHorizonColor;
+          uniform vec3 uSunColor;
+          varying vec3 vWorldPos;
+          void main() {
+            vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
+            float h = clamp(dir.y, 0.0, 1.0);
+            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.65));
+            // Brilliant sun disc at azimuth
+            vec3 sunDir = normalize(vec3(0.35, 0.75, -0.55));
+            float sunDot = max(0.0, dot(dir, sunDir));
+            sky += uSunColor * pow(sunDot, 120.0) * 1.8;
+            sky += vec3(1.0, 0.95, 0.8) * pow(sunDot, 8.0) * 0.45;
+            gl_FragColor = vec4(sky, 1.0);
+          }
+        `,
+        side: THREE.BackSide,
+        depthWrite: false
+      });
+      const skyDome = new THREE.Mesh(skyGeo, skyMat);
+      skyDome.position.set(originX, originY, originZ);
+      group.add(skyDome);
+
+      // Direct shining sunlight and radiant ambient lighting inside the sanctuary
+      const sunLight = new THREE.DirectionalLight(0xfff7d6, 2.8);
+      sunLight.position.set(originX + 10.0, originY + 28.0, originZ - 16.0);
+      sunLight.target.position.set(originX, originY, originZ);
+      group.add(sunLight);
+      group.add(sunLight.target);
+
+      const sanctuaryHemiLight = new THREE.HemisphereLight(0x93c5fd, 0x3d4a2d, 1.35);
+      sanctuaryHemiLight.position.set(originX, originY + 20.0, originZ);
+      group.add(sanctuaryHemiLight);
+
+      // Volumetric Sunbeams streaming through the cavern roof
+      const sunbeamGeo = new THREE.CylinderGeometry(4.8, 1.2, 22.0, 16, 1, true);
+      const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const sunbeamMat = new THREE.MeshBasicMaterial({
+        map: beamTex,
+        color: 0xfffde8,
+        transparent: true,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const sunbeamMesh = new THREE.Mesh(sunbeamGeo, sunbeamMat);
+      sunbeamMesh.position.set(originX + 2.0, originY + 11.0, originZ - 3.0);
+      sunbeamMesh.rotation.x = 0.25;
+      sunbeamMesh.rotation.z = -0.15;
+      group.add(sunbeamMesh);
+
+      // 5. Gorgeous Rushing Waterfall & Plunge Pool (matching 2nd photo on the right)
+      // Plunge pool water plane
+      const poolGeo = new THREE.CircleGeometry(6.5, 32);
+      const poolMat = new THREE.MeshStandardMaterial({
+        color: 0x0ea5e9, // crystal clear azure-teal water
+        roughness: 0.15,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.85
+      });
+      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+      poolMesh.rotation.x = -Math.PI / 2;
+      poolMesh.position.set(originX + 8.5, originY + 0.05, originZ - 6.5);
+      group.add(poolMesh);
+
+      // Vertical rushing waterfall sheets
+      const wfGeo = new THREE.PlaneGeometry(5.2, 13.5, 16, 24);
+      const wfUniforms = {
+        uTime: { value: 0 },
+        uColorTop: { value: new THREE.Color(0xffffff) },
+        uColorBot: { value: new THREE.Color(0x38bdf8) }
+      };
+      const wfMat = new THREE.ShaderMaterial({
+        uniforms: wfUniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          uniform float uTime;
+          void main() {
+            vUv = uv;
+            vec3 pos = position;
+            // Billowing rushing wave displacement
+            pos.z += sin(pos.y * 2.5 - uTime * 9.0) * 0.14 * (1.0 - uv.y);
+            pos.x += cos(pos.y * 3.0 - uTime * 6.0) * 0.08;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColorTop;
+          uniform vec3 uColorBot;
+          varying vec2 vUv;
+          void main() {
+            // High-speed rushing water streaks
+            float rush = sin(vUv.y * 45.0 - uTime * 14.0) * 0.5 + 0.5;
+            rush += sin(vUv.x * 28.0 + vUv.y * 18.0 - uTime * 10.0) * 0.35;
+            rush = clamp(rush, 0.0, 1.0);
+            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.35);
+            // Frothy edge foam
+            float foam = smoothstep(0.0, 0.15, vUv.y);
+            float alpha = 0.82 + rush * 0.18;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        side: THREE.DoubleSide
+      });
+      const wfMesh1 = new THREE.Mesh(wfGeo, wfMat);
+      wfMesh1.position.set(originX + 8.5, originY + 6.75, originZ - 10.5);
+      group.add(wfMesh1);
+
+      // Offset front splash layer for dense volumetric volume
+      const wfMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 12.0, 12, 16), wfMat);
+      wfMesh2.position.set(originX + 8.5, originY + 6.0, originZ - 10.1);
+      group.add(wfMesh2);
+
+      // 6. Waterfall Mist & Plunge Pool Foam (billowing soft particles)
+      const mistCount = 65;
+      const mistGeo = new THREE.BufferGeometry();
+      const mistPos = new Float32Array(mistCount * 3);
+      const mistVel = [];
+      for (let i = 0; i < mistCount; i++) {
+        mistPos[i * 3]     = originX + 8.5 + (Math.random() - 0.5) * 5.5;
+        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 2.8;
+        mistPos[i * 3 + 2] = originZ - 7.5 + (Math.random() - 0.5) * 4.5;
+        mistVel.push({
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: 0.3 + Math.random() * 0.6,
+          vz: (Math.random() - 0.5) * 0.3
+        });
+      }
+      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
+      const mistMat = new THREE.PointsMaterial({
+        size: 0.75,
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.42,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const mistPoints = new THREE.Points(mistGeo, mistMat);
+      group.add(mistPoints);
+
+      // 7. Floating Ethereal Pastel Color Lights (Teal, Blue, Green, Yellow, Pink, Purple)
+      const motePalette = [
+        new THREE.Color(0x2dd4bf), // Teal
+        new THREE.Color(0x38bdf8), // Blue
+        new THREE.Color(0x4ade80), // Green
+        new THREE.Color(0xfacc15), // Yellow
+        new THREE.Color(0xf472b6), // Pink
+        new THREE.Color(0xc084fc)  // Purple
+      ];
+
+      const orbCount = 85;
+      const orbGeo = new THREE.BufferGeometry();
+      const orbPos = new Float32Array(orbCount * 3);
+      const orbColors = new Float32Array(orbCount * 3);
+      const orbData = [];
+
+      for (let i = 0; i < orbCount; i++) {
+        const ox = originX + (Math.random() - 0.5) * 22.0;
+        const oy = originY + 0.8 + Math.random() * 5.5;
+        const oz = originZ + (Math.random() - 0.5) * 22.0;
+
+        orbPos[i * 3]     = ox;
+        orbPos[i * 3 + 1] = oy;
+        orbPos[i * 3 + 2] = oz;
+
+        const col = motePalette[i % motePalette.length];
+        orbColors[i * 3]     = col.r;
+        orbColors[i * 3 + 1] = col.g;
+        orbColors[i * 3 + 2] = col.b;
+
+        orbData.push({
+          baseX: ox,
+          baseY: oy,
+          baseZ: oz,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.4 + Math.random() * 0.6,
+          radius: 0.6 + Math.random() * 1.4
+        });
+      }
+      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
+      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
+
+      const orbMat = new THREE.PointsMaterial({
+        size: 0.22,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const orbPoints = new THREE.Points(orbGeo, orbMat);
+      group.add(orbPoints);
+
+      // 8. Return Portal to Museum (matching left side of 2nd photo)
+      const retPortalGroup = new THREE.Group();
+      const retPortalX = originX - 9.0;
+      const retPortalY = originY + 2.4;
+      const retPortalZ = originZ;
+      retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
+
+      // Beautiful swirling vortex disk facing east into the sanctuary
+      const burstTex = this.texLoader.load('assets/textures/portal_burst_flow.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const retPortalUniforms = {
+        uTime: { value: 0 },
+        uColorHot: { value: new THREE.Color(0xa7f3d0) }, // ethereal seafoam/teal center
+        uColorMid: { value: new THREE.Color(0x38bdf8) }, // bright azure
+        uColorOuter: { value: new THREE.Color(0xc084fc) } // mystic purple
+      };
+
+      const retShaderMat = new THREE.ShaderMaterial({
+        uniforms: retPortalUniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          uniform vec3 uColorHot;
+          uniform vec3 uColorMid;
+          uniform vec3 uColorOuter;
+          varying vec2 vUv;
+          void main() {
+            vec2 centered = (vUv - 0.5) * 2.0;
+            float r = length(centered);
+            if (r > 1.0) discard;
+            float angle = atan(centered.y, centered.x);
+            float swirl = angle + r * 4.0 - uTime * 2.2;
+            float rays = sin(angle * 8.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
+            float smoothEdge = cos(r * 1.5707963);
+            vec3 col = mix(uColorOuter, uColorMid, smoothstep(0.8, 0.25, r));
+            col = mix(col, uColorHot, smoothstep(0.45, 0.0, r));
+            col += uColorHot * (rays * 0.45);
+            float alpha = smoothEdge * 0.95;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.2, 4.2, 24, 24), retShaderMat);
+      retDisc.rotation.y = Math.PI / 2; // Facing +X into sanctuary
+      retPortalGroup.add(retDisc);
+
+      const retBurstMat = new THREE.MeshBasicMaterial({
+        map: burstTex,
+        color: 0xa5f3fc,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 6.2), retBurstMat);
+      retBurst.rotation.y = Math.PI / 2;
+      retPortalGroup.add(retBurst);
+
+      const retLight = new THREE.PointLight(0x5eead4, 3.8, 14.0, 1.2);
+      retLight.position.set(0.2, 0, 0);
+      retPortalGroup.add(retLight);
+
+      group.add(retPortalGroup);
+
+      this.scene.add(group);
+      group.visible = false; // Isolated until player enters
+
+      this.safeRoomSanctuary = {
+        group: group,
+        originX: originX,
+        originY: originY,
+        originZ: originZ,
+        retPortalX: retPortalX,
+        retPortalY: retPortalY,
+        retPortalZ: retPortalZ,
+        retDisc: retDisc,
+        retBurst: retBurst,
+        wfMat: wfMat,
+        wfUniforms: wfUniforms,
+        retPortalUniforms: retPortalUniforms,
+        mistPoints: mistPoints,
+        mistVel: mistVel,
+        orbPoints: orbPoints,
+        orbData: orbData,
         time: 0
       };
     }
@@ -10964,12 +11489,22 @@ window.game = this;
 
       if (ep.portalGroup) ep.portalGroup.visible = isCurrentFloor;
       if (ep.beamsGroup) ep.beamsGroup.visible = isCurrentFloor;
-      if (ep.pedestal) ep.pedestal.visible = isCurrentFloor;
+      if (ep.roomFogGroup) ep.roomFogGroup.visible = isCurrentFloor;
       if (ep.motePoints) ep.motePoints.visible = isCurrentFloor;
 
       if (!isCurrentFloor) return;
 
       ep.time += delta;
+
+      // Rotate dense volumetric room fog
+      if (ep.fogPlanes) {
+        for (let i = 0; i < ep.fogPlanes.length; i++) {
+          const fp = ep.fogPlanes[i];
+          fp.rotation.y += delta * (0.05 + i * 0.02);
+          const sc = 1.0 + Math.sin(ep.time * 1.5 + i) * 0.08;
+          fp.scale.set(sc, sc, 1.0);
+        }
+      }
 
       // 1. Update procedural portal vortex shader uniforms
       if (ep.portalUniforms) {
@@ -11011,15 +11546,15 @@ window.game = this;
         ep.ring2.rotation.z -= delta * 0.22;
       }
 
-      // 4. Dynamic point lights pulsing
+      // 4. Dynamic point lights pulsing (ultra high intensity)
       if (ep.pointLight1) {
-        ep.pointLight1.intensity = 3.2 + Math.sin(ep.time * 3.6) * 0.6 + Math.cos(ep.time * 7.2) * 0.25;
+        ep.pointLight1.intensity = 8.5 + Math.sin(ep.time * 3.6) * 1.5 + Math.cos(ep.time * 7.2) * 0.8;
       }
       if (ep.pointLight2) {
-        ep.pointLight2.intensity = 2.0 + Math.cos(ep.time * 2.8) * 0.45;
+        ep.pointLight2.intensity = 5.5 + Math.cos(ep.time * 2.8) * 1.2;
       }
       if (ep.pointLight3) {
-        ep.pointLight3.intensity = 1.5 + Math.sin(ep.time * 1.8) * 0.4;
+        ep.pointLight3.intensity = 4.0 + Math.sin(ep.time * 1.8) * 1.0;
       }
 
       // 5. Volumetric light shafts & cone hulls (slow organic axial rotation and undulating opacity)
@@ -11031,7 +11566,7 @@ window.game = this;
               bm.mesh.rotation.y += delta * bm.rotSpeed;
             }
             if (bm.mesh.material) {
-              bm.mesh.material.opacity = bm.baseOpacity * (0.82 + 0.28 * Math.sin(ep.time * 2.2 + bm.phase));
+              bm.mesh.material.opacity = bm.baseOpacity * (0.85 + 0.25 * Math.sin(ep.time * 2.2 + bm.phase));
             }
           }
         }
@@ -17082,6 +17617,8 @@ window.game = this;
         const dz = z - 28.0;
         if (dx * dx + dz * dz <= 6.46 * 6.46) return true;
       }
+      // 11. Nature Safe Room Sanctuary (x: 282..328, z: 282..328)
+      if (x >= 282.0 && x <= 328.0 && z >= 282.0 && z <= 328.0) return true;
       return false;
     }
 
@@ -17139,6 +17676,286 @@ window.game = this;
       if (lastValidPos) {
         lastValidPos.x = pos.x;
         lastValidPos.z = pos.z;
+      }
+    }
+
+    isInEastOfficePortalRoom(pos, floor = this.playerFloor) {
+      if (!pos) return false;
+      const fl = (floor !== undefined) ? floor : this.playerFloor;
+      if (fl !== 2) return false; // Only 3rd Floor (fl = 2) East Office has the portal
+      return (pos.x >= 19.2 && pos.x <= 32.8 && pos.z >= 8.2 && pos.z <= 17.8);
+    }
+
+    isInSafeRoom(pos) {
+      if (!pos) return false;
+      return (pos.x >= 280.0 && pos.x <= 335.0 && pos.z >= 280.0 && pos.z <= 335.0);
+    }
+
+    updatePortalRoomLogic(delta) {
+      if (this.isGameOver || this.isVictory || this.isSpectatorMode) return;
+
+      const overlay = this.dom.portalFadeOverlay;
+      if (!this._portalRoomFade) this._portalRoomFade = 0.0;
+      if (!this._portalRoomStayTimer) this._portalRoomStayTimer = 0.0;
+      if (this._isTeleportingPortal === undefined) this._isTeleportingPortal = false;
+
+      // 1. Player is inside 3rd Floor East Office Portal Room
+      const inPortalRoom = this.isInEastOfficePortalRoom(this.playerPos, this.playerFloor);
+
+      if (!this.isSafeRoomActive) {
+        if (inPortalRoom && !this._isTeleportingPortal) {
+          // Vision slowly fades into pure white over ~2.8 seconds
+          this._portalRoomFade = Math.min(1.0, this._portalRoomFade + delta * 0.42);
+          this._portalRoomStayTimer += delta;
+
+          // If staying inside for 5.0 seconds, teleport to Nature Saferoom
+          if (this._portalRoomStayTimer >= 5.0) {
+            this._isTeleportingPortal = true;
+            this.teleportToNatureSafeRoom();
+            return;
+          }
+        } else if (!this._isTeleportingPortal) {
+          // White fades away slowly if the player walks out
+          this._portalRoomFade = Math.max(0.0, this._portalRoomFade - delta * 0.55);
+          this._portalRoomStayTimer = Math.max(0.0, this._portalRoomStayTimer - delta * 1.5);
+        }
+
+        if (overlay && !this._isTeleportingPortal) {
+          overlay.style.background = '#ffffff';
+          overlay.style.opacity = this._portalRoomFade.toFixed(3);
+          overlay.style.pointerEvents = (this._portalRoomFade > 0.85) ? 'auto' : 'none';
+        }
+      } else {
+        // Player is inside the Nature Saferoom
+        const sr = this.safeRoomSanctuary;
+        if (!sr) return;
+
+        // Standing in the nature saferoom completely heals player & restores stamina
+        if (this.health < CONFIG.PLAYER.MAX_HEALTH && this.health > 0) {
+          this.health = Math.min(CONFIG.PLAYER.MAX_HEALTH, this.health + delta * 15.0);
+          this.stamina = CONFIG.PLAYER.MAX_STAMINA;
+          this.updateHud();
+        }
+
+        // Check proximity to the Return Portal (located at retPortalX: originX - 9.0, retPortalZ: originZ)
+        const distToRetPortal = Math.hypot(this.playerPos.x - sr.retPortalX, this.playerPos.z - sr.retPortalZ);
+        if (distToRetPortal < 2.2 && !this._isTeleportingPortal) {
+          // Step into the portal: fades into the ethereal portal color, then teleports back in front of east office
+          this._isTeleportingPortal = true;
+          this.teleportFromNatureSafeRoom();
+        }
+      }
+    }
+
+    teleportToNatureSafeRoom() {
+      const overlay = this.dom.portalFadeOverlay;
+      if (overlay) {
+        overlay.style.background = '#ffffff';
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+
+      setTimeout(() => {
+        const sr = this.safeRoomSanctuary;
+        if (sr) {
+          this.isSafeRoomActive = true;
+          // Spawn player safely on the natural sanctuary ground facing east towards the waterfall and sunny glade
+          this.playerPos.set(sr.originX - 5.5, sr.originY + CONFIG.PLAYER.CAMERA_HEIGHT, sr.originZ);
+          this.playerYaw = Math.PI / 2; // Facing +X into the sun and waterfall
+          this.playerPitch = 0.05;
+          this.camera.position.copy(this.playerPos);
+
+          // Update floor visibility & audio
+          this.updateFloorGroupVisibility();
+          if (this.audio && this.audio.setWaterfallVolume) {
+            this.audio.setWaterfallVolume(0.48, 1.2);
+          }
+          if (this.scene && this.scene.fog) {
+            this._preSafeRoomFog = { color: this.scene.fog.color.getHex(), density: this.scene.fog.density };
+            this.scene.fog.color.setHex(0x93c5fd);
+            this.scene.fog.density = 0.008; // crisp, clear sunny horizon
+          }
+          if (this.scene) {
+            this._preSafeRoomBg = this.scene.background ? this.scene.background.getHex() : 0x05070c;
+            this.scene.background.setHex(0x38bdf8);
+          }
+        }
+
+        // Slowly fade the pure white away to reveal the breathtaking nature sanctuary
+        setTimeout(() => {
+          if (overlay) {
+            overlay.style.opacity = '0';
+          }
+          setTimeout(() => {
+            if (overlay) overlay.style.pointerEvents = 'none';
+            this._portalRoomFade = 0.0;
+            this._portalRoomStayTimer = 0.0;
+            this._isTeleportingPortal = false;
+          }, 850);
+        }, 300);
+      }, 700);
+    }
+
+    updateSafeRoomSanctuary(delta) {
+      const sr = this.safeRoomSanctuary;
+      if (!sr || !sr.group || !this.isSafeRoomActive) return;
+
+      sr.time += delta;
+
+      // Animate rushing waterfall shader
+      if (sr.wfUniforms) {
+        sr.wfUniforms.uTime.value = sr.time;
+      }
+
+      // Animate return portal shader
+      if (sr.retPortalUniforms) {
+        sr.retPortalUniforms.uTime.value = sr.time;
+      }
+      if (sr.retBurst) {
+        sr.retBurst.rotation.x += delta * 0.18;
+      }
+
+      // Animate waterfall mist particles rising and drifting
+      if (sr.mistPoints && sr.mistVel) {
+        const posAttr = sr.mistPoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.mistVel.length;
+        for (let i = 0; i < count; i++) {
+          const v = sr.mistVel[i];
+          arr[i * 3]     += v.vx * delta;
+          arr[i * 3 + 1] += v.vy * delta;
+          arr[i * 3 + 2] += v.vz * delta;
+
+          if (arr[i * 3 + 1] > sr.originY + 4.2) {
+            arr[i * 3]     = sr.originX + 8.5 + (Math.random() - 0.5) * 5.5;
+            arr[i * 3 + 1] = sr.originY + 0.2;
+            arr[i * 3 + 2] = sr.originZ - 7.5 + (Math.random() - 0.5) * 4.5;
+          }
+        }
+        posAttr.needsUpdate = true;
+      }
+
+      // Animate floating ethereal pastel motes (teal, blue, green, yellow, pink, purple)
+      if (sr.orbPoints && sr.orbData) {
+        const posAttr = sr.orbPoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.orbData.length;
+        for (let i = 0; i < count; i++) {
+          const d = sr.orbData[i];
+          const t = sr.time * d.speed + d.phase;
+          arr[i * 3]     = d.baseX + Math.cos(t) * d.radius;
+          arr[i * 3 + 1] = d.baseY + Math.sin(t * 1.5) * 0.65;
+          arr[i * 3 + 2] = d.baseZ + Math.sin(t) * d.radius;
+        }
+        posAttr.needsUpdate = true;
+      }
+    }
+
+    teleportFromNatureSafeRoom() {
+      const overlay = this.dom.portalFadeOverlay;
+      if (overlay) {
+        // Fade into the portal's ethereal radiant color (iridescent celestial cyan/violet tint)
+        overlay.style.background = 'radial-gradient(ellipse at center, #a7f3d0 0%, #38bdf8 45%, #c084fc 100%)';
+        overlay.style.opacity = '1';
+        overlay.style.pointerEvents = 'auto';
+      }
+
+      setTimeout(() => {
+        this.isSafeRoomActive = false;
+        // Spawn player standing outside in front of the 3rd floor east office arched entrance (x = 16.5, z = 13.0, floor 2)
+        const y0 = 2 * CONFIG.FLOOR_HEIGHT;
+        this.playerFloor = 2;
+        this.playerPos.set(16.5, y0 + CONFIG.PLAYER.CAMERA_HEIGHT, 13.0);
+        this.playerYaw = -Math.PI / 2; // Facing east towards the portal room doorway
+        this.playerPitch = 0.0;
+        this.camera.position.copy(this.playerPos);
+
+        // Restore museum fog, background, audio, and visibility
+        this.updateFloorGroupVisibility();
+        if (this.audio && this.audio.setWaterfallVolume) {
+          this.audio.setWaterfallVolume(0.0, 0.8);
+        }
+        if (this.scene && this.scene.fog && this._preSafeRoomFog) {
+          this.scene.fog.color.setHex(this._preSafeRoomFog.color);
+          this.scene.fog.density = this._preSafeRoomFog.density;
+        } else if (this.scene && this.scene.fog) {
+          this.scene.fog.color.setHex(0x05070c);
+          this.scene.fog.density = 0.032;
+        }
+        if (this.scene && this._preSafeRoomBg !== undefined) {
+          this.scene.background.setHex(this._preSafeRoomBg);
+        }
+
+        // Slowly fade the portal color away to reveal the museum corridor
+        setTimeout(() => {
+          if (overlay) {
+            overlay.style.opacity = '0';
+          }
+          setTimeout(() => {
+            if (overlay) {
+              overlay.style.pointerEvents = 'none';
+              overlay.style.background = '#ffffff';
+            }
+            this._portalRoomFade = 0.0;
+            this._portalRoomStayTimer = 0.0;
+            this._isTeleportingPortal = false;
+          }, 850);
+        }, 300);
+      }, 700);
+    }
+
+    updateSafeRoomSanctuary(delta) {
+      const sr = this.safeRoomSanctuary;
+      if (!sr || !sr.group || !this.isSafeRoomActive) return;
+
+      sr.time += delta;
+
+      // Animate rushing waterfall shader
+      if (sr.wfUniforms) {
+        sr.wfUniforms.uTime.value = sr.time;
+      }
+
+      // Animate return portal shader
+      if (sr.retPortalUniforms) {
+        sr.retPortalUniforms.uTime.value = sr.time;
+      }
+      if (sr.retBurst) {
+        sr.retBurst.rotation.x += delta * 0.18;
+      }
+
+      // Animate waterfall mist particles rising and drifting
+      if (sr.mistPoints && sr.mistVel) {
+        const posAttr = sr.mistPoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.mistVel.length;
+        for (let i = 0; i < count; i++) {
+          const v = sr.mistVel[i];
+          arr[i * 3]     += v.vx * delta;
+          arr[i * 3 + 1] += v.vy * delta;
+          arr[i * 3 + 2] += v.vz * delta;
+
+          if (arr[i * 3 + 1] > sr.originY + 4.2) {
+            arr[i * 3]     = sr.originX + 8.5 + (Math.random() - 0.5) * 5.5;
+            arr[i * 3 + 1] = sr.originY + 0.2;
+            arr[i * 3 + 2] = sr.originZ - 7.5 + (Math.random() - 0.5) * 4.5;
+          }
+        }
+        posAttr.needsUpdate = true;
+      }
+
+      // Animate floating ethereal pastel motes (teal, blue, green, yellow, pink, purple)
+      if (sr.orbPoints && sr.orbData) {
+        const posAttr = sr.orbPoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.orbData.length;
+        for (let i = 0; i < count; i++) {
+          const d = sr.orbData[i];
+          const t = sr.time * d.speed + d.phase;
+          arr[i * 3]     = d.baseX + Math.cos(t) * d.radius;
+          arr[i * 3 + 1] = d.baseY + Math.sin(t * 1.5) * 0.65;
+          arr[i * 3 + 2] = d.baseZ + Math.sin(t) * d.radius;
+        }
+        posAttr.needsUpdate = true;
       }
     }
 
@@ -21911,6 +22728,10 @@ window.game = this;
     trackCurrentRoom() {
       if (!this.dom.roomIndicator) return;
       if (this.exitUnlocked) return;
+      if (this.isSafeRoomActive) {
+        this.dom.roomIndicator.textContent = 'SANCTUARY GROTTO • SAFE ROOM';
+        return;
+      }
       const px = this.playerPos.x;
       const pz = this.playerPos.z;
       const fl = this.playerFloor;
@@ -23178,6 +23999,13 @@ window.game = this;
     updateSmitty(delta) {
       if (!this.gameStarted) return;
       if (!this.smittyMesh) return;
+      if (this.isSafeRoomActive) {
+        // Player is completely safe in the sanctuary: Smitty remains paused in idle/patrol in the museum
+        this.smittyMesh.visible = false;
+        if (this.smittyXrayGroup) this.smittyXrayGroup.visible = false;
+        this.audio.setHeartbeatBpm(45);
+        return;
+      }
       if (!this.smittyEnabled) {
         this.smittyMesh.visible = false;
         if (this.smittyXrayGroup) this.smittyXrayGroup.visible = false;
@@ -23827,6 +24655,12 @@ window.game = this;
           this.updateBurningMountain(delta);
           if (this.updateEtherealPortal) {
             this.updateEtherealPortal(delta);
+          }
+          if (this.updatePortalRoomLogic) {
+            this.updatePortalRoomLogic(delta);
+          }
+          if (this.updateSafeRoomSanctuary) {
+            this.updateSafeRoomSanctuary(delta);
           }
           if (this.updateFloorThreeBubbles) {
             this.updateFloorThreeBubbles(delta);
