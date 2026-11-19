@@ -4469,6 +4469,7 @@
         jumpscareOverlay: document.getElementById('jumpscare-overlay'),
         interactPrompt: document.getElementById('interact-prompt'),
         deathKeys: document.getElementById('death-keys'),
+        deathSub: document.getElementById('death-sub'),
         deathTime: document.getElementById('death-time'),
         deathShots: document.getElementById('death-shots'),
         deathHits: document.getElementById('death-hits'),
@@ -10204,80 +10205,763 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Atmosphere & Lighting: Multi-point ethereal light setup
-      const ambient = new THREE.AmbientLight(0xcceeff, 0.4);
-      group.add(ambient);
+      // 1. Load Textures
+      const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(16, 16);
+      });
+      const earthTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_earth.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(2, 14);
+      });
+      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(3, 3);
+      });
+      const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 6);
+      });
+      const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(1, 2);
+      });
+      const wfTex2 = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(1, 2);
+      });
+      const sandTex = this.texLoader.load('assets/textures/sanctuary/river_sand.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(6, 6);
+      });
+      const flowersTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_flowers.png');
+      const leafTex = this.texLoader.load('assets/textures/sanctuary/canopy_leaf.png');
+      const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
+      const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
+      const ringTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png');
 
-      const lightTeal = new THREE.PointLight(0x008080, 2.0, 100);
-      lightTeal.position.set(originX - 30, originY + 20, originZ);
-      group.add(lightTeal);
+      // 2. Boundless Mountain Sky Dome with Procedural Sunlight
+      const skyGeo = new THREE.SphereGeometry(160.0, 36, 24);
+      const skyMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uTopColor: { value: new THREE.Color(0x1d4ed8) },
+          uMidColor: { value: new THREE.Color(0x60a5fa) },
+          uHorizonColor: { value: new THREE.Color(0xdbeafe) },
+          uSunDir: { value: new THREE.Vector3(0.35, 0.72, -0.42).normalize() },
+          uSunColor: { value: new THREE.Color(0xfffbeb) }
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldPos = wp.xyz;
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uTopColor;
+          uniform vec3 uMidColor;
+          uniform vec3 uHorizonColor;
+          uniform vec3 uSunDir;
+          uniform vec3 uSunColor;
+          varying vec3 vWorldPos;
+          void main() {
+            vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
+            float h = clamp(dir.y, 0.0, 1.0);
+            vec3 sky = mix(uHorizonColor, uMidColor, pow(h, 0.42));
+            sky = mix(sky, uTopColor, pow(h, 1.8));
 
-      const lightPink = new THREE.PointLight(0xFF69B4, 1.5, 100);
-      lightPink.position.set(originX + 30, originY + 20, originZ);
-      group.add(lightPink);
+            float sunDot = max(0.0, dot(dir, uSunDir));
+            float sunGlow = pow(sunDot, 14.0) * 0.42 + pow(sunDot, 120.0) * 0.88;
+            sky = mix(sky, uSunColor, clamp(sunGlow, 0.0, 1.0));
 
-      const sun = new THREE.DirectionalLight(0xfff7d6, 1.2);
-      sun.position.set(20, 100, 20);
-      group.add(sun);
+            gl_FragColor = vec4(sky, 1.0);
+          }
+        `,
+        side: THREE.BackSide,
+        depthWrite: false
+      });
+      const skyMesh = new THREE.Mesh(skyGeo, skyMat);
+      skyMesh.position.set(originX, originY, originZ);
+      group.add(skyMesh);
 
-      // 2. Complex terrain: Layers of ground with moss and cliff textures
-      const groundTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png');
-      groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
-      groundTex.repeat.set(20, 20);
-      const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, side: THREE.DoubleSide });
-      
-      // Multi-layered terrain for depth
-      for (let i = 0; i < 3; i++) {
-        const geo = new THREE.CircleGeometry(60 - i * 5, 64);
-        geo.rotateX(-Math.PI / 2);
-        const mesh = new THREE.Mesh(geo, groundMat);
-        mesh.position.set(originX, originY - i * 0.5, originZ);
-        group.add(mesh);
+      // Fluffy 3D Clouds drifting across the sunlit mountain sky
+      const cloudGroup = new THREE.Group();
+      const cloudParts = [];
+      const cloudPuffs = [
+        [originX + 15.0, originY + 42.0, originZ - 20.0, 14.0, 6.0, 9.0],
+        [originX + 24.0, originY + 44.0, originZ - 18.0, 12.0, 7.0, 8.0],
+        [originX + 8.0, originY + 41.0, originZ - 22.0, 11.0, 5.5, 7.5],
+        [originX + 45.0, originY + 46.0, originZ + 15.0, 16.0, 7.0, 10.0],
+        [originX + 54.0, originY + 48.0, originZ + 18.0, 13.0, 6.5, 9.0],
+        [originX - 25.0, originY + 45.0, originZ - 35.0, 15.0, 7.0, 10.0],
+        [originX - 15.0, originY + 46.0, originZ - 32.0, 12.0, 6.0, 8.0],
+        [originX + 60.0, originY + 50.0, originZ - 40.0, 18.0, 8.0, 12.0]
+      ];
+      for (let i = 0; i < cloudPuffs.length; i++) {
+        const [cx, cy, cz, sx, sy, sz] = cloudPuffs[i];
+        const puffGeo = new THREE.SphereGeometry(1.0, 10, 8);
+        puffGeo.scale(sx, sy, sz);
+        puffGeo.translate(cx, cy, cz);
+        cloudParts.push(puffGeo);
       }
+      const mergedClouds = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(cloudParts) : cloudParts[0];
+      const cloudMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.84,
+        depthWrite: false
+      });
+      const cloudMesh = new THREE.Mesh(mergedClouds, cloudMat);
+      cloudGroup.add(cloudMesh);
+      group.add(cloudGroup);
 
-      // 3. Waterfall: Layered planes for volume and mist
-      const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png');
-      const wfMat = new THREE.MeshBasicMaterial({ map: wfTex, transparent: true, side: THREE.DoubleSide, opacity: 0.7, blending: THREE.AdditiveBlending });
-      for (let i = 0; i < 3; i++) {
-        const wfGeo = new THREE.PlaneGeometry(20 + i * 2, 30 + i * 5);
-        const wfMesh = new THREE.Mesh(wfGeo, wfMat);
-        wfMesh.position.set(originX + 45, originY + 15, originZ + 5 + i * 0.5);
-        wfMesh.rotation.y = -Math.PI / 2;
-        group.add(wfMesh);
+      // 3. Distant Mountains Backdrop (Rugged peaks and foothill ridges)
+      const mountainParts = [];
+      const peakCoords = [
+        [originX + 95.0, originZ - 60.0, 36.0, 28.0],
+        [originX + 115.0, originZ - 35.0, 44.0, 32.0],
+        [originX + 125.0, originZ - 5.0, 40.0, 34.0],
+        [originX + 120.0, originZ + 25.0, 42.0, 30.0],
+        [originX + 100.0, originZ + 55.0, 38.0, 26.0],
+        [originX + 75.0, originZ - 75.0, 32.0, 24.0],
+        [originX + 80.0, originZ + 75.0, 34.0, 25.0]
+      ];
+      for (let i = 0; i < peakCoords.length; i++) {
+        const [mx, mz, mw, mh] = peakCoords[i];
+        const mGeo = new THREE.DodecahedronGeometry(1.0, 1);
+        mGeo.scale(mw, mh, mw * 0.7);
+        mGeo.translate(mx, originY + mh * 0.45, mz);
+        mountainParts.push(mGeo);
       }
+      const mountainGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(mountainParts) : mountainParts[0];
+      const mountainMat = new THREE.MeshStandardMaterial({
+        color: 0x64748b,
+        roughness: 0.95,
+        metalness: 0.05
+      });
+      const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
+      group.add(mountainMesh);
 
-      // 4. Portal: Additive blended portal vortex
-      const portalTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
-      const portalMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
-      const portalGeo = new THREE.TorusGeometry(9, 0.8, 32, 64);
-      const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-      portalMesh.position.set(originX - 45, originY + 8, originZ);
-      group.add(portalMesh);
+      // 4. Undulating Green Meadow Terrain
+      const terrainW = 100.0;
+      const terrainD = 100.0;
+      const terrainSegs = 40;
+      const groundGeo = new THREE.PlaneGeometry(terrainW, terrainD, terrainSegs, terrainSegs);
+      groundGeo.rotateX(-Math.PI / 2);
+      const gPos = groundGeo.attributes.position;
+      for (let i = 0; i < gPos.count; i++) {
+        const lx = gPos.getX(i);
+        const lz = gPos.getZ(i);
+        const wx = originX + lx;
+        const wz = originZ + lz;
 
-      // 5. Dense Ethereal Motes: Multi-colored, layered point system
-      const colors = [0x008080, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFF69B4, 0x800080];
-      for (let c = 0; c < colors.length; c++) {
-        const moteGeo = new THREE.BufferGeometry();
-        const count = 80;
-        const pos = new Float32Array(count * 3);
-        for(let i=0; i<count; i++) {
-          pos[i*3] = (Math.random() - 0.5) * 100;
-          pos[i*3+1] = Math.random() * 40;
-          pos[i*3+2] = (Math.random() - 0.5) * 100;
+        let h = 0.0;
+        // Left side rolling grassy hillside behind portal
+        if (lz < -4.0) {
+          const distL = Math.abs(lz + 4.0);
+          h += Math.min(8.5, Math.pow(distL * 0.16, 1.45) * 2.2);
+          h += Math.sin(wx * 0.14) * 0.85;
         }
-        moteGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
-        const moteMat = new THREE.PointsMaterial({ size: 1.5, color: colors[c], transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
-        group.add(new THREE.Points(moteGeo, moteMat));
+        // Right side plunge pool basin & cliff elevation
+        if (lz > 6.0 && lx > 4.0) {
+          const distToPool = Math.hypot(wx - (originX + 17.5), wz - (originZ + 17.0));
+          if (distToPool < 9.5) {
+            h -= (1.0 - distToPool / 9.5) * 0.45; // shallow basin
+          } else if (lz > 18.0 || lx > 24.0) {
+            h += Math.min(6.5, Math.pow((distToPool - 9.5) * 0.22, 1.3) * 1.8);
+          }
+        }
+        // Subtle natural roll everywhere else
+        h += Math.sin(wx * 0.08 + wz * 0.06) * 0.18;
+        gPos.setY(i, h);
+      }
+      groundGeo.computeVertexNormals();
+
+      const groundMat = new THREE.MeshStandardMaterial({
+        map: floorTex,
+        roughness: 0.86,
+        metalness: 0.02
+      });
+      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+      groundMesh.position.set(originX, originY, originZ);
+      group.add(groundMesh);
+
+      // Walkable flat floor collider so the player has solid ground with zero snagging or falling
+      const floorRadius = 50.0;
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: originX - floorRadius,
+        maxX: originX + floorRadius,
+        minZ: originZ - floorRadius,
+        maxZ: originZ + floorRadius,
+        minY: originY - 1.0,
+        maxY: originY,
+        isWall: false
+      });
+
+      // Distant perimeter boundary (44m out)
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * Math.PI * 2;
+        const bDist = 44.0;
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 'all',
+          x: originX + Math.cos(th) * bDist,
+          z: originZ + Math.sin(th) * bDist,
+          radius: 2.5,
+          minY: originY,
+          maxY: originY + 25.0
+        });
       }
 
-      // Final Setup
-      if (this._rootSceneAdd) this._rootSceneAdd(group); else this.scene.add(group);
+      // 5. Central Earth Trail winding forward into the valley
+      const trailGeo = new THREE.PlaneGeometry(42.0, 4.4, 28, 4);
+      trailGeo.rotateX(-Math.PI / 2);
+      const tPos = trailGeo.attributes.position;
+      for (let i = 0; i < tPos.count; i++) {
+        const tx = tPos.getX(i);
+        const normX = (tx + 21.0) / 42.0;
+        const targetZ = Math.sin(normX * Math.PI * 0.8) * 1.8;
+        tPos.setZ(i, tPos.getZ(i) + targetZ);
+        const edge = Math.sin(tPos.getX(i) * 1.2) * 0.25;
+        tPos.setZ(i, tPos.getZ(i) + edge);
+      }
+      trailGeo.computeVertexNormals();
+      const trailMat = new THREE.MeshStandardMaterial({
+        map: earthTex,
+        roughness: 0.94,
+        metalness: 0.01
+      });
+      const trailMesh = new THREE.Mesh(trailGeo, trailMat);
+      trailMesh.position.set(originX + 13.0, originY + 0.04, originZ);
+      group.add(trailMesh);
+
+      // Embedded stepping stones & flat river rocks along the path
+      const stoneParts = [];
+      const stoneLocs = [
+        [originX - 3.5, originZ - 0.4, 0.45],
+        [originX - 1.2, originZ + 0.3, 0.55],
+        [originX + 2.5, originZ - 0.2, 0.48],
+        [originX + 7.0, originZ + 0.5, 0.62],
+        [originX + 12.0, originZ - 0.3, 0.52],
+        [originX + 18.0, originZ + 0.4, 0.65],
+        [originX + 24.0, originZ + 0.8, 0.58],
+        [originX + 30.0, originZ + 1.2, 0.60]
+      ];
+      for (let i = 0; i < stoneLocs.length; i++) {
+        const [sx, sz, sr] = stoneLocs[i];
+        const sGeo = new THREE.DodecahedronGeometry(sr, 1);
+        sGeo.scale(1.2, 0.28, 1.1);
+        sGeo.translate(sx, originY + 0.06, sz);
+        stoneParts.push(sGeo);
+      }
+      const stoneGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(stoneParts) : stoneParts[0];
+      const stoneMat = new THREE.MeshStandardMaterial({
+        map: rockTex,
+        roughness: 0.85,
+        metalness: 0.04
+      });
+      const stoneMesh = new THREE.Mesh(stoneGeo, stoneMat);
+      group.add(stoneMesh);
+
+      // 6. Right Side: Majestic Towering Rocky Cliffs & Bluffs
+      const cliffParts = [];
+      // Lower rock tier surrounding the plunge pool and waterfall
+      const lowerRocks = [
+        [originX + 14.0, originY + 3.0, originZ + 24.0, 5.5, 6.0, 5.0],
+        [originX + 19.0, originY + 4.0, originZ + 25.5, 6.0, 8.0, 5.5],
+        [originX + 25.0, originY + 5.0, originZ + 24.5, 6.5, 9.5, 6.0],
+        [originX + 27.5, originY + 4.0, originZ + 18.0, 5.5, 7.5, 5.0],
+        [originX + 26.0, originY + 3.0, originZ + 12.0, 5.0, 6.0, 4.5],
+        [originX + 20.0, originY + 2.5, originZ + 10.0, 4.5, 5.0, 4.0],
+        [originX + 12.5, originY + 2.0, originZ + 13.5, 3.8, 4.0, 3.8]
+      ];
+      for (let i = 0; i < lowerRocks.length; i++) {
+        const [rx, ry, rz, sx, sy, sz] = lowerRocks[i];
+        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
+        rGeo.scale(sx, sy, sz);
+        rGeo.translate(rx, ry, rz);
+        cliffParts.push(rGeo);
+      }
+      // Mid-level rock shelf / plateau at Y = originY + 12.0
+      const midRocks = [
+        [originX + 21.0, originY + 11.5, originZ + 24.0, 6.0, 4.0, 5.5],
+        [originX + 26.0, originY + 12.0, originZ + 23.5, 6.5, 4.5, 6.0],
+        [originX + 25.0, originY + 11.0, originZ + 18.0, 5.5, 4.0, 5.0],
+        [originX + 28.5, originY + 12.5, originZ + 21.0, 5.0, 4.2, 5.0]
+      ];
+      for (let i = 0; i < midRocks.length; i++) {
+        const [rx, ry, rz, sx, sy, sz] = midRocks[i];
+        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
+        rGeo.scale(sx, sy, sz);
+        rGeo.translate(rx, ry, rz);
+        cliffParts.push(rGeo);
+      }
+      // Towering upper cliff wall rising to Y = originY + 26.0
+      const upperRocks = [
+        [originX + 23.0, originY + 20.0, originZ + 26.0, 6.5, 12.0, 5.5],
+        [originX + 27.5, originY + 21.0, originZ + 25.0, 7.0, 13.5, 6.0],
+        [originX + 31.0, originY + 22.0, originZ + 22.0, 6.5, 14.0, 5.5],
+        [originX + 29.0, originY + 19.5, originZ + 16.5, 6.0, 11.5, 5.0],
+        [originX + 24.0, originY + 25.0, originZ + 27.0, 6.0, 6.0, 5.0]
+      ];
+      for (let i = 0; i < upperRocks.length; i++) {
+        const [rx, ry, rz, sx, sy, sz] = upperRocks[i];
+        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
+        rGeo.scale(sx, sy, sz);
+        rGeo.translate(rx, ry, rz);
+        cliffParts.push(rGeo);
+      }
+      const cliffsGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(cliffParts) : cliffParts[0];
+      const cliffsMat = new THREE.MeshStandardMaterial({
+        map: cliffTex,
+        roughness: 0.88,
+        metalness: 0.05
+      });
+      const cliffsMesh = new THREE.Mesh(cliffsGeo, cliffsMat);
+      group.add(cliffsMesh);
+
+      // 7. Multi-Tier Rushing Animated Waterfall
+      const wfGroup = new THREE.Group();
+
+      // (A) Upper Waterfall Cascade (Tumbling from Y = originY + 25.5 down to mid ledge Y = originY + 12.5)
+      const wfUpGeo = new THREE.PlaneGeometry(6.5, 13.0, 12, 12);
+      const wfUpMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.85,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfUpMesh = new THREE.Mesh(wfUpGeo, wfUpMat);
+      wfUpMesh.rotation.y = -Math.PI * 0.45;
+      wfUpMesh.rotation.z = -0.12;
+      wfUpMesh.position.set(originX + 23.5, originY + 19.0, originZ + 24.0);
+      wfGroup.add(wfUpMesh);
+
+      // (B) Mid-Ledge Splash & Divide Plane
+      const splashGeo = new THREE.CircleGeometry(4.2, 16);
+      splashGeo.rotateX(-Math.PI / 2);
+      const splashMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const splashMesh = new THREE.Mesh(splashGeo, splashMat);
+      splashMesh.position.set(originX + 23.5, originY + 12.6, originZ + 22.0);
+      wfGroup.add(splashMesh);
+
+      // (C) Lower Waterfall Cascades (Main & Secondary roaring into the plunge pool)
+      const wfLowGeo1 = new THREE.PlaneGeometry(8.2, 12.5, 14, 14);
+      const wfLowMat1 = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfLowMesh1 = new THREE.Mesh(wfLowGeo1, wfLowMat1);
+      wfLowMesh1.rotation.y = -Math.PI * 0.42;
+      wfLowMesh1.rotation.z = -0.08;
+      wfLowMesh1.position.set(originX + 20.5, originY + 6.3, originZ + 21.2);
+      wfGroup.add(wfLowMesh1);
+
+      const wfLowGeo2 = new THREE.PlaneGeometry(5.4, 12.5, 10, 12);
+      const wfLowMat2 = new THREE.MeshBasicMaterial({
+        map: wfTex2,
+        transparent: true,
+        opacity: 0.82,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfLowMesh2 = new THREE.Mesh(wfLowGeo2, wfLowMat2);
+      wfLowMesh2.rotation.y = -Math.PI * 0.38;
+      wfLowMesh2.rotation.z = -0.06;
+      wfLowMesh2.position.set(originX + 24.5, originY + 6.3, originZ + 18.0);
+      wfGroup.add(wfLowMesh2);
+
+      const foamGeo1 = new THREE.CircleGeometry(4.8, 16);
+      foamGeo1.rotateX(-Math.PI / 2);
+      const foamMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.70,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const foamMesh1 = new THREE.Mesh(foamGeo1, foamMat);
+      foamMesh1.position.set(originX + 20.0, originY + 0.12, originZ + 20.5);
+      wfGroup.add(foamMesh1);
+
+      group.add(wfGroup);
+
+      // 8. Shimmering Crystal-Clear Mountain Plunge Pool / Lake
+      const poolGroup = new THREE.Group();
+      const poolCenter = { x: originX + 17.5, z: originZ + 17.0 };
+
+      const sandGeo = new THREE.CircleGeometry(9.4, 32);
+      sandGeo.rotateX(-Math.PI / 2);
+      const sandMat = new THREE.MeshStandardMaterial({
+        map: sandTex,
+        roughness: 0.90,
+        metalness: 0.02
+      });
+      const sandMesh = new THREE.Mesh(sandGeo, sandMat);
+      sandMesh.position.set(poolCenter.x, originY - 0.42, poolCenter.z);
+      poolGroup.add(sandMesh);
+
+      const poolGeo = new THREE.CircleGeometry(9.2, 32);
+      poolGeo.rotateX(-Math.PI / 2);
+      const poolMat = new THREE.MeshStandardMaterial({
+        color: 0x0284c7,
+        roughness: 0.06,
+        metalness: 0.38,
+        transparent: true,
+        opacity: 0.74
+      });
+      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+      poolMesh.position.set(poolCenter.x, originY + 0.08, poolCenter.z);
+      poolGroup.add(poolMesh);
+
+      const poolRockParts = [];
+      const shorelineRocks = [
+        [originX + 8.5, originZ + 17.0, 0.95],
+        [originX + 9.5, originZ + 13.5, 1.15],
+        [originX + 11.5, originZ + 10.5, 1.25],
+        [originX + 14.5, originZ + 8.5, 1.10],
+        [originX + 18.0, originZ + 8.0, 1.30],
+        [originX + 21.5, originZ + 8.5, 1.15],
+        [originX + 10.0, originZ + 20.5, 1.20],
+        [originX + 12.0, originZ + 23.5, 1.35],
+        [originX + 15.0, originZ + 25.5, 1.40]
+      ];
+      for (let i = 0; i < shorelineRocks.length; i++) {
+        const [rx, rz, rr] = shorelineRocks[i];
+        const rGeo = new THREE.DodecahedronGeometry(rr, 1);
+        rGeo.scale(1.1, 0.65, 1.1);
+        rGeo.translate(rx, originY + rr * 0.4, rz);
+        poolRockParts.push(rGeo);
+      }
+      const poolRocksGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(poolRockParts) : poolRockParts[0];
+      const poolRocksMesh = new THREE.Mesh(poolRocksGeo, stoneMat);
+      poolGroup.add(poolRocksMesh);
+
+      group.add(poolGroup);
+
+      // Rising Waterfall Mist & Spray
+      const mistCount = 65;
+      const mistGeo = new THREE.BufferGeometry();
+      const mistPos = new Float32Array(mistCount * 3);
+      const mistVel = [];
+      for (let i = 0; i < mistCount; i++) {
+        mistPos[i * 3]     = originX + 20.5 + (Math.random() - 0.5) * 8.0;
+        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 5.0;
+        mistPos[i * 3 + 2] = originZ + 20.5 + (Math.random() - 0.5) * 8.0;
+        mistVel.push({
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: 0.35 + Math.random() * 0.65,
+          vz: (Math.random() - 0.5) * 0.35
+        });
+      }
+      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
+      const mistMat = new THREE.PointsMaterial({
+        size: 2.8,
+        map: moteTex,
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.30,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const mistPoints = new THREE.Points(mistGeo, mistMat);
+      group.add(mistPoints);
+
+      // 9. Warm Directional Sunlight & Glade Illumination
+      const sunLight = new THREE.DirectionalLight(0xfffae0, 2.4);
+      sunLight.position.set(originX + 20.0, originY + 55.0, originZ - 25.0);
+      sunLight.target.position.set(originX + 15.0, originY, originZ + 5.0);
+      group.add(sunLight);
+      group.add(sunLight.target);
+
+      const hemiLight = new THREE.HemisphereLight(0xbbe4fe, 0x475f28, 1.35);
+      hemiLight.position.set(originX, originY + 35.0, originZ);
+      group.add(hemiLight);
+
+      const poolLight = new THREE.PointLight(0x38bdf8, 1.8, 22.0, 1.2);
+      poolLight.position.set(poolCenter.x, originY + 2.5, poolCenter.z);
+      group.add(poolLight);
+
+      // 10. Left Side: Ethereal Floating Return Portal Vortex
+      const retPortalGroup = new THREE.Group();
+      const retPortalX = originX + 5.0;
+      const retPortalY = originY + 2.2;
+      const retPortalZ = originZ - 9.0;
+      retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
+      retPortalGroup.rotation.y = -0.72;
+
+      const retPortalUniforms = {
+        uTime: { value: 0 }
+      };
+
+      const retPortalShaderMat = new THREE.ShaderMaterial({
+        uniforms: retPortalUniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            vec2 p = (vUv - 0.5) * 2.0;
+            float r = length(p);
+            if (r > 1.0) discard;
+            float angle = atan(p.y, p.x);
+            float swirl = angle + r * 5.5 - uTime * 2.4;
+            float rays = sin(angle * 8.0 + swirl * 2.2 + uTime * 2.8) * 0.5 + 0.5;
+            float smoothEdge = cos(r * 1.5707963);
+
+            vec3 cOuter = vec3(0.72, 0.48, 0.98);
+            vec3 cMid = vec3(0.22, 0.78, 0.96);
+            vec3 cCenter = vec3(0.85, 1.0, 0.92);
+
+            vec3 col = mix(cOuter, cMid, smoothstep(0.85, 0.25, r));
+            col = mix(col, cCenter, smoothstep(0.38, 0.0, r));
+            col += cCenter * (rays * 0.45);
+
+            float alpha = smoothEdge * 0.94;
+            gl_FragColor = vec4(col, alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2, 24, 24), retPortalShaderMat);
+      retPortalGroup.add(retDisc);
+
+      const retBurstMat = new THREE.MeshBasicMaterial({
+        map: vortexTex,
+        transparent: true,
+        opacity: 0.90,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 6.6), retBurstMat);
+      retPortalGroup.add(retBurst);
+
+      const retRingMat = new THREE.MeshBasicMaterial({
+        map: ringTex,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const retRing = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.6), retRingMat);
+      retPortalGroup.add(retRing);
+
+      const retLight = new THREE.PointLight(0x5eead4, 3.8, 18.0, 1.2);
+      retLight.position.set(0, 0, 0.35);
+      retPortalGroup.add(retLight);
+
+      group.add(retPortalGroup);
+
+      // Swirling sparkles around the portal
+      const portalMoteCount = 45;
+      const portalMoteGeo = new THREE.BufferGeometry();
+      const portalMotePos = new Float32Array(portalMoteCount * 3);
+      const portalMoteData = [];
+      for (let i = 0; i < portalMoteCount; i++) {
+        portalMoteData.push({
+          angle: Math.random() * Math.PI * 2,
+          radius: 1.8 + Math.random() * 2.8,
+          speed: 0.8 + Math.random() * 1.4,
+          zOffset: (Math.random() - 0.5) * 1.6,
+          yDrift: (Math.random() - 0.5) * 0.8
+        });
+        portalMotePos[i * 3]     = retPortalX;
+        portalMotePos[i * 3 + 1] = retPortalY;
+        portalMotePos[i * 3 + 2] = retPortalZ;
+      }
+      portalMoteGeo.setAttribute('position', new THREE.BufferAttribute(portalMotePos, 3));
+      const portalMoteMat = new THREE.PointsMaterial({
+        size: 0.75,
+        map: moteTex,
+        color: 0x99f6e4,
+        transparent: true,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const portalMotePoints = new THREE.Points(portalMoteGeo, portalMoteMat);
+      group.add(portalMotePoints);
+
+      // 11. Foreground Flora & Wildflowers (Framing the camera view like the painting)
+      const floraParts = [];
+      const floraPlacements = [
+        [originX - 3.8, originZ - 3.2, 1.1],
+        [originX - 3.2, originZ - 2.6, 0.9],
+        [originX - 2.4, originZ - 2.8, 1.0],
+        [originX - 1.6, originZ - 2.2, 0.8],
+        [originX - 2.8, originZ - 1.8, 0.85],
+        [originX - 3.8, originZ + 3.2, 1.1],
+        [originX - 3.0, originZ + 2.5, 0.95],
+        [originX - 2.2, originZ + 2.8, 1.05],
+        [originX - 1.5, originZ + 2.0, 0.8],
+        [originX - 2.6, originZ + 1.6, 0.85],
+        [originX + 1.0, originZ - 2.2, 0.85],
+        [originX + 4.5, originZ - 2.4, 0.9],
+        [originX + 9.0, originZ - 2.0, 0.85],
+        [originX + 2.0, originZ + 2.2, 0.85],
+        [originX + 6.5, originZ + 2.4, 0.9],
+        [originX + 11.0, originZ + 2.2, 0.85],
+        [originX + 11.0, originZ + 8.5, 0.9],
+        [originX + 14.0, originZ + 7.5, 0.85],
+        [originX + 16.5, originZ + 7.0, 0.9]
+      ];
+      for (let i = 0; i < floraPlacements.length; i++) {
+        const [fx, fz, fs] = floraPlacements[i];
+        const p1 = new THREE.PlaneGeometry(fs * 1.2, fs * 1.0);
+        p1.translate(fx, originY + fs * 0.45, fz);
+        const p2 = p1.clone();
+        p2.rotateY(Math.PI * 0.5);
+        floraParts.push(p1);
+        floraParts.push(p2);
+      }
+      const floraGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(floraParts) : floraParts[0];
+      const floraMat = new THREE.MeshStandardMaterial({
+        map: flowersTex,
+        transparent: true,
+        roughness: 0.82,
+        metalness: 0.02,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const floraMesh = new THREE.Mesh(floraGeo, floraMat);
+      group.add(floraMesh);
+
+      // Midground trees on hillside and cliff top
+      const treeParts = [];
+      const treeLocs = [
+        [originX + 2.0, originZ - 18.0, 3.5, 8.0],
+        [originX + 12.0, originZ - 24.0, 4.0, 9.5],
+        [originX + 22.0, originZ - 30.0, 4.5, 11.0],
+        [originX + 26.0, originZ + 27.0, 3.5, 8.5]
+      ];
+      for (let i = 0; i < treeLocs.length; i++) {
+        const [tx, tz, tr, th] = treeLocs[i];
+        const tGeo = new THREE.DodecahedronGeometry(tr, 1);
+        tGeo.scale(1.0, 1.4, 1.0);
+        tGeo.translate(tx, originY + th * 0.8, tz);
+        treeParts.push(tGeo);
+      }
+      const treesGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(treeParts) : treeParts[0];
+      const treesMat = new THREE.MeshStandardMaterial({
+        map: leafTex,
+        roughness: 0.86,
+        metalness: 0.02
+      });
+      const treesMesh = new THREE.Mesh(treesGeo, treesMat);
+      group.add(treesMesh);
+
+      // 12. Floating Glowing Pastel Motes (Teal, blue, mint, yellow, pink, purple)
+      const motePalette = [
+        new THREE.Color(0x2dd4bf),
+        new THREE.Color(0x38bdf8),
+        new THREE.Color(0x4ade80),
+        new THREE.Color(0xfacc15),
+        new THREE.Color(0xf472b6),
+        new THREE.Color(0xc084fc)
+      ];
+
+      const orbCount = 80;
+      const orbGeo = new THREE.BufferGeometry();
+      const orbPos = new Float32Array(orbCount * 3);
+      const orbColors = new Float32Array(orbCount * 3);
+      const orbData = [];
+
+      for (let i = 0; i < orbCount; i++) {
+        const ox = originX + (Math.random() - 0.5) * 32.0;
+        const oy = originY + 0.6 + Math.random() * 6.5;
+        const oz = originZ + (Math.random() - 0.5) * 30.0;
+
+        orbPos[i * 3]     = ox;
+        orbPos[i * 3 + 1] = oy;
+        orbPos[i * 3 + 2] = oz;
+
+        const col = motePalette[i % motePalette.length];
+        orbColors[i * 3]     = col.r;
+        orbColors[i * 3 + 1] = col.g;
+        orbColors[i * 3 + 2] = col.b;
+
+        orbData.push({
+          baseX: ox,
+          baseY: oy,
+          baseZ: oz,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.35 + Math.random() * 0.45,
+          radius: 0.6 + Math.random() * 1.5
+        });
+      }
+      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
+      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
+
+      const orbMat = new THREE.PointsMaterial({
+        size: 0.65,
+        map: moteTex,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const orbPoints = new THREE.Points(orbGeo, orbMat);
+      group.add(orbPoints);
+
+      if (this._rootSceneAdd) {
+        this._rootSceneAdd(group);
+      } else {
+        this.scene.add(group);
+      }
       group.visible = false;
-      
+
       this.safeRoomSanctuary = {
-        group, originX, originY, originZ,
-        retPortalX: originX - 45,
-        retPortalZ: originZ,
+        group: group,
+        originX: originX,
+        originY: originY,
+        originZ: originZ,
+        retPortalX: retPortalX,
+        retPortalY: retPortalY,
+        retPortalZ: retPortalZ,
+        retDisc: retDisc,
+        retBurst: retBurst,
+        retRing: retRing,
+        retPortalUniforms: retPortalUniforms,
+        portalMotePoints: portalMotePoints,
+        portalMoteData: portalMoteData,
+        wfTex: wfTex,
+        wfTex2: wfTex2,
+        cloudGroup: cloudGroup,
+        mistPoints: mistPoints,
+        mistVel: mistVel,
+        orbPoints: orbPoints,
+        orbData: orbData,
         time: 0
       };
     }
@@ -11044,7 +11728,7 @@ window.game = this;
               }
 
               if (this.health <= 0) {
-                this.triggerGameOver();
+                this.triggerGameOver('fire');
               }
             }
           }
@@ -17317,7 +18001,7 @@ window.game = this;
 
     isInSafeRoom(pos) {
       if (!pos) return false;
-      return (pos.x >= 280.0 && pos.x <= 335.0 && pos.z >= 280.0 && pos.z <= 335.0);
+      return (pos.x >= 250.0 && pos.x <= 350.0 && pos.z >= 250.0 && pos.z <= 350.0);
     }
 
     updatePortalRoomLogic(delta) {
@@ -17459,9 +18143,12 @@ window.game = this;
 
       sr.time += delta;
 
-      // Animate rushing waterfall shader
-      if (sr.wfUniforms) {
-        sr.wfUniforms.uTime.value = sr.time;
+      // Animate rushing waterfall cascades
+      if (sr.wfTex) {
+        sr.wfTex.offset.y -= delta * 1.85;
+      }
+      if (sr.wfTex2) {
+        sr.wfTex2.offset.y -= delta * 2.40;
       }
 
       // Animate return portal shader
@@ -17469,7 +18156,39 @@ window.game = this;
         sr.retPortalUniforms.uTime.value = sr.time;
       }
       if (sr.retBurst) {
-        sr.retBurst.rotation.x += delta * 0.18;
+        sr.retBurst.rotation.z += delta * 0.42;
+      }
+      if (sr.retRing) {
+        sr.retRing.rotation.z -= delta * 0.28;
+        const pScale = 1.0 + Math.sin(sr.time * 2.4) * 0.04;
+        sr.retRing.scale.set(pScale, pScale, 1.0);
+      }
+
+      // Animate portal orbiters
+      if (sr.portalMotePoints && sr.portalMoteData) {
+        const posAttr = sr.portalMotePoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.portalMoteData.length;
+        for (let i = 0; i < count; i++) {
+          const m = sr.portalMoteData[i];
+          m.angle += delta * m.speed;
+          const lx = Math.cos(m.angle) * m.radius;
+          const ly = Math.sin(m.angle) * m.radius + Math.sin(sr.time * 1.5 + i) * m.yDrift;
+          const lz = m.zOffset + Math.sin(m.angle * 2.0) * 0.35;
+
+          const cosR = Math.cos(-0.72);
+          const sinR = Math.sin(-0.72);
+          arr[i * 3]     = sr.retPortalX + (lx * cosR + lz * sinR);
+          arr[i * 3 + 1] = sr.retPortalY + ly;
+          arr[i * 3 + 2] = sr.retPortalZ + (-lx * sinR + lz * cosR);
+        }
+        posAttr.needsUpdate = true;
+      }
+
+      // Animate clouds gentle drift
+      if (sr.cloudGroup) {
+        sr.cloudGroup.position.x = Math.sin(sr.time * 0.03) * 4.0;
+        sr.cloudGroup.position.z = Math.cos(sr.time * 0.02) * 3.0;
       }
 
       // Animate waterfall mist particles rising and drifting
@@ -17483,16 +18202,16 @@ window.game = this;
           arr[i * 3 + 1] += v.vy * delta;
           arr[i * 3 + 2] += v.vz * delta;
 
-          if (arr[i * 3 + 1] > sr.originY + 4.2) {
-            arr[i * 3]     = sr.originX + 8.5 + (Math.random() - 0.5) * 5.5;
+          if (arr[i * 3 + 1] > sr.originY + 11.5) {
+            arr[i * 3]     = sr.originX + 20.5 + (Math.random() - 0.5) * 7.5;
             arr[i * 3 + 1] = sr.originY + 0.2;
-            arr[i * 3 + 2] = sr.originZ - 7.5 + (Math.random() - 0.5) * 4.5;
+            arr[i * 3 + 2] = sr.originZ + 20.5 + (Math.random() - 0.5) * 7.5;
           }
         }
         posAttr.needsUpdate = true;
       }
 
-      // Animate floating ethereal pastel motes (teal, blue, green, yellow, pink, purple)
+      // Animate floating ethereal pastel motes
       if (sr.orbPoints && sr.orbData) {
         const posAttr = sr.orbPoints.geometry.attributes.position;
         const arr = posAttr.array;
@@ -24199,7 +24918,7 @@ window.game = this;
       }
     }
 
-    triggerGameOver() {
+    triggerGameOver(cause = 'smitty') {
       if (!this.smittyEnabled) return;
       this.isGameOver = true;
       this.releaseNativeOrBrowserLock();
@@ -24215,6 +24934,18 @@ window.game = this;
         const totalEl = document.querySelector('[data-text="gameover.relics_out_of"]');
         if (totalEl) totalEl.textContent = `/ ${CONFIG.TOTAL_RELICS}`;
         
+        // Dynamic death message based on cause of death
+        const deathSubEl = this.dom.deathSub || document.getElementById('death-sub') || document.querySelector('.death-sub');
+        if (deathSubEl) {
+          if (cause === 'fire') {
+            deathSubEl.textContent = T('gameover.text.fire', 'You were burned to death');
+          } else if (cause === 'dog') {
+            deathSubEl.textContent = T('gameover.text.dog', 'You were bitten to death');
+          } else {
+            deathSubEl.textContent = T('gameover.text', 'You were beaten to death');
+          }
+        }
+
         // Calculate playtime formatted as m:ss
         const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
         const mins = Math.floor(elapsedSec / 60);
@@ -24236,6 +24967,7 @@ window.game = this;
     }
 
     triggerVictory() {
+      if (this.isVictory) return;
       this.isVictory = true;
       this.releaseNativeOrBrowserLock();
 
@@ -24243,6 +24975,16 @@ window.game = this;
       try {
         localStorage.setItem('the_museum_game_completed', 'true');
       } catch (e) {}
+
+      // Fade to black first
+      if (this.dom.cinemaFadeOverlay) {
+        this.dom.cinemaFadeOverlay.classList.add('active');
+      }
+
+      // Pause gameplay ambient/horror audio immediately as the screen fades out
+      if (this.audio) {
+        this.audio.pauseGameplayAudio();
+      }
 
       const elapsedSec = Math.floor((Date.now() - this.startTime) / 1000);
       const mins = Math.floor(elapsedSec / 60);
@@ -24254,11 +24996,13 @@ window.game = this;
         allRelicsEl.textContent = T('victory.all_relics', `All ${CONFIG.TOTAL_RELICS} Relics Recovered!`, { total: CONFIG.TOTAL_RELICS });
       }
 
-      this.dom.victoryModal.classList.remove('hidden');
-      if (this.audio) {
-        this.audio.pauseGameplayAudio();
-        this.audio.playMenuMusic();
-      }
+      // Victory UI fades in a few seconds after walking out the door
+      setTimeout(() => {
+        this.dom.victoryModal.classList.remove('hidden');
+        if (this.audio) {
+          this.audio.playMenuMusic();
+        }
+      }, 2000);
     }
 
     updateHud() {
@@ -24964,7 +25708,7 @@ window.game = this;
                 if (this.dom.damageOverlay) this.dom.damageOverlay.style.opacity = '0';
               }, 300);
             }
-            this.health = Math.max(1, this.health - 12); // Dog bites back for 12 damage
+            this.health = Math.max(0, this.health - 12); // Dog bites back for 12 damage
             this.updateHud();
             this.playerPitch += (Math.random() - 0.5) * 0.25;
             this.playerYaw += (Math.random() - 0.5) * 0.25;
@@ -24976,6 +25720,10 @@ window.game = this;
             this.playerPos.x += pushDirX * 1.25;
             this.playerPos.z += pushDirZ * 1.25;
             this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, this.playerFloor);
+
+            if (this.health <= 0) {
+              this.triggerGameOver('dog');
+            }
           }
 
           if (dog.aiTimer <= 0) {

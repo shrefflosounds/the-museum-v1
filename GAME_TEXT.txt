@@ -244,6 +244,8 @@ pause.button = RESUME
 [ GAME OVER SCREEN ]
 gameover.title = EXHIBIT CASUALTY
 gameover.text = You were beaten to death
+gameover.text.fire = You were burned to death
+gameover.text.dog = You were bitten to death
 gameover.relics_label = Relics Recovered:
 gameover.relics_out_of = / {total}
 gameover.time_label = Playtime:
@@ -252,7 +254,7 @@ gameover.button = TRY AGAIN
 
 [ VICTORY SCREEN ]
 victory.title = YOU ESCAPED
-victory.text = You unsealed the museum's emergency doors and fled into the night.
+victory.text =
 victory.all_relics = All {total} Relics Recovered
 victory.time_label = Playtime:
 victory.button = PLAY AGAIN

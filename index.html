@@ -419,7 +419,7 @@
   <div id="game-over-modal" class="modal-overlay hidden">
     <div class="modal-box game-over-box">
       <h1 class="horror-title death-title" data-text="gameover.title">EXHIBIT CASUALTY</h1>
-      <p class="death-sub" data-text="gameover.text">Smitty caught you in the museum halls and preserved you as an art installation.</p>
+      <p id="death-sub" class="death-sub" data-text="gameover.text">Smitty caught you in the museum halls and preserved you as an art installation.</p>
       <div class="stats-box">
         <p><span data-text="gameover.relics_label">Relics Recovered:</span> <span id="death-keys">0</span> <span data-text="gameover.relics_out_of">/ 14</span></p>
         <p><span data-text="gameover.time_label">Playtime:</span> <span id="death-time">0:00</span></p>
@@ -433,7 +433,6 @@
   <div id="victory-modal" class="modal-overlay hidden">
     <div class="modal-box victory-box">
       <h1 class="horror-title win-title" data-text="victory.title">YOU ESCAPED</h1>
-      <p class="victory-sub" data-text="victory.text">You unsealed the museum's emergency doors and fled into the night.</p>
       <div class="stats-box">
         <p data-text="victory.all_relics">All 14 Relics Recovered!</p>
         <p><span data-text="victory.time_label">Playtime:</span> <span id="win-time">0:00</span></p>
