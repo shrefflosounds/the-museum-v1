@@ -10204,354 +10204,56 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // Load curated clean garden textures (Chao Garden inspired aesthetic)
-      const grassTex = this.texLoader.load('assets/textures/sanctuary/chao_grass.png', (tx) => {
+      // Load high-resolution photographic backdrop and organic textures
+      const backdropTex = this.texLoader.load('assets/textures/sanctuary/nature_sanctuary_backdrop.jpg', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const earthTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_earth.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(16, 16);
+        tx.repeat.set(12, 12);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const sandTex = this.texLoader.load('assets/textures/sanctuary/river_sand.png', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(8, 8);
+      const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(8, 4);
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const barkTex = this.texLoader.load('assets/textures/sanctuary/chao_bark.png', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(3, 8);
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const canopyTex = this.texLoader.load('assets/textures/sanctuary/canopy_leaf.png', (tx) => {
-        tx.wrapS = THREE.RepeatWrapping;
-        tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 4);
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const flowerTex = this.texLoader.load('assets/textures/sanctuary/clean_foliage.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const moteGlowTex = this.texLoader.load('assets/textures/sanctuary/glow_mote.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png', (tx) => {
+      const vortexTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
 
-      // 1. Expansive, Open Meadow Basin Floor (Flat at originY = 50.0 so player feet never sink)
-      const meadowRadius = 55.0;
-      const meadowGeo = new THREE.PlaneGeometry(meadowRadius * 2, meadowRadius * 2, 2, 2);
-      const grassMat = new THREE.MeshStandardMaterial({
-        map: grassTex,
-        roughness: 0.75,
-        metalness: 0.02
-      });
-      const meadowFloor = new THREE.Mesh(meadowGeo, grassMat);
-      meadowFloor.rotation.x = -Math.PI / 2;
-      meadowFloor.position.set(originX, originY, originZ);
-      group.add(meadowFloor);
+      // 1. Photographic 3D Horizon Grotto Backdrop (Direct match of reference image)
+      // Large panoramic cylinder curved around the player's view (+X eastward towards waterfall and open sky)
+      const panoramaRadius = 38.0;
+      const panoramaHeight = 36.0;
+      const panoramaGeo = new THREE.CylinderGeometry(
+        panoramaRadius,
+        panoramaRadius,
+        panoramaHeight,
+        48,
+        1,
+        true,
+        -Math.PI * 0.45,
+        Math.PI * 0.90
+      );
+      // Ensure normals and texture face inward towards the player
+      panoramaGeo.scale(-1, 1, 1);
 
-      // Smooth sandy shoreline ring around the lake and portal clearing
-      const sandGeo = new THREE.RingGeometry(11.0, 16.5, 36);
-      const sandMat = new THREE.MeshStandardMaterial({
-        map: sandTex,
-        roughness: 0.85,
-        metalness: 0.02
-      });
-      const sandRing = new THREE.Mesh(sandGeo, sandMat);
-      sandRing.rotation.x = -Math.PI / 2;
-      sandRing.position.set(originX + 14.0, originY + 0.015, originZ - 10.0);
-      group.add(sandRing);
-
-      // Solid floor collider perfectly aligned with originY = 50.0
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX - meadowRadius,
-        maxX: originX + meadowRadius,
-        minZ: originZ - meadowRadius,
-        maxZ: originZ + meadowRadius,
-        minY: originY - 1.0,
-        maxY: originY,
-        isWall: false
-      });
-
-      // 2. Distant Horizon Mountain Valley (Completely Open Sky overhead, NO claustrophobic cave roof)
-      // Gentle circular mountain range set far back (R = 48m..55m) giving total open panoramic freedom
-      const mountainSegments = 40;
-      const mountainMat = new THREE.MeshStandardMaterial({
-        map: cliffTex,
-        roughness: 0.88,
-        metalness: 0.05
-      });
-      const cliffGeo = new THREE.CylinderGeometry(meadowRadius + 2.0, meadowRadius - 6.0, 24.0, mountainSegments, 2, true);
-      // Natural rolling mountain peak ridge line
-      const cPos = cliffGeo.attributes.position;
-      for (let i = 0; i < cPos.count; i++) {
-        const py = cPos.getY(i);
-        const px = cPos.getX(i);
-        const pz = cPos.getZ(i);
-        const angle = Math.atan2(pz, px);
-        // Scenic ridge heights (higher in north where waterfall emerges, lower in south)
-        if (py > 0) {
-          const ridge = Math.sin(angle * 4.0) * 3.5 + Math.cos(angle * 7.0) * 1.8;
-          cPos.setY(i, py + ridge + (angle < 0 ? 5.0 : 0.0));
-        }
-      }
-      cliffGeo.computeVertexNormals();
-      const mountainRidge = new THREE.Mesh(cliffGeo, mountainMat);
-      mountainRidge.position.set(originX, originY + 11.5, originZ);
-      group.add(mountainRidge);
-
-      // Perimeter boundaries keeping player safely inside the lush meadow garden
-      for (let a = 0; a < 24; a++) {
-        const th = (a / 24) * Math.PI * 2;
-        const bDist = 44.0;
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: originX + Math.cos(th) * bDist,
-          z: originZ + Math.sin(th) * bDist,
-          radius: 3.5,
-          minY: originY,
-          maxY: originY + 25.0
-        });
-      }
-
-      // 3. Gorgeous Sparkling Garden Lagoon & Rushing Waterfall (Chao Garden style)
-      // Crystal turquoise lake
-      const lakeGeo = new THREE.CircleGeometry(12.5, 48);
-      const lakeMat = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        roughness: 0.08,
-        metalness: 0.35,
-        transparent: true,
-        opacity: 0.88
-      });
-      const lakeMesh = new THREE.Mesh(lakeGeo, lakeMat);
-      lakeMesh.rotation.x = -Math.PI / 2;
-      lakeMesh.position.set(originX + 14.0, originY + 0.03, originZ - 10.0);
-      group.add(lakeMesh);
-
-      // Waterfall spilling down from northern mountain cliff into the lake
-      const wfUniforms = {
-        uTime: { value: 0 },
-        uColorTop: { value: new THREE.Color(0xffffff) },
-        uColorBot: { value: new THREE.Color(0x38bdf8) }
-      };
-
-      const wfMat = new THREE.ShaderMaterial({
-        uniforms: wfUniforms,
-        vertexShader: `
-          varying vec2 vUv;
-          uniform float uTime;
-          void main() {
-            vUv = uv;
-            vec3 pos = position;
-            pos.z += sin(pos.y * 2.0 - uTime * 6.0) * 0.12 * (1.0 - uv.y);
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float uTime;
-          uniform vec3 uColorTop;
-          uniform vec3 uColorBot;
-          varying vec2 vUv;
-          void main() {
-            float rush = sin(vUv.y * 42.0 - uTime * 14.0) * 0.5 + 0.5;
-            rush += sin(vUv.x * 24.0 + vUv.y * 18.0 - uTime * 9.0) * 0.35;
-            rush = clamp(rush, 0.0, 1.0);
-            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.35);
-            float alpha = 0.85 + rush * 0.15;
-            gl_FragColor = vec4(col, alpha);
-          }
-        `,
-        transparent: true,
-        side: THREE.DoubleSide
-      });
-
-      const wfMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 20.0, 16, 24), wfMat);
-      wfMesh.position.set(originX + 14.0, originY + 10.0, originZ - 22.0);
-      group.add(wfMesh);
-
-      // Soft mist rising gently from the waterfall base
-      const mistCount = 60;
-      const mistGeo = new THREE.BufferGeometry();
-      const mistPos = new Float32Array(mistCount * 3);
-      const mistVel = [];
-      for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 14.0 + (Math.random() - 0.5) * 8.0;
-        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
-        mistPos[i * 3 + 2] = originZ - 18.0 + (Math.random() - 0.5) * 6.0;
-        mistVel.push({
-          vx: (Math.random() - 0.5) * 0.3,
-          vy: 0.35 + Math.random() * 0.5,
-          vz: (Math.random() - 0.5) * 0.3
-        });
-      }
-      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
-      const mistMat = new THREE.PointsMaterial({
-        size: 1.8,
-        map: moteGlowTex,
-        color: 0xe0f2fe,
-        transparent: true,
-        opacity: 0.32,
-        blending: THREE.AdditiveBlending,
+      const panoramaMat = new THREE.MeshBasicMaterial({
+        map: backdropTex,
+        side: THREE.DoubleSide,
         depthWrite: false
       });
-      const mistPoints = new THREE.Points(mistGeo, mistMat);
-      group.add(mistPoints);
+      const panoramaMesh = new THREE.Mesh(panoramaGeo, panoramaMat);
+      // Position center of cylinder slightly behind player so the panoramic view wraps naturally
+      panoramaMesh.position.set(originX - 10.0, originY + panoramaHeight * 0.38, originZ);
+      group.add(panoramaMesh);
 
-      // 4. Beautiful Lush Shade Trees (Chao Garden aesthetic: clean trunks and cloud-like green foliage)
-      const treeBarkMat = new THREE.MeshStandardMaterial({
-        map: barkTex,
-        roughness: 0.82
-      });
-      const treeLeafMat = new THREE.MeshStandardMaterial({
-        map: canopyTex,
-        color: 0x58c038,
-        roughness: 0.65
-      });
-
-      const createGardenTree = (tx, tz, scale = 1.0) => {
-        const treeGroup = new THREE.Group();
-        treeGroup.position.set(tx, originY, tz);
-
-        // Natural tapered trunk
-        const trunkGeo = new THREE.CylinderGeometry(0.35 * scale, 0.65 * scale, 4.8 * scale, 12);
-        trunkGeo.translate(0, 2.4 * scale, 0);
-        const trunkMesh = new THREE.Mesh(trunkGeo, treeBarkMat);
-        treeGroup.add(trunkMesh);
-
-        // Lush rounded cloud-like foliage crowns
-        const crownOffsets = [
-          { x: 0, y: 4.8 * scale, z: 0, r: 2.2 * scale },
-          { x: 0.9 * scale, y: 5.6 * scale, z: 0.6 * scale, r: 1.8 * scale },
-          { x: -0.8 * scale, y: 5.4 * scale, z: -0.7 * scale, r: 1.9 * scale },
-          { x: -0.4 * scale, y: 6.3 * scale, z: 0.5 * scale, r: 1.6 * scale }
-        ];
-        crownOffsets.forEach(c => {
-          const cGeo = new THREE.DodecahedronGeometry(c.r, 2);
-          const cMesh = new THREE.Mesh(cGeo, treeLeafMat);
-          cMesh.position.set(c.x, c.y, c.z);
-          treeGroup.add(cMesh);
-        });
-
-        group.add(treeGroup);
-
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: tx,
-          z: tz,
-          radius: 0.8 * scale,
-          minY: originY,
-          maxY: originY + 6.0
-        });
-      };
-
-      // Scatter scenic shade trees naturally around the open garden
-      createGardenTree(originX - 16.0, originZ - 12.0, 1.25);
-      createGardenTree(originX - 22.0, originZ + 6.0, 1.15);
-      createGardenTree(originX - 10.0, originZ + 22.0, 1.3);
-      createGardenTree(originX + 18.0, originZ + 18.0, 1.2);
-      createGardenTree(originX + 26.0, originZ - 4.0, 1.1);
-      createGardenTree(originX + 5.0, originZ - 26.0, 1.35);
-
-      // 5. Clean, Realistic Boulders along Pond and Shore
-      const boulderMat = new THREE.MeshStandardMaterial({
-        map: cliffTex,
-        roughness: 0.85,
-        metalness: 0.05
-      });
-      const rockPlacements = [
-        { x: originX + 7.5, z: originZ - 14.0, r: 1.8 },
-        { x: originX + 11.0, z: originZ - 19.5, r: 2.2 },
-        { x: originX + 18.5, z: originZ - 18.0, r: 2.4 },
-        { x: originX + 22.0, z: originZ - 12.0, r: 1.9 },
-        { x: originX + 15.0, z: originZ - 2.5, r: 1.5 },
-        { x: originX + 8.0, z: originZ - 4.5, r: 1.6 },
-        { x: originX - 4.0, z: originZ - 6.0, r: 1.2 },
-        { x: originX - 6.5, z: originZ + 8.0, r: 1.4 }
-      ];
-      rockPlacements.forEach(b => {
-        const bGeo = new THREE.DodecahedronGeometry(b.r, 1);
-        const bMesh = new THREE.Mesh(bGeo, boulderMat);
-        bMesh.position.set(b.x, originY + b.r * 0.45, b.z);
-        bMesh.rotation.set(0.2, Math.random() * Math.PI, 0.1);
-        group.add(bMesh);
-
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: b.x,
-          z: b.z,
-          radius: b.r * 0.8,
-          minY: originY,
-          maxY: originY + b.r * 1.2
-        });
-      });
-
-      // 6. Smooth Wildflower Clusters (Delicate, realistic, non-pixelated)
-      const plantMat = new THREE.MeshStandardMaterial({
-        map: flowerTex,
-        transparent: true,
-        alphaTest: 0.35,
-        roughness: 0.82,
-        side: THREE.DoubleSide
-      });
-
-      function makeCrossPlant(uMin, uMax, w, h) {
-        const g1 = new THREE.PlaneGeometry(w, h);
-        g1.translate(0, h / 2, 0);
-        const uvs = g1.getAttribute('uv');
-        uvs.setXY(0, uMin, 1);
-        uvs.setXY(1, uMax, 1);
-        uvs.setXY(2, uMin, 0);
-        uvs.setXY(3, uMax, 0);
-        const g2 = g1.clone();
-        g2.rotateY(Math.PI / 2);
-        return mergeBufferGeometries([g1, g2]);
-      }
-
-      const folList = [
-        makeCrossPlant(0.00, 0.25, 0.75, 0.95), // Fern
-        makeCrossPlant(0.25, 0.50, 0.65, 0.85), // Pink Bloom
-        makeCrossPlant(0.50, 0.75, 0.65, 0.85), // Bluebell
-        makeCrossPlant(0.75, 1.00, 0.60, 0.80)  // Golden Buttercup
-      ];
-
-      for (let p = 0; p < 45; p++) {
-        const angle = Math.random() * Math.PI * 2;
-        const dist = 3.0 + Math.random() * 28.0;
-        const px = originX + Math.cos(angle) * dist;
-        const pz = originZ + Math.sin(angle) * dist;
-
-        // Skip inside lake
-        if (Math.hypot(px - (originX + 14.0), pz - (originZ - 10.0)) < 13.0) continue;
-        if (Math.hypot(px - (originX - 16.0), pz - originZ) < 3.5) continue;
-
-        const fGeo = folList[p % folList.length];
-        const pMesh = new THREE.Mesh(fGeo, plantMat);
-        pMesh.position.set(px, originY, pz);
-        pMesh.rotation.y = Math.random() * Math.PI * 2;
-        group.add(pMesh);
-      }
-
-      // 7. Bright Panoramic Sky Dome & Radiant Sun
-      const skyGeo = new THREE.SphereGeometry(85.0, 32, 24);
+      // Complete 360 Sky and Ambient Horizon Dome for full view freedom
+      const skyGeo = new THREE.SphereGeometry(75.0, 32, 24);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
           uTopColor: { value: new THREE.Color(0x38bdf8) },     // radiant sky blue
-          uHorizonColor: { value: new THREE.Color(0xbae6fd) }, // soft pastel azure horizon
-          uSunColor: { value: new THREE.Color(0xfffbeb) }      // warm sunlight
+          uHorizonColor: { value: new THREE.Color(0xcbebfd) }  // soft warm sunny horizon
         },
         vertexShader: `
           varying vec3 vWorldPos;
@@ -10564,17 +10266,11 @@ window.game = this;
         fragmentShader: `
           uniform vec3 uTopColor;
           uniform vec3 uHorizonColor;
-          uniform vec3 uSunColor;
           varying vec3 vWorldPos;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.60));
-            // Brilliant sun disc in open sky
-            vec3 sunDir = normalize(vec3(0.35, 0.78, -0.50));
-            float sunDot = max(0.0, dot(dir, sunDir));
-            sky += uSunColor * pow(sunDot, 128.0) * 1.8;
-            sky += vec3(1.0, 0.95, 0.8) * pow(sunDot, 8.0) * 0.35;
+            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.70));
             gl_FragColor = vec4(sky, 1.0);
           }
         `,
@@ -10585,18 +10281,154 @@ window.game = this;
       skyDome.position.set(originX, originY, originZ);
       group.add(skyDome);
 
-      // Clean bright directional sunlight & natural ambient illumination
-      const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.4);
-      sunLight.position.set(originX + 15.0, originY + 45.0, originZ - 20.0);
+      // 2. Wide Natural Walkable Ground (Flat at originY = 50.0, NO foot sinking, NO invisible walls in the clearing)
+      const floorRadius = 45.0;
+      const groundGeo = new THREE.PlaneGeometry(floorRadius * 2, floorRadius * 2, 2, 2);
+      const groundMat = new THREE.MeshStandardMaterial({
+        map: earthTex,
+        color: 0x5a4836, // warm mossy earth tone matching the painting's bank
+        roughness: 0.88,
+        metalness: 0.02
+      });
+      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
+      groundMesh.rotation.x = -Math.PI / 2;
+      groundMesh.position.set(originX, originY, originZ);
+      group.add(groundMesh);
+
+      // Single floor collider so player walks firmly without sinking
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: originX - floorRadius,
+        maxX: originX + floorRadius,
+        minZ: originZ - floorRadius,
+        maxZ: originZ + floorRadius,
+        minY: originY - 1.0,
+        maxY: originY,
+        isWall: false
+      });
+
+      // Distant safety boundary set far away (36m) so the whole clearing has zero invisible walls
+      for (let a = 0; a < 16; a++) {
+        const th = (a / 16) * Math.PI * 2;
+        const bDist = 36.0;
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 'all',
+          x: originX + Math.cos(th) * bDist,
+          z: originZ + Math.sin(th) * bDist,
+          radius: 2.0,
+          minY: originY,
+          maxY: originY + 20.0
+        });
+      }
+
+      // 3. Dynamic Rushing Waterfall Spray & Water Shimmer in Front of the Waterfall
+      const poolGeo = new THREE.CircleGeometry(8.5, 32);
+      const poolMat = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.12,
+        metalness: 0.40,
+        transparent: true,
+        opacity: 0.65
+      });
+      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+      poolMesh.rotation.x = -Math.PI / 2;
+      poolMesh.position.set(originX + 18.0, originY + 0.02, originZ - 6.5);
+      group.add(poolMesh);
+
+      // Flowing waterfall spray overlay
+      const wfUniforms = {
+        uTime: { value: 0 }
+      };
+      const wfSplashMat = new THREE.ShaderMaterial({
+        uniforms: wfUniforms,
+        vertexShader: `
+          varying vec2 vUv;
+          void main() {
+            vUv = uv;
+            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+          }
+        `,
+        fragmentShader: `
+          uniform float uTime;
+          varying vec2 vUv;
+          void main() {
+            float stream = sin(vUv.y * 30.0 - uTime * 12.0) * 0.5 + 0.5;
+            float shimmer = sin(vUv.x * 20.0 + vUv.y * 15.0 - uTime * 8.0) * 0.35;
+            float alpha = (stream * 0.45 + shimmer * 0.25) * smoothstep(0.0, 0.2, vUv.y);
+            gl_FragColor = vec4(0.85, 0.95, 1.0, alpha);
+          }
+        `,
+        transparent: true,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const wfSplash = new THREE.Mesh(new THREE.PlaneGeometry(6.5, 16.0), wfSplashMat);
+      wfSplash.position.set(originX + 22.0, originY + 9.5, originZ - 10.0);
+      group.add(wfSplash);
+
+      // Fine rising waterfall mist
+      const mistCount = 45;
+      const mistGeo = new THREE.BufferGeometry();
+      const mistPos = new Float32Array(mistCount * 3);
+      const mistVel = [];
+      for (let i = 0; i < mistCount; i++) {
+        mistPos[i * 3]     = originX + 18.0 + (Math.random() - 0.5) * 7.0;
+        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
+        mistPos[i * 3 + 2] = originZ - 7.0 + (Math.random() - 0.5) * 6.0;
+        mistVel.push({
+          vx: (Math.random() - 0.5) * 0.25,
+          vy: 0.25 + Math.random() * 0.45,
+          vz: (Math.random() - 0.5) * 0.25
+        });
+      }
+      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
+      const mistMat = new THREE.PointsMaterial({
+        size: 2.2,
+        map: moteTex,
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.28,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const mistPoints = new THREE.Points(mistGeo, mistMat);
+      group.add(mistPoints);
+
+      // 4. Natural Sunbeams Streaming Downward (Matching the sun rays in the reference image)
+      const sunbeamGeo = new THREE.CylinderGeometry(5.5, 1.5, 26.0, 16, 1, true);
+      const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const sunbeamMat = new THREE.MeshBasicMaterial({
+        map: beamTex,
+        color: 0xfffde8,
+        transparent: true,
+        opacity: 0.32,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false,
+        side: THREE.DoubleSide
+      });
+      const sunbeamMesh = new THREE.Mesh(sunbeamGeo, sunbeamMat);
+      sunbeamMesh.position.set(originX + 6.0, originY + 13.0, originZ - 4.0);
+      sunbeamMesh.rotation.x = 0.25;
+      sunbeamMesh.rotation.z = -0.22;
+      group.add(sunbeamMesh);
+
+      // Warm directional sunlight and radiant ambient lighting
+      const sunLight = new THREE.DirectionalLight(0xfffae6, 2.2);
+      sunLight.position.set(originX + 12.0, originY + 40.0, originZ - 18.0);
       sunLight.target.position.set(originX, originY, originZ);
       group.add(sunLight);
       group.add(sunLight.target);
 
-      const gardenHemiLight = new THREE.HemisphereLight(0xbae6fd, 0x60a5fa, 1.25);
-      gardenHemiLight.position.set(originX, originY + 25.0, originZ);
-      group.add(gardenHemiLight);
+      const hemiLight = new THREE.HemisphereLight(0xcbebfd, 0x5a4836, 1.35);
+      hemiLight.position.set(originX, originY + 25.0, originZ);
+      group.add(hemiLight);
 
-      // 8. Soft Radiant Glowing Light Motes (Smooth circular particles with Gaussian falloff, NOT square pixels)
+      // 5. Floating Glowing Pastel Motes (Matching reference image: elegant, subtle, floating lights)
       const motePalette = [
         new THREE.Color(0x2dd4bf), // Teal
         new THREE.Color(0x38bdf8), // Blue
@@ -10606,16 +10438,16 @@ window.game = this;
         new THREE.Color(0xc084fc)  // Purple
       ];
 
-      const orbCount = 75;
+      const orbCount = 70;
       const orbGeo = new THREE.BufferGeometry();
       const orbPos = new Float32Array(orbCount * 3);
       const orbColors = new Float32Array(orbCount * 3);
       const orbData = [];
 
       for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 48.0;
-        const oy = originY + 0.8 + Math.random() * 6.5;
-        const oz = originZ + (Math.random() - 0.5) * 48.0;
+        const ox = originX + (Math.random() - 0.5) * 28.0;
+        const oy = originY + 0.6 + Math.random() * 5.5;
+        const oz = originZ + (Math.random() - 0.5) * 24.0;
 
         orbPos[i * 3]     = ox;
         orbPos[i * 3 + 1] = oy;
@@ -10631,30 +10463,31 @@ window.game = this;
           baseY: oy,
           baseZ: oz,
           phase: Math.random() * Math.PI * 2,
-          speed: 0.3 + Math.random() * 0.5,
-          radius: 0.8 + Math.random() * 1.5
+          speed: 0.35 + Math.random() * 0.45,
+          radius: 0.6 + Math.random() * 1.4
         });
       }
       orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
       orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
 
       const orbMat = new THREE.PointsMaterial({
-        size: 0.85,
-        map: moteGlowTex,
+        size: 0.55,
+        map: moteTex,
         vertexColors: true,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.90,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
       const orbPoints = new THREE.Points(orbGeo, orbMat);
       group.add(orbPoints);
 
-      // 9. Ethereal Return Portal cleanly situated in a peaceful grove
+      // 6. Ethereal Swirling Return Portal (Matching the left portal in the reference image)
       const retPortalGroup = new THREE.Group();
-      const retPortalX = originX - 18.0;
+      // Sit on the left side of the sanctuary, aligned with the grotto archway
+      const retPortalX = originX - 12.0;
       const retPortalY = originY + 2.5;
-      const retPortalZ = originZ;
+      const retPortalZ = originZ - 2.0;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
 
       const retPortalUniforms = {
@@ -10678,17 +10511,17 @@ window.game = this;
             float r = length(p);
             if (r > 1.0) discard;
             float angle = atan(p.y, p.x);
-            float swirl = angle + r * 4.8 - uTime * 2.2;
-            float rays = sin(angle * 6.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
+            float swirl = angle + r * 5.0 - uTime * 2.2;
+            float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
             float smoothEdge = cos(r * 1.5707963);
-            
+
             vec3 cOuter = vec3(0.75, 0.52, 0.98); // violet
-            vec3 cMid = vec3(0.22, 0.74, 0.97);   // cyan/azure
+            vec3 cMid = vec3(0.22, 0.74, 0.97);   // cyan
             vec3 cCenter = vec3(0.85, 1.0, 0.92); // radiant mint core
 
             vec3 col = mix(cOuter, cMid, smoothstep(0.82, 0.28, r));
             col = mix(col, cCenter, smoothstep(0.40, 0.0, r));
-            col += cCenter * (rays * 0.38);
+            col += cCenter * (rays * 0.40);
 
             float alpha = smoothEdge * 0.95;
             gl_FragColor = vec4(col, alpha);
@@ -10700,23 +10533,23 @@ window.game = this;
         side: THREE.DoubleSide
       });
 
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8, 24, 24), retPortalShaderMat);
-      retDisc.rotation.y = Math.PI / 2; // Facing +X into garden
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2, 24, 24), retPortalShaderMat);
+      retDisc.rotation.y = Math.PI / 2; // Facing +X into sanctuary
       retPortalGroup.add(retDisc);
 
       const retBurstMat = new THREE.MeshBasicMaterial({
         map: vortexTex,
         transparent: true,
-        opacity: 0.90,
+        opacity: 0.92,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), retBurstMat);
+      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 6.8), retBurstMat);
       retBurst.rotation.y = Math.PI / 2;
       retPortalGroup.add(retBurst);
 
-      const retLight = new THREE.PointLight(0x5eead4, 3.5, 16.0, 1.2);
+      const retLight = new THREE.PointLight(0x5eead4, 3.8, 16.0, 1.2);
       retLight.position.set(0.3, 0, 0);
       retPortalGroup.add(retLight);
 
@@ -10739,7 +10572,7 @@ window.game = this;
         retPortalZ: retPortalZ,
         retDisc: retDisc,
         retBurst: retBurst,
-        wfMat: wfMat,
+        wfSplash: wfSplash,
         wfUniforms: wfUniforms,
         retPortalUniforms: retPortalUniforms,
         mistPoints: mistPoints,
