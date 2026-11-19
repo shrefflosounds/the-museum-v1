@@ -10630,7 +10630,11 @@ window.game = this;
 
       group.add(retPortalGroup);
 
-      this.scene.add(group);
+      if (this._rootSceneAdd) {
+        this._rootSceneAdd(group);
+      } else {
+        this.scene.add(group);
+      }
       group.visible = false; // Isolated until player enters
 
       this.safeRoomSanctuary = {
@@ -17767,13 +17771,16 @@ window.game = this;
 
           // Update floor visibility & audio
           this.updateFloorGroupVisibility();
+          if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
+            this.safeRoomSanctuary.group.visible = true;
+          }
           if (this.audio && this.audio.setWaterfallVolume) {
             this.audio.setWaterfallVolume(0.48, 1.2);
           }
           if (this.scene && this.scene.fog) {
             this._preSafeRoomFog = { color: this.scene.fog.color.getHex(), density: this.scene.fog.density };
-            this.scene.fog.color.setHex(0x93c5fd);
-            this.scene.fog.density = 0.008; // crisp, clear sunny horizon
+            this._activeSafeRoomFog = this.scene.fog;
+            this.scene.fog = null; // No exponential fog wash in the sanctuary: crisp, crystal-clear grotto vistas!
           }
           if (this.scene) {
             this._preSafeRoomBg = this.scene.background ? this.scene.background.getHex() : 0x05070c;
@@ -17872,15 +17879,25 @@ window.game = this;
 
         // Restore museum fog, background, audio, and visibility
         this.updateFloorGroupVisibility();
+        if (this.safeRoomSanctuary && this.safeRoomSanctuary.group) {
+          this.safeRoomSanctuary.group.visible = false;
+        }
         if (this.audio && this.audio.setWaterfallVolume) {
           this.audio.setWaterfallVolume(0.0, 0.8);
         }
-        if (this.scene && this.scene.fog && this._preSafeRoomFog) {
-          this.scene.fog.color.setHex(this._preSafeRoomFog.color);
-          this.scene.fog.density = this._preSafeRoomFog.density;
-        } else if (this.scene && this.scene.fog) {
-          this.scene.fog.color.setHex(0x05070c);
-          this.scene.fog.density = 0.032;
+        if (this.scene) {
+          if (this._activeSafeRoomFog) {
+            this.scene.fog = this._activeSafeRoomFog;
+          } else if (!this.scene.fog) {
+            this.scene.fog = new THREE.FogExp2(0x05070c, 0.032);
+          }
+          if (this.scene.fog && this._preSafeRoomFog) {
+            this.scene.fog.color.setHex(this._preSafeRoomFog.color);
+            this.scene.fog.density = this._preSafeRoomFog.density;
+          } else if (this.scene.fog) {
+            this.scene.fog.color.setHex(0x05070c);
+            this.scene.fog.density = 0.032;
+          }
         }
         if (this.scene && this._preSafeRoomBg !== undefined) {
           this.scene.background.setHex(this._preSafeRoomBg);
