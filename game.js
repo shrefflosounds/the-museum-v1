@@ -10205,22 +10205,22 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Load Textures
+      // 1. Textures
       const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(16, 16);
+        tx.repeat.set(14, 14);
       });
       const earthTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_earth.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
         tx.repeat.set(2, 14);
       });
-      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
-        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(3, 3);
-      });
       const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 6);
+        tx.repeat.set(3, 5);
+      });
+      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
+        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(2, 2);
       });
       const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
@@ -10234,10 +10234,11 @@ window.game = this;
       });
       const sandTex = this.texLoader.load('assets/textures/sanctuary/river_sand.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(6, 6);
+        tx.repeat.set(4, 4);
       });
       const flowersTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_flowers.png');
       const leafTex = this.texLoader.load('assets/textures/sanctuary/canopy_leaf.png');
+      const barkTex = this.texLoader.load('assets/textures/sanctuary/chao_bark.png');
       const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
       const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
       const ringTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png');
@@ -10271,10 +10272,10 @@ window.game = this;
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
             vec3 sky = mix(uHorizonColor, uMidColor, pow(h, 0.42));
-            sky = mix(sky, uTopColor, pow(h, 1.8));
+            sky = mix(sky, uTopColor, pow(h, 1.75));
 
             float sunDot = max(0.0, dot(dir, uSunDir));
-            float sunGlow = pow(sunDot, 14.0) * 0.42 + pow(sunDot, 120.0) * 0.88;
+            float sunGlow = pow(sunDot, 12.0) * 0.45 + pow(sunDot, 120.0) * 0.90;
             sky = mix(sky, uSunColor, clamp(sunGlow, 0.0, 1.0));
 
             gl_FragColor = vec4(sky, 1.0);
@@ -10287,69 +10288,115 @@ window.game = this;
       skyMesh.position.set(originX, originY, originZ);
       group.add(skyMesh);
 
-      // Fluffy 3D Clouds drifting across the sunlit mountain sky
-      const cloudGroup = new THREE.Group();
-      const cloudParts = [];
-      const cloudPuffs = [
-        [originX + 15.0, originY + 42.0, originZ - 20.0, 14.0, 6.0, 9.0],
-        [originX + 24.0, originY + 44.0, originZ - 18.0, 12.0, 7.0, 8.0],
-        [originX + 8.0, originY + 41.0, originZ - 22.0, 11.0, 5.5, 7.5],
-        [originX + 45.0, originY + 46.0, originZ + 15.0, 16.0, 7.0, 10.0],
-        [originX + 54.0, originY + 48.0, originZ + 18.0, 13.0, 6.5, 9.0],
-        [originX - 25.0, originY + 45.0, originZ - 35.0, 15.0, 7.0, 10.0],
-        [originX - 15.0, originY + 46.0, originZ - 32.0, 12.0, 6.0, 8.0],
-        [originX + 60.0, originY + 50.0, originZ - 40.0, 18.0, 8.0, 12.0]
-      ];
-      for (let i = 0; i < cloudPuffs.length; i++) {
-        const [cx, cy, cz, sx, sy, sz] = cloudPuffs[i];
-        const puffGeo = new THREE.SphereGeometry(1.0, 10, 8);
-        puffGeo.scale(sx, sy, sz);
-        puffGeo.translate(cx, cy, cz);
-        cloudParts.push(puffGeo);
+      // 3. Continuous Panoramic Distant Mountain Ridge Mesh (Realistic jagged alpine peaks and saddles)
+      const mountainRadius = 110.0;
+      const mountainArc = Math.PI * 0.92;
+      const mountainSegsX = 64;
+      const mountainSegsY = 16;
+      const mountainGeo = new THREE.CylinderGeometry(
+        mountainRadius,
+        mountainRadius,
+        44.0,
+        mountainSegsX,
+        mountainSegsY,
+        true,
+        -mountainArc * 0.5 - Math.PI * 0.5,
+        mountainArc
+      );
+      mountainGeo.scale(-1, 1, 1);
+      const mPos = mountainGeo.attributes.position;
+      for (let i = 0; i < mPos.count; i++) {
+        const lx = mPos.getX(i);
+        const ly = mPos.getY(i);
+        const lz = mPos.getZ(i);
+        const normY = (ly + 22.0) / 44.0;
+
+        const angle = Math.atan2(lz, lx);
+        const ridgeH = (
+          Math.sin(angle * 3.5) * 7.5 +
+          Math.sin(angle * 7.2 + 1.2) * 4.5 +
+          Math.sin(angle * 14.0 - 0.7) * 2.2 +
+          Math.sin(angle * 28.0) * 1.1
+        );
+
+        if (normY > 0.15) {
+          const factor = Math.pow((normY - 0.15) / 0.85, 1.25);
+          mPos.setY(i, ly + ridgeH * factor);
+          const currentDist = Math.hypot(lx, lz);
+          const radialDisplacement = (Math.sin(angle * 10.5 + ly * 0.25) * 3.8) * factor;
+          const newDist = currentDist + radialDisplacement;
+          mPos.setX(i, (lx / currentDist) * newDist);
+          mPos.setZ(i, (lz / currentDist) * newDist);
+        }
       }
-      const mergedClouds = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(cloudParts) : cloudParts[0];
+      mountainGeo.computeVertexNormals();
+
+      const mountainMat = new THREE.ShaderMaterial({
+        uniforms: {
+          uFogColor: { value: new THREE.Color(0xdbeafe) },
+          uPeakColor: { value: new THREE.Color(0x475569) },
+          uSunDir: { value: new THREE.Vector3(0.35, 0.72, -0.42).normalize() }
+        },
+        vertexShader: `
+          varying vec3 vWorldPos;
+          varying vec3 vNormal;
+          void main() {
+            vec4 wp = modelMatrix * vec4(position, 1.0);
+            vWorldPos = wp.xyz;
+            vNormal = normalize(normalMatrix * normal);
+            gl_Position = projectionMatrix * viewMatrix * wp;
+          }
+        `,
+        fragmentShader: `
+          uniform vec3 uFogColor;
+          uniform vec3 uPeakColor;
+          uniform vec3 uSunDir;
+          varying vec3 vWorldPos;
+          varying vec3 vNormal;
+          void main() {
+            float h = clamp((vWorldPos.y - 50.0) / 36.0, 0.0, 1.0);
+            float nDotL = max(0.28, dot(vNormal, uSunDir));
+            vec3 litRock = uPeakColor * (nDotL * 1.25);
+            vec3 col = mix(uFogColor, litRock, pow(h, 0.75));
+            gl_FragColor = vec4(col, 1.0);
+          }
+        `,
+        side: THREE.DoubleSide
+      });
+      const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
+      mountainMesh.position.set(originX, originY + 14.0, originZ);
+      group.add(mountainMesh);
+
+      // 4. Soft Wispy Cloud Planes in Upper Sky
+      const cloudGroup = new THREE.Group();
+      const cloudGeo = new THREE.PlaneGeometry(80.0, 36.0, 1, 1);
+      cloudGeo.rotateX(-Math.PI / 2);
       const cloudMat = new THREE.MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
-        opacity: 0.84,
+        opacity: 0.76,
         depthWrite: false
       });
-      const cloudMesh = new THREE.Mesh(mergedClouds, cloudMat);
-      cloudGroup.add(cloudMesh);
+      const cloud1 = new THREE.Mesh(cloudGeo, cloudMat);
+      cloud1.position.set(originX + 25.0, originY + 65.0, originZ - 10.0);
+      cloudGroup.add(cloud1);
+
+      const cloud2 = new THREE.Mesh(cloudGeo, cloudMat);
+      cloud2.scale.set(0.75, 1.0, 0.65);
+      cloud2.position.set(originX - 15.0, originY + 68.0, originZ - 35.0);
+      cloudGroup.add(cloud2);
+
+      const cloud3 = new THREE.Mesh(cloudGeo, cloudMat);
+      cloud3.scale.set(0.85, 1.0, 0.75);
+      cloud3.position.set(originX + 50.0, originY + 62.0, originZ + 20.0);
+      cloudGroup.add(cloud3);
       group.add(cloudGroup);
 
-      // 3. Distant Mountains Backdrop (Rugged peaks and foothill ridges)
-      const mountainParts = [];
-      const peakCoords = [
-        [originX + 95.0, originZ - 60.0, 36.0, 28.0],
-        [originX + 115.0, originZ - 35.0, 44.0, 32.0],
-        [originX + 125.0, originZ - 5.0, 40.0, 34.0],
-        [originX + 120.0, originZ + 25.0, 42.0, 30.0],
-        [originX + 100.0, originZ + 55.0, 38.0, 26.0],
-        [originX + 75.0, originZ - 75.0, 32.0, 24.0],
-        [originX + 80.0, originZ + 75.0, 34.0, 25.0]
-      ];
-      for (let i = 0; i < peakCoords.length; i++) {
-        const [mx, mz, mw, mh] = peakCoords[i];
-        const mGeo = new THREE.DodecahedronGeometry(1.0, 1);
-        mGeo.scale(mw, mh, mw * 0.7);
-        mGeo.translate(mx, originY + mh * 0.45, mz);
-        mountainParts.push(mGeo);
-      }
-      const mountainGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(mountainParts) : mountainParts[0];
-      const mountainMat = new THREE.MeshStandardMaterial({
-        color: 0x64748b,
-        roughness: 0.95,
-        metalness: 0.05
-      });
-      const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
-      group.add(mountainMesh);
-
-      // 4. Undulating Green Meadow Terrain
-      const terrainW = 100.0;
-      const terrainD = 100.0;
-      const terrainSegs = 40;
-      const groundGeo = new THREE.PlaneGeometry(terrainW, terrainD, terrainSegs, terrainSegs);
+      // 5. Continuous Meadow Ground Mesh with Natural Rolling Contours
+      const groundW = 90.0;
+      const groundD = 90.0;
+      const groundSegs = 48;
+      const groundGeo = new THREE.PlaneGeometry(groundW, groundD, groundSegs, groundSegs);
       groundGeo.rotateX(-Math.PI / 2);
       const gPos = groundGeo.attributes.position;
       for (let i = 0; i < gPos.count; i++) {
@@ -10359,38 +10406,35 @@ window.game = this;
         const wz = originZ + lz;
 
         let h = 0.0;
-        // Left side rolling grassy hillside behind portal
-        if (lz < -4.0) {
-          const distL = Math.abs(lz + 4.0);
-          h += Math.min(8.5, Math.pow(distL * 0.16, 1.45) * 2.2);
-          h += Math.sin(wx * 0.14) * 0.85;
+        // Left side rolling green hillside (slopes up smoothly to Y ~ 57.0)
+        if (lz < -3.5) {
+          const distL = Math.abs(lz + 3.5);
+          h += Math.min(7.2, Math.pow(distL * 0.15, 1.4) * 2.1);
         }
-        // Right side plunge pool basin & cliff elevation
-        if (lz > 6.0 && lx > 4.0) {
+        // Right side plunge pool depression (dips to Y ~ 49.5 at pool center)
+        if (lz > 5.0 && lx > 3.0) {
           const distToPool = Math.hypot(wx - (originX + 17.5), wz - (originZ + 17.0));
           if (distToPool < 9.5) {
-            h -= (1.0 - distToPool / 9.5) * 0.45; // shallow basin
-          } else if (lz > 18.0 || lx > 24.0) {
-            h += Math.min(6.5, Math.pow((distToPool - 9.5) * 0.22, 1.3) * 1.8);
+            h -= (1.0 - distToPool / 9.5) * 0.55;
           }
         }
-        // Subtle natural roll everywhere else
-        h += Math.sin(wx * 0.08 + wz * 0.06) * 0.18;
+        // Gentle organic micro-undulations across the glade
+        h += (Math.sin(wx * 0.12 + wz * 0.08) * 0.18 + Math.cos(wx * 0.06 - wz * 0.14) * 0.14);
         gPos.setY(i, h);
       }
       groundGeo.computeVertexNormals();
 
       const groundMat = new THREE.MeshStandardMaterial({
         map: floorTex,
-        roughness: 0.86,
+        roughness: 0.85,
         metalness: 0.02
       });
       const groundMesh = new THREE.Mesh(groundGeo, groundMat);
       groundMesh.position.set(originX, originY, originZ);
       group.add(groundMesh);
 
-      // Walkable flat floor collider so the player has solid ground with zero snagging or falling
-      const floorRadius = 50.0;
+      // Floor collider so player walks firmly without sinking
+      const floorRadius = 45.0;
       this.colliders.push({
         type: 'box',
         floor: 'all',
@@ -10403,154 +10447,118 @@ window.game = this;
         isWall: false
       });
 
-      // Distant perimeter boundary (44m out)
+      // Distant perimeter boundary (42m out)
       for (let a = 0; a < 16; a++) {
         const th = (a / 16) * Math.PI * 2;
-        const bDist = 44.0;
+        const bDist = 42.0;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
           x: originX + Math.cos(th) * bDist,
           z: originZ + Math.sin(th) * bDist,
-          radius: 2.5,
+          radius: 2.2,
           minY: originY,
           maxY: originY + 25.0
         });
       }
 
-      // 5. Central Earth Trail winding forward into the valley
-      const trailGeo = new THREE.PlaneGeometry(42.0, 4.4, 28, 4);
+      // Natural Dirt Trail
+      const trailGeo = new THREE.PlaneGeometry(42.0, 4.2, 32, 4);
       trailGeo.rotateX(-Math.PI / 2);
       const tPos = trailGeo.attributes.position;
       for (let i = 0; i < tPos.count; i++) {
         const tx = tPos.getX(i);
         const normX = (tx + 21.0) / 42.0;
-        const targetZ = Math.sin(normX * Math.PI * 0.8) * 1.8;
-        tPos.setZ(i, tPos.getZ(i) + targetZ);
-        const edge = Math.sin(tPos.getX(i) * 1.2) * 0.25;
-        tPos.setZ(i, tPos.getZ(i) + edge);
+        const targetZ = Math.sin(normX * Math.PI * 0.85) * 1.6;
+        tPos.setZ(i, tPos.getZ(i) + targetZ + Math.sin(tx * 1.2) * 0.2);
       }
       trailGeo.computeVertexNormals();
       const trailMat = new THREE.MeshStandardMaterial({
         map: earthTex,
-        roughness: 0.94,
-        metalness: 0.01
+        roughness: 0.92,
+        metalness: 0.02
       });
       const trailMesh = new THREE.Mesh(trailGeo, trailMat);
       trailMesh.position.set(originX + 13.0, originY + 0.04, originZ);
       group.add(trailMesh);
 
-      // Embedded stepping stones & flat river rocks along the path
-      const stoneParts = [];
-      const stoneLocs = [
-        [originX - 3.5, originZ - 0.4, 0.45],
-        [originX - 1.2, originZ + 0.3, 0.55],
-        [originX + 2.5, originZ - 0.2, 0.48],
-        [originX + 7.0, originZ + 0.5, 0.62],
-        [originX + 12.0, originZ - 0.3, 0.52],
-        [originX + 18.0, originZ + 0.4, 0.65],
-        [originX + 24.0, originZ + 0.8, 0.58],
-        [originX + 30.0, originZ + 1.2, 0.60]
-      ];
-      for (let i = 0; i < stoneLocs.length; i++) {
-        const [sx, sz, sr] = stoneLocs[i];
-        const sGeo = new THREE.DodecahedronGeometry(sr, 1);
-        sGeo.scale(1.2, 0.28, 1.1);
-        sGeo.translate(sx, originY + 0.06, sz);
-        stoneParts.push(sGeo);
+      // 6. Continuous Stratified Rock Cliff Face (Right Side)
+      const cliffRadius = 18.0;
+      const cliffHeight = 28.0;
+      const cliffSegsU = 36;
+      const cliffSegsV = 24;
+      const cliffGeo = new THREE.CylinderGeometry(
+        cliffRadius * 0.92,
+        cliffRadius,
+        cliffHeight,
+        cliffSegsU,
+        cliffSegsV,
+        true,
+        Math.PI * 0.04,
+        Math.PI * 0.74
+      );
+      cliffGeo.scale(-1, 1, 1);
+      const cPos = cliffGeo.attributes.position;
+      for (let i = 0; i < cPos.count; i++) {
+        const cx = cPos.getX(i);
+        const cy = cPos.getY(i);
+        const cz = cPos.getZ(i);
+        const normY = (cy + cliffHeight * 0.5) / cliffHeight;
+
+        let shelfRecede = 0.0;
+        if (normY > 0.42) {
+          shelfRecede = Math.min(3.5, (normY - 0.42) * 11.0);
+        }
+
+        const angle = Math.atan2(cz, cx);
+        const cragNoise = (
+          Math.sin(angle * 6.0 + cy * 0.35) * 1.8 +
+          Math.sin(angle * 12.0 - cy * 0.8) * 0.85 +
+          Math.sin(cy * 1.8) * 0.55
+        );
+
+        const currentDist = Math.hypot(cx, cz);
+        const newDist = currentDist + shelfRecede + cragNoise;
+        cPos.setX(i, (cx / currentDist) * newDist);
+        cPos.setZ(i, (cz / currentDist) * newDist);
       }
-      const stoneGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(stoneParts) : stoneParts[0];
-      const stoneMat = new THREE.MeshStandardMaterial({
-        map: rockTex,
-        roughness: 0.85,
+      cliffGeo.computeVertexNormals();
+
+      const cliffMat = new THREE.MeshStandardMaterial({
+        map: cliffTex,
+        roughness: 0.86,
         metalness: 0.04
       });
-      const stoneMesh = new THREE.Mesh(stoneGeo, stoneMat);
-      group.add(stoneMesh);
+      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
+      cliffMesh.position.set(originX + 21.0, originY + cliffHeight * 0.5, originZ + 20.0);
+      group.add(cliffMesh);
 
-      // 6. Right Side: Majestic Towering Rocky Cliffs & Bluffs
-      const cliffParts = [];
-      // Lower rock tier surrounding the plunge pool and waterfall
-      const lowerRocks = [
-        [originX + 14.0, originY + 3.0, originZ + 24.0, 5.5, 6.0, 5.0],
-        [originX + 19.0, originY + 4.0, originZ + 25.5, 6.0, 8.0, 5.5],
-        [originX + 25.0, originY + 5.0, originZ + 24.5, 6.5, 9.5, 6.0],
-        [originX + 27.5, originY + 4.0, originZ + 18.0, 5.5, 7.5, 5.0],
-        [originX + 26.0, originY + 3.0, originZ + 12.0, 5.0, 6.0, 4.5],
-        [originX + 20.0, originY + 2.5, originZ + 10.0, 4.5, 5.0, 4.0],
-        [originX + 12.5, originY + 2.0, originZ + 13.5, 3.8, 4.0, 3.8]
-      ];
-      for (let i = 0; i < lowerRocks.length; i++) {
-        const [rx, ry, rz, sx, sy, sz] = lowerRocks[i];
-        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
-        rGeo.scale(sx, sy, sz);
-        rGeo.translate(rx, ry, rz);
-        cliffParts.push(rGeo);
-      }
-      // Mid-level rock shelf / plateau at Y = originY + 12.0
-      const midRocks = [
-        [originX + 21.0, originY + 11.5, originZ + 24.0, 6.0, 4.0, 5.5],
-        [originX + 26.0, originY + 12.0, originZ + 23.5, 6.5, 4.5, 6.0],
-        [originX + 25.0, originY + 11.0, originZ + 18.0, 5.5, 4.0, 5.0],
-        [originX + 28.5, originY + 12.5, originZ + 21.0, 5.0, 4.2, 5.0]
-      ];
-      for (let i = 0; i < midRocks.length; i++) {
-        const [rx, ry, rz, sx, sy, sz] = midRocks[i];
-        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
-        rGeo.scale(sx, sy, sz);
-        rGeo.translate(rx, ry, rz);
-        cliffParts.push(rGeo);
-      }
-      // Towering upper cliff wall rising to Y = originY + 26.0
-      const upperRocks = [
-        [originX + 23.0, originY + 20.0, originZ + 26.0, 6.5, 12.0, 5.5],
-        [originX + 27.5, originY + 21.0, originZ + 25.0, 7.0, 13.5, 6.0],
-        [originX + 31.0, originY + 22.0, originZ + 22.0, 6.5, 14.0, 5.5],
-        [originX + 29.0, originY + 19.5, originZ + 16.5, 6.0, 11.5, 5.0],
-        [originX + 24.0, originY + 25.0, originZ + 27.0, 6.0, 6.0, 5.0]
-      ];
-      for (let i = 0; i < upperRocks.length; i++) {
-        const [rx, ry, rz, sx, sy, sz] = upperRocks[i];
-        const rGeo = new THREE.DodecahedronGeometry(1.0, 1);
-        rGeo.scale(sx, sy, sz);
-        rGeo.translate(rx, ry, rz);
-        cliffParts.push(rGeo);
-      }
-      const cliffsGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(cliffParts) : cliffParts[0];
-      const cliffsMat = new THREE.MeshStandardMaterial({
-        map: cliffTex,
-        roughness: 0.88,
-        metalness: 0.05
-      });
-      const cliffsMesh = new THREE.Mesh(cliffsGeo, cliffsMat);
-      group.add(cliffsMesh);
-
-      // 7. Multi-Tier Rushing Animated Waterfall
+      // 7. Multi-Tier Cascading Waterfall
       const wfGroup = new THREE.Group();
 
-      // (A) Upper Waterfall Cascade (Tumbling from Y = originY + 25.5 down to mid ledge Y = originY + 12.5)
+      // (A) Upper Waterfall Cascade (Y = originY + 25.5 down to Y = originY + 12.5)
       const wfUpGeo = new THREE.PlaneGeometry(6.5, 13.0, 12, 12);
       const wfUpMat = new THREE.MeshBasicMaterial({
         map: wfTex,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.86,
         blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false
       });
       const wfUpMesh = new THREE.Mesh(wfUpGeo, wfUpMat);
       wfUpMesh.rotation.y = -Math.PI * 0.45;
-      wfUpMesh.rotation.z = -0.12;
+      wfUpMesh.rotation.z = -0.10;
       wfUpMesh.position.set(originX + 23.5, originY + 19.0, originZ + 24.0);
       wfGroup.add(wfUpMesh);
 
-      // (B) Mid-Ledge Splash & Divide Plane
+      // (B) Mid-Ledge Impact Foam & Splash Plane
       const splashGeo = new THREE.CircleGeometry(4.2, 16);
       splashGeo.rotateX(-Math.PI / 2);
       const splashMat = new THREE.MeshBasicMaterial({
         map: wfTex,
         transparent: true,
-        opacity: 0.75,
+        opacity: 0.72,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -10558,7 +10566,7 @@ window.game = this;
       splashMesh.position.set(originX + 23.5, originY + 12.6, originZ + 22.0);
       wfGroup.add(splashMesh);
 
-      // (C) Lower Waterfall Cascades (Main & Secondary roaring into the plunge pool)
+      // (C) Lower Waterfall Cascades (Main & Secondary into plunge pool)
       const wfLowGeo1 = new THREE.PlaneGeometry(8.2, 12.5, 14, 14);
       const wfLowMat1 = new THREE.MeshBasicMaterial({
         map: wfTex,
@@ -10570,7 +10578,7 @@ window.game = this;
       });
       const wfLowMesh1 = new THREE.Mesh(wfLowGeo1, wfLowMat1);
       wfLowMesh1.rotation.y = -Math.PI * 0.42;
-      wfLowMesh1.rotation.z = -0.08;
+      wfLowMesh1.rotation.z = -0.06;
       wfLowMesh1.position.set(originX + 20.5, originY + 6.3, originZ + 21.2);
       wfGroup.add(wfLowMesh1);
 
@@ -10585,7 +10593,7 @@ window.game = this;
       });
       const wfLowMesh2 = new THREE.Mesh(wfLowGeo2, wfLowMat2);
       wfLowMesh2.rotation.y = -Math.PI * 0.38;
-      wfLowMesh2.rotation.z = -0.06;
+      wfLowMesh2.rotation.z = -0.05;
       wfLowMesh2.position.set(originX + 24.5, originY + 6.3, originZ + 18.0);
       wfGroup.add(wfLowMesh2);
 
@@ -10604,10 +10612,11 @@ window.game = this;
 
       group.add(wfGroup);
 
-      // 8. Shimmering Crystal-Clear Mountain Plunge Pool / Lake
+      // 8. Plunge Pool & Shoreline
       const poolGroup = new THREE.Group();
       const poolCenter = { x: originX + 17.5, z: originZ + 17.0 };
 
+      // Sandy bed under water
       const sandGeo = new THREE.CircleGeometry(9.4, 32);
       sandGeo.rotateX(-Math.PI / 2);
       const sandMat = new THREE.MeshStandardMaterial({
@@ -10619,42 +10628,19 @@ window.game = this;
       sandMesh.position.set(poolCenter.x, originY - 0.42, poolCenter.z);
       poolGroup.add(sandMesh);
 
+      // Shimmering clear water surface
       const poolGeo = new THREE.CircleGeometry(9.2, 32);
       poolGeo.rotateX(-Math.PI / 2);
       const poolMat = new THREE.MeshStandardMaterial({
         color: 0x0284c7,
-        roughness: 0.06,
+        roughness: 0.05,
         metalness: 0.38,
         transparent: true,
-        opacity: 0.74
+        opacity: 0.76
       });
       const poolMesh = new THREE.Mesh(poolGeo, poolMat);
       poolMesh.position.set(poolCenter.x, originY + 0.08, poolCenter.z);
       poolGroup.add(poolMesh);
-
-      const poolRockParts = [];
-      const shorelineRocks = [
-        [originX + 8.5, originZ + 17.0, 0.95],
-        [originX + 9.5, originZ + 13.5, 1.15],
-        [originX + 11.5, originZ + 10.5, 1.25],
-        [originX + 14.5, originZ + 8.5, 1.10],
-        [originX + 18.0, originZ + 8.0, 1.30],
-        [originX + 21.5, originZ + 8.5, 1.15],
-        [originX + 10.0, originZ + 20.5, 1.20],
-        [originX + 12.0, originZ + 23.5, 1.35],
-        [originX + 15.0, originZ + 25.5, 1.40]
-      ];
-      for (let i = 0; i < shorelineRocks.length; i++) {
-        const [rx, rz, rr] = shorelineRocks[i];
-        const rGeo = new THREE.DodecahedronGeometry(rr, 1);
-        rGeo.scale(1.1, 0.65, 1.1);
-        rGeo.translate(rx, originY + rr * 0.4, rz);
-        poolRockParts.push(rGeo);
-      }
-      const poolRocksGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(poolRockParts) : poolRockParts[0];
-      const poolRocksMesh = new THREE.Mesh(poolRocksGeo, stoneMat);
-      poolGroup.add(poolRocksMesh);
-
       group.add(poolGroup);
 
       // Rising Waterfall Mist & Spray
@@ -10708,10 +10694,19 @@ window.game = this;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
       retPortalGroup.rotation.y = -0.72;
 
-      const retPortalUniforms = {
-        uTime: { value: 0 }
-      };
+      // Outer Glowing Torus Energy Ring
+      const torusGeo = new THREE.TorusGeometry(3.3, 0.28, 20, 48);
+      const torusMat = new THREE.MeshStandardMaterial({
+        color: 0x5eead4,
+        emissive: 0x2dd4bf,
+        emissiveIntensity: 0.85,
+        roughness: 0.2,
+        metalness: 0.1
+      });
+      const torusMesh = new THREE.Mesh(torusGeo, torusMat);
+      retPortalGroup.add(torusMesh);
 
+      const retPortalUniforms = { uTime: { value: 0 } };
       const retPortalShaderMat = new THREE.ShaderMaterial({
         uniforms: retPortalUniforms,
         vertexShader: `
@@ -10750,8 +10745,7 @@ window.game = this;
         depthWrite: false,
         side: THREE.DoubleSide
       });
-
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2, 24, 24), retPortalShaderMat);
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4, 24, 24), retPortalShaderMat);
       retPortalGroup.add(retDisc);
 
       const retBurstMat = new THREE.MeshBasicMaterial({
@@ -10812,39 +10806,61 @@ window.game = this;
       const portalMotePoints = new THREE.Points(portalMoteGeo, portalMoteMat);
       group.add(portalMotePoints);
 
-      // 11. Foreground Flora & Wildflowers (Framing the camera view like the painting)
-      const floraParts = [];
+      // 11. Natural Trees on Hillside and Cliff Top
+      const treeGroup = new THREE.Group();
+      const treeLocs = [
+        [originX + 2.0, originZ - 20.0, 6.5],
+        [originX + 12.0, originZ - 26.0, 8.0],
+        [originX + 22.0, originZ - 32.0, 9.5],
+        [originX + 27.0, originZ + 28.0, 7.5]
+      ];
+      const trunkMat = new THREE.MeshStandardMaterial({
+        map: barkTex,
+        roughness: 0.90,
+        metalness: 0.05
+      });
+      const canopyMat = new THREE.MeshStandardMaterial({
+        map: leafTex,
+        roughness: 0.82,
+        metalness: 0.02
+      });
+
+      for (let i = 0; i < treeLocs.length; i++) {
+        const [tx, tz, th] = treeLocs[i];
+        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.55, th * 0.45, 8);
+        const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
+        trunkMesh.position.set(tx, originY + th * 0.22, tz);
+        treeGroup.add(trunkMesh);
+
+        for (let t = 0; t < 3; t++) {
+          const coneH = th * 0.35;
+          const coneR = (3 - t) * 0.9 + 1.1;
+          const coneGeo = new THREE.ConeGeometry(coneR, coneH, 8);
+          const coneMesh = new THREE.Mesh(coneGeo, canopyMat);
+          coneMesh.position.set(tx, originY + th * 0.35 + t * (coneH * 0.65), tz);
+          treeGroup.add(coneMesh);
+        }
+      }
+      group.add(treeGroup);
+
+      // 12. Natural Wildflowers & Foliage (Framing foreground view)
+      const floraGroup = new THREE.Group();
       const floraPlacements = [
         [originX - 3.8, originZ - 3.2, 1.1],
         [originX - 3.2, originZ - 2.6, 0.9],
         [originX - 2.4, originZ - 2.8, 1.0],
         [originX - 1.6, originZ - 2.2, 0.8],
-        [originX - 2.8, originZ - 1.8, 0.85],
         [originX - 3.8, originZ + 3.2, 1.1],
         [originX - 3.0, originZ + 2.5, 0.95],
         [originX - 2.2, originZ + 2.8, 1.05],
         [originX - 1.5, originZ + 2.0, 0.8],
-        [originX - 2.6, originZ + 1.6, 0.85],
         [originX + 1.0, originZ - 2.2, 0.85],
         [originX + 4.5, originZ - 2.4, 0.9],
-        [originX + 9.0, originZ - 2.0, 0.85],
         [originX + 2.0, originZ + 2.2, 0.85],
         [originX + 6.5, originZ + 2.4, 0.9],
-        [originX + 11.0, originZ + 2.2, 0.85],
         [originX + 11.0, originZ + 8.5, 0.9],
-        [originX + 14.0, originZ + 7.5, 0.85],
-        [originX + 16.5, originZ + 7.0, 0.9]
+        [originX + 14.0, originZ + 7.5, 0.85]
       ];
-      for (let i = 0; i < floraPlacements.length; i++) {
-        const [fx, fz, fs] = floraPlacements[i];
-        const p1 = new THREE.PlaneGeometry(fs * 1.2, fs * 1.0);
-        p1.translate(fx, originY + fs * 0.45, fz);
-        const p2 = p1.clone();
-        p2.rotateY(Math.PI * 0.5);
-        floraParts.push(p1);
-        floraParts.push(p2);
-      }
-      const floraGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(floraParts) : floraParts[0];
       const floraMat = new THREE.MeshStandardMaterial({
         map: flowersTex,
         transparent: true,
@@ -10853,34 +10869,22 @@ window.game = this;
         side: THREE.DoubleSide,
         depthWrite: false
       });
-      const floraMesh = new THREE.Mesh(floraGeo, floraMat);
-      group.add(floraMesh);
+      for (let i = 0; i < floraPlacements.length; i++) {
+        const [fx, fz, fs] = floraPlacements[i];
+        const p1 = new THREE.PlaneGeometry(fs * 1.2, fs * 1.0);
+        const m1 = new THREE.Mesh(p1, floraMat);
+        m1.position.set(fx, originY + fs * 0.5, fz);
+        floraGroup.add(m1);
 
-      // Midground trees on hillside and cliff top
-      const treeParts = [];
-      const treeLocs = [
-        [originX + 2.0, originZ - 18.0, 3.5, 8.0],
-        [originX + 12.0, originZ - 24.0, 4.0, 9.5],
-        [originX + 22.0, originZ - 30.0, 4.5, 11.0],
-        [originX + 26.0, originZ + 27.0, 3.5, 8.5]
-      ];
-      for (let i = 0; i < treeLocs.length; i++) {
-        const [tx, tz, tr, th] = treeLocs[i];
-        const tGeo = new THREE.DodecahedronGeometry(tr, 1);
-        tGeo.scale(1.0, 1.4, 1.0);
-        tGeo.translate(tx, originY + th * 0.8, tz);
-        treeParts.push(tGeo);
+        const p2 = p1.clone();
+        p2.rotateY(Math.PI * 0.5);
+        const m2 = new THREE.Mesh(p2, floraMat);
+        m2.position.set(fx, originY + fs * 0.5, fz);
+        floraGroup.add(m2);
       }
-      const treesGeo = (typeof mergeBufferGeometries === 'function') ? mergeBufferGeometries(treeParts) : treeParts[0];
-      const treesMat = new THREE.MeshStandardMaterial({
-        map: leafTex,
-        roughness: 0.86,
-        metalness: 0.02
-      });
-      const treesMesh = new THREE.Mesh(treesGeo, treesMat);
-      group.add(treesMesh);
+      group.add(floraGroup);
 
-      // 12. Floating Glowing Pastel Motes (Teal, blue, mint, yellow, pink, purple)
+      // 13. Floating Glowing Pastel Motes
       const motePalette = [
         new THREE.Color(0x2dd4bf),
         new THREE.Color(0x38bdf8),
@@ -10890,7 +10894,7 @@ window.game = this;
         new THREE.Color(0xc084fc)
       ];
 
-      const orbCount = 80;
+      const orbCount = 75;
       const orbGeo = new THREE.BufferGeometry();
       const orbPos = new Float32Array(orbCount * 3);
       const orbColors = new Float32Array(orbCount * 3);
