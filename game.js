@@ -1270,7 +1270,7 @@
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
-    "z": 11.2,
+    "z": 10.3,
     "rotY": -1.5708,
     "maxW": 4.0
   },
@@ -1278,7 +1278,7 @@
     "floor": 0,
     "x": -4.35,
     "y": 2.75,
-    "z": 16.5,
+    "z": 17.2,
     "rotY": -1.5708,
     "maxW": 4.0
   },
@@ -8214,37 +8214,71 @@ window.game = this;
       officeLight.position.set(0, 2.75, 1.8);
       counterGroup.add(officeLight);
 
-      // 8. Decorative Closed "EMPLOYEES ONLY" Door
-      // Mounted on the exterior west wall facing the main entrance concourse / grand hall
-      // Exterior west wall is at x = -4.0, z ~ 11.0, player views it from main entrance hall (x < -4)
-      const doorTex = this.texLoader.load('assets/textures/employees_only_door.jpg', (tx) => {
+      // 8. Decorative Closed Unopenable "EMPLOYEES ONLY" Door
+      // Mounted on the exterior west wall of REem8's room facing the Main Gallery concourse,
+      // perfectly centered between Jewelry (z = 10.3) and Leadership Lemon (z = 17.2) at z = 13.75.
+      // Wall center is x = -4.0, thickness t = 0.40m, outer west face is at x = -4.20m.
+      const doorTex = this.texLoader.load('assets/textures/employees_only_door.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
       const doorMat = new THREE.MeshStandardMaterial({
         map: doorTex,
-        roughness: 0.55,
-        metalness: 0.15
+        roughness: 0.50,
+        metalness: 0.12,
+        polygonOffset: true,
+        polygonOffsetFactor: -1,
+        polygonOffsetUnits: -1
       });
-      // Door aspect: ~1.05m wide, ~2.25m high
+      // In counterGroup coordinates (x=0, z=8.0):
+      // World position: x = -4.205, z = 13.75, y = 1.25 (Door: 1.25m wide, 2.50m high)
+      const doorWidth = 1.25;
+      const doorHeight = 2.50;
       const employeesDoor = new THREE.Mesh(
-        new THREE.PlaneGeometry(1.05, 2.25),
+        new THREE.PlaneGeometry(doorWidth, doorHeight),
         doorMat
       );
-      // Place at exterior west wall facing west (-X direction towards concourse):
-      // In counterGroup coordinates, x = -4.01 - 0 = -4.01, z = 11.0 - 8.0 = 3.0
-      employeesDoor.position.set(-4.015, 1.125, 3.0);
-      employeesDoor.rotation.y = -Math.PI / 2; // Faces west (-X) towards entrance hall
+      employeesDoor.position.set(-4.205, doorHeight / 2, 13.75 - 8.0);
+      employeesDoor.rotation.y = -Math.PI / 2; // Faces west (-X) towards gallery
       counterGroup.add(employeesDoor);
 
-      // Slim door frame trim
-      const frameMat = new THREE.MeshStandardMaterial({ color: 0xc8c3ba, roughness: 0.5 });
-      const doorFrameL = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.30, 0.05), frameMat);
-      doorFrameL.position.set(-4.02, 1.15, 2.475);
-      const doorFrameR = new THREE.Mesh(new THREE.BoxGeometry(0.02, 2.30, 0.05), frameMat);
-      doorFrameR.position.set(-4.02, 1.15, 3.525);
-      const doorFrameTop = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.05, 1.10), frameMat);
-      doorFrameTop.position.set(-4.02, 2.275, 3.0);
-      counterGroup.add(doorFrameL, doorFrameR, doorFrameTop);
+      // 3D architectural casing / jamb trim around the door opening
+      const casingMat = new THREE.MeshStandardMaterial({ color: 0xd8d4cb, roughness: 0.55 });
+      const casingThick = 0.055;
+      const casingDepth = 0.035;
+      // North / left casing trim
+      const casingNorth = new THREE.Mesh(new THREE.BoxGeometry(casingDepth, doorHeight + casingThick, casingThick), casingMat);
+      casingNorth.position.set(-4.215, (doorHeight + casingThick) / 2, (13.75 - 8.0) - doorWidth / 2 - casingThick / 2);
+      // South / right casing trim
+      const casingSouth = new THREE.Mesh(new THREE.BoxGeometry(casingDepth, doorHeight + casingThick, casingThick), casingMat);
+      casingSouth.position.set(-4.215, (doorHeight + casingThick) / 2, (13.75 - 8.0) + doorWidth / 2 + casingThick / 2);
+      // Top header casing trim
+      const casingTop = new THREE.Mesh(new THREE.BoxGeometry(casingDepth, casingThick, doorWidth + casingThick * 2), casingMat);
+      casingTop.position.set(-4.215, doorHeight + casingThick / 2, 13.75 - 8.0);
+      counterGroup.add(casingNorth, casingSouth, casingTop);
+
+      // 3D brushed chrome lever handle & escutcheon matching Image 3 (mounted on left/North side of door leaf)
+      const handleMat = new THREE.MeshStandardMaterial({ color: 0xb5bcc4, roughness: 0.28, metalness: 0.88 });
+      const escutcheon = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.012, 16), handleMat);
+      escutcheon.rotation.z = Math.PI / 2;
+      escutcheon.position.set(-4.216, 1.05, (13.75 - 8.0) - doorWidth * 0.36);
+      const leverStem = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.045, 12), handleMat);
+      leverStem.rotation.z = Math.PI / 2;
+      leverStem.position.set(-4.235, 1.05, (13.75 - 8.0) - doorWidth * 0.36);
+      const leverBar = new THREE.Mesh(new THREE.BoxGeometry(0.018, 0.016, 0.12), handleMat);
+      leverBar.position.set(-4.255, 1.05, (13.75 - 8.0) - doorWidth * 0.36 + 0.05);
+      const deadbolt = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.012, 16), handleMat);
+      deadbolt.rotation.z = Math.PI / 2;
+      deadbolt.position.set(-4.216, 1.15, (13.75 - 8.0) - doorWidth * 0.36);
+      counterGroup.add(escutcheon, leverStem, leverBar, deadbolt);
+
+      // Register door hotspot for examine / locked door interaction prompt
+      this.employeesOnlyDoor = {
+        x: -4.20,
+        y: doorHeight / 2,
+        z: 13.75,
+        width: doorWidth,
+        height: doorHeight
+      };
 
       this.scene.add(counterGroup);
 
@@ -20518,6 +20552,15 @@ window.game = this;
         return;
       }
 
+      // Check Employees Only unopenable door interaction on Floor 0 outside REem8's room
+      if (this.focusedEmployeesOnlyDoor) {
+        if (this.audio && this.audio.playEmptyClick) {
+          this.audio.playEmptyClick();
+        }
+        this.showSystemNotification(T('hud.notify_locked_door', 'LOCKED — EMPLOYEES ONLY'), 2500);
+        return;
+      }
+
       // 4. Check Paintings
       if (this.focusedPainting) {
         this.openArtModal(this.focusedPainting);
@@ -21558,8 +21601,30 @@ window.game = this;
       if (aimingAtBell) {
         this.setInteractPrompt('[E] RING BELL');
         this.focusedPainting = null;
+        this.focusedEmployeesOnlyDoor = null;
         return;
       }
+
+      // Check looking at the unopenable "EMPLOYEES ONLY" door on Floor 0 outside REem8's room
+      const empDoor = this.employeesOnlyDoor;
+      if (empDoor && this.playerFloor === 0) {
+        const dDoor = Math.hypot(this.playerPos.x - empDoor.x, this.playerPos.z - empDoor.z);
+        if (dDoor < 3.8 && this.playerPos.x < empDoor.x) { // Standing in gallery facing east toward wall
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const toDoor = new THREE.Vector3(empDoor.x - this.playerPos.x, (empDoor.y || 1.25) - this.playerPos.y, empDoor.z - this.playerPos.z).normalize();
+          if (fwd.dot(toDoor) > 0.65) {
+            this.focusedEmployeesOnlyDoor = empDoor;
+            this.focusedPainting = null;
+            this.setInteractPrompt(T('hud.prompt_locked_door', '[E] EMPLOYEES ONLY (LOCKED)'));
+            return;
+          }
+        }
+      }
+      this.focusedEmployeesOnlyDoor = null;
 
       _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
       let bestPainting = null;
