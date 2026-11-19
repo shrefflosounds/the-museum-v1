@@ -21351,6 +21351,7 @@ window.game = this;
         for (let i = 0; i < floorColliders.length; i++) {
           const c = floorColliders[i];
           if (c.disabled || (pos._ignoreCollider && c === pos._ignoreCollider)) continue;
+          if (pos._isStatueMoving && c.isStatue) continue; // Moving statues handle dynamic steering and mutual avoidance separately
 
           // Architectural walls on the active floor always block horizontally (even if jumping on furniture/stairs)
           if (c.isWall && c.floor === floorIdx) {
@@ -24809,7 +24810,8 @@ window.game = this;
           radius: 0.62,
           minY: y0,
           maxY: y0 + 2.35,
-          isStatue: true
+          isStatue: true,
+          statue: null
         };
         if (this.colliders) {
           this.colliders.push(colliderObj);
@@ -24845,6 +24847,7 @@ window.game = this;
           stairState: { active: null, baseFloor: fl },
           teleportCooldown: 45.0 + Math.random() * 40.0
         };
+        colliderObj.statue = statueObj;
 
         const resetStatuePose = () => {
           statueObj.isPlayingAudio = false;
@@ -24950,10 +24953,18 @@ window.game = this;
         if (!this.isRoomNavNode(n)) return false;
         if (stayOnFloor && n.floor !== s.floor) return false;
         const d = Math.hypot(n.x - s.x, n.z - s.z);
-        return stayOnFloor ? (d > 5.0 && d < 32.0) : (n.floor !== s.floor);
+        if (stayOnFloor && (d <= 5.0 || d >= 34.0)) return false;
+        // Avoid selecting a destination node that another statue is already targeting or occupying
+        for (let other of this.statues) {
+          if (other === s || other.floor !== n.floor) continue;
+          if (other.targetNodeId === n.id) return false;
+          if (Math.hypot(other.x - n.x, other.z - n.z) < 3.5) return false;
+        }
+        return true;
       });
       if (candidates.length === 0) return null;
       const targetNode = candidates[Math.floor(Math.random() * candidates.length)];
+      s.targetNodeId = targetNode.id;
       const startId = this.findNearestNavNode({ x: s.x, z: s.z }, s.floor);
       const goalId = targetNode.id;
       if (startId < 0 || goalId < 0) return null;
@@ -25198,45 +25209,113 @@ window.game = this;
           let stepX = (dx / dist) * speed * effDelta;
           let stepZ = (dz / dist) * speed * effDelta;
 
+          // 1. Proactive Statue-to-Statue Awareness & Steering:
+          // Recognize other statues in advance (within 3.2m), steer smoothly to avoid collisions,
+          // yield gracefully when approaching head-on, and prevent traffic jams.
+          let avoidX = 0, avoidZ = 0;
+          let yieldSlowdown = 1.0;
+          for (let other of this.statues) {
+            if (other === s || other.floor !== s.floor || !other.group || !other.group.visible) continue;
+            const odx = s.x - other.x;
+            const odz = s.z - other.z;
+            const od = Math.hypot(odx, odz);
+            if (od < 3.2 && od > 0.001) {
+              // Priority protocol: statue playing audio has absolute right of way;
+              // otherwise higher ID or standing idle statue has priority
+              const isOtherDancing = !!other.isPlayingAudio;
+              const hasOtherPriority = isOtherDancing || (other.aiState === "IDLE") || (other.cfg.id > s.cfg.id);
+
+              // Predict relative approach: check dot product of walking directions
+              const dirX = dx / dist;
+              const dirZ = dz / dist;
+              const toOtherX = -odx / od;
+              const toOtherZ = -odz / od;
+              const dotApproach = dirX * toOtherX + dirZ * toOtherZ;
+
+              // If heading toward each other
+              if (dotApproach > 0.25) {
+                // Steer perpendicular (right-hand traffic rule in hallways)
+                const perpX = -toOtherZ;
+                const perpZ = toOtherX;
+                const steerForce = (3.2 - od) / 3.2;
+                avoidX += (perpX * 1.8 + odx / od * 1.2) * steerForce;
+                avoidZ += (perpZ * 1.8 + odz / od * 1.2) * steerForce;
+
+                if (hasOtherPriority && od < 2.2) {
+                  yieldSlowdown = Math.min(yieldSlowdown, Math.max(0.15, (od - 0.9) / 1.3));
+                }
+              } else {
+                // Lateral gentle separation
+                const sepForce = Math.pow((3.2 - od) / 3.2, 1.5) * 1.2;
+                avoidX += (odx / od) * sepForce;
+                avoidZ += (odz / od) * sepForce;
+              }
+
+              // If two statues get too close (< 1.6m) and are both walking, yield or repath
+              if (od < 1.6 && dotApproach > 0.5 && hasOtherPriority) {
+                s.stuckTimer = (s.stuckTimer || 0) + effDelta * 2.0;
+                if (s.stuckTimer > 0.6) {
+                  s.stuckTimer = 0;
+                  const np = this.pickStatueWanderPath(s);
+                  if (np && np.length > 0) { s.navPath = np; s.navIndex = 0; }
+                  else { s.aiState = "IDLE"; s.aiTimer = 1.2 + Math.random() * 2.0; }
+                }
+              }
+            }
+          }
+
+          // Blend steering avoidance into step velocity
+          stepX = (stepX + avoidX * effDelta * 2.2) * yieldSlowdown;
+          stepZ = (stepZ + avoidZ * effDelta * 2.2) * yieldSlowdown;
+
           // Sidestep around the player if on the same floor without locking onto the player
           if (s.floor === this.playerFloor) {
             const pdx = s.x + stepX - this.playerPos.x;
             const pdz = s.z + stepZ - this.playerPos.z;
             const pDist = Math.hypot(pdx, pdz);
-            if (pDist < 1.15 && pDist > 0.001) {
-              stepX += (pdx / pDist) * (1.15 - pDist);
-              stepZ += (pdz / pDist) * (1.15 - pDist);
+            if (pDist < 1.25 && pDist > 0.001) {
+              stepX += (pdx / pDist) * (1.25 - pDist);
+              stepZ += (pdz / pDist) * (1.25 - pDist);
             }
           }
 
-          const tempPos = { x: s.x + stepX, y: s.y, z: s.z + stepZ, _ignoreCollider: s.collider };
-          this.resolveCollisions(tempPos, 0.48, s.floor, s.y, 2.35);
+          // Filter out other statues from resolveCollisions so they don't treat each other as static geometry walls
+          const tempPos = {
+            x: s.x + stepX,
+            y: s.y,
+            z: s.z + stepZ,
+            _ignoreCollider: s.collider,
+            _isStatueMoving: true
+          };
+          this.resolveCollisions(tempPos, 0.44, s.floor, s.y, 2.35);
 
-          // Avoid overlapping other statues
+          // Hard collision bubble separation: ensures statues never clip or interpenetrate
           for (let other of this.statues) {
-            if (other === s || other.floor !== s.floor) continue;
+            if (other === s || other.floor !== s.floor || !other.group || !other.group.visible) continue;
             const odx = tempPos.x - other.x;
             const odz = tempPos.z - other.z;
             const od = Math.hypot(odx, odz);
-            if (od < 1.25 && od > 0.001) {
-              tempPos.x += (odx / od) * (1.25 - od);
-              tempPos.z += (odz / od) * (1.25 - od);
+            const minDist = 1.35;
+            if (od < minDist && od > 0.0001) {
+              const push = (minDist - od);
+              tempPos.x += (odx / od) * push;
+              tempPos.z += (odz / od) * push;
             }
           }
 
-          // Stuck detection: if blocked by something for ~0.7s, replan a fresh obstacle-aware route
+          // Stuck detection: if blocked by geometry/statue for >0.6s, replan a fresh obstacle-aware route
           const intended = Math.hypot(stepX, stepZ);
           const actual = Math.hypot(tempPos.x - s.x, tempPos.z - s.z);
-          if (intended > 0.001 && actual < intended * 0.25) {
+          if (intended > 0.001 && actual < intended * 0.28) {
             s.stuckTimer = (s.stuckTimer || 0) + effDelta;
-            if (s.stuckTimer > 0.7) {
+            if (s.stuckTimer > 0.6) {
               s.stuckTimer = 0;
               const np = this.pickStatueWanderPath(s);
               if (np && np.length > 0) { s.navPath = np; s.navIndex = 0; }
-              else { s.aiState = "IDLE"; s.aiTimer = 1.0; }
+              else { s.aiState = "IDLE"; s.aiTimer = 1.0 + Math.random() * 2.0; }
             }
           } else {
-            s.stuckTimer = 0;
+            s.stuckTimer = Math.max(0, (s.stuckTimer || 0) - effDelta * 0.5);
           }
 
           s.x = tempPos.x;
