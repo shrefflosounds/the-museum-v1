@@ -4197,6 +4197,11 @@
       this.thirdPersonCameraDistance = savedCameraDistance !== null && Number.isFinite(parsedCameraDistance)
         ? THREE.MathUtils.clamp(parsedCameraDistance, 0.6, 2.6)
         : 2.0;
+      const savedMouseSens = localStorage.getItem('the_museum_mouse_sens_mult');
+      const parsedMouseSens = Number(savedMouseSens);
+      this.mouseSensitivityMultiplier = savedMouseSens !== null && Number.isFinite(parsedMouseSens)
+        ? THREE.MathUtils.clamp(parsedMouseSens, 0.2, 3.0)
+        : 1.0;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
       this.recoilOffset = { z: 0, rotX: 0 };
@@ -4360,6 +4365,10 @@
         settingsBubbleBtn: document.getElementById('settings-bubble-btn'),
         settingsCloseBtn: document.getElementById('settings-close-btn'),
         settingsBackBtn: document.getElementById('settings-back-btn'),
+        optionsMouseSensSlider: document.getElementById('options-mouse-sens-slider'),
+        optionsMouseSensVal: document.getElementById('options-mouse-sens-val'),
+        settingsMouseSensSlider: document.getElementById('settings-mouse-sens-slider'),
+        settingsMouseSensVal: document.getElementById('settings-mouse-sens-val'),
         firstPersonViewBtn: document.getElementById('view-first-person-btn'),
         thirdPersonViewBtn: document.getElementById('view-third-person-btn'),
         playerCharacterSelectBtn: document.getElementById('player-character-select-btn'),
@@ -4461,6 +4470,7 @@ window.game = this;
         this.updateSmittyModeUI();
         this.updateMusicModeUI();
         this.updatePlayerViewUI();
+        this.updateMouseSensUI();
         if (this.dom.aboutBuildTag) {
           this.dom.aboutBuildTag.textContent = `Build ${APP_VERSION}`;
         }
@@ -18867,7 +18877,7 @@ window.game = this;
       const mx = Math.max(-maxDelta, Math.min(maxDelta, rawMx));
       const my = Math.max(-maxDelta, Math.min(maxDelta, rawMy));
 
-      let sens = CONFIG.PLAYER.MOUSE_SENS;
+      let sens = CONFIG.PLAYER.MOUSE_SENS * (this.mouseSensitivityMultiplier || 1.0);
       if (this.isAiming) sens *= 0.52;
 
       this.playerYaw -= mx * sens;
@@ -19247,6 +19257,25 @@ window.game = this;
         this.dom.optionsMusicOffBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.setMusicMode(false);
+        });
+      }
+
+      // Mouse Sensitivity Sliders (in both Settings/Controls & Options modals)
+      const handleSensChange = (val) => {
+        const num = parseFloat(val);
+        if (Number.isFinite(num)) {
+          this.setMouseSensitivity(num);
+        }
+      };
+
+      if (this.dom.optionsMouseSensSlider) {
+        this.dom.optionsMouseSensSlider.addEventListener('input', (e) => {
+          handleSensChange(e.target.value);
+        });
+      }
+      if (this.dom.settingsMouseSensSlider) {
+        this.dom.settingsMouseSensSlider.addEventListener('input', (e) => {
+          handleSensChange(e.target.value);
         });
       }
 
@@ -19762,6 +19791,7 @@ window.game = this;
       this.isOptionsModalOpen = true;
       this.updateSmittyModeUI();
       this.updateStatuesModeUI();
+      this.updateMouseSensUI();
       this.dom.optionsModal.classList.remove('hidden');
     }
 
@@ -19777,6 +19807,7 @@ window.game = this;
 
     openSettingsModal() {
       this.isSettingsModalOpen = true;
+      this.updateMouseSensUI();
       this.dom.settingsModal.classList.remove('hidden');
     }
 
@@ -19914,6 +19945,32 @@ window.game = this;
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.style.opacity = isCoopClient ? '0.5' : '1';
       if (onBtn) onBtn.style.opacity = isCoopClient ? '0.5' : '1';
       if (offBtn) offBtn.style.opacity = isCoopClient ? '0.5' : '1';
+    }
+
+    setMouseSensitivity(val) {
+      const clamped = THREE.MathUtils.clamp(val, 0.2, 3.0);
+      this.mouseSensitivityMultiplier = clamped;
+      try {
+        localStorage.setItem('the_museum_mouse_sens_mult', String(clamped));
+      } catch (e) {}
+      this.updateMouseSensUI();
+    }
+
+    updateMouseSensUI() {
+      const mult = (this.mouseSensitivityMultiplier !== undefined) ? this.mouseSensitivityMultiplier : 1.0;
+      const formatted = mult.toFixed(2) + 'x';
+      if (this.dom.optionsMouseSensSlider) {
+        this.dom.optionsMouseSensSlider.value = String(mult);
+      }
+      if (this.dom.optionsMouseSensVal) {
+        this.dom.optionsMouseSensVal.textContent = formatted;
+      }
+      if (this.dom.settingsMouseSensSlider) {
+        this.dom.settingsMouseSensSlider.value = String(mult);
+      }
+      if (this.dom.settingsMouseSensVal) {
+        this.dom.settingsMouseSensVal.textContent = formatted;
+      }
     }
 
     updateSmittyModeUI() {
