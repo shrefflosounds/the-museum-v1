@@ -10205,324 +10205,80 @@ window.game = this;
       const originZ = 300.0;
 
       // 1. Load textures
-      const backdropTex = this.texLoader.load('assets/textures/sanctuary/nature_sanctuary_backdrop.jpg', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png', (tx) => {
+      const grassTex = this.texLoader.load('assets/textures/sanctuary/meadow_ground.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(10, 10);
-        tx.colorSpace = THREE.SRGBColorSpace;
+        tx.repeat.set(4, 4);
       });
-      const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const vortexTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
+      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png');
+      const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png');
+      const waterfallTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png');
+      const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
+      const portalTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
 
-      // 2. High-Fidelity Curved Panoramic Backdrop directly matching the reference painting
-      // Player spawns at (originX - 5.5, 51.65, originZ) and looks towards +X (yaw = -Math.PI / 2).
-      // We place the backdrop 26.5m in front of the player (X = originX + 21.0), centered on originZ.
-      const bgW = 56.0;
-      const bgH = 31.0;
-      const bgSegs = 36;
-      const bgGeo = new THREE.PlaneGeometry(bgW, bgH, bgSegs, 1);
-      const bgPos = bgGeo.attributes.position;
-      // Gently curve the left and right wings forward towards the player (local +Z) like an amphitheater
-      for (let i = 0; i < bgPos.count; i++) {
-        const lx = bgPos.getX(i);
-        const normX = lx / (bgW * 0.5); // -1.0 to +1.0
-        const curveZ = (1.0 - Math.cos(normX * Math.PI * 0.44)) * 7.5;
-        bgPos.setZ(i, curveZ);
-      }
-      bgGeo.computeVertexNormals();
-
-      const bgMat = new THREE.MeshBasicMaterial({
-        map: backdropTex,
-        side: THREE.DoubleSide
-      });
-      const bgMesh = new THREE.Mesh(bgGeo, bgMat);
-      // Rotation -PI/2 points default +Z normal towards -X (straight at the player at spawn)
-      bgMesh.rotation.y = -Math.PI / 2;
-      bgMesh.position.set(originX + 21.0, originY + bgH * 0.46, originZ);
-      group.add(bgMesh);
-
-      // Sky hemisphere behind and above to create a boundless sunny atmosphere
-      const skyGeo = new THREE.SphereGeometry(65.0, 32, 20, 0, Math.PI * 2, 0, Math.PI * 0.52);
-      const skyMat = new THREE.ShaderMaterial({
-        uniforms: {
-          uTopColor: { value: new THREE.Color(0x38bdf8) },
-          uHorizonColor: { value: new THREE.Color(0xcbebfd) }
-        },
-        vertexShader: `
-          varying vec3 vWorldPos;
-          void main() {
-            vec4 wp = modelMatrix * vec4(position, 1.0);
-            vWorldPos = wp.xyz;
-            gl_Position = projectionMatrix * viewMatrix * wp;
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uTopColor;
-          uniform vec3 uHorizonColor;
-          varying vec3 vWorldPos;
-          void main() {
-            vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
-            float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.65));
-            gl_FragColor = vec4(sky, 1.0);
-          }
-        `,
-        side: THREE.BackSide,
-        depthWrite: false
-      });
+      // 2. Sky Dome
+      const skyGeo = new THREE.SphereGeometry(150.0, 32, 32);
+      const skyMat = new THREE.MeshBasicMaterial({ color: 0x87ceeb, side: THREE.BackSide });
       const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-      skyMesh.position.set(originX, originY, originZ);
       group.add(skyMesh);
 
-      // 3. Wide Natural Walkable Ground (Flat at originY = 50.0, zero sinking, NO invisible walls in the clearing)
-      const floorRadius = 45.0;
-      const groundGeo = new THREE.PlaneGeometry(floorRadius * 2, floorRadius * 2, 2, 2);
-      const groundMat = new THREE.MeshStandardMaterial({
-        map: floorTex,
-        roughness: 0.88,
-        metalness: 0.02
-      });
+      // 3. Ground
+      const groundGeo = new THREE.SphereGeometry(40, 32, 32, 0, Math.PI * 2, 0, Math.PI / 2);
+      groundGeo.scale(1.2, 0.5, 1.2);
+      const groundMat = new THREE.MeshStandardMaterial({ map: grassTex, color: 0x4a6e3e });
       const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-      groundMesh.rotation.x = -Math.PI / 2;
-      groundMesh.position.set(originX, originY, originZ);
+      groundMesh.position.set(originX, originY - 15, originZ);
       group.add(groundMesh);
 
-      // Single floor collider so player walks firmly without sinking
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX - floorRadius,
-        maxX: originX + floorRadius,
-        minZ: originZ - floorRadius,
-        maxZ: originZ + floorRadius,
-        minY: originY - 1.0,
-        maxY: originY,
-        isWall: false
-      });
-
-      // Distant perimeter boundary (34m out) so player has 100% freedom inside the clearing
-      for (let a = 0; a < 16; a++) {
-        const th = (a / 16) * Math.PI * 2;
-        const bDist = 34.0;
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: originX + Math.cos(th) * bDist,
-          z: originZ + Math.sin(th) * bDist,
-          radius: 2.0,
-          minY: originY,
-          maxY: originY + 20.0
-        });
+      // 4. Cliffs
+      const cliffGeo = new THREE.DodecahedronGeometry(12, 1);
+      const cliffMat = new THREE.MeshStandardMaterial({ map: cliffTex });
+      for(let i=0; i<6; i++) {
+        const c = new THREE.Mesh(cliffGeo, cliffMat);
+        const th = (i/6) * Math.PI * 2;
+        c.position.set(originX + Math.cos(th)*35, originY + 5, originZ + Math.sin(th)*35);
+        c.rotation.set(Math.random(), Math.random(), 0);
+        group.add(c);
       }
 
-      // 4. Subtle Shimmering Plunge Pool Surface on the right bank near waterfall
-      const poolGeo = new THREE.CircleGeometry(7.2, 32);
-      const poolMat = new THREE.MeshStandardMaterial({
-        color: 0x38bdf8,
-        roughness: 0.12,
-        metalness: 0.40,
-        transparent: true,
-        opacity: 0.60
-      });
-      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
-      poolMesh.rotation.x = -Math.PI / 2;
-      poolMesh.position.set(originX + 17.5, originY + 0.03, originZ + 16.0);
-      group.add(poolMesh);
+      // 5. Waterfall
+      const wfGeo = new THREE.PlaneGeometry(12, 20);
+      const wfMat = new THREE.MeshBasicMaterial({ map: waterfallTex, transparent: true, side: THREE.DoubleSide });
+      const wfMesh = new THREE.Mesh(wfGeo, wfMat);
+      wfMesh.position.set(originX + 25, originY + 10, originZ);
+      wfMesh.rotation.y = -Math.PI / 2;
+      group.add(wfMesh);
 
-      // Subtle rising waterfall mist
-      const mistCount = 35;
-      const mistGeo = new THREE.BufferGeometry();
-      const mistPos = new Float32Array(mistCount * 3);
-      const mistVel = [];
-      for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 17.5 + (Math.random() - 0.5) * 6.0;
-        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
-        mistPos[i * 3 + 2] = originZ + 16.0 + (Math.random() - 0.5) * 6.0;
-        mistVel.push({
-          vx: (Math.random() - 0.5) * 0.25,
-          vy: 0.25 + Math.random() * 0.45,
-          vz: (Math.random() - 0.5) * 0.25
-        });
+      // 6. Portal
+      const pGeo = new THREE.TorusGeometry(5, 1, 16, 32);
+      const pMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true });
+      const pMesh = new THREE.Mesh(pGeo, pMat);
+      pMesh.position.set(originX - 25, originY + 5, originZ);
+      pMesh.rotation.y = Math.PI / 2;
+      group.add(pMesh);
+
+      // 7. Motes
+      const moteGeo = new THREE.BufferGeometry();
+      const count = 100;
+      const positions = new Float32Array(count * 3);
+      for(let i=0; i<count; i++) {
+        positions[i*3] = originX + (Math.random()-0.5)*50;
+        positions[i*3+1] = originY + Math.random()*20;
+        positions[i*3+2] = originZ + (Math.random()-0.5)*50;
       }
-      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
-      const mistMat = new THREE.PointsMaterial({
-        size: 2.4,
-        map: moteTex,
-        color: 0xe0f2fe,
-        transparent: true,
-        opacity: 0.26,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const mistPoints = new THREE.Points(mistGeo, mistMat);
-      group.add(mistPoints);
+      moteGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const moteMat = new THREE.PointsMaterial({ size: 1.5, map: moteTex, transparent: true, blending: THREE.AdditiveBlending, depthWrite: false });
+      const motes = new THREE.Points(moteGeo, moteMat);
+      group.add(motes);
 
-      // 5. Warm Directional Sunlight & Ambient Glade Illumination
-      const sunLight = new THREE.DirectionalLight(0xfffae6, 2.2);
-      sunLight.position.set(originX + 10.0, originY + 35.0, originZ - 10.0);
-      sunLight.target.position.set(originX, originY, originZ);
-      group.add(sunLight);
-      group.add(sunLight.target);
-
-      const hemiLight = new THREE.HemisphereLight(0xcbebfd, 0x5a4836, 1.35);
-      hemiLight.position.set(originX, originY + 25.0, originZ);
-      group.add(hemiLight);
-
-      // 6. Floating Glowing Pastel Motes (Matching reference image: elegant, subtle, floating lights)
-      const motePalette = [
-        new THREE.Color(0x2dd4bf), // Teal
-        new THREE.Color(0x38bdf8), // Blue
-        new THREE.Color(0x4ade80), // Green
-        new THREE.Color(0xfacc15), // Yellow
-        new THREE.Color(0xf472b6), // Pink
-        new THREE.Color(0xc084fc)  // Purple
-      ];
-
-      const orbCount = 70;
-      const orbGeo = new THREE.BufferGeometry();
-      const orbPos = new Float32Array(orbCount * 3);
-      const orbColors = new Float32Array(orbCount * 3);
-      const orbData = [];
-
-      for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 26.0;
-        const oy = originY + 0.6 + Math.random() * 5.0;
-        const oz = originZ + (Math.random() - 0.5) * 24.0;
-
-        orbPos[i * 3]     = ox;
-        orbPos[i * 3 + 1] = oy;
-        orbPos[i * 3 + 2] = oz;
-
-        const col = motePalette[i % motePalette.length];
-        orbColors[i * 3]     = col.r;
-        orbColors[i * 3 + 1] = col.g;
-        orbColors[i * 3 + 2] = col.b;
-
-        orbData.push({
-          baseX: ox,
-          baseY: oy,
-          baseZ: oz,
-          phase: Math.random() * Math.PI * 2,
-          speed: 0.35 + Math.random() * 0.45,
-          radius: 0.6 + Math.random() * 1.4
-        });
-      }
-      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
-      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
-
-      const orbMat = new THREE.PointsMaterial({
-        size: 0.55,
-        map: moteTex,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.90,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const orbPoints = new THREE.Points(orbGeo, orbMat);
-      group.add(orbPoints);
-
-      // 7. Ethereal Swirling Return Portal (Aligned with the portal grotto archway on left side of concept art)
-      const retPortalGroup = new THREE.Group();
-      const retPortalX = originX + 11.0;
-      const retPortalY = originY + 2.8;
-      const retPortalZ = originZ - 14.5;
-      retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
-      // Face towards the player's spawn clearing (-48.7 degrees)
-      retPortalGroup.rotation.y = -0.85;
-
-      const retPortalUniforms = {
-        uTime: { value: 0 }
-      };
-
-      const retPortalShaderMat = new THREE.ShaderMaterial({
-        uniforms: retPortalUniforms,
-        vertexShader: `
-          varying vec2 vUv;
-          void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-          }
-        `,
-        fragmentShader: `
-          uniform float uTime;
-          varying vec2 vUv;
-          void main() {
-            vec2 p = (vUv - 0.5) * 2.0;
-            float r = length(p);
-            if (r > 1.0) discard;
-            float angle = atan(p.y, p.x);
-            float swirl = angle + r * 5.0 - uTime * 2.2;
-            float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
-            float smoothEdge = cos(r * 1.5707963);
-
-            vec3 cOuter = vec3(0.75, 0.52, 0.98); // violet
-            vec3 cMid = vec3(0.22, 0.74, 0.97);   // cyan
-            vec3 cCenter = vec3(0.85, 1.0, 0.92); // radiant mint core
-
-            vec3 col = mix(cOuter, cMid, smoothstep(0.82, 0.28, r));
-            col = mix(col, cCenter, smoothstep(0.40, 0.0, r));
-            col += cCenter * (rays * 0.40);
-
-            float alpha = smoothEdge * 0.95;
-            gl_FragColor = vec4(col, alpha);
-          }
-        `,
-        transparent: true,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 5.2, 24, 24), retPortalShaderMat);
-      retPortalGroup.add(retDisc);
-
-      const retBurstMat = new THREE.MeshBasicMaterial({
-        map: vortexTex,
-        transparent: true,
-        opacity: 0.92,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.8, 6.8), retBurstMat);
-      retPortalGroup.add(retBurst);
-
-      const retLight = new THREE.PointLight(0x5eead4, 3.8, 16.0, 1.2);
-      retLight.position.set(0, 0, 0.3);
-      retPortalGroup.add(retLight);
-
-      group.add(retPortalGroup);
-
-      if (this._rootSceneAdd) {
-        this._rootSceneAdd(group);
-      } else {
-        this.scene.add(group);
-      }
+      // Final Setup & Teleport Logic
+      if (this._rootSceneAdd) this._rootSceneAdd(group); else this.scene.add(group);
       group.visible = false;
-
+      
       this.safeRoomSanctuary = {
-        group: group,
-        originX: originX,
-        originY: originY,
-        originZ: originZ,
-        retPortalX: retPortalX,
-        retPortalY: retPortalY,
-        retPortalZ: retPortalZ,
-        retDisc: retDisc,
-        retBurst: retBurst,
-        retPortalUniforms: retPortalUniforms,
-        mistPoints: mistPoints,
-        mistVel: mistVel,
-        orbPoints: orbPoints,
-        orbData: orbData,
+        group, originX, originY, originZ,
+        retPortalX: originX - 25,
+        retPortalZ: originZ,
         time: 0
       };
     }
