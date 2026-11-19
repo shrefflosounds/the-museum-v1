@@ -16921,9 +16921,14 @@ window.game = this;
         fn.doorOff_s_mid = addNode(23.0, y, 18.0, fl, 'doorOff_s_mid');
         fn.doorOff_s_ext = addNode(23.0, y, 19.2, fl, 'doorOff_s_ext');
         fn.doorOff_s_out = addNode(19.0, y, 19.5, fl, 'doorOff_s_out');
-        connect(fn.doorOff_s_in, fn.doorOff_s_mid);
-        connect(fn.doorOff_s_mid, fn.doorOff_s_ext);
-        connect(fn.doorOff_s_ext, fn.doorOff_s_out);
+        if (fl === 0) {
+          // On Floor 0, South perimeter is a solid fence (z = 18.0) with NO door.
+          // Do not connect doorOff_s_in to the outside south wing.
+        } else {
+          connect(fn.doorOff_s_in, fn.doorOff_s_mid);
+          connect(fn.doorOff_s_mid, fn.doorOff_s_ext);
+          connect(fn.doorOff_s_ext, fn.doorOff_s_out);
+        }
 
         if (fl === 1) {
           // On Floor 1, burning mountain is centered at (26, 13); perimeter path around danger radius
@@ -16956,8 +16961,10 @@ window.game = this;
         connect(fn.se_c_p20, fn.se_c_p23);
         connect(fn.crossS_e_se, fn.se_c_p23);
 
-        connect(fn.doorOff_s_out, fn.se_c_p20);
-        connect(fn.doorOff_s_out, fn.se_c_p23);
+        if (fl > 0) {
+          connect(fn.doorOff_s_out, fn.se_c_p20);
+          connect(fn.doorOff_s_out, fn.se_c_p23);
+        }
 
         // Rotunda entrance at z = 28.0 (Colonnade apse opening)
         fn.rot_approach = addNode(19.0, y, 26.5, fl, 'rot_approach');
@@ -24276,25 +24283,24 @@ window.game = this;
       if (!this.navGrid) this.buildObstacleGrid();
 
       // Hyperactive explorer:
-      // 60% stays in Arts & Music (East Hall) & Media Wing, 40% eagerly explores out into
+      // 60% stays in Arts & Music (East Hall, Petting Zoo) & Media Wing, 40% eagerly explores out into
       // Central Cross Hallway, Main Gallery, North Gallery, or even across stairwells!
       const exploreOutside = Math.random() < 0.40;
       const pool = this.navNodes.filter(n => {
         if (!this.isRoomNavNode(n)) return false;
-        // Never wander inside Petting Zoo enclosure
-        if (n.floor === 0 && this.isPettingZooArea(n.x, n.z, 0, 0.8)) return false;
 
         if (!exploreOutside) {
-          // Home territory: East Hall and Media Wing
+          // Home territory: East Hall, Petting Zoo (x: 19..33, z: 8..18), and Media Wing
           const inEastHall = (n.x >= 5.0 && n.x <= 26.5 && n.z >= -24.0 && n.z <= 6.5);
           const inMediaWing = (n.x >= 5.0 && n.x <= 26.5 && n.z >= 19.0 && n.z <= 27.5);
-          return n.floor === 0 && (inEastHall || inMediaWing);
+          const inPettingZoo = (n.floor === 0 && this.isPettingZooArea(n.x, n.z, 0, 0.4));
+          return n.floor === 0 && (inEastHall || inMediaWing || inPettingZoo);
         }
         return n.floor === dog.floor;
       });
 
       if (pool.length === 0) {
-        return this.navNodes.find(n => n.floor === dog.floor && this.isRoomNavNode(n) && !this.isPettingZooArea(n.x, n.z, n.floor, 0.8)) || null;
+        return this.navNodes.find(n => n.floor === dog.floor && this.isRoomNavNode(n)) || null;
       }
       return pool[Math.floor(Math.random() * pool.length)];
     }
@@ -24304,9 +24310,6 @@ window.game = this;
       if (!this.navGrid) this.buildObstacleGrid();
 
       let gx = targetX, gz = targetZ;
-      if (this.isPettingZooArea(gx, gz, targetFloor, 0.8)) {
-        gx = 16.0; gz = 13.0; // Wait right outside gate
-      }
 
       const startId = this.findNearestNavNode({ x: dog.x, z: dog.z }, dog.floor);
       const goalId = this.findNearestNavNode({ x: gx, z: gz }, targetFloor);
@@ -24315,10 +24318,7 @@ window.game = this;
       const rawPath = this.findShortestPath(startId, goalId);
       if (!rawPath || rawPath.length === 0) return null;
 
-      const safeRawPath = rawPath.filter(n => !(n.floor === 0 && this.isPettingZooArea(n.x, n.z, 0, 0.6)));
-      if (safeRawPath.length === 0) return null;
-
-      return this.refineNavPath(safeRawPath, { x: dog.x, z: dog.z }, dog.floor);
+      return this.refineNavPath(rawPath, { x: dog.x, z: dog.z }, dog.floor);
     }
 
     updateRobotDog(delta) {
@@ -24346,15 +24346,6 @@ window.game = this;
       const pDist = Math.hypot(this.playerPos.x - dog.x, this.playerPos.z - dog.z);
       const isPlayerSameFloor = (this.playerFloor === dog.floor);
 
-      // Eject if somehow inside petting zoo
-      if (dog.floor === 0 && this.isPettingZooArea(dog.x, dog.z, 0, 0.1)) {
-        dog.x = 16.5; dog.z = 13.0;
-        dog.group.position.set(dog.x, dog.y, dog.z);
-        dog.aiState = "IDLE";
-        dog.aiTimer = 0.5;
-        dog.navPath = null;
-      }
-
       const isMoving = (dog.aiState === "WANDER" || dog.aiState === "RUN" || dog.aiState === "CIRCLE" || dog.aiState === "APPROACH_PLAYER" || dog.aiState === "APPROACH_STATUE" || dog.aiState === "FOLLOW_PLAYER");
       if (isMoving) {
         dog.stepTimer = (dog.stepTimer || 0) + delta;
@@ -24371,14 +24362,6 @@ window.game = this;
 
         let mx = (stepX / stepDist) * Math.min(stepDist, speed * delta);
         let mz = (stepZ / stepDist) * Math.min(stepDist, speed * delta);
-
-        const targetX = dog.x + mx;
-        const targetZ = dog.z + mz;
-
-        if (dog.floor === 0 && this.isPettingZooArea(targetX, targetZ, 0, 0.35)) {
-          mx = 0;
-          if (dog.x > 18.2) dog.x = 18.0;
-        }
 
         const tempPos = { x: dog.x + mx, y: dog.y, z: dog.z + mz, _ignoreCollider: dog.collider };
         this.resolveCollisions(tempPos, 0.40, dog.floor, dog.y, 1.1);
@@ -24596,7 +24579,7 @@ window.game = this;
             } else if (roll < 0.55) {
               // Playful zoomies: circle spin!
               const freeSpace = !this.gridBlocked(dog.floor, dog.x + 1.5, dog.z) && !this.gridBlocked(dog.floor, dog.x - 1.5, dog.z);
-              if (freeSpace && !this.isPettingZooArea(dog.x, dog.z, dog.floor, 1.2)) {
+              if (freeSpace) {
                 dog.aiState = "CIRCLE";
                 dog.circleCenter = { x: dog.x, z: dog.z };
                 dog.circleRadius = 1.2 + Math.random() * 0.9;
@@ -24920,7 +24903,7 @@ window.game = this;
         }
 
         case "PATROL_PETTING_ZOO": {
-          // Patrol and guard the perimeter outside the Petting Zoo fence on Floor 0
+          // Patrol and guard the Petting Zoo on Floor 0 (perimeter gate and inside enclosure)
           if (dog.floor !== 0) {
             dog.aiState = "IDLE";
             dog.aiTimer = 1.0;
@@ -24930,9 +24913,13 @@ window.game = this;
           const patrolWaypoints = [
             { x: 17.5, z: 8.8 },   // Northwest corner of fence
             { x: 17.2, z: 12.0 },  // North side of petting zoo gate
-            { x: 17.2, z: 14.0 },  // South side of petting zoo gate
-            { x: 17.5, z: 17.2 },  // Southwest corner of fence
-            { x: 17.2, z: 13.0 }   // Directly guarding the open entrance gate
+            { x: 19.0, z: 13.0 },  // Directly through the open gate
+            { x: 23.5, z: 13.0 },  // Inside the petting zoo yard
+            { x: 27.0, z: 11.0 },  // Near the animals (north side)
+            { x: 27.0, z: 15.0 },  // Near the animals (south side)
+            { x: 20.5, z: 13.0 },  // Inside petting zoo gate
+            { x: 17.2, z: 13.0 },  // Directly outside the open entrance gate
+            { x: 17.5, z: 17.2 }   // Southwest corner of fence
           ];
 
           if (dog.pzPatrolIndex === undefined || dog.pzPatrolIndex >= patrolWaypoints.length) {

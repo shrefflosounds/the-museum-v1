@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.4.6">
+  <link rel="stylesheet" href="style.css?v=2.4.7">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -122,16 +122,16 @@
   <!-- Start Screen Modal -->
   <div id="start-screen" class="modal-overlay">
     <div class="modal-box start-box">
+      <h1 class="horror-title start-main-title" data-text="start.title">SHREFFLO MUSEUM</h1>
+      <div class="lore-text start-subtitle">
+        <p data-text="start.goal">Recover the relics, explore the exhibits, visit the video rooms</p>
+      </div>
+
       <!-- Options & Controls Bubbles -->
       <div class="start-bubbles-row">
         <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Audio and Curator gameplay options" data-text="bubble.options">OPTIONS</button>
         <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="View keybinds and spectator mode controls" data-text="bubble.controls">CONTROLS</button>
         <button id="about-bubble-btn" class="start-bubble-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about">ABOUT</button>
-      </div>
-
-      <h1 class="horror-title" data-text="start.title">SHREFFLO MUSEUM</h1>
-      <div class="lore-text">
-        <p data-text="start.goal">Recover all 14 relics to unlock the exit.</p>
       </div>
 
       <button id="start-btn" class="museum-btn" title="Enter the museum and begin the exhibition" data-text="start.button">START GAME</button>
@@ -463,12 +463,12 @@
   <script src="character_select.js?v=2.2.0"></script>
   <script src="finalfight.js?v=1.3.1"></script>
     <!-- Museum Game Engine -->
-  <script src="text_loader.js?v=615_1795051400"></script>
+  <script src="text_loader.js?v=615_1795052000"></script>
   <script type="module">
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795051400';
+    gameScript.src = 'game.js?v=2.9.1795052000';
     document.body.appendChild(gameScript);
   </script>
 </body>
