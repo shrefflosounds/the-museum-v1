@@ -10204,365 +10204,143 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // Load curated sanctuary textures
-      const groundTex = this.texLoader.load('assets/textures/sanctuary/meadow_ground.png', (tx) => {
+      // Load curated clean garden textures (Chao Garden inspired aesthetic)
+      const grassTex = this.texLoader.load('assets/textures/sanctuary/chao_grass.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(6, 6);
+        tx.repeat.set(16, 16);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
+      const sandTex = this.texLoader.load('assets/textures/sanctuary/river_sand.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 3);
+        tx.repeat.set(8, 8);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const barkTex = this.texLoader.load('assets/textures/sanctuary/gnarled_bark.png', (tx) => {
+      const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(2, 6);
+        tx.repeat.set(8, 4);
         tx.colorSpace = THREE.SRGBColorSpace;
       });
-      const flowerTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_flowers.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
+      const barkTex = this.texLoader.load('assets/textures/sanctuary/chao_bark.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(1, 2);
+        tx.repeat.set(3, 8);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const canopyTex = this.texLoader.load('assets/textures/sanctuary/canopy_leaf.png', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.wrapT = THREE.RepeatWrapping;
+        tx.repeat.set(4, 4);
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const flowerTex = this.texLoader.load('assets/textures/sanctuary/clean_foliage.png', (tx) => {
+        tx.colorSpace = THREE.SRGBColorSpace;
+      });
+      const moteGlowTex = this.texLoader.load('assets/textures/sanctuary/glow_mote.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
       const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png', (tx) => {
         tx.colorSpace = THREE.SRGBColorSpace;
       });
 
-      // 1. Natural Contoured Meadow Basin Floor
-      const basinWidth = 44.0;
-      const basinSegs = 36;
-      const basinGeo = new THREE.PlaneGeometry(basinWidth, basinWidth, basinSegs, basinSegs);
-      const bPos = basinGeo.attributes.position;
-      for (let i = 0; i < bPos.count; i++) {
-        const vx = bPos.getX(i);
-        const vy = bPos.getY(i);
-        const distFromCenter = Math.hypot(vx, vy);
-        // Subtle natural rolling hollow basin, slightly elevated near the rocky rim
-        const hollow = Math.sin(distFromCenter * 0.18) * 0.45;
-        const roll = Math.sin(vx * 0.35) * Math.cos(vy * 0.35) * 0.22;
-        bPos.setZ(i, hollow + roll);
-      }
-      basinGeo.computeVertexNormals();
-
-      const groundMat = new THREE.MeshStandardMaterial({
-        map: groundTex,
-        roughness: 0.88,
-        metalness: 0.04
+      // 1. Expansive, Open Meadow Basin Floor (Flat at originY = 50.0 so player feet never sink)
+      const meadowRadius = 55.0;
+      const meadowGeo = new THREE.PlaneGeometry(meadowRadius * 2, meadowRadius * 2, 2, 2);
+      const grassMat = new THREE.MeshStandardMaterial({
+        map: grassTex,
+        roughness: 0.75,
+        metalness: 0.02
       });
-      const basinFloor = new THREE.Mesh(basinGeo, groundMat);
-      basinFloor.rotation.x = -Math.PI / 2;
-      basinFloor.position.set(originX, originY, originZ);
-      group.add(basinFloor);
+      const meadowFloor = new THREE.Mesh(meadowGeo, grassMat);
+      meadowFloor.rotation.x = -Math.PI / 2;
+      meadowFloor.position.set(originX, originY, originZ);
+      group.add(meadowFloor);
 
-      // Solid floor collider so player stands firmly on the sanctuary ground
+      // Smooth sandy shoreline ring around the lake and portal clearing
+      const sandGeo = new THREE.RingGeometry(11.0, 16.5, 36);
+      const sandMat = new THREE.MeshStandardMaterial({
+        map: sandTex,
+        roughness: 0.85,
+        metalness: 0.02
+      });
+      const sandRing = new THREE.Mesh(sandGeo, sandMat);
+      sandRing.rotation.x = -Math.PI / 2;
+      sandRing.position.set(originX + 14.0, originY + 0.015, originZ - 10.0);
+      group.add(sandRing);
+
+      // Solid floor collider perfectly aligned with originY = 50.0
       this.colliders.push({
         type: 'box',
         floor: 'all',
-        minX: originX - 22.0,
-        maxX: originX + 22.0,
-        minZ: originZ - 22.0,
-        maxZ: originZ + 22.0,
+        minX: originX - meadowRadius,
+        maxX: originX + meadowRadius,
+        minZ: originZ - meadowRadius,
+        maxZ: originZ + meadowRadius,
         minY: originY - 1.0,
         maxY: originY,
         isWall: false
       });
 
-      // 2. Sculpted Organic Cavern Walls with Natural Overhang Arch
-      // Instead of square checkerboard box walls, build a sculpted organic cavern
-      const caveMat = new THREE.MeshStandardMaterial({
-        map: rockTex,
-        roughness: 0.90,
-        metalness: 0.08,
-        side: THREE.DoubleSide
-      });
-
-      const caveSegmentsU = 48; // around the circle
-      const caveSegmentsV = 20; // vertical slices
-      const caveGeo = new THREE.BufferGeometry();
-      const cavePositions = [];
-      const caveUvs = [];
-      const caveIndices = [];
-
-      const caveHeight = 16.5;
-      for (let j = 0; j <= caveSegmentsV; j++) {
-        const v = j / caveSegmentsV; // 0..1 from floor to ceiling
-        const y = originY + v * caveHeight;
-
-        for (let i = 0; i <= caveSegmentsU; i++) {
-          const u = i / caveSegmentsU;
-          const theta = u * Math.PI * 2;
-
-          // Natural organic cave outline with alcoves
-          // Opening facing east/northeast for the radiant sun and waterfall
-          let baseR = 17.5 + Math.sin(theta * 3.0) * 2.2 + Math.cos(theta * 5.0) * 1.2;
-
-          // The cavern arches overhead at the top to frame the open sky
-          if (v > 0.45) {
-            const roofProgress = (v - 0.45) / 0.55;
-            // Overhang inward like the rocky cave ceiling in the mockup
-            baseR *= (1.0 - 0.42 * Math.sin(roofProgress * Math.PI * 0.5));
-          }
-
-          // Indent west side alcove where the return portal sits nestled inside cave rock
-          const portalAngle = Math.PI; // West is theta = PI
-          const angleDiff = Math.abs(theta - portalAngle);
-          if (angleDiff < 0.65) {
-            baseR -= (0.65 - angleDiff) * 3.5;
-          }
-
-          const px = originX + Math.cos(theta) * baseR;
-          const pz = originZ + Math.sin(theta) * baseR;
-
-          cavePositions.push(px, y, pz);
-          caveUvs.push(u * 6.0, v * 3.0);
-        }
-      }
-
-      for (let j = 0; j < caveSegmentsV; j++) {
-        for (let i = 0; i < caveSegmentsU; i++) {
-          const a = j * (caveSegmentsU + 1) + i;
-          const b = (j + 1) * (caveSegmentsU + 1) + i;
-          const c = (j + 1) * (caveSegmentsU + 1) + (i + 1);
-          const d = j * (caveSegmentsU + 1) + (i + 1);
-          caveIndices.push(a, b, d);
-          caveIndices.push(d, b, c);
-        }
-      }
-
-      caveGeo.setIndex(caveIndices);
-      caveGeo.setAttribute('position', new THREE.Float32BufferAttribute(cavePositions, 3));
-      caveGeo.setAttribute('uv', new THREE.Float32BufferAttribute(caveUvs, 2));
-      caveGeo.computeVertexNormals();
-
-      const caveMesh = new THREE.Mesh(caveGeo, caveMat);
-      group.add(caveMesh);
-
-      // Boundary colliders preventing falling out of the cavern
-      const addCavernBarrier = (x, z, r) => {
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: x,
-          z: z,
-          radius: r,
-          minY: originY,
-          maxY: originY + caveHeight
-        });
-      };
-      // Place surrounding safety boundary colliders along the cavern perimeter
-      for (let a = 0; a < 16; a++) {
-        const th = (a / 16) * Math.PI * 2;
-        const dist = 18.0;
-        addCavernBarrier(originX + Math.cos(th) * dist, originZ + Math.sin(th) * dist, 2.5);
-      }
-
-      // 3. Natural Sculpted Boulders Framing Plunge Pool and Cavern
-      const boulderMat = new THREE.MeshStandardMaterial({
-        map: rockTex,
+      // 2. Distant Horizon Mountain Valley (Completely Open Sky overhead, NO claustrophobic cave roof)
+      // Gentle circular mountain range set far back (R = 48m..55m) giving total open panoramic freedom
+      const mountainSegments = 40;
+      const mountainMat = new THREE.MeshStandardMaterial({
+        map: cliffTex,
         roughness: 0.88,
-        metalness: 0.08
+        metalness: 0.05
       });
-      const boulderPlacements = [
-        // Boulders framing the waterfall pool
-        { x: originX + 7.0, z: originZ - 4.5, s: 2.2, ry: 0.4 },
-        { x: originX + 9.5, z: originZ - 4.0, s: 2.8, ry: 1.1 },
-        { x: originX + 11.5, z: originZ - 7.5, s: 3.2, ry: 2.3 },
-        { x: originX + 5.5, z: originZ - 7.0, s: 2.0, ry: 1.8 },
-        { x: originX + 4.2, z: originZ - 9.0, s: 1.8, ry: 0.6 },
-        { x: originX + 10.0, z: originZ - 11.5, s: 3.5, ry: 1.5 },
-        // Stepping stones and mossy rocks across the center
-        { x: originX - 0.5, z: originZ - 3.5, s: 1.3, ry: 0.5 },
-        { x: originX + 1.2, z: originZ - 4.8, s: 1.5, ry: 2.1 },
-        { x: originX + 2.8, z: originZ - 3.2, s: 1.4, ry: 1.2 },
-        // Portal grotto alcove framing boulders
-        { x: originX - 10.5, z: originZ - 4.2, s: 2.4, ry: 0.8 },
-        { x: originX - 11.5, z: originZ + 3.8, s: 2.6, ry: 2.7 },
-        { x: originX - 8.2, z: originZ + 4.5, s: 1.9, ry: 1.4 }
-      ];
-      boulderPlacements.forEach(b => {
-        const bGeo = new THREE.DodecahedronGeometry(b.s, 2);
-        // Distort vertices slightly for organic natural rock asymmetry
-        const bAttr = bGeo.attributes.position;
-        for (let k = 0; k < bAttr.count; k++) {
-          const vx = bAttr.getX(k);
-          const vy = bAttr.getY(k);
-          const vz = bAttr.getZ(k);
-          const disp = 1.0 + Math.sin(vx * 3.0 + vy * 2.0) * 0.12;
-          bAttr.setXYZ(k, vx * disp, vy * disp * 0.85, vz * disp);
+      const cliffGeo = new THREE.CylinderGeometry(meadowRadius + 2.0, meadowRadius - 6.0, 24.0, mountainSegments, 2, true);
+      // Natural rolling mountain peak ridge line
+      const cPos = cliffGeo.attributes.position;
+      for (let i = 0; i < cPos.count; i++) {
+        const py = cPos.getY(i);
+        const px = cPos.getX(i);
+        const pz = cPos.getZ(i);
+        const angle = Math.atan2(pz, px);
+        // Scenic ridge heights (higher in north where waterfall emerges, lower in south)
+        if (py > 0) {
+          const ridge = Math.sin(angle * 4.0) * 3.5 + Math.cos(angle * 7.0) * 1.8;
+          cPos.setY(i, py + ridge + (angle < 0 ? 5.0 : 0.0));
         }
-        bGeo.computeVertexNormals();
+      }
+      cliffGeo.computeVertexNormals();
+      const mountainRidge = new THREE.Mesh(cliffGeo, mountainMat);
+      mountainRidge.position.set(originX, originY + 11.5, originZ);
+      group.add(mountainRidge);
 
-        const bMesh = new THREE.Mesh(bGeo, boulderMat);
-        bMesh.position.set(b.x, originY + b.s * 0.42, b.z);
-        bMesh.rotation.set(0.2, b.ry, 0.15);
-        group.add(bMesh);
-
+      // Perimeter boundaries keeping player safely inside the lush meadow garden
+      for (let a = 0; a < 24; a++) {
+        const th = (a / 24) * Math.PI * 2;
+        const bDist = 44.0;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
-          x: b.x,
-          z: b.z,
-          radius: b.s * 0.75,
+          x: originX + Math.cos(th) * bDist,
+          z: originZ + Math.sin(th) * bDist,
+          radius: 3.5,
           minY: originY,
-          maxY: originY + b.s * 1.3
+          maxY: originY + 25.0
         });
-      });
-
-      // 4. Massive Ancient Gnarled Tree Roots Framing the Cavern Arch and Portal (Mockup centerpiece)
-      const woodMat = new THREE.MeshStandardMaterial({
-        map: barkTex,
-        roughness: 0.82,
-        metalness: 0.04
-      });
-
-      // Root 1: Massive overhead arch spanning across the cavern ceiling opening
-      const overheadRootCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 13.0, originY + 0.5, originZ - 6.0),
-        new THREE.Vector3(originX - 9.5, originY + 6.0, originZ - 7.5),
-        new THREE.Vector3(originX - 4.0, originY + 11.5, originZ - 8.0),
-        new THREE.Vector3(originX + 3.0, originY + 12.2, originZ - 9.2),
-        new THREE.Vector3(originX + 9.5, originY + 8.5, originZ - 10.5),
-        new THREE.Vector3(originX + 13.5, originY + 2.0, originZ - 11.0)
-      ]);
-      const overheadRootMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(overheadRootCurve, 40, 1.45, 14, false),
-        woodMat
-      );
-      group.add(overheadRootMesh);
-
-      // Root 2: Secondary branching twisting limb intertwined with Root 1
-      const overheadBranchCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 5.0, originY + 10.5, originZ - 7.5),
-        new THREE.Vector3(originX - 1.0, originY + 13.0, originZ - 6.5),
-        new THREE.Vector3(originX + 5.0, originY + 11.8, originZ - 7.0),
-        new THREE.Vector3(originX + 11.0, originY + 7.0, originZ - 8.5)
-      ]);
-      const overheadBranchMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(overheadBranchCurve, 28, 0.85, 10, false),
-        woodMat
-      );
-      group.add(overheadBranchMesh);
-
-      // Root 3: Dramatic gnarled trunk framing the portal entrance (identical to left side of mockup)
-      const portalArchRootCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 12.0, originY, originZ - 3.8),
-        new THREE.Vector3(originX - 10.5, originY + 3.2, originZ - 2.5),
-        new THREE.Vector3(originX - 9.5, originY + 5.5, originZ + 0.0),
-        new THREE.Vector3(originX - 8.8, originY + 5.2, originZ + 2.2),
-        new THREE.Vector3(originX - 9.8, originY + 2.8, originZ + 4.2),
-        new THREE.Vector3(originX - 11.8, originY, originZ + 5.0)
-      ]);
-      const portalArchMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(portalArchRootCurve, 36, 1.15, 12, false),
-        woodMat
-      );
-      group.add(portalArchMesh);
-
-      // Root 4: Inner twisted vine looping around the portal frame
-      const innerPortalVine = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX - 11.2, originY + 0.2, originZ - 3.0),
-        new THREE.Vector3(originX - 9.8, originY + 3.8, originZ - 1.8),
-        new THREE.Vector3(originX - 8.6, originY + 4.8, originZ + 0.4),
-        new THREE.Vector3(originX - 9.2, originY + 2.5, originZ + 3.2),
-        new THREE.Vector3(originX - 11.0, originY + 0.1, originZ + 3.8)
-      ]);
-      const innerVineMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(innerPortalVine, 28, 0.55, 8, false),
-        woodMat
-      );
-      group.add(innerVineMesh);
-
-      // Root 5: Heavy shelf root flanking the waterfall on the right
-      const waterfallRootCurve = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(originX + 12.5, originY + 11.0, originZ - 12.0),
-        new THREE.Vector3(originX + 11.0, originY + 7.5, originZ - 9.5),
-        new THREE.Vector3(originX + 8.5, originY + 3.2, originZ - 7.5),
-        new THREE.Vector3(originX + 7.2, originY + 0.2, originZ - 6.0)
-      ]);
-      const waterfallRootMesh = new THREE.Mesh(
-        new THREE.TubeGeometry(waterfallRootCurve, 28, 1.10, 12, false),
-        woodMat
-      );
-      group.add(waterfallRootMesh);
-
-      // 5. Wildflowers, Ferns, and Forest Foliage (Matching vibrant meadow foreground in mockup)
-      const flowerMat = new THREE.MeshStandardMaterial({
-        map: flowerTex,
-        transparent: true,
-        alphaTest: 0.35,
-        roughness: 0.85,
-        metalness: 0.02,
-        side: THREE.DoubleSide
-      });
-
-      function createFoliageMesh(uMin, uMax, width, height) {
-        const geom = new THREE.PlaneGeometry(width, height);
-        geom.translate(0, height / 2, 0);
-        const uvs = geom.getAttribute('uv');
-        uvs.setXY(0, uMin, 1);
-        uvs.setXY(1, uMax, 1);
-        uvs.setXY(2, uMin, 0);
-        uvs.setXY(3, uMax, 0);
-        uvs.needsUpdate = true;
-
-        // Two crossed angled planes for full 3D parallax foliage
-        const g2 = geom.clone();
-        g2.rotateY(Math.PI / 2);
-        return mergeBufferGeometries([geom, g2]);
       }
 
-      const folVariants = [
-        createFoliageMesh(0.00, 0.25, 0.85, 1.15), // Fern
-        createFoliageMesh(0.25, 0.50, 0.65, 0.95), // Magenta Wildflowers
-        createFoliageMesh(0.50, 0.75, 0.65, 0.90), // Azure Bellflowers
-        createFoliageMesh(0.75, 1.00, 0.60, 0.85)  // Golden Buttercups
-      ];
-
-      // Scatter dense wildflower clusters across the meadow basin floor (especially foreground)
-      const plantClusterCount = 55;
-      for (let p = 0; p < plantClusterCount; p++) {
-        const pAngle = Math.random() * Math.PI * 2;
-        const pDist = 2.5 + Math.random() * 11.5;
-        const px = originX + Math.cos(pAngle) * pDist;
-        const pz = originZ + Math.sin(pAngle) * pDist;
-
-        // Don't spawn inside the pool or portal
-        if (Math.hypot(px - (originX + 8.5), pz - (originZ - 7.5)) < 4.5) continue;
-        if (Math.hypot(px - (originX - 9.2), pz - originZ) < 3.2) continue;
-
-        const vIdx = Math.floor(Math.random() * folVariants.length);
-        const plantMesh = new THREE.Mesh(folVariants[vIdx], flowerMat);
-        const pScale = 0.8 + Math.random() * 0.5;
-        plantMesh.scale.set(pScale, pScale, pScale);
-        plantMesh.position.set(px, originY, pz);
-        plantMesh.rotation.y = Math.random() * Math.PI * 2;
-        group.add(plantMesh);
-      }
-
-      // 6. Brilliant Azure Plunge Pool and Majestic Animated Waterfall
-      // Plunge pool water disc
-      const poolGeo = new THREE.CircleGeometry(5.8, 36);
-      const poolMat = new THREE.MeshStandardMaterial({
+      // 3. Gorgeous Sparkling Garden Lagoon & Rushing Waterfall (Chao Garden style)
+      // Crystal turquoise lake
+      const lakeGeo = new THREE.CircleGeometry(12.5, 48);
+      const lakeMat = new THREE.MeshStandardMaterial({
         color: 0x38bdf8,
-        roughness: 0.12,
+        roughness: 0.08,
         metalness: 0.35,
         transparent: true,
-        opacity: 0.85
+        opacity: 0.88
       });
-      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
-      poolMesh.rotation.x = -Math.PI / 2;
-      poolMesh.position.set(originX + 8.5, originY + 0.12, originZ - 7.5);
-      group.add(poolMesh);
+      const lakeMesh = new THREE.Mesh(lakeGeo, lakeMat);
+      lakeMesh.rotation.x = -Math.PI / 2;
+      lakeMesh.position.set(originX + 14.0, originY + 0.03, originZ - 10.0);
+      group.add(lakeMesh);
 
-      // Waterfall Shader & Meshes
+      // Waterfall spilling down from northern mountain cliff into the lake
       const wfUniforms = {
         uTime: { value: 0 },
         uColorTop: { value: new THREE.Color(0xffffff) },
@@ -10577,9 +10355,7 @@ window.game = this;
           void main() {
             vUv = uv;
             vec3 pos = position;
-            // Billowing rushing wave displacement
-            pos.z += sin(pos.y * 2.2 - uTime * 8.0) * 0.18 * (1.0 - uv.y);
-            pos.x += cos(pos.y * 2.8 - uTime * 5.0) * 0.10;
+            pos.z += sin(pos.y * 2.0 - uTime * 6.0) * 0.12 * (1.0 - uv.y);
             gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
           }
         `,
@@ -10589,12 +10365,11 @@ window.game = this;
           uniform vec3 uColorBot;
           varying vec2 vUv;
           void main() {
-            // High-speed rushing water streaks
-            float rush = sin(vUv.y * 55.0 - uTime * 15.0) * 0.5 + 0.5;
-            rush += sin(vUv.x * 32.0 + vUv.y * 22.0 - uTime * 11.0) * 0.35;
+            float rush = sin(vUv.y * 42.0 - uTime * 14.0) * 0.5 + 0.5;
+            rush += sin(vUv.x * 24.0 + vUv.y * 18.0 - uTime * 9.0) * 0.35;
             rush = clamp(rush, 0.0, 1.0);
-            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.45);
-            float alpha = 0.82 + rush * 0.18;
+            vec3 col = mix(uColorBot, uColorTop, rush * 0.65 + (1.0 - vUv.y) * 0.35);
+            float alpha = 0.85 + rush * 0.15;
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -10602,103 +10377,181 @@ window.game = this;
         side: THREE.DoubleSide
       });
 
-      // Main waterfall sheet falling from cliff ledge
-      const wfMesh1 = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 14.5, 20, 28), wfMat);
-      wfMesh1.position.set(originX + 8.5, originY + 7.25, originZ - 10.8);
-      group.add(wfMesh1);
+      const wfMesh = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 20.0, 16, 24), wfMat);
+      wfMesh.position.set(originX + 14.0, originY + 10.0, originZ - 22.0);
+      group.add(wfMesh);
 
-      // Front secondary water drape for lush volumetric depth
-      const wfMesh2 = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 13.0, 16, 20), wfMat);
-      wfMesh2.position.set(originX + 8.5, originY + 6.5, originZ - 10.3);
-      group.add(wfMesh2);
-
-      // 7. Soft Waterfall Mist and Splash Particles
-      const mistCount = 80;
+      // Soft mist rising gently from the waterfall base
+      const mistCount = 60;
       const mistGeo = new THREE.BufferGeometry();
       const mistPos = new Float32Array(mistCount * 3);
       const mistVel = [];
       for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 8.5 + (Math.random() - 0.5) * 6.5;
+        mistPos[i * 3]     = originX + 14.0 + (Math.random() - 0.5) * 8.0;
         mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 3.5;
-        mistPos[i * 3 + 2] = originZ - 7.5 + (Math.random() - 0.5) * 5.0;
+        mistPos[i * 3 + 2] = originZ - 18.0 + (Math.random() - 0.5) * 6.0;
         mistVel.push({
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: 0.35 + Math.random() * 0.65,
-          vz: (Math.random() - 0.5) * 0.35
+          vx: (Math.random() - 0.5) * 0.3,
+          vy: 0.35 + Math.random() * 0.5,
+          vz: (Math.random() - 0.5) * 0.3
         });
       }
       mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
       const mistMat = new THREE.PointsMaterial({
-        size: 0.85,
+        size: 1.8,
+        map: moteGlowTex,
         color: 0xe0f2fe,
         transparent: true,
-        opacity: 0.45,
+        opacity: 0.32,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
       const mistPoints = new THREE.Points(mistGeo, mistMat);
       group.add(mistPoints);
 
-      // 8. Floating Multicolored Pastel Motes (Matching mockup's subtle floating glowing lights)
-      const motePalette = [
-        new THREE.Color(0x2dd4bf), // Teal
-        new THREE.Color(0x38bdf8), // Blue
-        new THREE.Color(0x4ade80), // Green
-        new THREE.Color(0xfacc15), // Yellow
-        new THREE.Color(0xf472b6), // Pink
-        new THREE.Color(0xc084fc)  // Purple
+      // 4. Beautiful Lush Shade Trees (Chao Garden aesthetic: clean trunks and cloud-like green foliage)
+      const treeBarkMat = new THREE.MeshStandardMaterial({
+        map: barkTex,
+        roughness: 0.82
+      });
+      const treeLeafMat = new THREE.MeshStandardMaterial({
+        map: canopyTex,
+        color: 0x58c038,
+        roughness: 0.65
+      });
+
+      const createGardenTree = (tx, tz, scale = 1.0) => {
+        const treeGroup = new THREE.Group();
+        treeGroup.position.set(tx, originY, tz);
+
+        // Natural tapered trunk
+        const trunkGeo = new THREE.CylinderGeometry(0.35 * scale, 0.65 * scale, 4.8 * scale, 12);
+        trunkGeo.translate(0, 2.4 * scale, 0);
+        const trunkMesh = new THREE.Mesh(trunkGeo, treeBarkMat);
+        treeGroup.add(trunkMesh);
+
+        // Lush rounded cloud-like foliage crowns
+        const crownOffsets = [
+          { x: 0, y: 4.8 * scale, z: 0, r: 2.2 * scale },
+          { x: 0.9 * scale, y: 5.6 * scale, z: 0.6 * scale, r: 1.8 * scale },
+          { x: -0.8 * scale, y: 5.4 * scale, z: -0.7 * scale, r: 1.9 * scale },
+          { x: -0.4 * scale, y: 6.3 * scale, z: 0.5 * scale, r: 1.6 * scale }
+        ];
+        crownOffsets.forEach(c => {
+          const cGeo = new THREE.DodecahedronGeometry(c.r, 2);
+          const cMesh = new THREE.Mesh(cGeo, treeLeafMat);
+          cMesh.position.set(c.x, c.y, c.z);
+          treeGroup.add(cMesh);
+        });
+
+        group.add(treeGroup);
+
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 'all',
+          x: tx,
+          z: tz,
+          radius: 0.8 * scale,
+          minY: originY,
+          maxY: originY + 6.0
+        });
+      };
+
+      // Scatter scenic shade trees naturally around the open garden
+      createGardenTree(originX - 16.0, originZ - 12.0, 1.25);
+      createGardenTree(originX - 22.0, originZ + 6.0, 1.15);
+      createGardenTree(originX - 10.0, originZ + 22.0, 1.3);
+      createGardenTree(originX + 18.0, originZ + 18.0, 1.2);
+      createGardenTree(originX + 26.0, originZ - 4.0, 1.1);
+      createGardenTree(originX + 5.0, originZ - 26.0, 1.35);
+
+      // 5. Clean, Realistic Boulders along Pond and Shore
+      const boulderMat = new THREE.MeshStandardMaterial({
+        map: cliffTex,
+        roughness: 0.85,
+        metalness: 0.05
+      });
+      const rockPlacements = [
+        { x: originX + 7.5, z: originZ - 14.0, r: 1.8 },
+        { x: originX + 11.0, z: originZ - 19.5, r: 2.2 },
+        { x: originX + 18.5, z: originZ - 18.0, r: 2.4 },
+        { x: originX + 22.0, z: originZ - 12.0, r: 1.9 },
+        { x: originX + 15.0, z: originZ - 2.5, r: 1.5 },
+        { x: originX + 8.0, z: originZ - 4.5, r: 1.6 },
+        { x: originX - 4.0, z: originZ - 6.0, r: 1.2 },
+        { x: originX - 6.5, z: originZ + 8.0, r: 1.4 }
+      ];
+      rockPlacements.forEach(b => {
+        const bGeo = new THREE.DodecahedronGeometry(b.r, 1);
+        const bMesh = new THREE.Mesh(bGeo, boulderMat);
+        bMesh.position.set(b.x, originY + b.r * 0.45, b.z);
+        bMesh.rotation.set(0.2, Math.random() * Math.PI, 0.1);
+        group.add(bMesh);
+
+        this.colliders.push({
+          type: 'cylinder',
+          floor: 'all',
+          x: b.x,
+          z: b.z,
+          radius: b.r * 0.8,
+          minY: originY,
+          maxY: originY + b.r * 1.2
+        });
+      });
+
+      // 6. Smooth Wildflower Clusters (Delicate, realistic, non-pixelated)
+      const plantMat = new THREE.MeshStandardMaterial({
+        map: flowerTex,
+        transparent: true,
+        alphaTest: 0.35,
+        roughness: 0.82,
+        side: THREE.DoubleSide
+      });
+
+      function makeCrossPlant(uMin, uMax, w, h) {
+        const g1 = new THREE.PlaneGeometry(w, h);
+        g1.translate(0, h / 2, 0);
+        const uvs = g1.getAttribute('uv');
+        uvs.setXY(0, uMin, 1);
+        uvs.setXY(1, uMax, 1);
+        uvs.setXY(2, uMin, 0);
+        uvs.setXY(3, uMax, 0);
+        const g2 = g1.clone();
+        g2.rotateY(Math.PI / 2);
+        return mergeBufferGeometries([g1, g2]);
+      }
+
+      const folList = [
+        makeCrossPlant(0.00, 0.25, 0.75, 0.95), // Fern
+        makeCrossPlant(0.25, 0.50, 0.65, 0.85), // Pink Bloom
+        makeCrossPlant(0.50, 0.75, 0.65, 0.85), // Bluebell
+        makeCrossPlant(0.75, 1.00, 0.60, 0.80)  // Golden Buttercup
       ];
 
-      const orbCount = 110;
-      const orbGeo = new THREE.BufferGeometry();
-      const orbPos = new Float32Array(orbCount * 3);
-      const orbColors = new Float32Array(orbCount * 3);
-      const orbData = [];
+      for (let p = 0; p < 45; p++) {
+        const angle = Math.random() * Math.PI * 2;
+        const dist = 3.0 + Math.random() * 28.0;
+        const px = originX + Math.cos(angle) * dist;
+        const pz = originZ + Math.sin(angle) * dist;
 
-      for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 26.0;
-        const oy = originY + 0.6 + Math.random() * 7.5;
-        const oz = originZ + (Math.random() - 0.5) * 26.0;
+        // Skip inside lake
+        if (Math.hypot(px - (originX + 14.0), pz - (originZ - 10.0)) < 13.0) continue;
+        if (Math.hypot(px - (originX - 16.0), pz - originZ) < 3.5) continue;
 
-        orbPos[i * 3]     = ox;
-        orbPos[i * 3 + 1] = oy;
-        orbPos[i * 3 + 2] = oz;
-
-        const col = motePalette[i % motePalette.length];
-        orbColors[i * 3]     = col.r;
-        orbColors[i * 3 + 1] = col.g;
-        orbColors[i * 3 + 2] = col.b;
-
-        orbData.push({
-          baseX: ox,
-          baseY: oy,
-          baseZ: oz,
-          phase: Math.random() * Math.PI * 2,
-          speed: 0.35 + Math.random() * 0.65,
-          radius: 0.8 + Math.random() * 1.8
-        });
+        const fGeo = folList[p % folList.length];
+        const pMesh = new THREE.Mesh(fGeo, plantMat);
+        pMesh.position.set(px, originY, pz);
+        pMesh.rotation.y = Math.random() * Math.PI * 2;
+        group.add(pMesh);
       }
-      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
-      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
 
-      const orbMat = new THREE.PointsMaterial({
-        size: 0.26,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.95,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const orbPoints = new THREE.Points(orbGeo, orbMat);
-      group.add(orbPoints);
-
-      // 9. Celestial Sky Dome & Radiant Sunbeams
-      const skyGeo = new THREE.SphereGeometry(65.0, 32, 24);
+      // 7. Bright Panoramic Sky Dome & Radiant Sun
+      const skyGeo = new THREE.SphereGeometry(85.0, 32, 24);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
-          uTopColor: { value: new THREE.Color(0x1d4ed8) },     // pure cobalt sky
-          uHorizonColor: { value: new THREE.Color(0x93c5fd) }, // bright azure horizon
-          uSunColor: { value: new THREE.Color(0xfffbeb) }      // bright radiant sun
+          uTopColor: { value: new THREE.Color(0x38bdf8) },     // radiant sky blue
+          uHorizonColor: { value: new THREE.Color(0xbae6fd) }, // soft pastel azure horizon
+          uSunColor: { value: new THREE.Color(0xfffbeb) }      // warm sunlight
         },
         vertexShader: `
           varying vec3 vWorldPos;
@@ -10716,11 +10569,12 @@ window.game = this;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.55));
-            vec3 sunDir = normalize(vec3(0.28, 0.82, -0.50));
+            vec3 sky = mix(uHorizonColor, uTopColor, pow(h, 0.60));
+            // Brilliant sun disc in open sky
+            vec3 sunDir = normalize(vec3(0.35, 0.78, -0.50));
             float sunDot = max(0.0, dot(dir, sunDir));
-            sky += uSunColor * pow(sunDot, 120.0) * 1.9;
-            sky += vec3(1.0, 0.95, 0.82) * pow(sunDot, 8.0) * 0.45;
+            sky += uSunColor * pow(sunDot, 128.0) * 1.8;
+            sky += vec3(1.0, 0.95, 0.8) * pow(sunDot, 8.0) * 0.35;
             gl_FragColor = vec4(sky, 1.0);
           }
         `,
@@ -10731,40 +10585,74 @@ window.game = this;
       skyDome.position.set(originX, originY, originZ);
       group.add(skyDome);
 
-      // Direct shining sunlight streaming through the cavern roof
-      const sunLight = new THREE.DirectionalLight(0xfffae0, 2.9);
-      sunLight.position.set(originX + 8.0, originY + 30.0, originZ - 15.0);
+      // Clean bright directional sunlight & natural ambient illumination
+      const sunLight = new THREE.DirectionalLight(0xfffbeb, 2.4);
+      sunLight.position.set(originX + 15.0, originY + 45.0, originZ - 20.0);
       sunLight.target.position.set(originX, originY, originZ);
       group.add(sunLight);
       group.add(sunLight.target);
 
-      const sanctuaryHemiLight = new THREE.HemisphereLight(0xbae6fd, 0x47553b, 1.45);
-      sanctuaryHemiLight.position.set(originX, originY + 20.0, originZ);
-      group.add(sanctuaryHemiLight);
+      const gardenHemiLight = new THREE.HemisphereLight(0xbae6fd, 0x60a5fa, 1.25);
+      gardenHemiLight.position.set(originX, originY + 25.0, originZ);
+      group.add(gardenHemiLight);
 
-      // Angled sunbeams pouring down through the archway opening (matching mockup)
-      const sunbeamGeo = new THREE.CylinderGeometry(5.2, 1.4, 22.0, 16, 1, true);
-      const beamTex = this.texLoader.load('assets/textures/portal_beam_flow.png', (tx) => {
-        tx.colorSpace = THREE.SRGBColorSpace;
-      });
-      const sunbeamMat = new THREE.MeshBasicMaterial({
-        map: beamTex,
-        color: 0xfffde8,
+      // 8. Soft Radiant Glowing Light Motes (Smooth circular particles with Gaussian falloff, NOT square pixels)
+      const motePalette = [
+        new THREE.Color(0x2dd4bf), // Teal
+        new THREE.Color(0x38bdf8), // Blue
+        new THREE.Color(0x4ade80), // Green
+        new THREE.Color(0xfacc15), // Yellow
+        new THREE.Color(0xf472b6), // Pink
+        new THREE.Color(0xc084fc)  // Purple
+      ];
+
+      const orbCount = 75;
+      const orbGeo = new THREE.BufferGeometry();
+      const orbPos = new Float32Array(orbCount * 3);
+      const orbColors = new Float32Array(orbCount * 3);
+      const orbData = [];
+
+      for (let i = 0; i < orbCount; i++) {
+        const ox = originX + (Math.random() - 0.5) * 48.0;
+        const oy = originY + 0.8 + Math.random() * 6.5;
+        const oz = originZ + (Math.random() - 0.5) * 48.0;
+
+        orbPos[i * 3]     = ox;
+        orbPos[i * 3 + 1] = oy;
+        orbPos[i * 3 + 2] = oz;
+
+        const col = motePalette[i % motePalette.length];
+        orbColors[i * 3]     = col.r;
+        orbColors[i * 3 + 1] = col.g;
+        orbColors[i * 3 + 2] = col.b;
+
+        orbData.push({
+          baseX: ox,
+          baseY: oy,
+          baseZ: oz,
+          phase: Math.random() * Math.PI * 2,
+          speed: 0.3 + Math.random() * 0.5,
+          radius: 0.8 + Math.random() * 1.5
+        });
+      }
+      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
+      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
+
+      const orbMat = new THREE.PointsMaterial({
+        size: 0.85,
+        map: moteGlowTex,
+        vertexColors: true,
         transparent: true,
-        opacity: 0.38,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
+        depthWrite: false
       });
-      const sunbeamMesh = new THREE.Mesh(sunbeamGeo, sunbeamMat);
-      sunbeamMesh.position.set(originX + 1.5, originY + 11.5, originZ - 3.5);
-      sunbeamMesh.rotation.x = 0.28;
-      sunbeamMesh.rotation.z = -0.18;
-      group.add(sunbeamMesh);
+      const orbPoints = new THREE.Points(orbGeo, orbMat);
+      group.add(orbPoints);
 
-      // 10. Ethereal Swirling Return Portal (Matching exact portal swirl in mockup)
+      // 9. Ethereal Return Portal cleanly situated in a peaceful grove
       const retPortalGroup = new THREE.Group();
-      const retPortalX = originX - 9.2;
+      const retPortalX = originX - 18.0;
       const retPortalY = originY + 2.5;
       const retPortalZ = originZ;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
@@ -10790,21 +10678,19 @@ window.game = this;
             float r = length(p);
             if (r > 1.0) discard;
             float angle = atan(p.y, p.x);
-            float swirl = angle + r * 5.2 - uTime * 2.4;
-            float rays = sin(angle * 7.0 + swirl * 2.0 + uTime * 2.8) * 0.5 + 0.5;
+            float swirl = angle + r * 4.8 - uTime * 2.2;
+            float rays = sin(angle * 6.0 + swirl * 2.0 + uTime * 2.5) * 0.5 + 0.5;
             float smoothEdge = cos(r * 1.5707963);
             
-            // Beautiful multi-color gradient matching mockup:
-            // Pale mint/turquoise center -> Azure blue mid -> Mystic violet outer rim
             vec3 cOuter = vec3(0.75, 0.52, 0.98); // violet
             vec3 cMid = vec3(0.22, 0.74, 0.97);   // cyan/azure
             vec3 cCenter = vec3(0.85, 1.0, 0.92); // radiant mint core
 
             vec3 col = mix(cOuter, cMid, smoothstep(0.82, 0.28, r));
             col = mix(col, cCenter, smoothstep(0.40, 0.0, r));
-            col += cCenter * (rays * 0.42);
+            col += cCenter * (rays * 0.38);
 
-            float alpha = smoothEdge * 0.96;
+            float alpha = smoothEdge * 0.95;
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -10814,14 +10700,14 @@ window.game = this;
         side: THREE.DoubleSide
       });
 
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8, 32, 32), retPortalShaderMat);
-      retDisc.rotation.y = Math.PI / 2; // Facing +X towards player in sanctuary
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(4.8, 4.8, 24, 24), retPortalShaderMat);
+      retDisc.rotation.y = Math.PI / 2; // Facing +X into garden
       retPortalGroup.add(retDisc);
 
       const retBurstMat = new THREE.MeshBasicMaterial({
         map: vortexTex,
         transparent: true,
-        opacity: 0.92,
+        opacity: 0.90,
         blending: THREE.AdditiveBlending,
         depthWrite: false,
         side: THREE.DoubleSide
@@ -10830,7 +10716,7 @@ window.game = this;
       retBurst.rotation.y = Math.PI / 2;
       retPortalGroup.add(retBurst);
 
-      const retLight = new THREE.PointLight(0x5eead4, 3.8, 16.0, 1.2);
+      const retLight = new THREE.PointLight(0x5eead4, 3.5, 16.0, 1.2);
       retLight.position.set(0.3, 0, 0);
       retPortalGroup.add(retLight);
 
@@ -10841,7 +10727,7 @@ window.game = this;
       } else {
         this.scene.add(group);
       }
-      group.visible = false; // Isolated until player enters
+      group.visible = false;
 
       this.safeRoomSanctuary = {
         group: group,
