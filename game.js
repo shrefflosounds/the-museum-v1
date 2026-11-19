@@ -18078,6 +18078,7 @@ window.game = this;
       const loader = new THREE.GLTFLoader();
       const assetCacheKey = window._ASSET_VERSION || Date.now();
       loader.load(`assets/LeftHand.glb?v=${assetCacheKey}`, (gltf) => {
+        console.log('LeftHand animations:', gltf.animations);
         this.leftHandMesh = gltf.scene;
         this.leftHandMesh.rotation.set(-0.48, 3.02, 0.04);
         this.leftHandMesh.scale.set(0.34, 0.34, 0.34);
