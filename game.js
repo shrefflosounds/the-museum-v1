@@ -18049,7 +18049,6 @@ window.game = this;
       const loader = new THREE.GLTFLoader();
       const assetCacheKey = window._ASSET_VERSION || Date.now();
       loader.load(`assets/PlayerHand.glb?v=${assetCacheKey}`, (gltf) => {
-        window.playerHandAnims = gltf.animations;
         this.weaponHandMesh = gltf.scene;
         this.weaponHandMesh.rotation.set(-0.76, -0.16, -0.12);
         this.weaponHandMesh.scale.set(0.34, 0.34, 0.34);
@@ -18079,7 +18078,6 @@ window.game = this;
       const loader = new THREE.GLTFLoader();
       const assetCacheKey = window._ASSET_VERSION || Date.now();
       loader.load(`assets/LeftHand.glb?v=${assetCacheKey}`, (gltf) => {
-        window.leftHandAnims = gltf.animations;
         this.leftHandMesh = gltf.scene;
         this.leftHandMesh.rotation.set(-0.48, 3.02, 0.04);
         this.leftHandMesh.scale.set(0.34, 0.34, 0.34);
@@ -22565,7 +22563,6 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
-        console.log('Punch animation active, timer:', this.leftHandPunchTimer);
         const dur = this.leftHandPunchDuration || 0.38;
         const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
 
@@ -22581,13 +22578,13 @@ window.game = this;
           punchWeight = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
         }
 
-        // Left arm thrusts forward, slightly inward towards center of screen with aggressive punch/swipe angle
-        const punchPoseX = -0.08;
-        const punchPoseY = -0.18;
-        const punchPoseZ = -0.72;
-        const punchRotX = -0.92;
-        const punchRotY = 0.65;
-        const punchRotZ = -1.15;
+        // Left arm thrusts forward and down in a scratch motion
+        const punchPoseX = 0.0;
+        const punchPoseY = -0.35;
+        const punchPoseZ = -0.9;
+        const punchRotX = -1.2;
+        const punchRotY = 0.5;
+        const punchRotZ = -1.5;
 
         targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
         targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
