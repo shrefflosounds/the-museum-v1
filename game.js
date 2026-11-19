@@ -241,14 +241,14 @@
         src.buffer = this.noiseBuffer;
         src.loop = true;
 
-        // Rich rushing water bandpass / lowpass combo
+        // Warm, soothing mountain water rush (no harsh white noise hiss)
         const lp = this.ctx.createBiquadFilter();
         lp.type = 'lowpass';
-        lp.frequency.value = 1100;
+        lp.frequency.value = 420;
 
         const hp = this.ctx.createBiquadFilter();
         hp.type = 'highpass';
-        hp.frequency.value = 180;
+        hp.frequency.value = 140;
 
         const gain = this.ctx.createGain();
         gain.gain.value = 0.0001;
@@ -10197,7 +10197,7 @@ window.game = this;
       };
     }
 
-    buildSafeRoomSanctuary() {
+                            buildSafeRoomSanctuary() {
       if (this.safeRoomSanctuary) return;
 
       const group = new THREE.Group();
@@ -10205,52 +10205,48 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Textures
+      // 1. Photorealistic Textures
       const floorTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(14, 14);
+        tx.repeat.set(10, 10);
       });
       const earthTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_earth.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(2, 14);
+        tx.repeat.set(5, 2);
       });
       const cliffTex = this.texLoader.load('assets/textures/sanctuary/chao_cliff.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(3, 5);
+        tx.repeat.set(4, 3);
       });
       const rockTex = this.texLoader.load('assets/textures/sanctuary/moss_rock.png', (tx) => {
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
         tx.repeat.set(2, 2);
       });
+      const vistaTex = this.texLoader.load('assets/textures/sanctuary/mountain_vista.jpg', (tx) => {
+        tx.wrapS = THREE.RepeatWrapping;
+        tx.offset.x = 0.22;
+      });
       const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(1, 2);
+        tx.repeat.set(1, 1);
       });
       const wfTex2 = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(1, 2);
-      });
-      const sandTex = this.texLoader.load('assets/textures/sanctuary/river_sand.png', (tx) => {
-        tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
-        tx.repeat.set(4, 4);
+        tx.repeat.set(1, 1);
       });
       const flowersTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_flowers.png');
-      const leafTex = this.texLoader.load('assets/textures/sanctuary/canopy_leaf.png');
-      const barkTex = this.texLoader.load('assets/textures/sanctuary/chao_bark.png');
       const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
-      const vortexTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
-      const ringTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png');
 
-      // 2. Boundless Mountain Sky Dome with Procedural Sunlight
-      const skyGeo = new THREE.SphereGeometry(160.0, 36, 24);
+      // 2. Boundless Mountain Sky Dome
+      const skyGeo = new THREE.SphereGeometry(180.0, 36, 24);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
-          uTopColor: { value: new THREE.Color(0x1d4ed8) },
+          uTopColor: { value: new THREE.Color(0x2563eb) },
           uMidColor: { value: new THREE.Color(0x60a5fa) },
           uHorizonColor: { value: new THREE.Color(0xdbeafe) },
-          uSunDir: { value: new THREE.Vector3(0.35, 0.72, -0.42).normalize() },
+          uSunDir: { value: new THREE.Vector3(0.40, 0.70, -0.35).normalize() },
           uSunColor: { value: new THREE.Color(0xfffbeb) }
         },
         vertexShader: `
@@ -10271,11 +10267,11 @@ window.game = this;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float h = clamp(dir.y, 0.0, 1.0);
-            vec3 sky = mix(uHorizonColor, uMidColor, pow(h, 0.42));
-            sky = mix(sky, uTopColor, pow(h, 1.75));
+            vec3 sky = mix(uHorizonColor, uMidColor, pow(h, 0.45));
+            sky = mix(sky, uTopColor, pow(h, 1.8));
 
             float sunDot = max(0.0, dot(dir, uSunDir));
-            float sunGlow = pow(sunDot, 12.0) * 0.45 + pow(sunDot, 120.0) * 0.90;
+            float sunGlow = pow(sunDot, 16.0) * 0.4 + pow(sunDot, 120.0) * 0.85;
             sky = mix(sky, uSunColor, clamp(sunGlow, 0.0, 1.0));
 
             gl_FragColor = vec4(sky, 1.0);
@@ -10288,113 +10284,31 @@ window.game = this;
       skyMesh.position.set(originX, originY, originZ);
       group.add(skyMesh);
 
-      // 3. Continuous Panoramic Distant Mountain Ridge Mesh (Realistic jagged alpine peaks and saddles)
-      const mountainRadius = 110.0;
-      const mountainArc = Math.PI * 0.92;
-      const mountainSegsX = 64;
-      const mountainSegsY = 16;
-      const mountainGeo = new THREE.CylinderGeometry(
-        mountainRadius,
-        mountainRadius,
-        44.0,
-        mountainSegsX,
-        mountainSegsY,
+      // 3. 360-Degree Panoramic Mountain Vista Horizon Cylinder (Seamless infinite height)
+      const vistaRadius = 155.0;
+      const vistaHeight = 220.0;
+      const vistaGeo = new THREE.CylinderGeometry(
+        vistaRadius,
+        vistaRadius,
+        vistaHeight,
+        64,
+        1,
         true,
-        -mountainArc * 0.5 - Math.PI * 0.5,
-        mountainArc
+        0,
+        Math.PI * 2
       );
-      mountainGeo.scale(-1, 1, 1);
-      const mPos = mountainGeo.attributes.position;
-      for (let i = 0; i < mPos.count; i++) {
-        const lx = mPos.getX(i);
-        const ly = mPos.getY(i);
-        const lz = mPos.getZ(i);
-        const normY = (ly + 22.0) / 44.0;
-
-        const angle = Math.atan2(lz, lx);
-        const ridgeH = (
-          Math.sin(angle * 3.5) * 7.5 +
-          Math.sin(angle * 7.2 + 1.2) * 4.5 +
-          Math.sin(angle * 14.0 - 0.7) * 2.2 +
-          Math.sin(angle * 28.0) * 1.1
-        );
-
-        if (normY > 0.15) {
-          const factor = Math.pow((normY - 0.15) / 0.85, 1.25);
-          mPos.setY(i, ly + ridgeH * factor);
-          const currentDist = Math.hypot(lx, lz);
-          const radialDisplacement = (Math.sin(angle * 10.5 + ly * 0.25) * 3.8) * factor;
-          const newDist = currentDist + radialDisplacement;
-          mPos.setX(i, (lx / currentDist) * newDist);
-          mPos.setZ(i, (lz / currentDist) * newDist);
-        }
-      }
-      mountainGeo.computeVertexNormals();
-
-      const mountainMat = new THREE.ShaderMaterial({
-        uniforms: {
-          uFogColor: { value: new THREE.Color(0xdbeafe) },
-          uPeakColor: { value: new THREE.Color(0x475569) },
-          uSunDir: { value: new THREE.Vector3(0.35, 0.72, -0.42).normalize() }
-        },
-        vertexShader: `
-          varying vec3 vWorldPos;
-          varying vec3 vNormal;
-          void main() {
-            vec4 wp = modelMatrix * vec4(position, 1.0);
-            vWorldPos = wp.xyz;
-            vNormal = normalize(normalMatrix * normal);
-            gl_Position = projectionMatrix * viewMatrix * wp;
-          }
-        `,
-        fragmentShader: `
-          uniform vec3 uFogColor;
-          uniform vec3 uPeakColor;
-          uniform vec3 uSunDir;
-          varying vec3 vWorldPos;
-          varying vec3 vNormal;
-          void main() {
-            float h = clamp((vWorldPos.y - 50.0) / 36.0, 0.0, 1.0);
-            float nDotL = max(0.28, dot(vNormal, uSunDir));
-            vec3 litRock = uPeakColor * (nDotL * 1.25);
-            vec3 col = mix(uFogColor, litRock, pow(h, 0.75));
-            gl_FragColor = vec4(col, 1.0);
-          }
-        `,
-        side: THREE.DoubleSide
-      });
-      const mountainMesh = new THREE.Mesh(mountainGeo, mountainMat);
-      mountainMesh.position.set(originX, originY + 14.0, originZ);
-      group.add(mountainMesh);
-
-      // 4. Soft Wispy Cloud Planes in Upper Sky
-      const cloudGroup = new THREE.Group();
-      const cloudGeo = new THREE.PlaneGeometry(80.0, 36.0, 1, 1);
-      cloudGeo.rotateX(-Math.PI / 2);
-      const cloudMat = new THREE.MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.76,
+      const vistaMat = new THREE.MeshBasicMaterial({
+        map: vistaTex,
+        side: THREE.BackSide,
         depthWrite: false
       });
-      const cloud1 = new THREE.Mesh(cloudGeo, cloudMat);
-      cloud1.position.set(originX + 25.0, originY + 65.0, originZ - 10.0);
-      cloudGroup.add(cloud1);
+      const vistaMesh = new THREE.Mesh(vistaGeo, vistaMat);
+      vistaMesh.position.set(originX, originY + 65.0, originZ);
+      group.add(vistaMesh);
 
-      const cloud2 = new THREE.Mesh(cloudGeo, cloudMat);
-      cloud2.scale.set(0.75, 1.0, 0.65);
-      cloud2.position.set(originX - 15.0, originY + 68.0, originZ - 35.0);
-      cloudGroup.add(cloud2);
-
-      const cloud3 = new THREE.Mesh(cloudGeo, cloudMat);
-      cloud3.scale.set(0.85, 1.0, 0.75);
-      cloud3.position.set(originX + 50.0, originY + 62.0, originZ + 20.0);
-      cloudGroup.add(cloud3);
-      group.add(cloudGroup);
-
-      // 5. Continuous Meadow Ground Mesh with Natural Rolling Contours
-      const groundW = 90.0;
-      const groundD = 90.0;
+      // 4. Continuous Meadow Ground Mesh with Natural Rolling Contours
+      const groundW = 95.0;
+      const groundD = 95.0;
       const groundSegs = 48;
       const groundGeo = new THREE.PlaneGeometry(groundW, groundD, groundSegs, groundSegs);
       groundGeo.rotateX(-Math.PI / 2);
@@ -10406,20 +10320,20 @@ window.game = this;
         const wz = originZ + lz;
 
         let h = 0.0;
-        // Left side rolling green hillside (slopes up smoothly to Y ~ 57.0)
-        if (lz < -3.5) {
-          const distL = Math.abs(lz + 3.5);
-          h += Math.min(7.2, Math.pow(distL * 0.15, 1.4) * 2.1);
+        // Left side rolling green hillside (slopes up smoothly at -Z to Y ~ 54.8)
+        if (lz < -2.0) {
+          const distL = Math.abs(lz + 2.0);
+          h += Math.min(5.5, Math.pow(distL * 0.12, 1.35) * 1.6);
         }
-        // Right side plunge pool depression (dips to Y ~ 49.5 at pool center)
-        if (lz > 5.0 && lx > 3.0) {
-          const distToPool = Math.hypot(wx - (originX + 17.5), wz - (originZ + 17.0));
+        // Right side plunge pool depression (dips at +Z to Y ~ 49.5 at pool center)
+        if (lz > 3.0 && lx > 2.0) {
+          const distToPool = Math.hypot(wx - (originX + 17.5), wz - (originZ + 14.0));
           if (distToPool < 9.5) {
-            h -= (1.0 - distToPool / 9.5) * 0.55;
+            h -= (1.0 - distToPool / 9.5) * 0.48;
           }
         }
         // Gentle organic micro-undulations across the glade
-        h += (Math.sin(wx * 0.12 + wz * 0.08) * 0.18 + Math.cos(wx * 0.06 - wz * 0.14) * 0.14);
+        h += (Math.sin(wx * 0.12 + wz * 0.08) * 0.12 + Math.cos(wx * 0.06 - wz * 0.14) * 0.10);
         gPos.setY(i, h);
       }
       groundGeo.computeVertexNormals();
@@ -10427,7 +10341,7 @@ window.game = this;
       const groundMat = new THREE.MeshStandardMaterial({
         map: floorTex,
         roughness: 0.85,
-        metalness: 0.02
+        metalness: 0.01
       });
       const groundMesh = new THREE.Mesh(groundGeo, groundMat);
       groundMesh.position.set(originX, originY, originZ);
@@ -10462,237 +10376,33 @@ window.game = this;
         });
       }
 
-      // Natural Dirt Trail
-      const trailGeo = new THREE.PlaneGeometry(42.0, 4.2, 32, 4);
+      // Natural Dirt Trail in Center curving gently forward
+      const trailGeo = new THREE.PlaneGeometry(38.0, 3.2, 32, 4);
       trailGeo.rotateX(-Math.PI / 2);
       const tPos = trailGeo.attributes.position;
       for (let i = 0; i < tPos.count; i++) {
         const tx = tPos.getX(i);
-        const normX = (tx + 21.0) / 42.0;
-        const targetZ = Math.sin(normX * Math.PI * 0.85) * 1.6;
-        tPos.setZ(i, tPos.getZ(i) + targetZ + Math.sin(tx * 1.2) * 0.2);
+        const normX = (tx + 19.0) / 38.0;
+        const targetZ = Math.sin(normX * Math.PI * 0.85) * 1.4;
+        tPos.setZ(i, tPos.getZ(i) + targetZ + Math.sin(tx * 1.1) * 0.15);
       }
       trailGeo.computeVertexNormals();
       const trailMat = new THREE.MeshStandardMaterial({
         map: earthTex,
-        roughness: 0.92,
-        metalness: 0.02
+        roughness: 0.90,
+        metalness: 0.01
       });
       const trailMesh = new THREE.Mesh(trailGeo, trailMat);
-      trailMesh.position.set(originX + 13.0, originY + 0.04, originZ);
+      trailMesh.position.set(originX + 10.0, originY + 0.03, originZ);
       group.add(trailMesh);
 
-      // 6. Continuous Stratified Rock Cliff Face (Right Side)
-      const cliffRadius = 18.0;
-      const cliffHeight = 28.0;
-      const cliffSegsU = 36;
-      const cliffSegsV = 24;
-      const cliffGeo = new THREE.CylinderGeometry(
-        cliffRadius * 0.92,
-        cliffRadius,
-        cliffHeight,
-        cliffSegsU,
-        cliffSegsV,
-        true,
-        Math.PI * 0.04,
-        Math.PI * 0.74
-      );
-      cliffGeo.scale(-1, 1, 1);
-      const cPos = cliffGeo.attributes.position;
-      for (let i = 0; i < cPos.count; i++) {
-        const cx = cPos.getX(i);
-        const cy = cPos.getY(i);
-        const cz = cPos.getZ(i);
-        const normY = (cy + cliffHeight * 0.5) / cliffHeight;
-
-        let shelfRecede = 0.0;
-        if (normY > 0.42) {
-          shelfRecede = Math.min(3.5, (normY - 0.42) * 11.0);
-        }
-
-        const angle = Math.atan2(cz, cx);
-        const cragNoise = (
-          Math.sin(angle * 6.0 + cy * 0.35) * 1.8 +
-          Math.sin(angle * 12.0 - cy * 0.8) * 0.85 +
-          Math.sin(cy * 1.8) * 0.55
-        );
-
-        const currentDist = Math.hypot(cx, cz);
-        const newDist = currentDist + shelfRecede + cragNoise;
-        cPos.setX(i, (cx / currentDist) * newDist);
-        cPos.setZ(i, (cz / currentDist) * newDist);
-      }
-      cliffGeo.computeVertexNormals();
-
-      const cliffMat = new THREE.MeshStandardMaterial({
-        map: cliffTex,
-        roughness: 0.86,
-        metalness: 0.04
-      });
-      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
-      cliffMesh.position.set(originX + 21.0, originY + cliffHeight * 0.5, originZ + 20.0);
-      group.add(cliffMesh);
-
-      // 7. Multi-Tier Cascading Waterfall
-      const wfGroup = new THREE.Group();
-
-      // (A) Upper Waterfall Cascade (Y = originY + 25.5 down to Y = originY + 12.5)
-      const wfUpGeo = new THREE.PlaneGeometry(6.5, 13.0, 12, 12);
-      const wfUpMat = new THREE.MeshBasicMaterial({
-        map: wfTex,
-        transparent: true,
-        opacity: 0.86,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
-      const wfUpMesh = new THREE.Mesh(wfUpGeo, wfUpMat);
-      wfUpMesh.rotation.y = -Math.PI * 0.45;
-      wfUpMesh.rotation.z = -0.10;
-      wfUpMesh.position.set(originX + 23.5, originY + 19.0, originZ + 24.0);
-      wfGroup.add(wfUpMesh);
-
-      // (B) Mid-Ledge Impact Foam & Splash Plane
-      const splashGeo = new THREE.CircleGeometry(4.2, 16);
-      splashGeo.rotateX(-Math.PI / 2);
-      const splashMat = new THREE.MeshBasicMaterial({
-        map: wfTex,
-        transparent: true,
-        opacity: 0.72,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const splashMesh = new THREE.Mesh(splashGeo, splashMat);
-      splashMesh.position.set(originX + 23.5, originY + 12.6, originZ + 22.0);
-      wfGroup.add(splashMesh);
-
-      // (C) Lower Waterfall Cascades (Main & Secondary into plunge pool)
-      const wfLowGeo1 = new THREE.PlaneGeometry(8.2, 12.5, 14, 14);
-      const wfLowMat1 = new THREE.MeshBasicMaterial({
-        map: wfTex,
-        transparent: true,
-        opacity: 0.88,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
-      const wfLowMesh1 = new THREE.Mesh(wfLowGeo1, wfLowMat1);
-      wfLowMesh1.rotation.y = -Math.PI * 0.42;
-      wfLowMesh1.rotation.z = -0.06;
-      wfLowMesh1.position.set(originX + 20.5, originY + 6.3, originZ + 21.2);
-      wfGroup.add(wfLowMesh1);
-
-      const wfLowGeo2 = new THREE.PlaneGeometry(5.4, 12.5, 10, 12);
-      const wfLowMat2 = new THREE.MeshBasicMaterial({
-        map: wfTex2,
-        transparent: true,
-        opacity: 0.82,
-        blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
-        depthWrite: false
-      });
-      const wfLowMesh2 = new THREE.Mesh(wfLowGeo2, wfLowMat2);
-      wfLowMesh2.rotation.y = -Math.PI * 0.38;
-      wfLowMesh2.rotation.z = -0.05;
-      wfLowMesh2.position.set(originX + 24.5, originY + 6.3, originZ + 18.0);
-      wfGroup.add(wfLowMesh2);
-
-      const foamGeo1 = new THREE.CircleGeometry(4.8, 16);
-      foamGeo1.rotateX(-Math.PI / 2);
-      const foamMat = new THREE.MeshBasicMaterial({
-        map: wfTex,
-        transparent: true,
-        opacity: 0.70,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const foamMesh1 = new THREE.Mesh(foamGeo1, foamMat);
-      foamMesh1.position.set(originX + 20.0, originY + 0.12, originZ + 20.5);
-      wfGroup.add(foamMesh1);
-
-      group.add(wfGroup);
-
-      // 8. Plunge Pool & Shoreline
-      const poolGroup = new THREE.Group();
-      const poolCenter = { x: originX + 17.5, z: originZ + 17.0 };
-
-      // Sandy bed under water
-      const sandGeo = new THREE.CircleGeometry(9.4, 32);
-      sandGeo.rotateX(-Math.PI / 2);
-      const sandMat = new THREE.MeshStandardMaterial({
-        map: sandTex,
-        roughness: 0.90,
-        metalness: 0.02
-      });
-      const sandMesh = new THREE.Mesh(sandGeo, sandMat);
-      sandMesh.position.set(poolCenter.x, originY - 0.42, poolCenter.z);
-      poolGroup.add(sandMesh);
-
-      // Shimmering clear water surface
-      const poolGeo = new THREE.CircleGeometry(9.2, 32);
-      poolGeo.rotateX(-Math.PI / 2);
-      const poolMat = new THREE.MeshStandardMaterial({
-        color: 0x0284c7,
-        roughness: 0.05,
-        metalness: 0.38,
-        transparent: true,
-        opacity: 0.76
-      });
-      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
-      poolMesh.position.set(poolCenter.x, originY + 0.08, poolCenter.z);
-      poolGroup.add(poolMesh);
-      group.add(poolGroup);
-
-      // Rising Waterfall Mist & Spray
-      const mistCount = 65;
-      const mistGeo = new THREE.BufferGeometry();
-      const mistPos = new Float32Array(mistCount * 3);
-      const mistVel = [];
-      for (let i = 0; i < mistCount; i++) {
-        mistPos[i * 3]     = originX + 20.5 + (Math.random() - 0.5) * 8.0;
-        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 5.0;
-        mistPos[i * 3 + 2] = originZ + 20.5 + (Math.random() - 0.5) * 8.0;
-        mistVel.push({
-          vx: (Math.random() - 0.5) * 0.35,
-          vy: 0.35 + Math.random() * 0.65,
-          vz: (Math.random() - 0.5) * 0.35
-        });
-      }
-      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
-      const mistMat = new THREE.PointsMaterial({
-        size: 2.8,
-        map: moteTex,
-        color: 0xe0f2fe,
-        transparent: true,
-        opacity: 0.30,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const mistPoints = new THREE.Points(mistGeo, mistMat);
-      group.add(mistPoints);
-
-      // 9. Warm Directional Sunlight & Glade Illumination
-      const sunLight = new THREE.DirectionalLight(0xfffae0, 2.4);
-      sunLight.position.set(originX + 20.0, originY + 55.0, originZ - 25.0);
-      sunLight.target.position.set(originX + 15.0, originY, originZ + 5.0);
-      group.add(sunLight);
-      group.add(sunLight.target);
-
-      const hemiLight = new THREE.HemisphereLight(0xbbe4fe, 0x475f28, 1.35);
-      hemiLight.position.set(originX, originY + 35.0, originZ);
-      group.add(hemiLight);
-
-      const poolLight = new THREE.PointLight(0x38bdf8, 1.8, 22.0, 1.2);
-      poolLight.position.set(poolCenter.x, originY + 2.5, poolCenter.z);
-      group.add(poolLight);
-
-      // 10. Left Side: Ethereal Floating Return Portal Vortex
+      // 5. Left Side: Ethereal Floating Return Portal Vortex (-Z, screen left)
       const retPortalGroup = new THREE.Group();
-      const retPortalX = originX + 5.0;
-      const retPortalY = originY + 2.2;
-      const retPortalZ = originZ - 9.0;
+      const retPortalX = originX + 7.5;
+      const retPortalY = originY + 2.4;
+      const retPortalZ = originZ - 8.2;
       retPortalGroup.position.set(retPortalX, retPortalY, retPortalZ);
-      retPortalGroup.rotation.y = -0.72;
+      retPortalGroup.lookAt(originX - 5.5, originY + CONFIG.PLAYER.CAMERA_HEIGHT, originZ);
 
       // Outer Glowing Torus Energy Ring
       const torusGeo = new THREE.TorusGeometry(3.3, 0.28, 20, 48);
@@ -10734,9 +10444,10 @@ window.game = this;
 
             vec3 col = mix(cOuter, cMid, smoothstep(0.85, 0.25, r));
             col = mix(col, cCenter, smoothstep(0.38, 0.0, r));
-            col += cCenter * (rays * 0.45);
+            col += cCenter * (rays * 0.35);
 
-            float alpha = smoothEdge * 0.94;
+            // Clean circular edge fade with completely translucent center eye
+            float alpha = smoothEdge * 0.85 * smoothstep(0.12, 0.42, r);
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -10745,35 +10456,11 @@ window.game = this;
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4, 24, 24), retPortalShaderMat);
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.6, 5.6, 24, 24), retPortalShaderMat);
       retPortalGroup.add(retDisc);
 
-      const retBurstMat = new THREE.MeshBasicMaterial({
-        map: vortexTex,
-        transparent: true,
-        opacity: 0.90,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const retBurst = new THREE.Mesh(new THREE.PlaneGeometry(6.6, 6.6), retBurstMat);
-      retPortalGroup.add(retBurst);
-
-      const retRingMat = new THREE.MeshBasicMaterial({
-        map: ringTex,
-        transparent: true,
-        opacity: 0.88,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false,
-        side: THREE.DoubleSide
-      });
-      const retRing = new THREE.Mesh(new THREE.PlaneGeometry(7.6, 7.6), retRingMat);
-      retPortalGroup.add(retRing);
-
-      const retLight = new THREE.PointLight(0x5eead4, 3.8, 18.0, 1.2);
-      retLight.position.set(0, 0, 0.35);
-      retPortalGroup.add(retLight);
-
+      const retGlowLight = new THREE.PointLight(0x5eead4, 1.8, 16.0, 1.3);
+      retPortalGroup.add(retGlowLight);
       group.add(retPortalGroup);
 
       // Swirling sparkles around the portal
@@ -10782,16 +10469,19 @@ window.game = this;
       const portalMotePos = new Float32Array(portalMoteCount * 3);
       const portalMoteData = [];
       for (let i = 0; i < portalMoteCount; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const rad = 1.2 + Math.random() * 3.2;
+        const py = (Math.random() - 0.5) * 3.4;
+        portalMotePos[i * 3]     = retPortalX + Math.cos(angle) * rad;
+        portalMotePos[i * 3 + 1] = retPortalY + py;
+        portalMotePos[i * 3 + 2] = retPortalZ + Math.sin(angle) * rad;
         portalMoteData.push({
-          angle: Math.random() * Math.PI * 2,
-          radius: 1.8 + Math.random() * 2.8,
-          speed: 0.8 + Math.random() * 1.4,
-          zOffset: (Math.random() - 0.5) * 1.6,
-          yDrift: (Math.random() - 0.5) * 0.8
+          angle: angle,
+          rad: rad,
+          baseY: retPortalY + py,
+          speed: 0.6 + Math.random() * 0.8,
+          wobbleFreq: 1.5 + Math.random() * 2.0
         });
-        portalMotePos[i * 3]     = retPortalX;
-        portalMotePos[i * 3 + 1] = retPortalY;
-        portalMotePos[i * 3 + 2] = retPortalZ;
       }
       portalMoteGeo.setAttribute('position', new THREE.BufferAttribute(portalMotePos, 3));
       const portalMoteMat = new THREE.PointsMaterial({
@@ -10806,85 +10496,268 @@ window.game = this;
       const portalMotePoints = new THREE.Points(portalMoteGeo, portalMoteMat);
       group.add(portalMotePoints);
 
-      // 11. Natural Trees on Hillside and Cliff Top
-      const treeGroup = new THREE.Group();
-      const treeLocs = [
-        [originX + 2.0, originZ - 20.0, 6.5],
-        [originX + 12.0, originZ - 26.0, 8.0],
-        [originX + 22.0, originZ - 32.0, 9.5],
-        [originX + 27.0, originZ + 28.0, 7.5]
-      ];
-      const trunkMat = new THREE.MeshStandardMaterial({
-        map: barkTex,
-        roughness: 0.90,
-        metalness: 0.05
-      });
-      const canopyMat = new THREE.MeshStandardMaterial({
-        map: leafTex,
-        roughness: 0.82,
-        metalness: 0.02
-      });
+      // 6. Continuous Stratified Granite Rock Cliff Face (Directly behind waterfall, +Z)
+      const cliffRadius = 18.0;
+      const cliffHeight = 32.0;
+      const cliffSegsU = 36;
+      const cliffSegsV = 24;
+      const cliffGeo = new THREE.CylinderGeometry(
+        cliffRadius * 0.90,
+        cliffRadius,
+        cliffHeight,
+        cliffSegsU,
+        cliffSegsV,
+        true,
+        Math.PI * 0.08,
+        Math.PI * 0.82
+      );
+      cliffGeo.scale(-1, 1, 1);
+      const cPos = cliffGeo.attributes.position;
+      for (let i = 0; i < cPos.count; i++) {
+        const cx = cPos.getX(i);
+        const cy = cPos.getY(i);
+        const cz = cPos.getZ(i);
+        const normY = (cy + cliffHeight * 0.5) / cliffHeight;
 
-      for (let i = 0; i < treeLocs.length; i++) {
-        const [tx, tz, th] = treeLocs[i];
-        const trunkGeo = new THREE.CylinderGeometry(0.3, 0.55, th * 0.45, 8);
-        const trunkMesh = new THREE.Mesh(trunkGeo, trunkMat);
-        trunkMesh.position.set(tx, originY + th * 0.22, tz);
-        treeGroup.add(trunkMesh);
-
-        for (let t = 0; t < 3; t++) {
-          const coneH = th * 0.35;
-          const coneR = (3 - t) * 0.9 + 1.1;
-          const coneGeo = new THREE.ConeGeometry(coneR, coneH, 8);
-          const coneMesh = new THREE.Mesh(coneGeo, canopyMat);
-          coneMesh.position.set(tx, originY + th * 0.35 + t * (coneH * 0.65), tz);
-          treeGroup.add(coneMesh);
+        let shelfRecede = 0.0;
+        if (normY > 0.38) {
+          shelfRecede = Math.min(3.5, (normY - 0.38) * 4.2);
         }
-      }
-      group.add(treeGroup);
 
-      // 12. Natural Wildflowers & Foliage (Framing foreground view)
+        const angle = Math.atan2(cz, cx);
+        const rockBulge = Math.sin(angle * 7.0) * 0.65 + Math.cos(cy * 0.5) * 0.45;
+
+        const currentDist = Math.hypot(cx, cz);
+        const newDist = currentDist - shelfRecede + rockBulge;
+        cPos.setX(i, (cx / currentDist) * newDist);
+        cPos.setZ(i, (cz / currentDist) * newDist);
+      }
+      cliffGeo.computeVertexNormals();
+
+      const cliffMat = new THREE.MeshStandardMaterial({
+        map: cliffTex,
+        roughness: 0.88,
+        metalness: 0.03
+      });
+      const cliffMesh = new THREE.Mesh(cliffGeo, cliffMat);
+      cliffMesh.position.set(originX + 22.0, originY + cliffHeight * 0.5, originZ + 16.0);
+      group.add(cliffMesh);
+
+      // Boulders and rocks surrounding the plunge pool on the right
+      const rockGroup = new THREE.Group();
+      const rockMat = new THREE.MeshStandardMaterial({
+        map: rockTex,
+        roughness: 0.85,
+        metalness: 0.03
+      });
+      const rockCoords = [
+        [originX + 13.0, originZ + 9.5, 1.5, 0.9],
+        [originX + 11.5, originZ + 12.0, 1.2, 0.7],
+        [originX + 11.8, originZ + 16.5, 1.7, 1.1],
+        [originX + 14.5, originZ + 21.0, 1.9, 1.3],
+        [originX + 21.0, originZ + 8.5, 1.6, 1.0],
+        [originX + 24.0, originZ + 11.0, 2.2, 1.4]
+      ];
+      for (let r = 0; r < rockCoords.length; r++) {
+        const [rx, rz, rs, rh] = rockCoords[r];
+        const rGeo = new THREE.DodecahedronGeometry(rs, 1);
+        rGeo.scale(1.0, rh / rs, 0.85);
+        const rMesh = new THREE.Mesh(rGeo, rockMat);
+        rMesh.position.set(rx, originY + rh * 0.35, rz);
+        rMesh.rotation.set(r * 0.4, r * 1.1, r * 0.3);
+        rockGroup.add(rMesh);
+      }
+      group.add(rockGroup);
+
+      // 7. Multi-Tier Cascading Waterfall (Right Side, cascading down the cliff face)
+      const wfGroup = new THREE.Group();
+
+      // (A) Upper Waterfall Cascade
+      const wfUpGeo = new THREE.PlaneGeometry(6.5, 14.0, 12, 12);
+      const wfUpMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.94,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfUpMesh = new THREE.Mesh(wfUpGeo, wfUpMat);
+      wfUpMesh.rotation.y = -Math.PI * 0.42;
+      wfUpMesh.rotation.z = -0.08;
+      wfUpMesh.position.set(originX + 22.5, originY + 20.0, originZ + 17.5);
+      wfGroup.add(wfUpMesh);
+
+      // (B) Mid-Ledge Impact Foam & Splash Plane
+      const splashGeo = new THREE.CircleGeometry(4.2, 16);
+      splashGeo.rotateX(-Math.PI / 2);
+      const splashMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const splashMesh = new THREE.Mesh(splashGeo, splashMat);
+      splashMesh.position.set(originX + 21.8, originY + 13.0, originZ + 16.5);
+      wfGroup.add(splashMesh);
+
+      // (C) Lower Waterfall Cascades (Main & Secondary plunging into pool)
+      const wfLowGeo1 = new THREE.PlaneGeometry(8.0, 13.0, 14, 14);
+      const wfLowMat1 = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.95,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfLowMesh1 = new THREE.Mesh(wfLowGeo1, wfLowMat1);
+      wfLowMesh1.rotation.y = -Math.PI * 0.40;
+      wfLowMesh1.rotation.z = -0.05;
+      wfLowMesh1.position.set(originX + 19.5, originY + 6.5, originZ + 15.8);
+      wfGroup.add(wfLowMesh1);
+
+      const wfLowGeo2 = new THREE.PlaneGeometry(5.2, 13.0, 10, 12);
+      const wfLowMat2 = new THREE.MeshBasicMaterial({
+        map: wfTex2,
+        transparent: true,
+        opacity: 0.90,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const wfLowMesh2 = new THREE.Mesh(wfLowGeo2, wfLowMat2);
+      wfLowMesh2.rotation.y = -Math.PI * 0.35;
+      wfLowMesh2.rotation.z = -0.04;
+      wfLowMesh2.position.set(originX + 23.0, originY + 6.5, originZ + 13.0);
+      wfGroup.add(wfLowMesh2);
+
+      const foamGeo1 = new THREE.CircleGeometry(5.2, 16);
+      foamGeo1.rotateX(-Math.PI / 2);
+      const foamMat = new THREE.MeshBasicMaterial({
+        map: wfTex,
+        transparent: true,
+        opacity: 0.72,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const foamMesh1 = new THREE.Mesh(foamGeo1, foamMat);
+      foamMesh1.position.set(originX + 19.0, originY + 0.12, originZ + 15.2);
+      wfGroup.add(foamMesh1);
+
+      group.add(wfGroup);
+
+      // 8. Plunge Pool & Shoreline on Right Side (+Z)
+      const poolGroup = new THREE.Group();
+      const poolCenter = { x: originX + 17.5, z: originZ + 14.5 };
+
+      // Deep, clear turquoise mountain plunge pool
+      const poolGeo = new THREE.CircleGeometry(8.8, 32);
+      poolGeo.rotateX(-Math.PI / 2);
+      const poolMat = new THREE.MeshStandardMaterial({
+        color: 0x0369a1,
+        roughness: 0.06,
+        metalness: 0.25,
+        transparent: true,
+        opacity: 0.78
+      });
+      const poolMesh = new THREE.Mesh(poolGeo, poolMat);
+      poolMesh.position.set(poolCenter.x, originY + 0.08, poolCenter.z);
+      poolGroup.add(poolMesh);
+      group.add(poolGroup);
+
+      // Rising Waterfall Mist & Spray
+      const mistCount = 65;
+      const mistGeo = new THREE.BufferGeometry();
+      const mistPos = new Float32Array(mistCount * 3);
+      const mistVel = [];
+      for (let i = 0; i < mistCount; i++) {
+        mistPos[i * 3]     = originX + 19.5 + (Math.random() - 0.5) * 7.0;
+        mistPos[i * 3 + 1] = originY + 0.2 + Math.random() * 5.0;
+        mistPos[i * 3 + 2] = originZ + 15.0 + (Math.random() - 0.5) * 7.0;
+        mistVel.push({
+          vx: (Math.random() - 0.5) * 0.35,
+          vy: 0.35 + Math.random() * 0.65,
+          vz: (Math.random() - 0.5) * 0.35
+        });
+      }
+      mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
+      const mistMat = new THREE.PointsMaterial({
+        size: 2.8,
+        map: moteTex,
+        color: 0xe0f2fe,
+        transparent: true,
+        opacity: 0.32,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const mistPoints = new THREE.Points(mistGeo, mistMat);
+      group.add(mistPoints);
+
+      // 9. Natural Balanced Sunlight & Glade Illumination
+      const sunLight = new THREE.DirectionalLight(0xfff7e6, 1.20);
+      sunLight.position.set(originX + 20.0, originY + 50.0, originZ - 20.0);
+      sunLight.target.position.set(originX + 15.0, originY, originZ);
+      group.add(sunLight);
+      group.add(sunLight.target);
+
+      const hemiLight = new THREE.HemisphereLight(0xbae6fd, 0x3f6212, 0.82);
+      hemiLight.position.set(originX, originY + 35.0, originZ);
+      group.add(hemiLight);
+
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.35);
+      group.add(ambLight);
+
+      const poolLight = new THREE.PointLight(0x38bdf8, 1.1, 18.0, 1.2);
+      poolLight.position.set(poolCenter.x, originY + 2.5, poolCenter.z);
+      group.add(poolLight);
+
+      // 10. Photorealistic Botanical Wildflowers & Foliage (Framing foreground view)
       const floraGroup = new THREE.Group();
       const floraPlacements = [
-        [originX - 3.8, originZ - 3.2, 1.1],
-        [originX - 3.2, originZ - 2.6, 0.9],
-        [originX - 2.4, originZ - 2.8, 1.0],
-        [originX - 1.6, originZ - 2.2, 0.8],
-        [originX - 3.8, originZ + 3.2, 1.1],
-        [originX - 3.0, originZ + 2.5, 0.95],
-        [originX - 2.2, originZ + 2.8, 1.05],
-        [originX - 1.5, originZ + 2.0, 0.8],
-        [originX + 1.0, originZ - 2.2, 0.85],
-        [originX + 4.5, originZ - 2.4, 0.9],
-        [originX + 2.0, originZ + 2.2, 0.85],
-        [originX + 6.5, originZ + 2.4, 0.9],
-        [originX + 11.0, originZ + 8.5, 0.9],
-        [originX + 14.0, originZ + 7.5, 0.85]
+        // Left Foreground framing (-Z)
+        [originX - 3.8, originZ - 2.8, 1.4, 0.2],
+        [originX - 3.2, originZ - 2.2, 1.2, -0.4],
+        [originX - 2.4, originZ - 2.6, 1.3, 0.5],
+        [originX - 1.6, originZ - 2.2, 1.0, 0.1],
+        // Right Foreground framing (+Z)
+        [originX - 3.8, originZ + 2.8, 1.4, -0.3],
+        [originX - 3.0, originZ + 2.2, 1.25, 0.4],
+        [originX - 2.2, originZ + 2.5, 1.3, -0.2],
+        [originX - 1.5, originZ + 2.0, 1.05, 0.3],
+        // Trailside and pool edge accents
+        [originX + 2.5, originZ - 1.8, 1.1, 0.6],
+        [originX + 5.5, originZ - 1.5, 1.15, -0.5],
+        [originX + 3.5, originZ + 1.8, 1.1, 0.2],
+        [originX + 7.2, originZ + 2.0, 1.15, -0.4],
+        [originX + 11.5, originZ + 6.5, 1.2, 0.3],
+        [originX + 13.5, originZ + 7.0, 1.2, -0.2]
       ];
       const floraMat = new THREE.MeshStandardMaterial({
         map: flowersTex,
         transparent: true,
-        roughness: 0.82,
+        alphaTest: 0.18,
+        roughness: 0.80,
         metalness: 0.02,
         side: THREE.DoubleSide,
-        depthWrite: false
+        depthWrite: true
       });
       for (let i = 0; i < floraPlacements.length; i++) {
-        const [fx, fz, fs] = floraPlacements[i];
-        const p1 = new THREE.PlaneGeometry(fs * 1.2, fs * 1.0);
+        const [fx, fz, fs, fRot] = floraPlacements[i];
+        const p1 = new THREE.PlaneGeometry(fs * 1.3, fs * 1.2);
         const m1 = new THREE.Mesh(p1, floraMat);
-        m1.position.set(fx, originY + fs * 0.5, fz);
+        m1.position.set(fx, originY + fs * 0.55, fz);
+        m1.rotation.y = fRot;
         floraGroup.add(m1);
 
         const p2 = p1.clone();
-        p2.rotateY(Math.PI * 0.5);
+        p2.rotateY(Math.PI * 0.45);
         const m2 = new THREE.Mesh(p2, floraMat);
-        m2.position.set(fx, originY + fs * 0.5, fz);
+        m2.position.set(fx, originY + fs * 0.55, fz);
+        m2.rotation.y = fRot + Math.PI * 0.45;
         floraGroup.add(m2);
       }
       group.add(floraGroup);
 
-      // 13. Floating Glowing Pastel Motes
+      // 11. Floating Glowing Pastel Motes
       const motePalette = [
         new THREE.Color(0x2dd4bf),
         new THREE.Color(0x38bdf8),
@@ -10901,26 +10774,28 @@ window.game = this;
       const orbData = [];
 
       for (let i = 0; i < orbCount; i++) {
-        const ox = originX + (Math.random() - 0.5) * 32.0;
-        const oy = originY + 0.6 + Math.random() * 6.5;
-        const oz = originZ + (Math.random() - 0.5) * 30.0;
+        const ox = originX + (Math.random() - 0.5) * 45.0;
+        const oy = originY + 0.6 + Math.random() * 7.5;
+        const oz = originZ + (Math.random() - 0.5) * 45.0;
 
         orbPos[i * 3]     = ox;
         orbPos[i * 3 + 1] = oy;
         orbPos[i * 3 + 2] = oz;
 
-        const col = motePalette[i % motePalette.length];
-        orbColors[i * 3]     = col.r;
-        orbColors[i * 3 + 1] = col.g;
-        orbColors[i * 3 + 2] = col.b;
+        const c = motePalette[Math.floor(Math.random() * motePalette.length)];
+        orbColors[i * 3]     = c.r;
+        orbColors[i * 3 + 1] = c.g;
+        orbColors[i * 3 + 2] = c.b;
 
         orbData.push({
           baseX: ox,
           baseY: oy,
           baseZ: oz,
+          speedY: 0.2 + Math.random() * 0.35,
+          freqX: 0.6 + Math.random() * 1.2,
+          freqZ: 0.6 + Math.random() * 1.2,
           phase: Math.random() * Math.PI * 2,
-          speed: 0.35 + Math.random() * 0.45,
-          radius: 0.6 + Math.random() * 1.5
+          amp: 0.6 + Math.random() * 1.4
         });
       }
       orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
@@ -10954,14 +10829,11 @@ window.game = this;
         retPortalY: retPortalY,
         retPortalZ: retPortalZ,
         retDisc: retDisc,
-        retBurst: retBurst,
-        retRing: retRing,
         retPortalUniforms: retPortalUniforms,
         portalMotePoints: portalMotePoints,
         portalMoteData: portalMoteData,
         wfTex: wfTex,
         wfTex2: wfTex2,
-        cloudGroup: cloudGroup,
         mistPoints: mistPoints,
         mistVel: mistVel,
         orbPoints: orbPoints,
@@ -18113,7 +17985,8 @@ window.game = this;
             this.safeRoomSanctuary.group.visible = true;
           }
           if (this.audio && this.audio.setWaterfallVolume) {
-            this.audio.setWaterfallVolume(0.48, 1.2);
+            if (this.audio.pauseGameplayAudio) this.audio.pauseGameplayAudio();
+            this.audio.setWaterfallVolume(0.06, 1.2);
           }
           if (this.scene && this.scene.fog) {
             this._preSafeRoomFog = { color: this.scene.fog.color.getHex(), density: this.scene.fog.density };
@@ -18261,6 +18134,7 @@ window.game = this;
         }
         if (this.audio && this.audio.setWaterfallVolume) {
           this.audio.setWaterfallVolume(0.0, 0.8);
+          if (this.audio.resumeGameplayAudio) this.audio.resumeGameplayAudio();
         }
         if (this.scene) {
           if (this._activeSafeRoomFog) {
