@@ -10204,76 +10204,71 @@ window.game = this;
       const originY = 50.0;
       const originZ = 300.0;
 
-      // 1. Open Blue Sky & Atmosphere (Dreamy Lighting)
-      const skyGeo = new THREE.SphereGeometry(200, 32, 32);
-      const skyMat = new THREE.MeshBasicMaterial({ color: 0x87CEEB, side: THREE.BackSide, fog: false });
-      const skyMesh = new THREE.Mesh(skyGeo, skyMat);
-      group.add(skyMesh);
+      // 1. Atmosphere & Lighting: Multi-point ethereal light setup
+      const ambient = new THREE.AmbientLight(0xcceeff, 0.4);
+      group.add(ambient);
 
-      // Soft golden-hour sunlight
-      const sunLight = new THREE.DirectionalLight(0xfff7d6, 1.5);
-      sunLight.position.set(50, 100, 50);
-      group.add(sunLight);
-      group.add(new THREE.AmbientLight(0xffffff, 0.8));
+      const lightTeal = new THREE.PointLight(0x008080, 2.0, 100);
+      lightTeal.position.set(originX - 30, originY + 20, originZ);
+      group.add(lightTeal);
 
-      // 2. Walkable Ground (Open natural clearing)
-      const groundGeo = new THREE.CircleGeometry(60, 64);
-      groundGeo.rotateX(-Math.PI / 2);
-      const groundTex = this.texLoader.load('assets/textures/sanctuary/meadow_ground.png');
+      const lightPink = new THREE.PointLight(0xFF69B4, 1.5, 100);
+      lightPink.position.set(originX + 30, originY + 20, originZ);
+      group.add(lightPink);
+
+      const sun = new THREE.DirectionalLight(0xfff7d6, 1.2);
+      sun.position.set(20, 100, 20);
+      group.add(sun);
+
+      // 2. Complex terrain: Layers of ground with moss and cliff textures
+      const groundTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_floor_moss.png');
       groundTex.wrapS = groundTex.wrapT = THREE.RepeatWrapping;
-      groundTex.repeat.set(5, 5);
-      const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, color: 0x6b8e23 });
-      const groundMesh = new THREE.Mesh(groundGeo, groundMat);
-      groundMesh.position.set(originX, originY, originZ);
-      groundMesh.receiveShadow = true;
-      group.add(groundMesh);
+      groundTex.repeat.set(20, 20);
+      const groundMat = new THREE.MeshStandardMaterial({ map: groundTex, side: THREE.DoubleSide });
+      
+      // Multi-layered terrain for depth
+      for (let i = 0; i < 3; i++) {
+        const geo = new THREE.CircleGeometry(60 - i * 5, 64);
+        geo.rotateX(-Math.PI / 2);
+        const mesh = new THREE.Mesh(geo, groundMat);
+        mesh.position.set(originX, originY - i * 0.5, originZ);
+        group.add(mesh);
+      }
 
-      // 3. Gorgeous Rushing Waterfall (Right)
-      const wfGeo = new THREE.PlaneGeometry(20, 30);
+      // 3. Waterfall: Layered planes for volume and mist
       const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png');
-      wfTex.wrapT = THREE.RepeatWrapping;
-      const wfMat = new THREE.MeshBasicMaterial({ map: wfTex, transparent: true, side: THREE.DoubleSide, opacity: 0.8 });
-      const wfMesh = new THREE.Mesh(wfGeo, wfMat);
-      wfMesh.position.set(originX + 45, originY + 15, originZ + 5);
-      wfMesh.rotation.y = -Math.PI / 2;
-      group.add(wfMesh);
+      const wfMat = new THREE.MeshBasicMaterial({ map: wfTex, transparent: true, side: THREE.DoubleSide, opacity: 0.7, blending: THREE.AdditiveBlending });
+      for (let i = 0; i < 3; i++) {
+        const wfGeo = new THREE.PlaneGeometry(20 + i * 2, 30 + i * 5);
+        const wfMesh = new THREE.Mesh(wfGeo, wfMat);
+        wfMesh.position.set(originX + 45, originY + 15, originZ + 5 + i * 0.5);
+        wfMesh.rotation.y = -Math.PI / 2;
+        group.add(wfMesh);
+      }
 
-      // 4. Portal (Left) - Using Ethereal vortex texture
+      // 4. Portal: Additive blended portal vortex
       const portalTex = this.texLoader.load('assets/textures/sanctuary/nature_portal_vortex.png');
-      const portalGeo = new THREE.TorusGeometry(7, 0.4, 16, 64);
-      const portalMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true, blending: THREE.AdditiveBlending });
+      const portalMat = new THREE.MeshBasicMaterial({ map: portalTex, transparent: true, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
+      const portalGeo = new THREE.TorusGeometry(9, 0.8, 32, 64);
       const portalMesh = new THREE.Mesh(portalGeo, portalMat);
-      portalMesh.position.set(originX - 45, originY + 7, originZ);
+      portalMesh.position.set(originX - 45, originY + 8, originZ);
       group.add(portalMesh);
 
-      // 5. Ethereal Motes (The floating colors: teal, blue, green, yellow, pink, purple)
-      const moteGeo = new THREE.BufferGeometry();
-      const count = 150;
-      const positions = new Float32Array(count * 3);
-      const colors = new Float32Array(count * 3);
-      const palette = [
-        new THREE.Color(0x008080), // Teal
-        new THREE.Color(0x0000FF), // Blue
-        new THREE.Color(0x00FF00), // Green
-        new THREE.Color(0xFFFF00), // Yellow
-        new THREE.Color(0xFF69B4), // Pink
-        new THREE.Color(0x800080)  // Purple
-      ];
-      for (let i = 0; i < count; i++) {
-        positions[i*3] = (Math.random() - 0.5) * 80;
-        positions[i*3+1] = Math.random() * 30;
-        positions[i*3+2] = (Math.random() - 0.5) * 80;
-        const color = palette[Math.floor(Math.random() * palette.length)];
-        colors[i*3] = color.r;
-        colors[i*3+1] = color.g;
-        colors[i*3+2] = color.b;
+      // 5. Dense Ethereal Motes: Multi-colored, layered point system
+      const colors = [0x008080, 0x0000FF, 0x00FF00, 0xFFFF00, 0xFF69B4, 0x800080];
+      for (let c = 0; c < colors.length; c++) {
+        const moteGeo = new THREE.BufferGeometry();
+        const count = 80;
+        const pos = new Float32Array(count * 3);
+        for(let i=0; i<count; i++) {
+          pos[i*3] = (Math.random() - 0.5) * 100;
+          pos[i*3+1] = Math.random() * 40;
+          pos[i*3+2] = (Math.random() - 0.5) * 100;
+        }
+        moteGeo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+        const moteMat = new THREE.PointsMaterial({ size: 1.5, color: colors[c], transparent: true, opacity: 0.6, blending: THREE.AdditiveBlending, depthWrite: false });
+        group.add(new THREE.Points(moteGeo, moteMat));
       }
-      moteGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-      moteGeo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
-      const moteMat = new THREE.PointsMaterial({ size: 1.2, vertexColors: true, transparent: true, opacity: 0.7, blending: THREE.AdditiveBlending, depthWrite: false });
-      const motes = new THREE.Points(moteGeo, moteMat);
-      motes.position.set(originX, originY, originZ);
-      group.add(motes);
 
       // Final Setup
       if (this._rootSceneAdd) this._rootSceneAdd(group); else this.scene.add(group);
