@@ -22578,13 +22578,14 @@ window.game = this;
           punchWeight = 1.0 - (ret * ret * (3.0 - 2.0 * ret));
         }
 
-        // Left arm thrusts forward and down in a scratch motion
-        const punchPoseX = 0.0;
-        const punchPoseY = -0.35;
-        const punchPoseZ = -0.9;
-        const punchRotX = -1.2;
-        const punchRotY = 0.5;
-        const punchRotZ = -1.5;
+        // Left arm thrusts forward and down in a strong scratch motion
+        // Making the pose significantly offset from the idle -0.32, -0.28, -0.41
+        const punchPoseX = 0.25; 
+        const punchPoseY = -0.80;
+        const punchPoseZ = -0.20;
+        const punchRotX = -1.8;
+        const punchRotY = 0.0;
+        const punchRotZ = -1.2;
 
         targetX = THREE.MathUtils.lerp(targetX, punchPoseX, punchWeight);
         targetY = THREE.MathUtils.lerp(targetY, punchPoseY, punchWeight);
