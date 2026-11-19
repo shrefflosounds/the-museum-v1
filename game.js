@@ -22563,11 +22563,30 @@ window.game = this;
 
       // Punch / swipe scratch attack animation (Q key)
       if (this.leftHandPunchTimer > 0) {
-        // Forced Override: If this doesn't move the hand, the update loop is broken.
-        targetX = -1.5; 
-        targetY = -1.5;
-        targetZ = -1.5;
-        this.leftHandPunchTimer -= delta; // Manually decrement to keep it alive
+        const dur = this.leftHandPunchDuration || 0.38;
+        const p = 1.0 - (this.leftHandPunchTimer / dur); // 0.0 -> 1.0
+        
+        // Define a smooth path for the scratch: forward and down, then back
+        // P0 (0.0): Idle (-0.32, -0.28, -0.41)
+        // P1 (0.3): Scratch peak (-0.05, -0.40, -0.70)
+        // P2 (1.0): Return to idle
+        
+        let weight = 0;
+        if (p < 0.4) {
+          weight = Math.sin((p / 0.4) * (Math.PI / 2));
+        } else {
+          weight = Math.cos(((p - 0.4) / 0.6) * (Math.PI / 2));
+        }
+        
+        targetX = THREE.MathUtils.lerp(-0.32, -0.05, weight);
+        targetY = THREE.MathUtils.lerp(-0.28, -0.40, weight);
+        targetZ = THREE.MathUtils.lerp(-0.41, -0.70, weight);
+        
+        targetRotX = THREE.MathUtils.lerp(0, -0.6, weight);
+        targetRotY = THREE.MathUtils.lerp(0, 0.2, weight);
+        targetRotZ = THREE.MathUtils.lerp(0, -0.5, weight);
+
+        this.leftHandPunchTimer -= delta;
       }
 
       // Smooth physical interpolation towards target transforms
