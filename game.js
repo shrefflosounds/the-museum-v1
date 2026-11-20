@@ -21790,24 +21790,27 @@ window.game = this;
       if (this.dom.pauseOptionsBtn) {
         this.dom.pauseOptionsBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.dom.pauseModal.classList.add('hidden');
-          this.openOptionsModal();
+          this.transitionMenuModal(this.dom.pauseModal, this.dom.optionsModal, () => {
+            this.openOptionsModal();
+          });
         });
       }
 
       if (this.dom.pauseSettingsBtn) {
         this.dom.pauseSettingsBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.dom.pauseModal.classList.add('hidden');
-          this.openSettingsModal();
+          this.transitionMenuModal(this.dom.pauseModal, this.dom.settingsModal, () => {
+            this.openSettingsModal();
+          });
         });
       }
 
       if (this.dom.pauseAboutBtn) {
         this.dom.pauseAboutBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.dom.pauseModal.classList.add('hidden');
-          this.openAboutModal();
+          this.transitionMenuModal(this.dom.pauseModal, this.dom.aboutModal, () => {
+            this.openAboutModal();
+          });
         });
       }
 
@@ -22487,6 +22490,86 @@ window.game = this;
       }
     }
 
+    transitionMenuModal(fromEl, toEl, onMidpoint) {
+      if (!fromEl || !toEl) {
+        if (fromEl) fromEl.classList.add('hidden');
+        if (toEl) toEl.classList.remove('hidden');
+        if (typeof onMidpoint === 'function') onMidpoint();
+        return;
+      }
+
+      // Check if user or system prefers reduced motion
+      const prefersReducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (prefersReducedMotion) {
+        fromEl.classList.add('hidden');
+        if (typeof onMidpoint === 'function') onMidpoint();
+        toEl.classList.remove('hidden');
+        return;
+      }
+
+      // Ensure global morph blob element exists
+      let morphBlob = document.getElementById('menu-morph-blob');
+      if (!morphBlob) {
+        morphBlob = document.createElement('div');
+        morphBlob.id = 'menu-morph-blob';
+        document.body.appendChild(morphBlob);
+      }
+
+      const fromBox = fromEl.querySelector('.modal-box, .char-select-container') || fromEl;
+      const fromRect = fromBox.getBoundingClientRect();
+
+      // Temporarily reveal target offscreen/zero-opacity to measure target box geometry accurately
+      toEl.style.visibility = 'hidden';
+      toEl.classList.remove('hidden');
+      const toBox = toEl.querySelector('.modal-box, .char-select-container') || toEl;
+      const toRect = toBox.getBoundingClientRect();
+      toEl.classList.add('hidden');
+      toEl.style.visibility = '';
+
+      // Fade out source modal contents
+      fromBox.classList.add('content-fading-out');
+
+      // Position morph blob at source box position
+      morphBlob.style.transition = 'none';
+      morphBlob.style.left = fromRect.left + 'px';
+      morphBlob.style.top = fromRect.top + 'px';
+      morphBlob.style.width = fromRect.width + 'px';
+      morphBlob.style.height = fromRect.height + 'px';
+      morphBlob.classList.add('active');
+
+      // Hide individual modal blobs during morph
+      fromBox.classList.add('blob-morphing');
+      toBox.classList.add('blob-morphing');
+
+      // Trigger animation on next frame
+      requestAnimationFrame(() => {
+        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease';
+        morphBlob.style.left = toRect.left + 'px';
+        morphBlob.style.top = toRect.top + 'px';
+        morphBlob.style.width = toRect.width + 'px';
+        morphBlob.style.height = toRect.height + 'px';
+
+        // Halfway through (220ms), hide fromEl and show toEl with smooth fade-in
+        setTimeout(() => {
+          fromEl.classList.add('hidden');
+          fromBox.classList.remove('content-fading-out');
+
+          if (typeof onMidpoint === 'function') onMidpoint();
+
+          toEl.classList.remove('hidden');
+          toBox.classList.add('content-fading-in');
+
+          // Cleanup after morph finishes
+          setTimeout(() => {
+            morphBlob.classList.remove('active');
+            fromBox.classList.remove('blob-morphing');
+            toBox.classList.remove('blob-morphing');
+            toBox.classList.remove('content-fading-in');
+          }, 240);
+        }, 220);
+      });
+    }
+
     openOptionsModal() {
       this.isOptionsModalOpen = true;
       this.updateSmittyModeUI();
@@ -22497,11 +22580,15 @@ window.game = this;
 
     closeOptionsModal() {
       this.isOptionsModalOpen = false;
-      this.dom.optionsModal.classList.add('hidden');
       if (this.isPaused) {
-        this.dom.pauseModal.classList.remove('hidden');
-      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
-        this.requestNativeOrBrowserLock();
+        this.transitionMenuModal(this.dom.optionsModal, this.dom.pauseModal, () => {
+          this.dom.optionsModal.classList.add('hidden');
+        });
+      } else {
+        this.dom.optionsModal.classList.add('hidden');
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+          this.requestNativeOrBrowserLock();
+        }
       }
     }
 
@@ -22513,11 +22600,15 @@ window.game = this;
 
     closeSettingsModal() {
       this.isSettingsModalOpen = false;
-      this.dom.settingsModal.classList.add('hidden');
       if (this.isPaused) {
-        this.dom.pauseModal.classList.remove('hidden');
-      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
-        this.requestNativeOrBrowserLock();
+        this.transitionMenuModal(this.dom.settingsModal, this.dom.pauseModal, () => {
+          this.dom.settingsModal.classList.add('hidden');
+        });
+      } else {
+        this.dom.settingsModal.classList.add('hidden');
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+          this.requestNativeOrBrowserLock();
+        }
       }
     }
 
@@ -22528,11 +22619,15 @@ window.game = this;
 
     closeAboutModal() {
       this.isAboutModalOpen = false;
-      if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
       if (this.isPaused) {
-        if (this.dom.pauseModal) this.dom.pauseModal.classList.remove('hidden');
-      } else if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
-        this.requestNativeOrBrowserLock();
+        this.transitionMenuModal(this.dom.aboutModal, this.dom.pauseModal, () => {
+          if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
+        });
+      } else {
+        if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
+        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
+          this.requestNativeOrBrowserLock();
+        }
       }
     }
 
