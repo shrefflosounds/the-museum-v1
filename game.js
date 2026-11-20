@@ -23482,6 +23482,34 @@ window.game = this;
         }
       }
 
+      // Clerk's Stand: Desk Call Bell
+      const bell = this.clerkDeskBell;
+      const clerk = this.museumClerk;
+
+      let aimingAtBell = false;
+      if (bell && this.playerFloor === 0) {
+        // Measure distance from the player character position (not the pulled-back 3rd-person camera)
+        // Hitspace restricted to the right 35% of the desk from player's view facing north (x <= -0.54)
+        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (charBellDist < 2.0 && this.playerPos.x <= -0.54 && this.playerPos.z <= 8.5) {
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
+          // In 3rd person or 1st person, facing toward the bell activates it
+          aimingAtBell = toBell.dot(fwd) > 0.50;
+        }
+      }
+
+      // If near and aiming at the bell, ringing the bell takes absolute precedence over all nearby interactions (e.g. Robot Dog)
+      if (aimingAtBell) {
+        this.ringClerkDeskBell();
+        return;
+      }
+
       // Check Robot Dog interaction (E to interact: barks, then follows player for 5-10s)
       const dog = this.robotDog;
       if (dog && dog.group && dog.floor === this.playerFloor) {
@@ -23492,39 +23520,13 @@ window.game = this;
         }
       }
 
-      // Clerk's Stand: clerk takes precedence; the bell is accessible whenever the player character is near the counter
-      const bell = this.clerkDeskBell;
-      const clerk = this.museumClerk;
-
-      let aimingAtBell = false;
-      if (bell && this.playerFloor === 0) {
-        // Measure distance from the player character position (not the pulled-back 3rd-person camera)
-        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (charBellDist < 2.5) {
-          const cosPitch = Math.cos(this.playerPitch);
-          const sinPitch = Math.sin(this.playerPitch);
-          const cosYaw = Math.cos(this.playerYaw);
-          const sinYaw = Math.sin(this.playerYaw);
-          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
-          // In 3rd person or 1st person, facing generally toward the bell activates it without needing to zoom in
-          aimingAtBell = toBell.dot(fwd) > 0.45;
-        }
-      }
-
-      // Check Museum Clerk (REem8) interaction - takes precedence over the bell
-      if (clerk && clerk.group && this.playerFloor === 0 && !aimingAtBell) {
+      // Check Museum Clerk (REem8) interaction
+      if (clerk && clerk.group && this.playerFloor === 0) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
         if (dClerk < 4.2) {
           this.interactMuseumClerk();
           return;
         }
-      }
-
-      if (aimingAtBell) {
-        this.ringClerkDeskBell();
-        return;
       }
       // Check Video Installation Console
       if (this.focusedVideoControl) {
@@ -24871,6 +24873,34 @@ window.game = this;
         }
       }
 
+      // Clerk's Stand: the bell surfaces whenever the player character is standing near the counter
+      // facing the bell, measured from character position rather than camera distance
+      const bell = this.clerkDeskBell;
+      const clerk = this.museumClerk;
+
+      let aimingAtBell = false;
+      if (bell && this.playerFloor === 0) {
+        // Hitspace restricted to the right 35% of the desk from player's view facing north (x <= -0.54)
+        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
+        if (charBellDist < 2.0 && this.playerPos.x <= -0.54 && this.playerPos.z <= 8.5) {
+          const cosPitch = Math.cos(this.playerPitch);
+          const sinPitch = Math.sin(this.playerPitch);
+          const cosYaw = Math.cos(this.playerYaw);
+          const sinYaw = Math.sin(this.playerYaw);
+          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
+          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
+          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
+          aimingAtBell = toBell.dot(fwd) > 0.50;
+        }
+      }
+
+      // Bell prompt takes precedence over Robot Dog and Clerk when in the bell hitspace
+      if (aimingAtBell) {
+        this.setInteractPrompt('[E] RING BELL');
+        this.focusedPainting = null;
+        return;
+      }
+
       // Check near robot dog (only "[E] INTERACT", no extra text per user prompt instructions)
       const dog = this.robotDog;
       if (dog && dog.group && dog.floor === this.playerFloor) {
@@ -24882,40 +24912,14 @@ window.game = this;
         }
       }
 
-      // Clerk's Stand: the bell surfaces whenever the player character is standing near the counter
-      // facing the bell, measured from character position rather than camera distance
-      const bell = this.clerkDeskBell;
-      const clerk = this.museumClerk;
-
-      let aimingAtBell = false;
-      if (bell && this.playerFloor === 0) {
-        const charBellDist = Math.hypot(this.playerPos.x - bell.worldPos.x, this.playerPos.z - bell.worldPos.z);
-        if (charBellDist < 2.5) {
-          const cosPitch = Math.cos(this.playerPitch);
-          const sinPitch = Math.sin(this.playerPitch);
-          const cosYaw = Math.cos(this.playerYaw);
-          const sinYaw = Math.sin(this.playerYaw);
-          const fwd = new THREE.Vector3(-sinYaw * cosPitch, sinPitch, -cosYaw * cosPitch);
-          const eyeOrigin = new THREE.Vector3(this.playerPos.x, this.playerPos.y, this.playerPos.z);
-          const toBell = new THREE.Vector3().subVectors(bell.worldPos, eyeOrigin).normalize();
-          aimingAtBell = toBell.dot(fwd) > 0.45;
-        }
-      }
-
-      // Check near Museum Clerk (REem8) at the Clerk's Stand - takes precedence over the bell
-      if (clerk && clerk.group && this.playerFloor === 0 && !aimingAtBell) {
+      // Check near Museum Clerk (REem8) at the Clerk's Stand
+      if (clerk && clerk.group && this.playerFloor === 0) {
         const dClerk = Math.hypot(this.playerPos.x - clerk.x, this.playerPos.z - clerk.z);
         if (dClerk < 4.2) {
           this.setInteractPrompt(T('hud.prompt_talk_clerk', '[E] TALK TO REem8'));
           this.focusedPainting = null;
           return;
         }
-      }
-
-      if (aimingAtBell) {
-        this.setInteractPrompt('[E] RING BELL');
-        this.focusedPainting = null;
-        return;
       }
 
       _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
