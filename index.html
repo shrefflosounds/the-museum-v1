@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.5.4">
+  <link rel="stylesheet" href="style.css?v=2.5.5">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -184,7 +184,6 @@
         <h2 class="char-select-title">SELECT CHARACTER</h2>
         <div class="char-select-header-right">
           <div id="char-select-code-badge" class="char-select-code-display hidden">ROOM: <span id="char-select-code-val"></span></div>
-          <div id="char-select-mode-tag" class="char-select-badge">COOPERATIVE</div>
         </div>
       </div>
 
@@ -205,7 +204,6 @@
           <div id="char-preview-loading" class="char-preview-loading hidden">LOADING...</div>
           <div class="char-preview-halo"></div>
           <div class="char-preview-footer">
-            <button id="char-back-btn" class="museum-btn char-back-btn" type="button">BACK</button>
             <button id="char-confirm-btn" class="museum-btn char-confirm-btn" type="button">CONFIRM CHARACTER</button>
           </div>
         </div>
@@ -235,7 +233,6 @@
       </div>
 
       <div class="settings-card player-view-settings">
-        <h3 class="settings-card-title">PLAYER VIEW</h3>
         <div class="player-view-mode-bar">
           <button id="view-first-person-btn" class="player-view-toggle-btn" type="button" aria-pressed="false">FIRST PERSON</button>
           <button id="view-third-person-btn" class="player-view-toggle-btn active" type="button" aria-pressed="true">THIRD PERSON</button>
@@ -459,7 +456,7 @@
   <script type="module">
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
-    window._ASSET_VERSION = '2.9.1795210000';
+    window._ASSET_VERSION = '2.9.1795211000';
     const gameScript = document.createElement('script');
     gameScript.src = 'game.js?v=2.9.1795210000';
     document.body.appendChild(gameScript);

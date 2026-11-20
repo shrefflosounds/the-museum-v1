@@ -739,7 +739,6 @@ body.cutscene-playing *,
 }
 
 .modal-box::before,
-.char-select-container::before,
 .mobile-block-box::before {
   content: '';
   position: absolute;
@@ -754,6 +753,19 @@ body.cutscene-playing *,
   transform: translate(var(--blob-tx, 0px), var(--blob-ty, 0px)) scale(var(--blob-sx, 1), var(--blob-sy, 1));
   transition: transform 0.44s cubic-bezier(0.22, 1, 0.36, 1);
   animation: purpleBlobPulse 6s ease-in-out infinite;
+}
+
+.char-select-container::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url('assets/ui/sky_clouds.gif') center center / cover no-repeat;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
+          drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 24px;
 }
 
 .art-lightbox::before {
@@ -1340,8 +1352,8 @@ body.cutscene-playing *,
 }
 
 .options-box .close-btn {
-  top: 14px;
-  right: 18px;
+  top: 24px;
+  right: 28px;
   width: 32px;
   height: 32px;
   font-size: 20px;
@@ -1392,7 +1404,7 @@ body.cutscene-playing *,
 
 /* Active State: bright purple strip, normal size */
 .options-toggle-btn.active {
-  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  background: url('assets/ui/blob_strip_purple.png') center center / 100% 100% no-repeat;
   color: #ffffff;
   transform: scale(1);
   opacity: 1;
@@ -1460,7 +1472,7 @@ body.cutscene-playing *,
 }
 
 .player-view-toggle-btn.active {
-  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  background: url('assets/ui/blob_strip_purple.png') center center / 100% 100% no-repeat;
   color: #ffffff;
   transform: scale(1);
   opacity: 1;
@@ -2016,7 +2028,7 @@ body.cutscene-playing *,
   filter: drop-shadow(0 20px 50px rgba(0, 0, 0, 0.95));
   border: none;
   box-shadow: none;
-  border-radius: 0;
+  border-radius: 24px;
   display: flex;
   flex-direction: column;
   padding: 44px 58px 48px 58px;
@@ -2027,6 +2039,11 @@ body.cutscene-playing *,
   --blob-sy: 1;
   --blob-tx: 0px;
   --blob-ty: 0px;
+}
+
+.char-select-container .close-btn {
+  top: 24px;
+  right: 28px;
 }
 
 .char-select-header {
@@ -2172,10 +2189,11 @@ body.cutscene-playing *,
   position: relative;
   display: flex;
   flex-direction: column;
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.30);
   border-radius: 12px;
   overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.40);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
   cursor: grab;
 }
 
@@ -2197,24 +2215,6 @@ body.cutscene-playing *,
   gap: 12px;
   align-items: center;
   z-index: 10;
-}
-
-.char-back-btn {
-  padding: 12px 28px;
-  font-family: 'Caryn';
-  font-size: 20px;
-  letter-spacing: 1.5px;
-  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
-  color: #cbd5e1;
-  border: none;
-  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
-  cursor: pointer;
-}
-
-.char-back-btn:hover {
-  color: #ffffff;
-  transform: translateY(-2px) scale(1.03);
-  filter: drop-shadow(0 6px 18px rgba(255, 255, 255, 0.3));
 }
 
 .char-confirm-btn {
