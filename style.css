@@ -11,6 +11,70 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Dogica Pixel';
+  src: local('Dogica Pixel'), local('Dogica_Pixel'), url('assets/fonts/dogicapixel.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Dogica Pixel';
+  src: local('Dogica Pixel Bold'), local('Dogica_Pixel_Bold'), url('assets/fonts/dogicapixelbold.ttf') format('truetype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Palatino';
+  src: local('Palatino'), local('Palatino-Roman'), url('assets/fonts/Palatino.ttc') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Zulfiqar';
+  src: local('Zulfiqar'), url('assets/fonts/Zulfiqar.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'qopro';
+  src: local('qopro'), local('Qopro'), url('assets/fonts/qopro.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'tEggst';
+  src: local('tEggst'), local('tEggst-Regular'), local('teggst'), url('assets/fonts/tEggst-Regular.otf') format('opentype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'tEggst';
+  src: local('tEggst Bold'), local('tEggst-Bold'), url('assets/fonts/tEggst-Bold.otf') format('opentype');
+  font-weight: bold;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'tEggst';
+  src: local('tEggst Light'), local('tEggst-Light'), url('assets/fonts/tEggst-Light.otf') format('opentype');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -1175,32 +1239,37 @@ body.cutscene-playing *,
 
 .about-box {
   position: relative;
-  max-width: 530px;
-  width: 92%;
-  padding: 58px 64px 52px 64px;
+  max-width: 820px;
+  width: 94%;
+  padding: 76px 86px 68px 86px;
   text-align: center;
+}
+
+.about-box .horror-title {
+  font-size: 52px;
+  margin-bottom: 22px;
 }
 
 .about-card {
   background: radial-gradient(ellipse at 50% 50%, rgba(20, 27, 40, 0.85) 0%, rgba(15, 23, 42, 0.60) 80%, rgba(15, 23, 42, 0) 100%);
-  border-radius: 20px;
-  padding: 24px 26px;
+  border-radius: 26px;
+  padding: 40px 44px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  font-family: 'Caryn';
+  font-family: 'tEggst', sans-serif;
   text-align: center;
   box-sizing: border-box;
 }
 
 .about-icon-wrap {
-  margin: 0 auto 14px auto;
+  margin: 0 auto 22px auto;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
 .about-icon {
-  width: 64px;
-  height: 64px;
+  width: 108px;
+  height: 108px;
   display: block;
   object-fit: contain;
   background: transparent !important;
@@ -1210,30 +1279,40 @@ body.cutscene-playing *,
 }
 
 .about-lead {
-  font-size: 16px;
+  font-size: 25px;
   color: #cbd5e1;
-  margin-bottom: 12px;
-  line-height: 1.45;
+  margin-bottom: 18px;
+  line-height: 1.5;
+}
+
+.about-lead strong {
+  color: #f1f5f9;
+  font-size: 27px;
 }
 
 .about-byline {
-  font-size: 14px;
+  font-size: 21px;
   color: #94a3b8;
-  margin-bottom: 8px;
+  margin-bottom: 14px;
 }
 
 .about-build {
-  font-size: 12px;
+  font-size: 17px;
   color: #64748b;
-  font-family: 'Caryn';
-  margin-bottom: 14px;
+  font-family: 'tEggst', sans-serif;
+  margin-bottom: 20px;
   letter-spacing: 0.5px;
 }
 
 .about-links {
-  font-size: 13px;
+  font-size: 19px;
   color: #94a3b8;
-  margin-top: 10px;
+  margin-top: 14px;
+}
+
+.about-box .museum-btn {
+  font-size: 26px;
+  padding: 18px 42px;
 }
 
 .about-links a {
@@ -1948,6 +2027,102 @@ body.cutscene-playing *,
   font-size: 14px;
   color: #64748b;
   letter-spacing: 0.8px;
+}
+
+/* ========================================================
+   MENU-SPECIFIC CUSTOM FONTS (Options, Victory, Death, Controls, About)
+   ======================================================== */
+
+/* Options Menu -> Dogica Pixel */
+#options-modal,
+#options-modal *,
+#options-modal .horror-title,
+#options-modal .smitty-mode-btn,
+#options-modal .char-choose-trigger-btn,
+#options-modal .settings-card-title,
+#options-modal .player-character-label,
+#options-modal .settings-slider-label,
+#options-modal .settings-slider-value,
+#options-modal .settings-slider-hints,
+#options-modal .museum-btn,
+#options-modal .close-btn {
+  font-family: 'Dogica Pixel', monospace !important;
+}
+
+#options-modal .horror-title {
+  font-size: 28px;
+}
+
+#options-modal .smitty-mode-btn,
+#options-modal .char-choose-trigger-btn {
+  font-size: 13px !important;
+}
+
+#options-modal .char-choose-subtext {
+  font-size: 10px !important;
+}
+
+#options-modal .settings-card-title,
+#options-modal .settings-slider-label,
+#options-modal .settings-slider-value {
+  font-size: 13px;
+}
+
+#options-modal .player-character-label,
+#options-modal .player-character-status,
+#options-modal .player-camera-help,
+#options-modal .settings-slider-hints {
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+#options-modal .museum-btn {
+  font-size: 16px;
+}
+
+/* Victory Screen -> Palatino */
+#victory-modal,
+#victory-modal *,
+#victory-modal .horror-title,
+#victory-modal .stats-box,
+#victory-modal .museum-btn {
+  font-family: 'Palatino', 'Palatino Linotype', serif !important;
+}
+
+/* Death Screen -> Zulfiqar */
+#game-over-modal,
+#game-over-modal *,
+#game-over-modal .horror-title,
+#game-over-modal .death-sub,
+#game-over-modal .stats-box,
+#game-over-modal .museum-btn {
+  font-family: 'Zulfiqar', serif !important;
+}
+
+/* Controls Menu -> qopro */
+#settings-modal,
+#settings-modal *,
+#settings-modal .horror-title,
+#settings-modal .settings-card-title,
+#settings-modal .controls-grid,
+#settings-modal .settings-list,
+#settings-modal .settings-slider-label,
+#settings-modal .settings-slider-value,
+#settings-modal .settings-slider-hints,
+#settings-modal .museum-btn,
+#settings-modal .close-btn {
+  font-family: 'qopro', sans-serif !important;
+}
+
+/* About Menu -> tEggst */
+#about-modal,
+#about-modal *,
+#about-modal .horror-title,
+#about-modal .about-card,
+#about-modal .about-build,
+#about-modal .museum-btn,
+#about-modal .close-btn {
+  font-family: 'tEggst', sans-serif !important;
 }
 
 /* Responsive media queries for TV, projector, and standard screens */
