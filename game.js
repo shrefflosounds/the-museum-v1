@@ -11402,6 +11402,19 @@ window.game = this;
           mountainBoulders.push(item);
         } else {
           groundBoulders.push(item);
+          // Solid physical cylinder colliders for all shoreline and ground boulders (blocks walking through them)
+          if (by >= 0.0) {
+            this.colliders.push({
+              type: 'cylinder',
+              floor: 'all',
+              x: originX + bx,
+              z: originZ + bz,
+              radius: bs * 0.88,
+              minY: originY + by - 1.2,
+              maxY: originY + by + bh * 1.05,
+              isBoulder: true
+            });
+          }
         }
       });
 
@@ -23745,16 +23758,37 @@ window.game = this;
                 this.jumpVelocity = 0;
               }
             } else {
+              let subGndY = subMeadowY;
+              if (this.safeRoomSanctuary && this.safeRoomSanctuary.groundBoulders) {
+                const gRocks = this.safeRoomSanctuary.groundBoulders;
+                const slx = this.playerPos.x - 300.0;
+                const slz = this.playerPos.z - 300.0;
+                for (let b = 0; b < gRocks.length; b++) {
+                  const rock = gRocks[b];
+                  const rdx = slx - rock.x;
+                  const rdz = slz - rock.z;
+                  const rad = rock.bs * 1.05;
+                  const distSq = rdx * rdx + rdz * rdz;
+                  if (distSq < rad * rad) {
+                    const cap = Math.sqrt(Math.max(0.0, 1.0 - distSq / (rad * rad)));
+                    const rockTopY = 50.0 + rock.y + rock.bh * cap;
+                    if (rockTopY > subGndY) {
+                      subGndY = rockTopY;
+                    }
+                  }
+                }
+              }
+
               const curFootY = this.playerPos.y - this.currentCamHeight;
-              if (curFootY > subMeadowY + 1.2) {
-                // Stepped off a high drop/bank into the air
+              if (curFootY > subGndY + 3.2) {
+                // Stepped off a high cliff drop into mid-air over the gorge
                 this.isGrounded = false;
                 this.isFalling = true;
                 this.fallVelocity = 0;
                 this.jumpOffset = 0;
                 this.jumpVelocity = 0;
               } else {
-                this.playerPos.y = subMeadowY + this.currentCamHeight;
+                this.playerPos.y = subGndY + this.currentCamHeight;
               }
             }
           }
@@ -24218,12 +24252,6 @@ window.game = this;
         return;
       }
 
-      // Swimming in the plunge pool: do NOT push horizontally against water waders
-      const distToPool = Math.hypot(lx - 7.8, lz - (-13.0));
-      if (distToPool < 9.2 && footElevation !== -999 && footElevation < originY + 0.3) {
-        return;
-      }
-
       // Flank wall corners:
       // North flank: lz = minZ (-41.2), extending from frontNorthX (2.30) to backNorthX (40.30)
       // South flank: lz = maxZ (14.8), extending from frontSouthX (2.30) to backSouthX (40.30)
@@ -24301,6 +24329,7 @@ window.game = this;
       }
 
       // 8. Front cliff face (smooth push outward along -X)
+      // Solid amphitheater rock barrier cradling the waterfall and plunge pool
       const si = Math.max(-spanS, Math.min(spanS, -13.2 - lz));
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const frontX = 10.8 - canyonCurv;
@@ -24318,7 +24347,10 @@ window.game = this;
         const penNorth = lz - minZ;
         const penSouth = maxZ - lz;
         const minPen = Math.min(penFront, penNorth, penSouth);
-        if (minPen === penSouth) {
+        // Near the front gorge / plunge pool amphitheater, always push outward forward to the front
+        if (lx < frontX + 7.0 || minPen === penFront) {
+          pos.x = originX + frontX - radius;
+        } else if (minPen === penSouth) {
           pos.z = originZ + maxZ + radius;
         } else if (minPen === penNorth) {
           pos.z = originZ + minZ - radius;
