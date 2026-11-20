@@ -11843,21 +11843,12 @@ window.game = this;
       const ambLight = new THREE.AmbientLight(0xffffff, 0.30);
       group.add(ambLight);
 
-      // (B) Ethereal Luminescent Light Wisps (Optimized: 2 key point lights + 10 glowing crystal motes)
+      // (B) Ethereal Luminescent Light Accent Lights (Optimized key accent lights, zero static floating crystal blocks)
       const wispConfigs = [
         { x: retPortalLocalX, z: retPortalLocalZ, yOff: 1.8, color: 0xa855f7, hasLight: true },  // Portal Glade (Dynamic Point Light)
-        { x: 6.5, z: -6.5, yOff: 1.8, color: 0x38bdf8, hasLight: false },                        // Lake Overlook
-        { x: 6.4, z: -13.2, yOff: 2.2, color: 0x06b6d4, hasLight: true },                       // Plunge Pool (Dynamic Point Light)
-        { x: 24.0, z: 19.5, yOff: 1.8, color: 0xfbbf24, hasLight: false },                       // South Ridge Meadow
-        { x: 55.0, z: -10.0, yOff: 2.0, color: 0xe879f9, hasLight: false },                      // Mountain Rear Valley
-        { x: 20.0, z: -45.0, yOff: 1.8, color: 0x22d3ee, hasLight: false },                      // North Flank Pass
-        { x: -11.5, z: -11.5, yOff: 1.8, color: 0xf472b6, hasLight: false },                     // North Blossom Clearing
-        { x: -6.5, z: 2.5, yOff: 1.8, color: 0xfde047, hasLight: false },                        // Valley Center Crossroads
-        { x: -8.5, z: 15.0, yOff: 1.8, color: 0x34d399, hasLight: false },                       // Southwest Foothills
-        { x: -4.5, z: -22.5, yOff: 1.8, color: 0x818cf8, hasLight: false }                       // Far North Lookout
+        { x: 6.4, z: -13.2, yOff: 2.2, color: 0x06b6d4, hasLight: true }                        // Plunge Pool (Dynamic Point Light)
       ];
 
-      const crystalGeo = new THREE.OctahedronGeometry(0.24, 0);
       wispConfigs.forEach(w => {
         const gY = this.getSafeRoomGroundY(originX + w.x, originZ + w.z) - originY;
         if (w.hasLight) {
@@ -11865,16 +11856,6 @@ window.game = this;
           pLight.position.set(w.x, gY + w.yOff, w.z);
           group.add(pLight);
         }
-
-        const cMat = new THREE.MeshBasicMaterial({
-          color: w.color,
-          transparent: true,
-          opacity: 0.92,
-          blending: THREE.AdditiveBlending
-        });
-        const crystalMesh = new THREE.Mesh(crystalGeo, cMat);
-        crystalMesh.position.set(w.x, gY + w.yOff, w.z);
-        group.add(crystalMesh);
       });
 
       // 11. Botanical Wildflowers & Diverse Floral Tapestry (Evenly dispersed across far rolling hills, zero clumping)
@@ -12002,6 +11983,67 @@ window.game = this;
       floraGroup.add(floraMesh);
       group.add(floraGroup);
 
+      // 12. Floating Ethereal Atmospheric Particles (Soft wafting luminous motes drifting over the meadows)
+      const motePalette = [
+        new THREE.Color(0x67e8f9), // Shimmering Cyan
+        new THREE.Color(0xc084fc), // Soft Lavender
+        new THREE.Color(0xfde047), // Celestial Gold
+        new THREE.Color(0xf472b6), // Wild Rose Pink
+        new THREE.Color(0x5eead4), // Ethereal Mint
+        new THREE.Color(0x93c5fd), // Periwinkle Azure
+        new THREE.Color(0xfdba74), // Soft Peach
+        new THREE.Color(0xa78bfa)  // Amethyst Violet
+      ];
+
+      const orbCount = 120;
+      const orbGeo = new THREE.BufferGeometry();
+      const orbPos = new Float32Array(orbCount * 3);
+      const orbColors = new Float32Array(orbCount * 3);
+      const orbData = [];
+
+      for (let i = 0; i < orbCount; i++) {
+        const ox = -65.0 + Math.random() * 130.0;
+        const oy = 0.8 + Math.random() * 9.5;
+        const oz = -65.0 + Math.random() * 130.0;
+
+        orbPos[i * 3]     = ox;
+        orbPos[i * 3 + 1] = oy;
+        orbPos[i * 3 + 2] = oz;
+
+        const c = motePalette[Math.floor(Math.random() * motePalette.length)];
+        orbColors[i * 3]     = c.r;
+        orbColors[i * 3 + 1] = c.g;
+        orbColors[i * 3 + 2] = c.b;
+
+        orbData.push({
+          baseX: ox,
+          baseY: oy,
+          baseZ: oz,
+          speedX: 0.18 + Math.random() * 0.28,
+          speedY: 0.25 + Math.random() * 0.35,
+          speedZ: 0.16 + Math.random() * 0.26,
+          radiusX: 1.5 + Math.random() * 2.8,
+          radiusZ: 1.5 + Math.random() * 2.8,
+          phaseX: Math.random() * Math.PI * 2,
+          phaseY: Math.random() * Math.PI * 2,
+          phaseZ: Math.random() * Math.PI * 2
+        });
+      }
+      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
+      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
+
+      const orbMat = new THREE.PointsMaterial({
+        size: 0.95,
+        map: moteTex,
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.90,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const orbPoints = new THREE.Points(orbGeo, orbMat);
+      group.add(orbPoints);
+
       if (this._rootSceneAdd) {
         this._rootSceneAdd(group);
       } else {
@@ -12043,6 +12085,8 @@ window.game = this;
         splashPlumes: splashPlumes,
         lipFoamMesh: lipFoamMesh,
         poolFoamMesh: poolFoam1,
+        orbPoints: orbPoints,
+        orbData: orbData,
         time: 0
       };
     }
@@ -19356,6 +19400,26 @@ window.game = this;
           }
         }
         posAttr.needsUpdate = true;
+      }
+
+      // Animate floating ethereal atmospheric particles (gentle 3D multi-frequency wafting drift)
+      if (sr.orbPoints && sr.orbData) {
+        const posAttr = sr.orbPoints.geometry.attributes.position;
+        const arr = posAttr.array;
+        const count = sr.orbData.length;
+        for (let i = 0; i < count; i++) {
+          const d = sr.orbData[i];
+          const tx = sr.time * d.speedX + d.phaseX;
+          const ty = sr.time * d.speedY + d.phaseY;
+          const tz = sr.time * d.speedZ + d.phaseZ;
+          arr[i * 3]     = d.baseX + Math.sin(tx) * d.radiusX + Math.sin(sr.time * 0.12) * 1.8;
+          arr[i * 3 + 1] = d.baseY + Math.sin(ty) * 0.75 + Math.cos(sr.time * 0.18) * 0.35;
+          arr[i * 3 + 2] = d.baseZ + Math.cos(tz) * d.radiusZ + Math.cos(sr.time * 0.14) * 1.8;
+        }
+        posAttr.needsUpdate = true;
+        if (sr.orbPoints.material) {
+          sr.orbPoints.material.opacity = 0.86 + Math.sin(sr.time * 0.6) * 0.08;
+        }
       }
     }
 
