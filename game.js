@@ -23864,8 +23864,10 @@ window.game = this;
         const meadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
         const mountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
 
-        const originX = 300.0;
-        const originZ = 300.0;
+        const sr = this.safeRoomSanctuary;
+        const originX = sr ? sr.originX : 300.0;
+        const originY = sr ? sr.originY : 50.0;
+        const originZ = sr ? sr.originZ : 300.0;
         const lx = this.playerPos.x - originX;
         const lz = this.playerPos.z - originZ;
         const si = -lz - 13.2;
