@@ -10334,7 +10334,71 @@ window.game = this;
         time: 0
       };
     }
-getSafeRoomGroundY(wx, wz) {
+    getMountainSurfaceY(lx, lz) {
+      const minZ = -41.2;
+      const maxZ = 14.8;
+      if (lz < minZ || lz > maxZ) return null;
+
+      const si = -lz - 13.2;
+      const spanS = 28.0;
+      if (Math.abs(si) > spanS) return null;
+
+      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
+      const baseX = 10.8 - canyonCurv;
+      const backDist = 38.0;
+      const backBaseX = baseX + backDist;
+
+      // Only active on the mountain rock surface (from the front crest lip back to the back ground line)
+      if (lx < baseX - 0.4 || lx > backBaseX + 0.5) return null;
+
+      const sr = this.safeRoomSanctuary;
+      const originX = sr ? sr.originX : 300.0;
+      const originY = sr ? sr.originY : 50.0;
+      const originZ = sr ? sr.originZ : 300.0;
+
+      const frontGndY = this.getSafeRoomMeadowY(originX + baseX, originZ + lz) - originY;
+      const backGndY = this.getSafeRoomMeadowY(originX + backBaseX, originZ + lz) - originY;
+
+      let summitH = 26.5;
+      let frontLipH;
+      if (Math.abs(si) < 4.2) {
+        frontLipH = 19.3;
+      } else if (si > 0) {
+        const t = (si - 4.2) / (spanS - 4.2);
+        summitH = 24.5 + Math.sin(t * Math.PI) * 3.5 - t * 4.5;
+        frontLipH = summitH;
+      } else {
+        const t = (-si - 4.2) / (spanS - 4.2);
+        summitH = 25.5 + Math.sin(t * Math.PI) * 3.8 - t * 5.0;
+        frontLipH = summitH;
+      }
+      summitH += (Math.sin(si * 0.55) * 1.2 + Math.cos(si * 1.1) * 0.6);
+      if (Math.abs(si) >= 4.2) frontLipH = summitH;
+
+      // Parametric elevation along the back slope (t = 0 at crest, t = 1 at back ground base)
+      const t = Math.max(0.0, Math.min(1.0, (lx - baseX) / backDist));
+      const summitY = frontGndY + summitH;
+
+      let h;
+      if (Math.abs(si) < 4.2) {
+        if (t < 0.18) {
+          const u = t / 0.18;
+          h = frontLipH * (1.0 - u) + 27.8 * u;
+        } else {
+          const u = (t - 0.18) / (1.0 - 0.18);
+          h = 27.8 * (1.0 - Math.pow(u, 1.25)) + (backGndY - 0.1) * Math.pow(u, 1.25);
+        }
+      } else {
+        const arch = Math.sin(t * Math.PI) * 3.4 * (1.0 - t * 0.4);
+        h = summitY * (1.0 - Math.pow(t, 1.2)) + (backGndY - 0.1) * Math.pow(t, 1.2) + arch;
+      }
+      const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
+      h += ridgeRelief;
+
+      return originY + Math.max(backGndY, h);
+    }
+
+    getSafeRoomMeadowY(wx, wz) {
       const sr = this.safeRoomSanctuary;
       const originX = sr ? sr.originX : 300.0;
       const originY = sr ? sr.originY : 50.0;
@@ -10361,8 +10425,6 @@ getSafeRoomGroundY(wx, wz) {
       }
 
       // 3. Plunge Pool Basin (center at lx ~ 7.8, lz ~ -13.0)
-      // Raised natural earth & boulder bank around pool rim (rad ~ 9.0 to 11.5)
-      // Sunken lagoon basin inside (water surface sits nestled safely at originY - 0.12)
       const poolDx = lx - 7.8;
       const poolDz = (lz - (-13.0)) * 1.10;
       const poolDist = Math.hypot(poolDx, poolDz);
@@ -10382,6 +10444,21 @@ getSafeRoomGroundY(wx, wz) {
       }
 
       return originY + h;
+    }
+
+    getSafeRoomGroundY(wx, wz) {
+      const sr = this.safeRoomSanctuary;
+      const originX = sr ? sr.originX : 300.0;
+      const originZ = sr ? sr.originZ : 300.0;
+      const lx = wx - originX;
+      const lz = wz - originZ;
+
+      const meadowY = this.getSafeRoomMeadowY(wx, wz);
+      const mSurfaceY = this.getMountainSurfaceY(lx, lz);
+      if (mSurfaceY !== null && mSurfaceY >= meadowY) {
+        return mSurfaceY;
+      }
+      return meadowY;
     }
 
     buildSafeRoomSanctuary() {
@@ -10777,10 +10854,22 @@ getSafeRoomGroundY(wx, wz) {
       const retPortalGroup = new THREE.Group();
       const retPortalLocalX = -20.5;
       const retPortalLocalZ = 7.5;
-      const retPortalGroundY = this.getSafeRoomGroundY(originX + retPortalLocalX, originZ + retPortalLocalZ) - originY;
-      const retPortalLocalY = retPortalGroundY + 2.5;
+      const retPortalGroundY = this.getSafeRoomMeadowY(originX + retPortalLocalX, originZ + retPortalLocalZ) - originY;
+      const retPortalLocalY = retPortalGroundY + 3.65; // Elevated so bottom of 3.2m ring floats cleanly above dais with zero sinking
       retPortalGroup.position.set(retPortalLocalX, retPortalLocalY, retPortalLocalZ);
       retPortalGroup.lookAt(-17.0, retPortalLocalY, 12.0);
+
+      // Ancient Circular Sacred Stone Portal Dais (Ensures portal stands proudly above ground with zero sinking)
+      const daisGeo = new THREE.CylinderGeometry(3.6, 3.9, 0.45, 32);
+      const daisMat = new THREE.MeshStandardMaterial({
+        map: rockTex,
+        color: 0x85776d,
+        roughness: 0.82,
+        metalness: 0.04
+      });
+      const daisMesh = new THREE.Mesh(daisGeo, daisMat);
+      daisMesh.position.set(retPortalLocalX, retPortalGroundY + 0.225, retPortalLocalZ);
+      group.add(daisMesh);
 
       // (A) 3D Multi-Layer Nested Gyroscopic Rings (Solid 3D Toruses)
       // 1. Outer Celestial Rune Torus
@@ -11616,8 +11705,8 @@ getSafeRoomGroundY(wx, wz) {
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Solid 3D Mountain Massif Colliders
-      // Contiguous airtight slices spanning the entire 3D mountain volume from front cliff to back slope, and north to south flank
+      // (A) Sheer Front Cliff Face & Lateral Flank Solid Colliders
+      // Blocks walking through the vertical cliff wall from the ground, while allowing running up the back slope and leaping off the summit!
       const mSlices = 14;
       for (let s = 0; s < mSlices; s++) {
         const zFrac1 = s / mSlices;
@@ -11629,20 +11718,45 @@ getSafeRoomGroundY(wx, wz) {
         const siClamped = Math.max(-28.0, Math.min(28.0, si));
         const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
         const sFrontX = 10.8 - canyonCurv - 0.7;
-        const sBackX = 10.8 - canyonCurv + 38.4;
 
+        // Tight collider protecting the sheer vertical front cliff face up to 18.5m (crest lip).
+        // Players on the ground cannot walk through the rock; players running on the summit (Y >= 24m) can jump off freely!
         this.colliders.push({
           type: 'box',
           floor: 'all',
-          minX: originX + sFrontX,
-          maxX: originX + sBackX,
+          minX: originX + sFrontX - 0.6,
+          maxX: originX + sFrontX + 1.2,
           minZ: originZ + sMinZ,
           maxZ: originZ + sMaxZ,
           minY: originY - 5.0,
-          maxY: originY + 45.0,
-          isWall: true
+          maxY: originY + 18.5,
+          isWall: false
         });
       }
+
+      // North & South Flank Lateral Barriers (Blocks side penetration into the rock massif)
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: originX + 5.0,
+        maxX: originX + 46.0,
+        minZ: originZ - 42.5,
+        maxZ: originZ - 40.5,
+        minY: originY - 2.0,
+        maxY: originY + 19.0,
+        isWall: false
+      });
+      this.colliders.push({
+        type: 'box',
+        floor: 'all',
+        minX: originX + 5.0,
+        maxX: originX + 46.0,
+        minZ: originZ + 14.0,
+        maxZ: originZ + 16.0,
+        minY: originY - 2.0,
+        maxY: originY + 19.0,
+        isWall: false
+      });
 
       // (B) Shoreline Boulders Colliders
       boulders.forEach(([bx, by, bz, bs, bh]) => {
@@ -11791,32 +11905,33 @@ getSafeRoomGroundY(wx, wz) {
       const ambLight = new THREE.AmbientLight(0xffffff, 0.30);
       group.add(ambLight);
 
-      // (B) 10 Ethereal Luminescent Light Wisps Distributed Across the Entire Area
+      // (B) Ethereal Luminescent Light Wisps (Optimized: 2 key point lights + 10 glowing crystal motes)
       const wispConfigs = [
-        { x: retPortalLocalX, z: retPortalLocalZ, yOff: 1.8, color: 0xa855f7, intensity: 2.2, dist: 24.0 }, // Portal Glade
-        { x: 6.5, z: -6.5, yOff: 1.8, color: 0x38bdf8, intensity: 1.8, dist: 25.0 },                        // Lake Overlook
-        { x: 6.4, z: -13.2, yOff: 2.2, color: 0x06b6d4, intensity: 2.0, dist: 22.0 },                       // Plunge Pool
-        { x: 24.0, z: 19.5, yOff: 1.8, color: 0xfbbf24, intensity: 1.7, dist: 24.0 },                       // South Ridge Meadow
-        { x: 55.0, z: -10.0, yOff: 2.0, color: 0xe879f9, intensity: 1.8, dist: 28.0 },                      // Mountain Rear Valley
-        { x: 20.0, z: -45.0, yOff: 1.8, color: 0x22d3ee, intensity: 1.7, dist: 25.0 },                      // North Flank Pass
-        { x: -11.5, z: -11.5, yOff: 1.8, color: 0xf472b6, intensity: 1.6, dist: 24.0 },                     // North Blossom Clearing
-        { x: -6.5, z: 2.5, yOff: 1.8, color: 0xfde047, intensity: 1.6, dist: 24.0 },                        // Valley Center Crossroads
-        { x: -8.5, z: 15.0, yOff: 1.8, color: 0x34d399, intensity: 1.5, dist: 22.0 },                       // Southwest Foothills
-        { x: -4.5, z: -22.5, yOff: 1.8, color: 0x818cf8, intensity: 1.5, dist: 24.0 }                       // Far North Lookout
+        { x: retPortalLocalX, z: retPortalLocalZ, yOff: 1.8, color: 0xa855f7, hasLight: true },  // Portal Glade (Dynamic Point Light)
+        { x: 6.5, z: -6.5, yOff: 1.8, color: 0x38bdf8, hasLight: false },                        // Lake Overlook
+        { x: 6.4, z: -13.2, yOff: 2.2, color: 0x06b6d4, hasLight: true },                       // Plunge Pool (Dynamic Point Light)
+        { x: 24.0, z: 19.5, yOff: 1.8, color: 0xfbbf24, hasLight: false },                       // South Ridge Meadow
+        { x: 55.0, z: -10.0, yOff: 2.0, color: 0xe879f9, hasLight: false },                      // Mountain Rear Valley
+        { x: 20.0, z: -45.0, yOff: 1.8, color: 0x22d3ee, hasLight: false },                      // North Flank Pass
+        { x: -11.5, z: -11.5, yOff: 1.8, color: 0xf472b6, hasLight: false },                     // North Blossom Clearing
+        { x: -6.5, z: 2.5, yOff: 1.8, color: 0xfde047, hasLight: false },                        // Valley Center Crossroads
+        { x: -8.5, z: 15.0, yOff: 1.8, color: 0x34d399, hasLight: false },                       // Southwest Foothills
+        { x: -4.5, z: -22.5, yOff: 1.8, color: 0x818cf8, hasLight: false }                       // Far North Lookout
       ];
 
       const crystalGeo = new THREE.OctahedronGeometry(0.24, 0);
       wispConfigs.forEach(w => {
         const gY = this.getSafeRoomGroundY(originX + w.x, originZ + w.z) - originY;
-        const pLight = new THREE.PointLight(w.color, w.intensity, w.dist, 1.25);
-        pLight.position.set(w.x, gY + w.yOff, w.z);
-        group.add(pLight);
+        if (w.hasLight) {
+          const pLight = new THREE.PointLight(w.color, 1.85, 20.0, 1.4);
+          pLight.position.set(w.x, gY + w.yOff, w.z);
+          group.add(pLight);
+        }
 
         const cMat = new THREE.MeshBasicMaterial({
           color: w.color,
-          wireframe: false,
           transparent: true,
-          opacity: 0.88,
+          opacity: 0.92,
           blending: THREE.AdditiveBlending
         });
         const crystalMesh = new THREE.Mesh(crystalGeo, cMat);
@@ -11824,7 +11939,7 @@ getSafeRoomGroundY(wx, wz) {
         group.add(crystalMesh);
       });
 
-      // 11. Botanical Wildflowers & Diverse Floral Tapestry (Merged single draw call with 6 distinct species)
+      // 11. Botanical Wildflowers & Diverse Floral Tapestry (Evenly dispersed across far rolling hills, zero clumping)
       const floraGroup = new THREE.Group();
       const flPos = [];
       const flUv = [];
@@ -11842,91 +11957,64 @@ getSafeRoomGroundY(wx, wz) {
         new THREE.Color(0xfb923c)  // 5: Sunset Mountain Lilies (Warm Coral Orange)
       ];
 
-      // Procedural organic distribution of 320+ flower clumps across meadows, glades, and trailsides
+      // Procedural Poisson-spaced distribution across distant rolling hills and outer meadows (strictly away from mountain base)
       const flowerClumps = [];
-
-      // A. Drifts along all walking trails (flanking left and right)
-      const trailWaypoints = [
-        [-18.5, 9.5], [-13.0, 6.0], [-6.5, 2.5], [0.0, 0.0], [4.5, -3.0], [6.5, -6.5],
-        [4.8, -10.5], [3.6, -14.5], [4.5, -18.5], [6.0, -23.0], [3.5, -31.0], [4.0, -40.0],
-        [12.0, -45.0], [24.0, -45.5], [38.0, -44.0], [52.0, -36.0], [56.0, -22.0], [56.0, -8.0],
-        [53.0, 6.0], [42.0, 17.5], [28.0, 19.5], [14.0, 18.0], [0.0, 15.0], [-12.0, 12.0],
-        [-9.0, -4.5], [-11.5, -11.5], [-9.5, -18.5], [-4.5, -22.5],
-        [5.2, -12.0], [-14.0, 13.5], [-8.5, 15.5], [4.0, 17.5]
+      const outerFloralZones = [
+        // 1. Far West Rolling Hills (Expansive rolling hills behind spawn & portal)
+        { minX: -85.0, maxX: -24.0, minZ: -72.0, maxZ: 72.0, attempts: 240 },
+        // 2. Far North Distant Foothills
+        { minX: -45.0, maxX: 45.0, minZ: -86.0, maxZ: -48.0, attempts: 180 },
+        // 3. South Sunny Meadows & Rolling Knoll
+        { minX: -45.0, maxX: 48.0, minZ: 25.0, maxZ: 86.0, attempts: 180 },
+        // 4. Far East Rear Meadow (Expansive meadow behind mountain slope)
+        { minX: 55.0, maxX: 86.0, minZ: -45.0, maxZ: 25.0, attempts: 140 }
       ];
 
-      for (let i = 0; i < trailWaypoints.length; i++) {
-        const [tx, tz] = trailWaypoints[i];
-        for (let side = -1; side <= 1; side += 2) {
-          for (let k = 0; k < 2; k++) {
-            const rOffset = 2.0 + Math.random() * 2.8;
-            const a = Math.random() * Math.PI * 2;
-            flowerClumps.push({
-              x: tx + Math.cos(a) * rOffset,
-              z: tz + Math.sin(a) * rOffset,
-              scale: 0.85 + Math.random() * 0.75,
-              rot: Math.random() * Math.PI,
-              species: Math.floor(Math.random() * 6)
-            });
-          }
-        }
-      }
-
-      // B. Expansive floral fields across North Meadow, South Ridge, and Mountain Rear Valley
-      const meadowSpawns = [
-        // North Meadow Blossom Field (80 clumps)
-        { minX: -36.0, maxX: -4.0, minZ: -42.0, maxZ: -6.0, count: 80 },
-        // South Ridge Wildflower Slopes (70 clumps)
-        { minX: -18.0, maxX: 36.0, minZ: 10.0, maxZ: 32.0, count: 70 },
-        // Mountain Rear Panoramic Meadow (65 clumps)
-        { minX: 48.0, maxX: 78.0, minZ: -42.0, maxZ: 15.0, count: 65 },
-        // Lake Overlook and Glade Surroundings (45 clumps)
-        { minX: -8.0, maxX: 12.0, minZ: -24.0, maxZ: 4.0, count: 45 }
-      ];
-
-      meadowSpawns.forEach(zone => {
-        for (let k = 0; k < zone.count; k++) {
+      outerFloralZones.forEach(zone => {
+        for (let a = 0; a < zone.attempts; a++) {
           const fx = zone.minX + Math.random() * (zone.maxX - zone.minX);
           const fz = zone.minZ + Math.random() * (zone.maxZ - zone.minZ);
 
-          // Exclude points inside the mountain solid envelope
-          if (fz >= -41.4 && fz <= 15.0) {
-            const si = -fz - 13.2;
-            const siClamped = Math.max(-28.0, Math.min(28.0, si));
-            const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
-            const rockFrontX = 10.8 - canyonCurv - 0.7;
-            const rockBackX = 10.8 - canyonCurv + 38.4;
-            if (fx >= rockFrontX - 1.2 && fx <= rockBackX + 1.2) continue;
+          // Exclude anything within 14m of mountain massif and waterfall plunge pool
+          if (fx >= -12.0 && fx <= 52.0 && fz >= -44.0 && fz <= 18.0) continue;
+          if (Math.hypot(fx - 6.4, fz - (-13.2)) < 12.0) continue;
+
+          // Exclude beyond perimeter fence
+          const distFromCenter = Math.hypot(fx, fz);
+          if (distFromCenter > 90.0 || distFromCenter < 14.0) continue;
+
+          // Poisson minimum distance check to prevent any clumping (minimum 3.4m spacing)
+          let tooClose = false;
+          for (let c = 0; c < flowerClumps.length; c++) {
+            const dx = fx - flowerClumps[c].x;
+            const dz = fz - flowerClumps[c].z;
+            if (dx * dx + dz * dz < 11.56) { // 3.4m^2
+              tooClose = true;
+              break;
+            }
           }
-
-          // Exclude points inside the deep lagoon water
-          const poolDist = Math.hypot(fx - 6.4, fz - (-13.2));
-          if (poolDist < 7.8) continue;
-
-          // Exclude points beyond the fence radius
-          if (Math.hypot(fx, fz) > 90.0) continue;
+          if (tooClose) continue;
 
           flowerClumps.push({
             x: fx,
             z: fz,
-            scale: 0.75 + Math.random() * 0.85,
+            scale: 0.72 + Math.random() * 0.45,
             rot: Math.random() * Math.PI,
             species: Math.floor(Math.random() * 6)
           });
         }
       });
 
-      // Construct multi-quad intersecting botanical billboards with vertex color tinting
+      // Construct 2-quad cross-billboard geometry for optimal rendering performance
       for (let i = 0; i < flowerClumps.length; i++) {
         const fc = flowerClumps[i];
         const gndY = this.getSafeRoomGroundY(originX + fc.x, originZ + fc.z) - originY;
         const cy = gndY + fc.scale * 0.55;
-        const hw = (fc.scale * 1.3) * 0.5;
-        const hh = (fc.scale * 1.2) * 0.5;
+        const hw = (fc.scale * 1.25) * 0.5;
+        const hh = (fc.scale * 1.15) * 0.5;
         const col = flowerSpecies[fc.species];
 
-        // 3-quad intersecting billboard (0, 60, 120 degrees) for lush 3D floral volume
-        const angles = [fc.rot, fc.rot + Math.PI / 3, fc.rot + (Math.PI * 2) / 3];
+        const angles = [fc.rot, fc.rot + Math.PI * 0.5];
         for (let a = 0; a < angles.length; a++) {
           const ang = angles[a];
           const cosA = Math.cos(ang);
@@ -23863,27 +23951,37 @@ getSafeRoomGroundY(wx, wz) {
         }
 
         // Dedicated sanctuary mountain massif collision resolver:
-        // Guarantees the mountain is a 100% solid, impenetrable object that player can never clip through from any angle
+        // Guarantees the mountain is a 100% solid, impenetrable object that player can never clip through from any angle,
+        // while allowing running up the back slope, navigating the summit, and leaping off into the plunge pool!
         if (this.isSafeRoomActive) {
-          this.resolveMountainSolidCollision(pos, radius);
+          this.resolveMountainSolidCollision(pos, radius, footElevation);
         }
       }
     }
 
-    resolveMountainSolidCollision(pos, radius) {
+    resolveMountainSolidCollision(pos, radius, footElevation = -999) {
       const sr = this.safeRoomSanctuary;
       const originX = sr ? sr.originX : 300.0;
+      const originY = sr ? sr.originY : 50.0;
       const originZ = sr ? sr.originZ : 300.0;
       const lx = pos.x - originX;
       const lz = pos.z - originZ;
 
-      // Mountain Z extent in local space (north flank: -41.2, south flank: +14.8)
+      // Mountain Z extent in local space (north flank: -41.4, south flank: +15.0)
       const minZ = -41.4;
       const maxZ = 15.0;
 
       // Fast early rejection if position is outside the mountain envelope
       if (lz < minZ - radius || lz > maxZ + radius) return;
-      if (lx < 0.5 - radius || lx > 50.0 + radius) return;
+      if (lx < -1.0 - radius || lx > 52.0 + radius) return;
+
+      // If player is on or above the mountain surface, allow completely free movement on the rock slope and summit!
+      const mSurfaceY = this.getMountainSurfaceY(lx, lz);
+      if (mSurfaceY !== null && footElevation !== -999) {
+        if (footElevation >= mSurfaceY - 0.85) {
+          return;
+        }
+      }
 
       // Clamp lz to find the corresponding rock cross-section
       const clampedZ = Math.max(minZ, Math.min(maxZ, lz));
@@ -23902,8 +24000,14 @@ getSafeRoomGroundY(wx, wz) {
       const penSouth = (maxZ + radius) - lz;   // Distance penetrated past south flank (> 0 if inside)
 
       if (penFront > 0 && penBack > 0 && penNorth > 0 && penSouth > 0) {
-        // Player is touching or inside the mountain - push out along the minimum escape vector
-        const minPen = Math.min(penFront, penBack, penNorth, penSouth);
+        // Allow player approaching from the back meadow to step freely onto the back slope ramp
+        const meadowY = this.getSafeRoomMeadowY(pos.x, pos.z);
+        if (footElevation !== -999 && footElevation >= meadowY - 0.45 && lx >= backX - 3.5) {
+          return;
+        }
+
+        // Player is touching or attempting to clip inside the mountain below its surface - push out
+        const minPen = Math.min(penFront, penNorth, penSouth, penBack);
 
         if (minPen === penFront) {
           pos.x = originX + (frontX - radius);
