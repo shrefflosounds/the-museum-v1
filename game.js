@@ -10485,7 +10485,7 @@ window.game = this;
         tx.wrapS = tx.wrapT = THREE.RepeatWrapping;
       });
       const portalRingTex = this.texLoader.load('assets/textures/sanctuary/sanctuary_portal_ring.png');
-      const vistaTex = this.texLoader.load('assets/textures/sanctuary/mountain_vista.jpg', (tx) => {
+      const vistaTex = this.texLoader.load('assets/textures/sanctuary/mountain_vista.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.ClampToEdgeWrapping;
       });
