@@ -23846,7 +23846,7 @@ window.game = this;
 
             // If player's feet are above the top of the cylinder, allow jumping/leaping freely over it
             if (c.maxY !== undefined && footElevation !== -999 && footElevation >= (c.maxY - 0.15)) continue;
-            if (c.minY !== undefined && footElevation !== -999 && (footElevation + camHeight) <= c.minY) continue;
+            if (c.minY !== undefined && footElevation !== -999 && (footElevation + bodyHeight) <= c.minY) continue;
 
             const dx = pos.x - c.x;
             const dz = pos.z - c.z;
