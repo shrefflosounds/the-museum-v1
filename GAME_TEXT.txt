@@ -72,6 +72,7 @@ ctrl.aim = **Right Click**: Aim
 ctrl.map = **Tab**: Inventory & Map
 ctrl.dance = **X**: Dance
 ctrl.smack = **Q**: Smack / Strike
+ctrl.perspective = **P**: Front / Rear View
 
 settings.spectator_heading = SPECTATOR MODE
 spec.toggle = **~ or F2**: Spectator
