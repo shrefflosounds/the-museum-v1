@@ -709,11 +709,6 @@ body.cutscene-playing *,
   visibility: hidden;
 }
 
-/* Specific styling for Options Modal to prevent layout jumping or scrollbar flickering */
-#options-modal {
-  overflow: hidden;
-}
-
 /* Game Over casualty screen & Victory screen: full solid black background without showing blurred game */
 #game-over-modal,
 #victory-modal {
@@ -748,13 +743,10 @@ body.cutscene-playing *,
 .mobile-block-box::before {
   content: '';
   position: absolute;
-  top: -18px;
-  bottom: -18px;
-  left: -24px;
-  right: -24px;
+  inset: 0;
   background: url('assets/ui/blob_blue.png') center center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.42))
-          drop-shadow(0 0 45px rgba(255, 255, 255, 0.22))
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
   z-index: -1;
   pointer-events: none;
@@ -765,8 +757,8 @@ body.cutscene-playing *,
 }
 
 .art-lightbox::before {
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.42))
-          drop-shadow(0 0 45px rgba(255, 255, 255, 0.22))
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
           drop-shadow(0 25px 60px rgba(0, 0, 0, 0.90));
   animation: purpleBlobPulse 6s ease-in-out infinite;
 }
@@ -789,8 +781,8 @@ body.cutscene-playing *,
   pointer-events: none;
   z-index: 10050;
   background: url('assets/ui/blob_blue.png') center center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.50))
-          drop-shadow(0 0 50px rgba(255, 255, 255, 0.28))
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
   opacity: 0;
   transform-origin: center center;
@@ -1342,7 +1334,7 @@ body.cutscene-playing *,
   width: 92%;
   max-height: 94vh;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   padding: 44px 64px 34px 64px;
   text-align: center;
 }
@@ -1425,7 +1417,7 @@ body.cutscene-playing *,
   width: 92%;
   max-height: 94vh;
   box-sizing: border-box;
-  overflow: hidden;
+  overflow: visible;
   padding: 38px 56px 30px 56px;
   text-align: left;
 }

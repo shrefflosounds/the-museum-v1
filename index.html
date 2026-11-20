@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.5.1">
+  <link rel="stylesheet" href="style.css?v=2.5.2">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -301,6 +301,7 @@
           <div class="ctrl-col" data-html-text="ctrl.dance"><strong>X</strong>: Dance</div>
           <div class="ctrl-col" data-html-text="ctrl.smack"><strong>Q</strong>: Smack / Strike</div>
           <div class="ctrl-col" data-html-text="ctrl.perspective"><strong>P</strong>: Front / Rear View (3rd Person)</div>
+          <div class="ctrl-col" data-html-text="ctrl.fullscreen"><strong>Y</strong>: Fullscreen</div>
         </div>
       </div>
 
@@ -472,9 +473,9 @@
   <script type="module">
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
-    window._ASSET_VERSION = '2.9.1795206000';
+    window._ASSET_VERSION = '2.9.1795208000';
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795206000';
+    gameScript.src = 'game.js?v=2.9.1795208000';
     document.body.appendChild(gameScript);
   </script>
 </body>

@@ -21842,7 +21842,9 @@ window.game = this;
       if (this.dom.optionsBubbleBtn) {
         this.dom.optionsBubbleBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.openOptionsModal();
+          this.transitionMenuModal(this.dom.startScreen, this.dom.optionsModal, () => {
+            this.openOptionsModal();
+          });
         });
       }
       if (this.dom.optionsCloseBtn) {
@@ -21863,7 +21865,9 @@ window.game = this;
       if (this.dom.settingsBubbleBtn) {
         this.dom.settingsBubbleBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.openSettingsModal();
+          this.transitionMenuModal(this.dom.startScreen, this.dom.settingsModal, () => {
+            this.openSettingsModal();
+          });
         });
       }
       if (this.dom.settingsCloseBtn) {
@@ -21908,7 +21912,9 @@ window.game = this;
       if (this.dom.aboutBubbleBtn) {
         this.dom.aboutBubbleBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          this.openAboutModal();
+          this.transitionMenuModal(this.dom.startScreen, this.dom.aboutModal, () => {
+            this.openAboutModal();
+          });
         });
       }
       if (this.dom.aboutCloseBtn) {
@@ -22250,7 +22256,12 @@ window.game = this;
           }
         }
 
-        if (e.code === 'KeyQ') {
+        if (e.code === 'KeyY') {
+          if (!e.target || (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA')) {
+            e.preventDefault();
+            this.toggleFullscreen();
+          }
+        } else if (e.code === 'KeyQ') {
           if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
             this.performPlayerPunch();
           }
@@ -22478,6 +22489,33 @@ window.game = this;
       }
     }
 
+    toggleFullscreen() {
+      const doc = document;
+      const elem = doc.documentElement;
+      const isFullscreen = !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
+      if (!isFullscreen) {
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen().catch(() => {});
+        } else if (elem.webkitRequestFullscreen) {
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) {
+          elem.msRequestFullscreen();
+        } else if (elem.mozRequestFullScreen) {
+          elem.mozRequestFullScreen();
+        }
+      } else {
+        if (doc.exitFullscreen) {
+          doc.exitFullscreen().catch(() => {});
+        } else if (doc.webkitExitFullscreen) {
+          doc.webkitExitFullscreen();
+        } else if (doc.msExitFullscreen) {
+          doc.msExitFullscreen();
+        } else if (doc.mozCancelFullScreen) {
+          doc.mozCancelFullScreen();
+        }
+      }
+    }
+
     openObjectiveModal() {
       this.isObjectiveModalOpen = true;
       this.releaseNativeOrBrowserLock();
@@ -22599,6 +22637,10 @@ window.game = this;
         this.transitionMenuModal(this.dom.optionsModal, this.dom.pauseModal, () => {
           this.dom.optionsModal.classList.add('hidden');
         });
+      } else if (!this.gameStarted) {
+        this.transitionMenuModal(this.dom.optionsModal, this.dom.startScreen, () => {
+          this.dom.optionsModal.classList.add('hidden');
+        });
       } else {
         this.dom.optionsModal.classList.add('hidden');
         if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
@@ -22619,6 +22661,10 @@ window.game = this;
         this.transitionMenuModal(this.dom.settingsModal, this.dom.pauseModal, () => {
           this.dom.settingsModal.classList.add('hidden');
         });
+      } else if (!this.gameStarted) {
+        this.transitionMenuModal(this.dom.settingsModal, this.dom.startScreen, () => {
+          this.dom.settingsModal.classList.add('hidden');
+        });
       } else {
         this.dom.settingsModal.classList.add('hidden');
         if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isGameOver && !this.isVictory) {
@@ -22636,6 +22682,10 @@ window.game = this;
       this.isAboutModalOpen = false;
       if (this.isPaused) {
         this.transitionMenuModal(this.dom.aboutModal, this.dom.pauseModal, () => {
+          if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
+        });
+      } else if (!this.gameStarted) {
+        this.transitionMenuModal(this.dom.aboutModal, this.dom.startScreen, () => {
           if (this.dom.aboutModal) this.dom.aboutModal.classList.add('hidden');
         });
       } else {
