@@ -9,7 +9,7 @@
         { id: 2, name: 'The Cook', file: 'The Cook.glb', portrait: 'assets/ui/portraits/3.png' },
         { id: 3, name: 'The Arse', file: 'The Arse.glb', portrait: 'assets/ui/portraits/4.png' },
         { id: 4, name: 'Sand', file: 'Sand.glb', portrait: 'assets/ui/portraits/5.png' },
-        { id: 5, name: 'The Clown', file: 'The Clown.glb', portrait: 'assets/ui/portraits/6.png' },
+        { id: 5, name: 'SF', file: 'The Clown.glb', portrait: 'assets/ui/portraits/6.png' },
         { id: 6, name: 'The Student', file: 'The Student.glb', portrait: 'assets/ui/portraits/7.png' },
         { id: 7, name: 'Heknah', file: 'Heknah.glb', portrait: 'assets/ui/portraits/8.png' },
         { id: 8, name: 'REem8', file: 'REem8.glb', portrait: 'assets/ui/portraits/9.png', isUnlockable: true },

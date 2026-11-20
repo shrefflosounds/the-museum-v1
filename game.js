@@ -20361,7 +20361,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'The Cook', 'The Arse', 'Sand', 'The Clown', 'The Student', 'Heknah', 'REem8', 'The Being'];
+        const charNames = ['The Animal', 'The Earth', 'The Cook', 'The Arse', 'Sand', 'SF', 'The Student', 'Heknah', 'REem8', 'The Being'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -20431,7 +20431,7 @@ window.game = this;
         { name: 'The Cook', file: 'The Cook.glb' },
         { name: 'The Arse', file: 'The Arse.glb' },
         { name: 'Sand', file: 'Sand.glb' },
-        { name: 'The Clown', file: 'The Clown.glb' },
+        { name: 'SF', file: 'The Clown.glb' },
         { name: 'The Student', file: 'The Student.glb' },
         { name: 'Heknah', file: 'Heknah.glb' },
         { name: 'REem8', file: 'REem8.glb' },

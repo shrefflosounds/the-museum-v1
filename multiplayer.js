@@ -23,7 +23,7 @@
         { name: 'The Cook', file: 'The Cook.glb' },
         { name: 'The Arse', file: 'The Arse.glb' },
         { name: 'Sand', file: 'Sand.glb' },
-        { name: 'The Clown', file: 'The Clown.glb' },
+        { name: 'SF', file: 'The Clown.glb' },
         { name: 'The Student', file: 'The Student.glb' },
         { name: 'Heknah', file: 'Heknah.glb' },
         { name: 'REem8', file: 'REem8.glb' },
