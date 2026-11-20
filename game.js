@@ -10452,29 +10452,7 @@ window.game = this;
 
         const y0 = sampleSliceY(slice0, lx);
         const y1 = sampleSliceY(slice1, lx);
-        let localY = y0 * (1.0 - wi) + y1 * wi;
-
-        // Incorporate ALL mountain boulders (crags and canyon rocks) as solid physical dome caps
-        // Matches the 3D Dodecahedron geometry to the millimeter, so player feet never dip inside
-        const mRocks = (sr && sr.mountainBoulders && sr.mountainBoulders.length > 0) ? sr.mountainBoulders : sr.topRockOutcrops;
-        if (mRocks) {
-          for (let b = 0; b < mRocks.length; b++) {
-            const rock = mRocks[b];
-            const rockRad = rock.bs ? (rock.bs * 1.05) : rock.radius;
-            const rockH = rock.bh !== undefined ? rock.bh : rock.height;
-            const rx = rock.x !== undefined ? rock.x : rock.bx;
-            const rz = rock.z !== undefined ? rock.z : rock.bz;
-            const ry = rock.y !== undefined ? rock.y : rock.by;
-            const dx = lx - rx;
-            const dz = lz - rz;
-            const distSq = dx * dx + dz * dz;
-            if (distSq < rockRad * rockRad) {
-              const cap = Math.sqrt(Math.max(0.0, 1.0 - distSq / (rockRad * rockRad)));
-              const rockTopY = ry + rockH * cap;
-              if (rockTopY > localY) localY = rockTopY;
-            }
-          }
-        }
+        const localY = y0 * (1.0 - wi) + y1 * wi;
 
         return originY + localY;
       }
@@ -11201,8 +11179,10 @@ window.game = this;
         for (let k = 0; k < segsFront; k++) {
           const yNorm = k / (segsFront - 1);
           // Taper cliff surface displacement cleanly to zero at the crest (yNorm -> 1)
-          // so the front cliff crest exactly coincides with the start of the back slope!
+          // and at the side flanks (|si| -> spanS) so the front cliff crest exactly coincides
+          // with the start of the back slope and aligns with the side wall colliders!
           const crestTaper = (k === segsFront - 1) ? 0.0 : (1.0 - Math.pow(yNorm, 3.5));
+          const flankTaper = Math.max(0.0, Math.min(1.0, (spanS - Math.abs(si)) / 2.5));
           const strata = Math.sin(yNorm * frontLipH * 0.75) * 0.35 + Math.sin(si * 0.5 + yNorm * 3.8) * 0.30;
           const cliffRecess = Math.pow(yNorm, 1.3) * 1.3;
           let cragShelf = 0.0;
@@ -11211,8 +11191,9 @@ window.game = this;
             const cragY = Math.sin(yNorm * Math.PI);
             cragShelf = cragS * cragY * 1.5;
           }
-          const x = (k === segsFront - 1) ? baseX : (baseX + nx * (cragShelf - cliffRecess + strata) * crestTaper);
-          const z = (k === segsFront - 1) ? baseZ : (baseZ + nz * (cragShelf - cliffRecess + strata) * crestTaper);
+          const cliffDisp = (cragShelf - cliffRecess + strata) * crestTaper * flankTaper;
+          const x = (k === segsFront - 1) ? baseX : (baseX + nx * cliffDisp);
+          const z = (k === segsFront - 1) ? baseZ : (baseZ + nz * cliffDisp);
           const y = (k === 0) ? (frontGndY - 1.2) : (frontGndY + yNorm * frontLipH);
           amphiPositions.push(x, y, z);
           amphiUvs.push((si + spanS) / 6.5, y / 6.5);
@@ -11221,18 +11202,17 @@ window.game = this;
         // 2. Solid sloping mountain back descending firmly into terrain (k = 0 .. segsBack - 1)
         for (let k = 0; k < segsBack; k++) {
           const t = k / (segsBack - 1);
-          const strataBack = Math.sin(si * 0.45 + t * 3.2) * 0.45 * Math.sin(t * Math.PI);
+          const flankTaper = Math.max(0.0, Math.min(1.0, (spanS - Math.abs(si)) / 2.5));
+          const strataBack = Math.sin(si * 0.45 + t * 3.2) * 0.45 * Math.sin(t * Math.PI) * flankTaper;
           const x = (k === 0) ? baseX : (baseX + t * backDist + px * strataBack);
           const z = (k === 0) ? baseZ : (baseZ + pz * strataBack);
-          const summitY = frontGndY + summitH;
 
           // Behind the waterfall cleft, smooth transition into an alpine crest behind the spring
-          const crestH = summitY * (1.0 - notch) + (frontLipH + 6.5 * Math.sin(Math.min(1.0, t / 0.22) * Math.PI * 0.5)) * notch;
+          const crestElevation = (frontGndY + summitH) * (1.0 - notch) + (frontGndY + frontLipH + 6.5 * Math.sin(Math.min(1.0, t / 0.22) * Math.PI * 0.5)) * notch;
           const arch = Math.sin(t * Math.PI) * (3.4 * (1.0 - notch * 0.4)) * (1.0 - t * 0.4);
-          const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
-          const h = (k === 0) ? frontLipH : (crestH * (1.0 - Math.pow(t, 1.2)) + (backGndY - 1.2) * Math.pow(t, 1.2) + arch + ridgeRelief);
+          const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75) * flankTaper;
+          const y = (k === 0) ? (frontGndY + frontLipH) : (crestElevation * (1.0 - Math.pow(t, 1.2)) + (backGndY - 0.5) * Math.pow(t, 1.2) + arch + ridgeRelief);
 
-          const y = frontGndY + h;
           amphiPositions.push(x, y, z);
           amphiUvs.push((si + spanS) / 6.5, (y + t * backDist * 0.4) / 6.5);
         }
@@ -11312,9 +11292,8 @@ window.game = this;
 
             const rx = bx * (1.0 - ringRatio) + cx * ringRatio;
             const ry = by * (1.0 - ringRatio) + cy * ringRatio;
-            const normSign = isNorth ? -1.0 : 1.0;
-            const cragRelief = (Math.sin(rx * 0.75) * 0.22 + Math.cos(ry * 0.65) * 0.18) * Math.sin(ringRatio * Math.PI);
-            const rz = bz * (1.0 - ringRatio) + cz * ringRatio + normSign * cragRelief;
+            // Keep side flank cap flat and planar at exact Z boundary (minZ/maxZ) to match physical colliders
+            const rz = cz;
 
             const newIdx = amphiPositions.length / 3;
             amphiPositions.push(rx, ry, rz);
@@ -11341,8 +11320,7 @@ window.game = this;
         }
 
         const centerIdx = amphiPositions.length / 3;
-        const centerZRelief = (isNorth ? -1.0 : 1.0) * 0.20;
-        amphiPositions.push(cx, cy, cz + centerZRelief);
+        amphiPositions.push(cx, cy, cz);
         amphiUvs.push(cx / 6.5, cy / 6.5);
 
         for (let k = 0; k < loopPts; k++) {
@@ -11404,14 +11382,7 @@ window.game = this;
         [9.2, -1.4, -14.5, 1.7, 0.85, 1.1],
         [6.8, -1.2, -15.5, 1.4, 0.7, 0.8],
         [8.8, -1.3, -11.2, 1.6, 0.8, 1.5],
-        [8.0, -1.4, -13.5, 1.8, 0.9, 0.3],
-
-        // Natural Canyon Boulders Framing Waterfall Lip Crest & Chute (Sitting solidly on mountain surface)
-        [9.8, 24.5, cliffLocalZ - 3.6, 2.2, 1.4, 0.5], // Left gorge rim boulder
-        [9.8, 24.5, cliffLocalZ + 3.6, 2.2, 1.4, 0.9], // Right gorge rim boulder
-        [12.5, 23.2, cliffLocalZ - 2.8, 2.4, 1.5, 0.3], // Upper left canyon rock
-        [12.5, 23.2, cliffLocalZ + 2.8, 2.4, 1.5, 1.2], // Upper right canyon rock
-        [10.5, 19.5, cliffLocalZ + 0.6, 1.3, 0.8, 0.7]  // Central dividing rock outcrop in the channel
+        [8.0, -1.4, -13.5, 1.8, 0.9, 0.3]
       ];
 
       const mountainBoulders = [];
@@ -12168,13 +12139,7 @@ window.game = this;
       }
       group.visible = false;
 
-      const topRockOutcrops = [
-        { x: 9.8, y: 19.5, z: cliffLocalZ - 3.6, radius: 2.2, height: 1.4 },
-        { x: 9.8, y: 19.5, z: cliffLocalZ + 3.6, radius: 2.2, height: 1.4 },
-        { x: 12.5, y: 20.6, z: cliffLocalZ - 2.8, radius: 2.4, height: 1.5 },
-        { x: 12.5, y: 20.6, z: cliffLocalZ + 2.8, radius: 2.4, height: 1.5 },
-        { x: 10.5, y: 19.7, z: cliffLocalZ + 0.6, radius: 1.3, height: 0.8 }
-      ];
+      const topRockOutcrops = [];
 
       this.safeRoomSanctuary = {
         group: group,
@@ -23754,8 +23719,9 @@ window.game = this;
 
         if (mountainY !== null) {
           // Conditions to enter mountain from ground meadow or land on it:
-          const isAtBackRamp = (lx >= backBaseX - 3.5 && Math.abs(currentFootElevation - meadowY) < 3.5);
-          const isLandingFromAbove = (this.isFalling && (this.fallVelocity || 0) < 0 && currentFootElevation >= mountainY - 0.5 && currentFootElevation > meadowY + 6.0);
+          // Player can ONLY walk onto the mountain from behind at the base of the rear slope (|si| <= 25.5), NOT from the side flanks
+          const isAtBackRamp = (lx >= backBaseX - 0.5 && lx <= backBaseX + 3.0 && Math.abs(si) <= 25.5 && Math.abs(currentFootElevation - meadowY) < 1.0);
+          const isLandingFromAbove = (this.isFalling && currentFootElevation <= mountainY + 0.6 && currentFootElevation >= mountainY - 1.5 && currentFootElevation > meadowY + 2.0);
 
           if (this.playerOnMountain) {
             // Player is traversing the mountain rock surface:
@@ -24116,77 +24082,109 @@ window.game = this;
       const minZ = -41.2;
       const maxZ = 14.8;
 
-      // 2. Back ramp is completely open for players to run up
-      const si = Math.max(-spanS, Math.min(spanS, -13.2 - lz));
-      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
-      const frontX = 10.8 - canyonCurv;
-      const backX = frontX + 38.0;
-      if (lx >= backX - 2.5) return;
+      // Flank wall corners:
+      // North flank: lz = minZ (-41.2), extending from frontNorthX (2.30) to backNorthX (40.30)
+      // South flank: lz = maxZ (14.8), extending from frontSouthX (2.30) to backSouthX (40.30)
+      const frontNorthX = 2.30;
+      const frontSouthX = 2.30;
+      const backNorthX = 40.30;
+      const backSouthX = 40.30;
 
-      // Corner vertices where front cliff meets side flanks
-      const cornerNorthX = 2.30;
-      const cornerSouthX = 2.30;
-
-      // 3. North-West rounded corner (smooth radial push)
-      const dxN = lx - cornerNorthX;
-      const dzN = lz - minZ;
-      if (dxN < 0 && dzN < 0) {
-        const distSq = dxN * dxN + dzN * dzN;
+      // 2. North-West rounded front corner (radial pushout)
+      const dxNW = lx - frontNorthX;
+      const dzNW = lz - minZ;
+      if (dxNW < 0 && dzNW < 0) {
+        const distSq = dxNW * dxNW + dzNW * dzNW;
         if (distSq < radius * radius && distSq > 0.000001) {
           const dist = Math.sqrt(distSq);
           const overlap = radius - dist;
-          pos.x += (dxN / dist) * overlap;
-          pos.z += (dzN / dist) * overlap;
+          pos.x += (dxNW / dist) * overlap;
+          pos.z += (dzNW / dist) * overlap;
           return;
         }
       }
 
-      // 4. South-West rounded corner (smooth radial push)
-      const dxS = lx - cornerSouthX;
-      const dzS = lz - maxZ;
-      if (dxS < 0 && dzS > 0) {
-        const distSq = dxS * dxS + dzS * dzS;
+      // 3. South-West rounded front corner (radial pushout)
+      const dxSW = lx - frontSouthX;
+      const dzSW = lz - maxZ;
+      if (dxSW < 0 && dzSW > 0) {
+        const distSq = dxSW * dxSW + dzSW * dzSW;
         if (distSq < radius * radius && distSq > 0.000001) {
           const dist = Math.sqrt(distSq);
           const overlap = radius - dist;
-          pos.x += (dxS / dist) * overlap;
-          pos.z += (dzS / dist) * overlap;
+          pos.x += (dxSW / dist) * overlap;
+          pos.z += (dzSW / dist) * overlap;
           return;
         }
       }
 
-      // 5. Solid Interior Protection: If ground player penetrated inside mountain volume, push out along shortest exit
-      if (lz >= minZ && lz <= maxZ && lx >= frontX && lx < backX) {
-        const penFront = lx - frontX;
-        const penNorth = lz - minZ;
-        const penSouth = maxZ - lz;
-        if (penNorth <= penSouth && penNorth <= penFront) {
-          pos.z = originZ + minZ - radius;
-          return;
-        } else if (penSouth <= penFront) {
-          pos.z = originZ + maxZ + radius;
-          return;
-        } else {
-          pos.x = originX + frontX - radius;
+      // 4. North-East rounded back corner (radial pushout)
+      const dxNE = lx - backNorthX;
+      const dzNE = lz - minZ;
+      if (dxNE > 0 && dzNE < 0) {
+        const distSq = dxNE * dxNE + dzNE * dzNE;
+        if (distSq < radius * radius && distSq > 0.000001) {
+          const dist = Math.sqrt(distSq);
+          const overlap = radius - dist;
+          pos.x += (dxNE / dist) * overlap;
+          pos.z += (dzNE / dist) * overlap;
           return;
         }
       }
 
-      // 6. North flank rock wall (smooth push outward along -Z)
-      if (lx >= cornerNorthX && lx <= backX && lz >= minZ - radius && lz <= minZ) {
+      // 5. South-East rounded back corner (radial pushout)
+      const dxSE = lx - backSouthX;
+      const dzSE = lz - maxZ;
+      if (dxSE > 0 && dzSE > 0) {
+        const distSq = dxSE * dxSE + dzSE * dzSE;
+        if (distSq < radius * radius && distSq > 0.000001) {
+          const dist = Math.sqrt(distSq);
+          const overlap = radius - dist;
+          pos.x += (dxSE / dist) * overlap;
+          pos.z += (dzSE / dist) * overlap;
+          return;
+        }
+      }
+
+      // 6. North flank rock wall: solid barrier from front corner all the way to back corner
+      if (lx >= frontNorthX && lx <= backNorthX && lz >= minZ - radius && lz <= minZ) {
         pos.z = originZ + minZ - radius;
         return;
       }
 
-      // 7. South flank rock wall (smooth push outward along +Z)
-      if (lx >= cornerSouthX && lx <= backX && lz <= maxZ + radius && lz >= maxZ) {
+      // 7. South flank rock wall: solid barrier from front corner all the way to back corner
+      if (lx >= frontSouthX && lx <= backSouthX && lz <= maxZ + radius && lz >= maxZ) {
         pos.z = originZ + maxZ + radius;
         return;
       }
 
       // 8. Front cliff face (smooth push outward along -X)
+      const si = Math.max(-spanS, Math.min(spanS, -13.2 - lz));
+      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
+      const frontX = 10.8 - canyonCurv;
+      const backX = frontX + 38.0;
+
       if (lz >= minZ && lz <= maxZ && lx >= frontX - radius && lx <= frontX) {
         pos.x = originX + frontX - radius;
+        return;
+      }
+
+      // 9. Solid Interior Protection: If ground player somehow penetrated inside mountain volume, push out along shortest exit
+      if (lz >= minZ && lz <= maxZ && lx >= frontX && lx < backX) {
+        const penFront = lx - frontX;
+        const penBack = backX - lx;
+        const penNorth = lz - minZ;
+        const penSouth = maxZ - lz;
+        const minPen = Math.min(penFront, penBack, penNorth, penSouth);
+        if (minPen === penSouth) {
+          pos.z = originZ + maxZ + radius;
+        } else if (minPen === penNorth) {
+          pos.z = originZ + minZ - radius;
+        } else if (minPen === penFront) {
+          pos.x = originX + frontX - radius;
+        } else {
+          pos.x = originX + backX + radius;
+        }
       }
     }
 
