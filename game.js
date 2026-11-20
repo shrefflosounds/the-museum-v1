@@ -5115,6 +5115,38 @@ window.game = this;
           this.scene.add(logoMesh);
         }
 
+        // Controls guide wall mural on REem8's interior East wall (left wall when viewing from counter, x = 3.77, facing West -X)
+        // Uses the exact same MeshStandardMaterial lighting settings as the Shrefflo wall mural
+        {
+          const controlsAspect = 746 / 1024; // ~0.7285
+          const controlsH = 4.65;
+          const controlsW = controlsH * controlsAspect; // ~3.39m
+          const controlsTex = this.texLoader.load('assets/textures/easel-controls-1.jpeg', (tx) => {
+            if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
+            else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
+            tx.anisotropy = 8;
+            tx.needsUpdate = true;
+          });
+          const controlsMat = new THREE.MeshStandardMaterial({
+            map: controlsTex,
+            transparent: true,
+            alphaTest: 0.02,
+            roughness: 0.75,
+            metalness: 0.05,
+            side: THREE.FrontSide,
+            polygonOffset: true,
+            polygonOffsetFactor: -2,
+            polygonOffsetUnits: -2
+          });
+          const controlsMesh = new THREE.Mesh(new THREE.PlaneGeometry(controlsW, controlsH), controlsMat);
+          controlsMesh.castShadow = false;
+          controlsMesh.receiveShadow = true;
+          // Interior East wall surface is at x = 3.78; place at x = 3.77 facing West (-X) into REem8's room
+          controlsMesh.rotation.y = -Math.PI / 2;
+          controlsMesh.position.set(3.77, y0 + 3.85, 10.65);
+          this.scene.add(controlsMesh);
+        }
+
         // Create the Clerk's counter desk & ledge structure (original wood & brass materials untouched)
         this.createClerkStandCounter(0.0, y0, 8.0, 3.6, mats);
       } else {
