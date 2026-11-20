@@ -21099,7 +21099,7 @@ window.game = this;
 
       const startGoalEl = document.querySelector('[data-text="start.goal"]');
       if (startGoalEl) {
-        startGoalEl.textContent = T('start.goal', `Recover all ${CONFIG.TOTAL_RELICS} relics to unlock the exit.`, { total: CONFIG.TOTAL_RELICS });
+        startGoalEl.textContent = T('start.goal', 'explore the exhibits, view the videos, recover the relics');
       }
     }
 

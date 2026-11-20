@@ -25,7 +25,7 @@ window_title = Shrefflo Museum
 
 [ START SCREEN ]
 start.title = SHREFFLO MUSEUM
-start.goal = Recover the relics, explore the exhibits, visit the video rooms
+start.goal = explore the exhibits, view the videos, recover the relics
 start.button = START GAME
 bubble.options = OPTIONS
 bubble.controls = CONTROLS
