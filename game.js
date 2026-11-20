@@ -10397,21 +10397,25 @@ window.game = this;
       // Span along mountain Z axis: si = -lz - 13.2. Clamped span is [-28.0, 28.0]
       const spanS = 28.0;
       const siRaw = -lz - 13.2;
+      const absSi = Math.abs(siRaw);
 
-      // Generous buffer margin beyond flank boundaries so ridges/edges never experience single-frame dropouts
-      if (Math.abs(siRaw) > spanS + 1.5) return null;
+      // Flank slope support: naturally support the rugged side flanks up to 4.5m beyond spanS
+      if (absSi > spanS + 4.5) return null;
+
       const si = Math.max(-spanS, Math.min(spanS, siRaw));
-
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const baseX = 10.8 - canyonCurv;
       const backDist = 38.0;
       const backBaseX = baseX + backDist;
 
-      // Active from front cliff crest lip back to the rear slope base
-      if (lx < baseX - 0.6 || lx > backBaseX + 2.5) return null;
+      // In front of cliff crest: returns null (air over waterfall plunge pool/gorge)
+      if (lx < baseX - 0.4) return null;
+      // Beyond rear base: mountain has completely merged into the rear meadow terrain
+      if (lx > backBaseX + 3.0) return null;
 
       const frontGndY = this.getSafeRoomGroundY(originX + baseX, originZ + lz) - originY;
       const backGndY = this.getSafeRoomGroundY(originX + backBaseX, originZ + lz) - originY;
+      const localMeadowY = this.getSafeRoomGroundY(wx, wz) - originY;
 
       let summitH = 26.5;
       let frontLipH;
@@ -10440,16 +10444,29 @@ window.game = this;
           h = frontLipH * (1.0 - u) + 27.8 * u;
         } else {
           const u = (t - 0.18) / (1.0 - 0.18);
-          h = 27.8 * (1.0 - Math.pow(u, 1.25)) + (backGndY - 0.1) * Math.pow(u, 1.25);
+          h = 27.8 * (1.0 - Math.pow(u, 1.25)) + backGndY * Math.pow(u, 1.25);
         }
       } else {
         const arch = Math.sin(t * Math.PI) * 3.4 * (1.0 - t * 0.4);
-        h = summitY * (1.0 - Math.pow(t, 1.2)) + (backGndY - 0.1) * Math.pow(t, 1.2) + arch;
+        h = summitY * (1.0 - Math.pow(t, 1.2)) + backGndY * Math.pow(t, 1.2) + arch;
       }
-      const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
+      const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t);
       h += ridgeRelief;
 
-      return originY + Math.max(backGndY, h);
+      // Seamlessly blend into meadow ground at the back base
+      if (lx >= backBaseX) {
+        const blendT = Math.min(1.0, (lx - backBaseX) / 3.0);
+        h = h * (1.0 - blendT) + localMeadowY * blendT;
+      }
+
+      // Smoothly taper flanks down to meadow ground
+      if (absSi > spanS) {
+        const flankT = (absSi - spanS) / 4.5;
+        const flankWeight = Math.cos(flankT * Math.PI * 0.5);
+        h = localMeadowY + (h - localMeadowY) * flankWeight;
+      }
+
+      return originY + Math.max(localMeadowY, h);
     }
 
     buildSafeRoomSanctuary() {
@@ -23621,33 +23638,29 @@ window.game = this;
         const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
         const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
         const frontLipX = 10.8 - canyonCurv;
-        const backBaseX = frontLipX + 38.0;
 
         if (mountainY !== null) {
-          if (this.playerOnMountain) {
+          // Check if player is traversing, running up the slope, or landing from above
+          const isAtMountainLevel = (currentFootElevation >= mountainY - 2.5);
+          const isAtSlopeBase = (mountainY - meadowY <= 2.2 && currentFootElevation >= meadowY - 0.6);
+
+          if (this.playerOnMountain || isAtMountainLevel || isAtSlopeBase) {
             // Player is traversing the mountain rock surface
-            if (lx < frontLipX - 0.6) {
+            if (lx < frontLipX - 0.4 && currentFootElevation > meadowY + 2.5) {
               // Stepped or leaped off the front cliff crest into mid-air over the waterfall/pool gorge!
               this.playerOnMountain = false;
               groundY = meadowY;
-            } else if (lx > backBaseX + 0.5 && Math.abs(mountainY - meadowY) < 0.6) {
-              // Walked down the rear slope onto the open meadow
+            } else if (mountainY <= meadowY + 0.25) {
+              // Walked down the mountain slope onto the open meadow
               this.playerOnMountain = false;
               groundY = meadowY;
             } else {
               // Stand solidly on the mountain rock surface (can NEVER fall through into the mountain)
+              this.playerOnMountain = true;
               groundY = mountainY;
             }
           } else {
-            // Player is approaching from the meadow or landing from above
-            const isNearBackRamp = (lx >= backBaseX - 4.5 && currentFootElevation >= meadowY - 0.6);
-            const isLandingFromAbove = (currentFootElevation >= mountainY - 1.5);
-            if (isNearBackRamp || isLandingFromAbove) {
-              this.playerOnMountain = true;
-              groundY = mountainY;
-            } else {
-              groundY = meadowY;
-            }
+            groundY = meadowY;
           }
         } else {
           this.playerOnMountain = false;
@@ -23733,6 +23746,9 @@ window.game = this;
             // Natural terrain slope following: smoothly follow terrain elevation (no teleporting up/down)
             const vRate = isMoving ? 38.0 : 45.0;
             this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * vRate));
+            if (this.playerOnMountain && this.playerPos.y < targetCamY) {
+              this.playerPos.y = Math.max(this.playerPos.y, targetCamY - 0.04);
+            }
           } else {
             const verticalFollowRate = this.playerStairState.active ? 42 : 18;
             this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * verticalFollowRate));
@@ -23943,55 +23959,31 @@ window.game = this;
       const lx = pos.x - originX;
       const lz = pos.z - originZ;
 
-      // Mountain Z extent in local coordinates (North flank: -41.2, South flank: +14.8)
-      // Span si = -lz - 13.2, spanning [-28.0, 28.0]
-      const minZ = -41.2;
-      const maxZ = 14.8;
+      // Span along mountain Z axis: si = -lz - 13.2
+      const siRaw = -lz - 13.2;
+      const spanS = 28.0;
 
-      // When outside the mountain in Z, player is on the open meadow/trails running around the flanks.
-      // Absolutely NO invisible walls or push vectors outside the rock envelope!
-      if (lz < minZ - radius || lz > maxZ + radius) return;
+      // When outside the mountain canyon gorge (|si| > spanS), player is on open meadow or flank trails.
+      // Absolutely ZERO push vectors, ZERO boxes, and ZERO invisible borders on or around the flanks!
+      if (Math.abs(siRaw) > spanS) return;
 
-      const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
+      const si = Math.max(-spanS, Math.min(spanS, siRaw));
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const frontX = 10.8 - canyonCurv;
-      const backX = frontX + 38.0;
 
-      // In front of the cliff (pool basin/front trail) or behind the mountain (back meadow): zero push!
-      if (lx < frontX - radius - 1.5 || lx > backX + radius + 1.5) return;
-
-      // If player is on top of the mountain (or landing/jumping on the mountain rock surface):
+      // If player is traversing, jumping, or landing on the mountain rock surface:
       // Complete 100% free movement across all summits, crags, ridges, and slopes!
       if (this.playerOnMountain) return;
 
       const mSurfaceY = this.getMountainSurfaceElevation(pos.x, pos.z);
-      if (mSurfaceY !== null && footElevation !== -999 && footElevation >= mSurfaceY - 0.75) {
+      if (mSurfaceY !== null && footElevation !== -999 && footElevation >= mSurfaceY - 2.0) {
         return;
       }
 
-      // Player is at ground elevation below the mountain rock:
-      // (1) Approaching from the rear meadow:
-      // The mountain back is a natural ramp descending seamlessly into the terrain.
-      // Never push the player away from the back slope - let them step right onto it!
-      if (lx >= backX - 4.5) return;
-
-      // (2) Front cliff face:
-      // Physical sheer rock wall prevents player at pool/path level from walking through the cliff face
-      if (lx > frontX - radius - 0.4 && lx < frontX + 4.5) {
-        pos.x = originX + frontX - radius - 0.4;
-        return;
-      }
-
-      // (3) Lateral flank crags (North & South):
-      // Only prevents clipping deep into the side rock interior from ground level
-      if (lx >= frontX + 1.0 && lx <= backX - 4.5) {
-        const penNorth = lz - minZ;
-        const penSouth = maxZ - lz;
-        if (penNorth > -radius && penNorth < 2.0) {
-          pos.z = originZ + minZ - radius;
-        } else if (penSouth > -radius && penSouth < 2.0) {
-          pos.z = originZ + maxZ + radius;
-        }
+      // Front cliff face:
+      // Physical vertical rock wall prevents player standing down in the pool/path from walking through the cliff face
+      if (lx > frontX - radius - 0.2 && lx < frontX + 2.5) {
+        pos.x = originX + frontX - radius - 0.2;
       }
     }
 
@@ -24378,8 +24370,9 @@ window.game = this;
         if (this.isSafeRoomActive) {
           const meadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
           const mountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
+          const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
           let groundY = meadowY;
-          if (mountainY !== null && (this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT) >= mountainY - 1.5) {
+          if (mountainY !== null && footY >= mountainY - 2.5) {
             groundY = mountainY;
             this.playerOnMountain = true;
           } else {
