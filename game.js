@@ -10397,21 +10397,21 @@ window.game = this;
       // Span along mountain Z axis: si = -lz - 13.2. Clamped span is [-28.0, 28.0]
       const spanS = 28.0;
       const siRaw = -lz - 13.2;
-      const absSi = Math.abs(siRaw);
 
-      // Flank slope support: naturally support the rugged side flanks up to 4.5m beyond spanS
-      if (absSi > spanS + 4.5) return null;
+      // The mountain surface ONLY exists within the physical 3D mountain body (|si| <= 28.0).
+      // Outside this span, you are on the meadow ground; zero invisible planes in mid-air!
+      if (Math.abs(siRaw) > spanS) return null;
 
-      const si = Math.max(-spanS, Math.min(spanS, siRaw));
+      const si = siRaw;
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const baseX = 10.8 - canyonCurv;
       const backDist = 38.0;
       const backBaseX = baseX + backDist;
 
       // In front of cliff crest: returns null (air over waterfall plunge pool/gorge)
-      if (lx < baseX - 0.4) return null;
+      if (lx < baseX - 0.3) return null;
       // Beyond rear base: mountain has completely merged into the rear meadow terrain
-      if (lx > backBaseX + 3.0) return null;
+      if (lx > backBaseX + 0.1) return null;
 
       const frontGndY = this.getSafeRoomGroundY(originX + baseX, originZ + lz) - originY;
       const backGndY = this.getSafeRoomGroundY(originX + backBaseX, originZ + lz) - originY;
@@ -10453,17 +10453,9 @@ window.game = this;
       const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t);
       h += ridgeRelief;
 
-      // Seamlessly blend into meadow ground at the back base
+      // At back base, perfectly matches meadow elevation
       if (lx >= backBaseX) {
-        const blendT = Math.min(1.0, (lx - backBaseX) / 3.0);
-        h = h * (1.0 - blendT) + localMeadowY * blendT;
-      }
-
-      // Smoothly taper flanks down to meadow ground
-      if (absSi > spanS) {
-        const flankT = (absSi - spanS) / 4.5;
-        const flankWeight = Math.cos(flankT * Math.PI * 0.5);
-        h = localMeadowY + (h - localMeadowY) * flankWeight;
+        h = localMeadowY;
       }
 
       return originY + Math.max(localMeadowY, h);
@@ -11716,6 +11708,9 @@ window.game = this;
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
       // (A) Shoreline Boulders Colliders (Mountain massif solidity is handled dynamically by resolveMountainSolidCollision)
       boulders.forEach(([bx, by, bz, bs, bh]) => {
+        // Only shoreline river rocks at the pond basin get physical cylinder colliders;
+        // canyon rocks at the top of the waterfall and cliff face are natural crag features that must NOT trap the player!
+        if (by > 2.0) return;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
@@ -23639,20 +23634,21 @@ window.game = this;
         const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
         const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
         const frontLipX = 10.8 - canyonCurv;
+        const backBaseX = frontLipX + 38.0;
 
         if (mountainY !== null) {
-          // Check if player is traversing, running up the slope, or landing from above
-          const isAtMountainLevel = (currentFootElevation >= mountainY - 2.5);
-          const isAtSlopeBase = (mountainY - meadowY <= 2.2 && currentFootElevation >= meadowY - 0.6);
+          // Player steps onto the mountain from the rear slope ramp, lands from above, or is traversing
+          const isAtBackRamp = (lx >= backBaseX - 3.5 && currentFootElevation >= meadowY - 0.6);
+          const isLandingFromAbove = (currentFootElevation >= mountainY - 2.0);
 
-          if (this.playerOnMountain || isAtMountainLevel || isAtSlopeBase) {
+          if (this.playerOnMountain || isAtBackRamp || isLandingFromAbove) {
             // Player is traversing the mountain rock surface
-            if (lx < frontLipX - 0.4 && currentFootElevation > meadowY + 2.5) {
+            if (lx < frontLipX - 0.3 && currentFootElevation > meadowY + 2.5) {
               // Stepped or leaped off the front cliff crest into mid-air over the waterfall/pool gorge!
               this.playerOnMountain = false;
               groundY = meadowY;
-            } else if (mountainY <= meadowY + 0.25) {
-              // Walked down the mountain slope onto the open meadow
+            } else if (lx >= backBaseX - 0.5 && Math.abs(mountainY - meadowY) < 0.35) {
+              // Walked down the rear slope onto the open meadow
               this.playerOnMountain = false;
               groundY = meadowY;
             } else {
@@ -23965,30 +23961,61 @@ window.game = this;
       const minZ = -41.2;
       const maxZ = 14.8;
 
+      // 2. Back ramp is completely open for players to run up
       const si = Math.max(-spanS, Math.min(spanS, -13.2 - lz));
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const frontX = 10.8 - canyonCurv;
       const backX = frontX + 38.0;
-      const rampThresholdX = backX - 3.0;
+      if (lx >= backX - 3.0) return;
 
-      // 2. Solid impenetrable mountain rock mass at ground level:
-      // Completely seals the front cliff face and lateral rock flanks from ground level entry,
-      // while leaving the back ramp wide open for players to run right up the mountain!
-      if (lx > frontX - radius && lx < rampThresholdX && lz > minZ - radius && lz < maxZ + radius) {
-        const dFront = lx - (frontX - radius);
-        const dNorth = lz - (minZ - radius);
-        const dSouth = (maxZ + radius) - lz;
-        const dBack = rampThresholdX - lx;
+      // Corner vertices where front cliff meets side flanks
+      const cornerNorthX = 2.30;
+      const cornerSouthX = 2.30;
 
-        const minD = Math.min(dFront, dNorth, dSouth, dBack);
-        if (minD === dFront) {
+      // 3. North-West rounded corner (smooth radial push - zero snapping, zero teleportation)
+      const dxN = lx - cornerNorthX;
+      const dzN = lz - minZ;
+      if (dxN < 0 && dzN < 0) {
+        const distSq = dxN * dxN + dzN * dzN;
+        if (distSq < radius * radius && distSq > 0.000001) {
+          const dist = Math.sqrt(distSq);
+          const overlap = radius - dist;
+          pos.x += (dxN / dist) * overlap;
+          pos.z += (dzN / dist) * overlap;
+          return;
+        }
+      }
+
+      // 4. South-West rounded corner (smooth radial push - zero snapping, zero teleportation)
+      const dxS = lx - cornerSouthX;
+      const dzS = lz - maxZ;
+      if (dxS < 0 && dzS > 0) {
+        const distSq = dxS * dxS + dzS * dzS;
+        if (distSq < radius * radius && distSq > 0.000001) {
+          const dist = Math.sqrt(distSq);
+          const overlap = radius - dist;
+          pos.x += (dxS / dist) * overlap;
+          pos.z += (dzS / dist) * overlap;
+          return;
+        }
+      }
+
+      // 5. North flank rock wall (lz <= minZ)
+      if (lz <= minZ && lz > minZ - radius && lx >= cornerNorthX) {
+        pos.z = originZ + minZ - radius;
+        return;
+      }
+
+      // 6. South flank rock wall (lz >= maxZ)
+      if (lz >= maxZ && lz < maxZ + radius && lx >= cornerSouthX) {
+        pos.z = originZ + maxZ + radius;
+        return;
+      }
+
+      // 7. Front cliff face (between minZ and maxZ)
+      if (lz > minZ && lz < maxZ) {
+        if (lx > frontX - radius && lx < backX - 3.0) {
           pos.x = originX + frontX - radius;
-        } else if (minD === dNorth) {
-          pos.z = originZ + minZ - radius;
-        } else if (minD === dSouth) {
-          pos.z = originZ + maxZ + radius;
-        } else {
-          pos.x = originX + rampThresholdX;
         }
       }
     }
