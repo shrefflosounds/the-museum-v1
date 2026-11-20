@@ -10345,41 +10345,49 @@ window.game = this;
       const lz = wz - originZ;
       const distFromCenter = Math.hypot(lx, lz);
 
+      const smoothstep = (x, min, max) => {
+        if (x <= min) return 0.0;
+        if (x >= max) return 1.0;
+        const t = (x - min) / (max - min);
+        return t * t * (3.0 - 2.0 * t);
+      };
+
       let h = 0.0;
 
       // 1. Natural rolling alpine meadow undulations
       h += Math.sin(lx * 0.12) * 0.20 + Math.cos(lz * 0.14) * 0.18 + Math.sin(lx * 0.06 - lz * 0.08) * 0.12;
 
-      // 2. Rolling hills on the far west (beyond spawn & glade)
-      if (lx < -26.0) {
-        const hillDist = Math.abs(lx + 26.0);
-        h += Math.min(9.0, Math.pow(hillDist * 0.085, 1.35) * 2.6 + Math.sin(lz * 0.15) * 0.45);
+      // 2. Rolling hills on the far west (beyond spawn & glade) - C1 smooth hermite transition (zero discontinuity)
+      if (lx < -24.0) {
+        const sWest = smoothstep(-24.0 - lx, 0.0, 30.0);
+        h += sWest * 8.5 + (Math.sin(lz * 0.15) * 0.45 * sWest);
       }
-      // Southern background gentle slopes (far behind spawn)
-      if (lz > 24.0) {
-        const backHill = lz - 24.0;
-        h += Math.min(8.0, Math.pow(backHill * 0.085, 1.3) * 2.3);
+      // Southern background gentle slopes (far behind spawn) - C1 smooth hermite transition
+      if (lz > 22.0) {
+        const sSouth = smoothstep(lz - 22.0, 0.0, 28.0);
+        h += sSouth * 7.5;
       }
 
       // 3. Plunge Pool Basin (center at lx ~ 7.8, lz ~ -13.0)
-      // Raised natural earth & boulder bank around pool rim (rad ~ 9.0 to 11.5)
+      // Raised natural earth & boulder bank around pool rim (rad ~ 8.0 to 12.0)
       // Sunken lagoon basin inside (water surface sits nestled safely at originY - 0.12)
       const poolDx = lx - 7.8;
       const poolDz = (lz - (-13.0)) * 1.10;
       const poolDist = Math.hypot(poolDx, poolDz);
-      if (poolDist < 12.0 && poolDist >= 8.2) {
-        const tBank = Math.sin(((poolDist - 8.2) / 3.8) * Math.PI);
+      if (poolDist < 12.0 && poolDist >= 8.0) {
+        const tBank = Math.sin(((poolDist - 8.0) / 4.0) * Math.PI);
         h += tBank * 0.22;
       }
-      if (poolDist < 8.2) {
-        const t = poolDist / 8.2;
-        h -= (1.0 - Math.pow(t, 2.0)) * 1.85 + 0.15;
+      if (poolDist < 8.0) {
+        const t = poolDist / 8.0;
+        const tBasin = (1.0 - t * t);
+        h -= tBasin * 1.85;
       }
 
-      // 4. Perimeter foothills rising smoothly to panoramic mountain horizon
-      if (distFromCenter > 38.0) {
-        const tRim = (distFromCenter - 38.0) / (96.0 - 38.0);
-        h += Math.pow(tRim, 2.0) * 18.0 + (Math.sin(lx * 0.12 + lz * 0.10) * 2.0);
+      // 4. Perimeter foothills rising smoothly to panoramic mountain horizon - C1 smooth hermite transition
+      if (distFromCenter > 36.0) {
+        const sRim = smoothstep(distFromCenter, 36.0, 96.0);
+        h += Math.pow(sRim, 1.6) * 18.0 + (Math.sin(lx * 0.12 + lz * 0.10) * 1.8 * sRim);
       }
 
       return originY + h;
@@ -10647,10 +10655,10 @@ window.game = this;
       skyMesh.position.set(0, 0, 0);
       group.add(skyMesh);
 
-      // 3. Expansive Wildflower Meadow Ground (High-Density Concentric Polar Mesh)
+      // 3. Expansive Wildflower Meadow Ground (Ultra-High-Density Concentric Polar Mesh)
       const groundRadius = 96.0;
-      const rings = 52;
-      const segs = 68;
+      const rings = 140;
+      const segs = 180;
       const gVerts = [];
       const gUvs = [];
       const gIndices = [];
@@ -11950,6 +11958,90 @@ window.game = this;
         new THREE.Color(0xfb923c)  // 5: Sunset Mountain Lilies (Warm Coral Orange)
       ];
 
+      // Helper to ensure absolutely zero flowers spawn on dirt paths, trails, or earthen glades
+      const sanctuaryGlades = [
+        { cx: -18.5, cz: 9.5, r: 9.0 },
+        { cx: 6.5, cz: -6.5, r: 6.2 },
+        { cx: 4.5, cz: -18.5, r: 5.5 },
+        { cx: 5.6, cz: -13.2, r: 4.6 },
+        { cx: 24.0, cz: 19.5, r: 6.0 },
+        { cx: 55.0, cz: -10.0, r: 6.5 },
+        { cx: 20.0, cz: -45.0, r: 5.8 },
+        { cx: -11.5, cz: -11.5, r: 5.5 },
+        { cx: -4.5, cz: -22.5, r: 5.0 },
+        { cx: -8.5, cz: 15.0, r: 4.8 },
+        { cx: -6.5, cz: 2.5, r: 5.2 },
+        { cx: -12.5, cz: -2.5, r: 4.2 }
+      ];
+
+      const sanctuaryTrails = [
+        {
+          pts: [
+            [-18.5, 9.5], [-13.0, 6.0], [-6.5, 2.5], [0.0, 0.0], [4.5, -3.0], [6.5, -6.5]
+          ],
+          width: 4.4
+        },
+        {
+          pts: [
+            [6.5, -6.5], [4.8, -10.5], [3.6, -14.5], [4.5, -18.5], [6.0, -23.0]
+          ],
+          width: 4.2
+        },
+        {
+          pts: [
+            [6.0, -23.0], [0.5, -31.0], [-1.0, -41.0], [3.5, -46.5], [12.0, -46.5],
+            [24.0, -46.5], [38.0, -45.0], [52.0, -36.0], [56.0, -22.0], [56.0, -8.0],
+            [53.0, 6.0], [42.0, 18.5], [28.0, 20.0], [14.0, 19.5], [2.0, 19.0],
+            [-6.0, 16.5], [-13.0, 13.0], [-18.5, 9.5]
+          ],
+          width: 4.0
+        },
+        {
+          pts: [
+            [-6.5, 2.5], [-9.0, -4.5], [-11.5, -11.5], [-9.5, -18.5], [-4.5, -22.5], [0.5, -31.0]
+          ],
+          width: 3.8
+        },
+        {
+          pts: [
+            [4.8, -10.5], [5.2, -12.0], [5.6, -13.2]
+          ],
+          width: 3.8
+        },
+        {
+          pts: [
+            [-18.5, 9.5], [-14.0, 13.5], [-8.5, 15.5], [4.0, 17.5], [14.0, 18.0], [24.0, 19.5]
+          ],
+          width: 3.8
+        }
+      ];
+
+      const distToSeg = (px, pz, ax, az, bx, bz) => {
+        const dx = bx - ax;
+        const dz = bz - az;
+        const l2 = dx * dx + dz * dz;
+        if (l2 < 0.0001) return Math.hypot(px - ax, pz - az);
+        let t = ((px - ax) * dx + (pz - az) * dz) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return Math.hypot(px - (ax + t * dx), pz - (az + t * dz));
+      };
+
+      const isFlowerNearPathOrGlade = (px, pz) => {
+        for (let g = 0; g < sanctuaryGlades.length; g++) {
+          const glade = sanctuaryGlades[g];
+          if (Math.hypot(px - glade.cx, pz - glade.cz) < glade.r + 1.2) return true;
+        }
+        for (let tr = 0; tr < sanctuaryTrails.length; tr++) {
+          const trail = sanctuaryTrails[tr];
+          const pts = trail.pts;
+          const clearance = (trail.width * 0.5) + 1.2;
+          for (let p = 0; p < pts.length - 1; p++) {
+            if (distToSeg(px, pz, pts[p][0], pts[p][1], pts[p + 1][0], pts[p + 1][1]) < clearance) return true;
+          }
+        }
+        return false;
+      };
+
       // Procedural Poisson-spaced distribution across distant rolling hills and outer meadows (strictly away from mountain base)
       const flowerClumps = [];
       const outerFloralZones = [
@@ -11971,6 +12063,9 @@ window.game = this;
           // Exclude anything within 14m of mountain massif and waterfall plunge pool
           if (fx >= -12.0 && fx <= 52.0 && fz >= -44.0 && fz <= 18.0) continue;
           if (Math.hypot(fx - 6.4, fz - (-13.2)) < 12.0) continue;
+
+          // Exclude anything near dirt trails, walkways, or earthen glades
+          if (isFlowerNearPathOrGlade(fx, fz)) continue;
 
           // Exclude beyond perimeter fence
           const distFromCenter = Math.hypot(fx, fz);
@@ -20594,11 +20689,18 @@ window.game = this;
         Math.max(footY + 0.35, target.y - sinPitch * distance),
         target.z + cosYaw * cosPitch * distance
       );
+      if (this.isSafeRoomActive) {
+        const camGndY = this.getSafeRoomGroundY(desired.x, desired.z);
+        if (desired.y < camGndY + 0.45) {
+          desired.y = camGndY + 0.45;
+        }
+      }
       if (!this.thirdPersonCameraReady) {
         this.camera.position.copy(desired);
         this.thirdPersonCameraReady = true;
       } else {
-        this.camera.position.lerp(desired, Math.min(1, delta * 8));
+        const camFollowRate = this.isSafeRoomActive ? 18 : 12;
+        this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
       }
       const lookAhead = new THREE.Vector3(
         target.x - sinYaw * cosPitch * 5,
@@ -20606,6 +20708,12 @@ window.game = this;
         target.z - cosYaw * cosPitch * 5
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
+      if (this.isSafeRoomActive) {
+        const curCamGndY = this.getSafeRoomGroundY(this.camera.position.x, this.camera.position.z);
+        if (this.camera.position.y < curCamGndY + 0.35) {
+          this.camera.position.y = curCamGndY + 0.35;
+        }
+      }
       this.camera.lookAt(lookAhead);
       if (this.playerModelRoot) {
         this.playerModelRoot.visible = (fade > 0.001);
@@ -23622,6 +23730,12 @@ window.game = this;
         for (let s = 0; s < subSteps; s++) {
           this.playerPos.x += _tempMoveDir.x * moveSpeed * stepDt;
           this.playerPos.z += _tempMoveDir.z * moveSpeed * stepDt;
+          if (this.isSafeRoomActive && this.isGrounded && !this.isFalling) {
+            const subMeadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
+            const subMountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
+            const subGroundY = (this.playerOnMountain && subMountainY !== null) ? subMountainY : subMeadowY;
+            this.playerPos.y = subGroundY + this.currentCamHeight;
+          }
           const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
           this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, activeFloor, currentFootElevation, this.currentCamHeight);
         }
