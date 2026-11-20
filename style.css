@@ -2571,7 +2571,7 @@ body.cutscene-playing *,
   font-family: 'Palatino', 'Palatino Linotype', serif !important;
 }
 
-/* Death Screen -> Zulfiqar */
+/* Death Screen -> Zulfiqar with extended kerning */
 #game-over-modal,
 #game-over-modal *,
 #game-over-modal .horror-title,
@@ -2579,6 +2579,27 @@ body.cutscene-playing *,
 #game-over-modal .stats-box,
 #game-over-modal .museum-btn {
   font-family: 'Zulfiqar', serif !important;
+  letter-spacing: 4px;
+}
+
+#game-over-modal .horror-title,
+#game-over-modal .death-title {
+  letter-spacing: 6px !important;
+}
+
+#game-over-modal .death-sub {
+  letter-spacing: 3.5px !important;
+  line-height: 1.6;
+}
+
+#game-over-modal .stats-box,
+#game-over-modal .stats-box p,
+#game-over-modal .stats-box span {
+  letter-spacing: 3.5px !important;
+}
+
+#game-over-modal .museum-btn {
+  letter-spacing: 5px !important;
 }
 
 /* Controls Menu -> qopro */
