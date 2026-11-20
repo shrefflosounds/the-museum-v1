@@ -10334,71 +10334,7 @@ window.game = this;
         time: 0
       };
     }
-    getMountainSurfaceY(lx, lz) {
-      const minZ = -41.2;
-      const maxZ = 14.8;
-      if (lz < minZ || lz > maxZ) return null;
-
-      const si = -lz - 13.2;
-      const spanS = 28.0;
-      if (Math.abs(si) > spanS) return null;
-
-      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
-      const baseX = 10.8 - canyonCurv;
-      const backDist = 38.0;
-      const backBaseX = baseX + backDist;
-
-      // Only active on the mountain rock surface (from the front crest lip back to the back ground line)
-      if (lx < baseX - 0.4 || lx > backBaseX + 0.5) return null;
-
-      const sr = this.safeRoomSanctuary;
-      const originX = sr ? sr.originX : 300.0;
-      const originY = sr ? sr.originY : 50.0;
-      const originZ = sr ? sr.originZ : 300.0;
-
-      const frontGndY = this.getSafeRoomMeadowY(originX + baseX, originZ + lz) - originY;
-      const backGndY = this.getSafeRoomMeadowY(originX + backBaseX, originZ + lz) - originY;
-
-      let summitH = 26.5;
-      let frontLipH;
-      if (Math.abs(si) < 4.2) {
-        frontLipH = 19.3;
-      } else if (si > 0) {
-        const t = (si - 4.2) / (spanS - 4.2);
-        summitH = 24.5 + Math.sin(t * Math.PI) * 3.5 - t * 4.5;
-        frontLipH = summitH;
-      } else {
-        const t = (-si - 4.2) / (spanS - 4.2);
-        summitH = 25.5 + Math.sin(t * Math.PI) * 3.8 - t * 5.0;
-        frontLipH = summitH;
-      }
-      summitH += (Math.sin(si * 0.55) * 1.2 + Math.cos(si * 1.1) * 0.6);
-      if (Math.abs(si) >= 4.2) frontLipH = summitH;
-
-      // Parametric elevation along the back slope (t = 0 at crest, t = 1 at back ground base)
-      const t = Math.max(0.0, Math.min(1.0, (lx - baseX) / backDist));
-      const summitY = frontGndY + summitH;
-
-      let h;
-      if (Math.abs(si) < 4.2) {
-        if (t < 0.18) {
-          const u = t / 0.18;
-          h = frontLipH * (1.0 - u) + 27.8 * u;
-        } else {
-          const u = (t - 0.18) / (1.0 - 0.18);
-          h = 27.8 * (1.0 - Math.pow(u, 1.25)) + (backGndY - 0.1) * Math.pow(u, 1.25);
-        }
-      } else {
-        const arch = Math.sin(t * Math.PI) * 3.4 * (1.0 - t * 0.4);
-        h = summitY * (1.0 - Math.pow(t, 1.2)) + (backGndY - 0.1) * Math.pow(t, 1.2) + arch;
-      }
-      const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
-      h += ridgeRelief;
-
-      return originY + Math.max(backGndY, h);
-    }
-
-    getSafeRoomMeadowY(wx, wz) {
+    getSafeRoomGroundY(wx, wz) {
       const sr = this.safeRoomSanctuary;
       const originX = sr ? sr.originX : 300.0;
       const originY = sr ? sr.originY : 50.0;
@@ -10425,6 +10361,8 @@ window.game = this;
       }
 
       // 3. Plunge Pool Basin (center at lx ~ 7.8, lz ~ -13.0)
+      // Raised natural earth & boulder bank around pool rim (rad ~ 9.0 to 11.5)
+      // Sunken lagoon basin inside (water surface sits nestled safely at originY - 0.12)
       const poolDx = lx - 7.8;
       const poolDz = (lz - (-13.0)) * 1.10;
       const poolDist = Math.hypot(poolDx, poolDz);
@@ -10444,21 +10382,6 @@ window.game = this;
       }
 
       return originY + h;
-    }
-
-    getSafeRoomGroundY(wx, wz) {
-      const sr = this.safeRoomSanctuary;
-      const originX = sr ? sr.originX : 300.0;
-      const originZ = sr ? sr.originZ : 300.0;
-      const lx = wx - originX;
-      const lz = wz - originZ;
-
-      const meadowY = this.getSafeRoomMeadowY(wx, wz);
-      const mSurfaceY = this.getMountainSurfaceY(lx, lz);
-      if (mSurfaceY !== null && mSurfaceY >= meadowY) {
-        return mSurfaceY;
-      }
-      return meadowY;
     }
 
     buildSafeRoomSanctuary() {
@@ -10854,7 +10777,7 @@ window.game = this;
       const retPortalGroup = new THREE.Group();
       const retPortalLocalX = -20.5;
       const retPortalLocalZ = 7.5;
-      const retPortalGroundY = this.getSafeRoomMeadowY(originX + retPortalLocalX, originZ + retPortalLocalZ) - originY;
+      const retPortalGroundY = this.getSafeRoomGroundY(originX + retPortalLocalX, originZ + retPortalLocalZ) - originY;
       const retPortalLocalY = retPortalGroundY + 3.65; // Elevated so bottom of 3.2m ring floats cleanly above dais with zero sinking
       retPortalGroup.position.set(retPortalLocalX, retPortalLocalY, retPortalLocalZ);
       retPortalGroup.lookAt(-17.0, retPortalLocalY, 12.0);
@@ -11705,8 +11628,8 @@ window.game = this;
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Sheer Front Cliff Face & Lateral Flank Solid Colliders
-      // Blocks walking through the vertical cliff wall from the ground, while allowing running up the back slope and leaping off the summit!
+      // (A) Solid 3D Mountain Massif Colliders
+      // Contiguous airtight slices spanning the entire 3D mountain volume from front cliff to back slope, and north to south flank
       const mSlices = 14;
       for (let s = 0; s < mSlices; s++) {
         const zFrac1 = s / mSlices;
@@ -11718,45 +11641,20 @@ window.game = this;
         const siClamped = Math.max(-28.0, Math.min(28.0, si));
         const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
         const sFrontX = 10.8 - canyonCurv - 0.7;
+        const sBackX = 10.8 - canyonCurv + 38.4;
 
-        // Tight collider protecting the sheer vertical front cliff face up to 18.5m (crest lip).
-        // Players on the ground cannot walk through the rock; players running on the summit (Y >= 24m) can jump off freely!
         this.colliders.push({
           type: 'box',
           floor: 'all',
-          minX: originX + sFrontX - 0.6,
-          maxX: originX + sFrontX + 1.2,
+          minX: originX + sFrontX,
+          maxX: originX + sBackX,
           minZ: originZ + sMinZ,
           maxZ: originZ + sMaxZ,
           minY: originY - 5.0,
-          maxY: originY + 18.5,
-          isWall: false
+          maxY: originY + 45.0,
+          isWall: true
         });
       }
-
-      // North & South Flank Lateral Barriers (Blocks side penetration into the rock massif)
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 5.0,
-        maxX: originX + 46.0,
-        minZ: originZ - 42.5,
-        maxZ: originZ - 40.5,
-        minY: originY - 2.0,
-        maxY: originY + 19.0,
-        isWall: false
-      });
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 5.0,
-        maxX: originX + 46.0,
-        minZ: originZ + 14.0,
-        maxZ: originZ + 16.0,
-        minY: originY - 2.0,
-        maxY: originY + 19.0,
-        isWall: false
-      });
 
       // (B) Shoreline Boulders Colliders
       boulders.forEach(([bx, by, bz, bs, bh]) => {
@@ -23951,37 +23849,27 @@ window.game = this;
         }
 
         // Dedicated sanctuary mountain massif collision resolver:
-        // Guarantees the mountain is a 100% solid, impenetrable object that player can never clip through from any angle,
-        // while allowing running up the back slope, navigating the summit, and leaping off into the plunge pool!
+        // Guarantees the mountain is a 100% solid, impenetrable object that player can never clip through from any angle
         if (this.isSafeRoomActive) {
-          this.resolveMountainSolidCollision(pos, radius, footElevation);
+          this.resolveMountainSolidCollision(pos, radius);
         }
       }
     }
 
-    resolveMountainSolidCollision(pos, radius, footElevation = -999) {
+    resolveMountainSolidCollision(pos, radius) {
       const sr = this.safeRoomSanctuary;
       const originX = sr ? sr.originX : 300.0;
-      const originY = sr ? sr.originY : 50.0;
       const originZ = sr ? sr.originZ : 300.0;
       const lx = pos.x - originX;
       const lz = pos.z - originZ;
 
-      // Mountain Z extent in local space (north flank: -41.4, south flank: +15.0)
+      // Mountain Z extent in local space (north flank: -41.2, south flank: +14.8)
       const minZ = -41.4;
       const maxZ = 15.0;
 
       // Fast early rejection if position is outside the mountain envelope
       if (lz < minZ - radius || lz > maxZ + radius) return;
-      if (lx < -1.0 - radius || lx > 52.0 + radius) return;
-
-      // If player is on or above the mountain surface, allow completely free movement on the rock slope and summit!
-      const mSurfaceY = this.getMountainSurfaceY(lx, lz);
-      if (mSurfaceY !== null && footElevation !== -999) {
-        if (footElevation >= mSurfaceY - 0.85) {
-          return;
-        }
-      }
+      if (lx < 0.5 - radius || lx > 50.0 + radius) return;
 
       // Clamp lz to find the corresponding rock cross-section
       const clampedZ = Math.max(minZ, Math.min(maxZ, lz));
@@ -24000,14 +23888,8 @@ window.game = this;
       const penSouth = (maxZ + radius) - lz;   // Distance penetrated past south flank (> 0 if inside)
 
       if (penFront > 0 && penBack > 0 && penNorth > 0 && penSouth > 0) {
-        // Allow player approaching from the back meadow to step freely onto the back slope ramp
-        const meadowY = this.getSafeRoomMeadowY(pos.x, pos.z);
-        if (footElevation !== -999 && footElevation >= meadowY - 0.45 && lx >= backX - 3.5) {
-          return;
-        }
-
-        // Player is touching or attempting to clip inside the mountain below its surface - push out
-        const minPen = Math.min(penFront, penNorth, penSouth, penBack);
+        // Player is touching or inside the mountain - push out along the minimum escape vector
+        const minPen = Math.min(penFront, penBack, penNorth, penSouth);
 
         if (minPen === penFront) {
           pos.x = originX + (frontX - radius);
