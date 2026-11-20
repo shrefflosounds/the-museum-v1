@@ -4369,7 +4369,7 @@
       const savedMouseSens = localStorage.getItem('the_museum_mouse_sens_mult');
       const parsedMouseSens = Number(savedMouseSens);
       this.mouseSensitivityMultiplier = savedMouseSens !== null && Number.isFinite(parsedMouseSens)
-        ? THREE.MathUtils.clamp(parsedMouseSens, 0.5, 2.0)
+        ? THREE.MathUtils.clamp(parsedMouseSens, 0.5, 1.5)
         : 1.0;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
@@ -22847,7 +22847,7 @@ window.game = this;
     }
 
     setMouseSensitivity(val) {
-      const clamped = THREE.MathUtils.clamp(val, 0.5, 2.0);
+      const clamped = THREE.MathUtils.clamp(val, 0.5, 1.5);
       this.mouseSensitivityMultiplier = clamped;
       try {
         localStorage.setItem('the_museum_mouse_sens_mult', String(clamped));
