@@ -10597,10 +10597,36 @@ getSafeRoomGroundY(wx, wz) {
         }
       };
 
-      // Helper to generate continuous dirt trail ribbons with smooth ground conform and planar UVs
+      // Helper to generate continuous dirt trail ribbons with smooth ground conform, planar UVs, and organic rounded end-caps
       const addTrailRibbon = (pts, pathWidth = 4.2, pathSteps = 36) => {
         const spline = new THREE.SplineCurve(pts);
         const trailStartIdx = pVerts.length / 3;
+
+        // Rounded start cap fan (eliminates abrupt rectangular cut-off at path start)
+        const pStart = spline.getPoint(0);
+        const tanStart = spline.getTangent(0);
+        const startCapCenter = pVerts.length / 3;
+        const startCapY = (this.getSafeRoomGroundY(originX + pStart.x, originZ + pStart.y) - originY) + 0.035;
+        pVerts.push(pStart.x, startCapY, pStart.y);
+        pUvs.push(pStart.x / 5.0, pStart.y / 5.0);
+
+        const startBaseAng = Math.atan2(-tanStart.y, -tanStart.x);
+        const numCapPts = 10;
+        const startFanStart = pVerts.length / 3;
+        for (let k = 0; k <= numCapPts; k++) {
+          const a = startBaseAng - Math.PI * 0.5 + (k / numCapPts) * Math.PI;
+          const fx = pStart.x + Math.cos(a) * (pathWidth * 0.5);
+          const fz = pStart.y + Math.sin(a) * (pathWidth * 0.5);
+          const fy = (this.getSafeRoomGroundY(originX + fx, originZ + fz) - originY) + 0.035;
+          pVerts.push(fx, fy, fz);
+          pUvs.push(fx / 5.0, fz / 5.0);
+        }
+        for (let k = 0; k < numCapPts; k++) {
+          pIndices.push(startCapCenter, startFanStart + k, startFanStart + k + 1);
+        }
+
+        // Ribbon body
+        const bodyStartIdx = pVerts.length / 3;
         for (let st = 0; st <= pathSteps; st++) {
           const t = st / pathSteps;
           const pt = spline.getPoint(t);
@@ -10619,29 +10645,52 @@ getSafeRoomGroundY(wx, wz) {
           }
         }
         for (let st = 0; st < pathSteps; st++) {
-          const i0 = trailStartIdx + st * 2;
+          const i0 = bodyStartIdx + st * 2;
           const i1 = i0 + 1;
-          const i2 = trailStartIdx + (st + 1) * 2;
+          const i2 = bodyStartIdx + (st + 1) * 2;
           const i3 = i2 + 1;
           pIndices.push(i0, i1, i2);
           pIndices.push(i1, i3, i2);
         }
+
+        // Rounded end cap fan (eliminates abrupt rectangular cut-off at path end)
+        const pEnd = spline.getPoint(1);
+        const tanEnd = spline.getTangent(1);
+        const endCapCenter = pVerts.length / 3;
+        const endCapY = (this.getSafeRoomGroundY(originX + pEnd.x, originZ + pEnd.y) - originY) + 0.035;
+        pVerts.push(pEnd.x, endCapY, pEnd.y);
+        pUvs.push(pEnd.x / 5.0, pEnd.y / 5.0);
+
+        const endBaseAng = Math.atan2(tanEnd.y, tanEnd.x);
+        const endFanStart = pVerts.length / 3;
+        for (let k = 0; k <= numCapPts; k++) {
+          const a = endBaseAng - Math.PI * 0.5 + (k / numCapPts) * Math.PI;
+          const fx = pEnd.x + Math.cos(a) * (pathWidth * 0.5);
+          const fz = pEnd.y + Math.sin(a) * (pathWidth * 0.5);
+          const fy = (this.getSafeRoomGroundY(originX + fx, originZ + fz) - originY) + 0.035;
+          pVerts.push(fx, fy, fz);
+          pUvs.push(fx / 5.0, fz / 5.0);
+        }
+        for (let k = 0; k < numCapPts; k++) {
+          pIndices.push(endCapCenter, endFanStart + k, endFanStart + k + 1);
+        }
       };
 
       // (A) Major Glades & Scenic Lookouts
-      addEarthenGlade(-18.5, 9.5, 8.5, 36);   // Spawn & Portal Glade
-      addEarthenGlade(6.5, -6.5, 5.8, 32);     // Lake Overlook Bluff
-      addEarthenGlade(4.5, -18.5, 5.2, 28);    // South Lagoon Shoreline Bluff
-      addEarthenGlade(24.0, 19.5, 5.5, 28);    // South Ridge Meadow Clearing
-      addEarthenGlade(55.0, -10.0, 6.0, 32);   // Mountain Rear Panoramic Vista Glade
-      addEarthenGlade(20.0, -45.0, 5.2, 28);   // North Flank Pass Clearing
-      addEarthenGlade(-11.5, -11.5, 5.2, 28);  // North Meadow Blossom Clearing
-      addEarthenGlade(-4.5, -22.5, 4.8, 28);   // Far North Meadow Lookout
-      addEarthenGlade(-8.5, 15.0, 4.5, 28);    // Southwest Foothills Glade
-      addEarthenGlade(-3.0, 8.5, 4.8, 28);     // Meadow Midpoint Rest
-      addEarthenGlade(-12.5, -2.5, 3.8, 24);   // Forest Border Clearing
+      addEarthenGlade(-18.5, 9.5, 9.0, 36);   // Spawn & Portal Glade
+      addEarthenGlade(6.5, -6.5, 6.2, 32);     // Lake Overlook Bluff
+      addEarthenGlade(4.5, -18.5, 5.5, 28);    // South Lagoon Shoreline Bluff
+      addEarthenGlade(5.6, -13.2, 4.6, 28);    // Plunge Pool Boulder Shoreline Landing
+      addEarthenGlade(24.0, 19.5, 6.0, 28);    // South Ridge Meadow Clearing
+      addEarthenGlade(55.0, -10.0, 6.5, 32);   // Mountain Rear Panoramic Vista Glade
+      addEarthenGlade(20.0, -45.0, 5.8, 28);   // North Flank Pass Clearing
+      addEarthenGlade(-11.5, -11.5, 5.5, 28);  // North Meadow Blossom Clearing
+      addEarthenGlade(-4.5, -22.5, 5.0, 28);   // Far North Meadow Lookout
+      addEarthenGlade(-8.5, 15.0, 4.8, 28);    // Southwest Foothills Glade
+      addEarthenGlade(-6.5, 2.5, 5.2, 28);     // Valley Center Crossroads Clearing
+      addEarthenGlade(-12.5, -2.5, 4.2, 24);   // Forest Border Clearing
 
-      // (B) Connected Trail Network (Continuous paths looping throughout sanctuary and around mountain)
+      // (B) Connected Trail Network (Continuous paths looping throughout sanctuary and around mountain, zero abrupt cutoffs)
       // Trail 1: Main Valley Parkway (Spawn Glade to Lake Overlook)
       addTrailRibbon([
         new THREE.Vector2(-18.5, 9.5),
@@ -10691,6 +10740,23 @@ getSafeRoomGroundY(wx, wz) {
         new THREE.Vector2(3.5, -31.0)
       ], 3.8, 44);
 
+      // Trail 5: Plunge Pool Shore Spur (Branching from Promenade directly into pool landing)
+      addTrailRibbon([
+        new THREE.Vector2(4.8, -10.5),
+        new THREE.Vector2(5.2, -12.0),
+        new THREE.Vector2(5.6, -13.2)
+      ], 3.8, 18);
+
+      // Trail 6: South Ridge Promenade (Looping from Spawn Glade across southwestern meadows to South Ridge)
+      addTrailRibbon([
+        new THREE.Vector2(-18.5, 9.5),
+        new THREE.Vector2(-14.0, 13.5),
+        new THREE.Vector2(-8.5, 15.5),
+        new THREE.Vector2(4.0, 17.5),
+        new THREE.Vector2(14.0, 18.0),
+        new THREE.Vector2(24.0, 19.5)
+      ], 3.8, 36);
+
       const pathGeo = new THREE.BufferGeometry();
       pathGeo.setAttribute('position', new THREE.Float32BufferAttribute(pVerts, 3));
       pathGeo.setAttribute('uv', new THREE.Float32BufferAttribute(pUvs, 2));
@@ -10707,7 +10773,7 @@ getSafeRoomGroundY(wx, wz) {
       pathMesh.position.set(0, 0, 0);
       group.add(pathMesh);
 
-      // 5. Ethereal Return Portal Vortex (Placed in Glade: lx = -20.5, lz = 7.5, far from mountain)
+      // 5. Volumetric 3D Fast-Spinning Ethereal Return Portal Vortex (Placed in Glade: lx = -20.5, lz = 7.5)
       const retPortalGroup = new THREE.Group();
       const retPortalLocalX = -20.5;
       const retPortalLocalZ = 7.5;
@@ -10716,16 +10782,81 @@ getSafeRoomGroundY(wx, wz) {
       retPortalGroup.position.set(retPortalLocalX, retPortalLocalY, retPortalLocalZ);
       retPortalGroup.lookAt(-17.0, retPortalLocalY, 12.0);
 
-      const retRingMat = new THREE.MeshBasicMaterial({
-        map: portalRingTex,
+      // (A) 3D Multi-Layer Nested Gyroscopic Rings (Solid 3D Toruses)
+      // 1. Outer Celestial Rune Torus
+      const torusMat1 = new THREE.MeshStandardMaterial({
+        color: 0x7c3aed,
+        emissive: 0x9333ea,
+        emissiveIntensity: 0.95,
+        roughness: 0.22,
+        metalness: 0.85
+      });
+      const retTorus1 = new THREE.Mesh(new THREE.TorusGeometry(3.2, 0.15, 16, 64), torusMat1);
+      retPortalGroup.add(retTorus1);
+
+      // 2. Mid Gyroscopic Cyan Energy Ring
+      const torusMat2 = new THREE.MeshStandardMaterial({
+        color: 0x06b6d4,
+        emissive: 0x0891b2,
+        emissiveIntensity: 1.1,
+        roughness: 0.18,
+        metalness: 0.90
+      });
+      const retTorus2 = new THREE.Mesh(new THREE.TorusGeometry(2.45, 0.11, 16, 48), torusMat2);
+      retTorus2.rotation.set(0.55, 0.35, 0);
+      retPortalGroup.add(retTorus2);
+
+      // 3. Inner Plasma Periwinkle Torus
+      const torusMat3 = new THREE.MeshBasicMaterial({
+        color: 0xf472b6,
         transparent: true,
-        opacity: 0.94,
+        opacity: 0.92,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const retTorus3 = new THREE.Mesh(new THREE.TorusGeometry(1.75, 0.08, 16, 48), torusMat3);
+      retTorus3.rotation.set(-0.45, 0, 0.75);
+      retPortalGroup.add(retTorus3);
+
+      // 4. Innermost Radiant Celestial Ring
+      const torusMat4 = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.95,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const retTorus4 = new THREE.Mesh(new THREE.TorusGeometry(1.10, 0.05, 16, 36), torusMat4);
+      retPortalGroup.add(retTorus4);
+
+      // (B) 3D Volumetric Wormhole Energy Funnel (Provides authentic 3D spatial depth)
+      const funnelGeo = new THREE.CylinderGeometry(0.35, 2.85, 2.6, 36, 16, true);
+      funnelGeo.rotateX(Math.PI / 2);
+      const funnelMat = new THREE.MeshBasicMaterial({
+        map: portalRingTex,
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.75,
+        blending: THREE.AdditiveBlending,
         side: THREE.DoubleSide,
         depthWrite: false
       });
-      const retRingMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 6.2), retRingMat);
-      retPortalGroup.add(retRingMesh);
+      const retFunnel = new THREE.Mesh(funnelGeo, funnelMat);
+      retPortalGroup.add(retFunnel);
 
+      // (C) 3D Radiant Core Sphere
+      const coreSphereGeo = new THREE.SphereGeometry(0.72, 24, 24);
+      const coreSphereMat = new THREE.MeshBasicMaterial({
+        color: 0xffffff,
+        transparent: true,
+        opacity: 0.88,
+        blending: THREE.AdditiveBlending,
+        depthWrite: false
+      });
+      const retCoreSphere = new THREE.Mesh(coreSphereGeo, coreSphereMat);
+      retPortalGroup.add(retCoreSphere);
+
+      // (D) High-Speed Swirling Arcane Vortex Disc
       const retPortalUniforms = { uTime: { value: 0 } };
       const retPortalShaderMat = new THREE.ShaderMaterial({
         uniforms: retPortalUniforms,
@@ -10744,19 +10875,19 @@ getSafeRoomGroundY(wx, wz) {
             float r = length(p);
             if (r > 1.0) discard;
             float angle = atan(p.y, p.x);
-            float swirl1 = angle + r * 6.5 - uTime * 2.5;
-            float rays1 = sin(angle * 6.0 + swirl1 * 2.0 + uTime * 2.5) * 0.5 + 0.5;
+            float swirl1 = angle + r * 9.5 - uTime * 6.0;
+            float rays1 = sin(angle * 8.0 + swirl1 * 2.5 + uTime * 4.0) * 0.5 + 0.5;
             float smoothEdge = cos(r * 1.5707963);
 
-            vec3 cOuter = vec3(0.65, 0.45, 0.98); // soft celestial violet
-            vec3 cMid   = vec3(0.22, 0.82, 0.96); // bright ethereal cyan
-            vec3 cCore  = vec3(0.98, 1.0, 0.98);  // pure radiant white
+            vec3 cOuter = vec3(0.65, 0.35, 0.98); // soft celestial violet
+            vec3 cMid   = vec3(0.18, 0.85, 0.98); // bright ethereal cyan
+            vec3 cCore  = vec3(1.0, 1.0, 1.0);    // pure radiant white
 
-            vec3 col = mix(cOuter, cMid, smoothstep(0.85, 0.35, r));
+            vec3 col = mix(cOuter, cMid, smoothstep(0.85, 0.30, r));
             col = mix(col, cCore, smoothstep(0.25, 0.0, r));
-            col += cCore * (rays1 * 0.35);
+            col += cCore * (rays1 * 0.45);
 
-            float alpha = smoothEdge * 0.92 * smoothstep(0.08, 0.38, r);
+            float alpha = smoothEdge * 0.95 * smoothstep(0.04, 0.35, r);
             gl_FragColor = vec4(col, alpha);
           }
         `,
@@ -10765,23 +10896,34 @@ getSafeRoomGroundY(wx, wz) {
         depthWrite: false,
         side: THREE.DoubleSide
       });
-      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.4, 5.4, 24, 24), retPortalShaderMat);
-      retDisc.position.z = 0.05;
+      const retDisc = new THREE.Mesh(new THREE.PlaneGeometry(5.8, 5.8, 32, 32), retPortalShaderMat);
       retPortalGroup.add(retDisc);
 
-      const retGlowLight = new THREE.PointLight(0x5eead4, 1.2, 12.0, 1.4);
+      const retRingMat = new THREE.MeshBasicMaterial({
+        map: portalRingTex,
+        transparent: true,
+        opacity: 0.90,
+        blending: THREE.AdditiveBlending,
+        side: THREE.DoubleSide,
+        depthWrite: false
+      });
+      const retRingMesh = new THREE.Mesh(new THREE.PlaneGeometry(6.4, 6.4), retRingMat);
+      retRingMesh.position.z = 0.02;
+      retPortalGroup.add(retRingMesh);
+
+      const retGlowLight = new THREE.PointLight(0xa855f7, 2.2, 24.0, 1.2);
       retPortalGroup.add(retGlowLight);
       group.add(retPortalGroup);
 
-      // Swirling portal sparkles - graceful halo around the vortex
-      const portalMoteCount = 32;
+      // (E) Fast-Orbiting Sparkling Starfield Halo (64 dynamic celestial motes)
+      const portalMoteCount = 64;
       const portalMoteGeo = new THREE.BufferGeometry();
       const portalMotePos = new Float32Array(portalMoteCount * 3);
       const portalMoteData = [];
       for (let i = 0; i < portalMoteCount; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const rad = 2.0 + Math.random() * 2.4;
-        const py = (Math.random() - 0.5) * 4.2;
+        const rad = 1.6 + Math.random() * 2.8;
+        const py = (Math.random() - 0.5) * 4.6;
         portalMotePos[i * 3]     = retPortalLocalX + Math.cos(angle) * rad;
         portalMotePos[i * 3 + 1] = retPortalLocalY + py;
         portalMotePos[i * 3 + 2] = retPortalLocalZ + Math.sin(angle) * rad;
@@ -10789,16 +10931,16 @@ getSafeRoomGroundY(wx, wz) {
           angle: angle,
           rad: rad,
           py: py,
-          speed: 0.55 + Math.random() * 0.65
+          speed: 2.2 + Math.random() * 3.2
         });
       }
       portalMoteGeo.setAttribute('position', new THREE.BufferAttribute(portalMotePos, 3));
       const portalMoteMat = new THREE.PointsMaterial({
-        size: 0.45,
+        size: 0.55,
         map: moteTex,
         color: 0x99f6e4,
         transparent: true,
-        opacity: 0.85,
+        opacity: 0.92,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -11516,16 +11658,17 @@ getSafeRoomGroundY(wx, wz) {
         });
       });
 
-      // (C) Complete Rustic Wooden Perimeter Fence (Enclosing the green meadow edge at radius 93.5m)
+      // (C) Clean Rustic Wooden Post-and-Rail Perimeter Fence (Seamlessly interconnected mortise-and-tenon timber fence at radius 93.5m)
       const fenceRad = 93.5;
-      const fenceSegs = 160;
+      const fenceSegs = 144;
       const fPostPos = [];
       const fPostNorm = [];
       const fPostUv = [];
       const fPostIdx = [];
       let fVertOffset = 0;
 
-      const appendSubGeo = (subGeo, tx, ty, tz, ry = 0) => {
+      const appendRotatedSubGeo = (subGeo, tx, ty, tz, rx = 0, ry = 0) => {
+        if (rx !== 0) subGeo.rotateX(rx);
         if (ry !== 0) subGeo.rotateY(ry);
         subGeo.translate(tx, ty, tz);
         const pAttr = subGeo.attributes.position;
@@ -11559,39 +11702,39 @@ getSafeRoomGroundY(wx, wz) {
 
         const y1 = this.getSafeRoomGroundY(originX + x1, originZ + z1) - originY;
         const y2 = this.getSafeRoomGroundY(originX + x2, originZ + z2) - originY;
-        const yMid = (y1 + y2) * 0.5;
 
         const dx = x2 - x1;
         const dz = z2 - z1;
-        const segLen = Math.hypot(dx, dz);
-        const segAng = Math.atan2(dx, dz);
+        const dy = y2 - y1;
+        const horizDist = Math.hypot(dx, dz);
+        const segLen = Math.hypot(dx, dy, dz) + 0.08; // Slight overlap into post centers guarantees zero gaps
+        const segYaw = Math.atan2(dx, dz);
+        const segPitch = -Math.atan2(dy, horizDist);
 
-        // Sturdy Square Wooden Post
-        const postGeo = new THREE.BoxGeometry(0.18, 1.35, 0.18);
-        appendSubGeo(postGeo, x1, y1 + 0.675, z1, segAng);
+        // Sturdy Round Cedar Post
+        const postGeo = new THREE.CylinderGeometry(0.12, 0.13, 1.45, 12);
+        appendRotatedSubGeo(postGeo, x1, y1 + 0.725, z1, 0, segYaw);
 
-        // Pyramidal Post Cap
-        const capGeo = new THREE.ConeGeometry(0.13, 0.10, 4);
-        appendSubGeo(capGeo, x1, y1 + 1.40, z1, segAng + Math.PI / 4);
+        // Chamfered Beveled Post Cap
+        const capGeo = new THREE.ConeGeometry(0.16, 0.12, 12);
+        appendRotatedSubGeo(capGeo, x1, y1 + 1.50, z1, 0, segYaw);
 
-        // Dual Horizontal Rails (Top and Bottom)
+        // Continuous Dual Rails (Top and Bottom) - Pitch-rotated to conform smoothly to ground elevation
         const midX = (x1 + x2) * 0.5;
         const midZ = (z1 + z2) * 0.5;
-        const topRailGeo = new THREE.BoxGeometry(0.08, 0.12, segLen);
-        appendSubGeo(topRailGeo, midX, yMid + 1.10, midZ, segAng);
+        const midY = (y1 + y2) * 0.5;
 
-        const botRailGeo = new THREE.BoxGeometry(0.08, 0.12, segLen);
-        appendSubGeo(botRailGeo, midX, yMid + 0.50, midZ, segAng);
+        // Top Rail
+        const topRailGeo = new THREE.BoxGeometry(0.09, 0.14, segLen);
+        appendRotatedSubGeo(topRailGeo, midX, midY + 1.12, midZ, segPitch, segYaw);
 
-        // Vertical Pickets / Split Rails
-        for (let p = 1; p <= 2; p++) {
-          const frac = p / 3.0;
-          const px = x1 + dx * frac;
-          const pz = z1 + dz * frac;
-          const py = y1 + (y2 - y1) * frac;
-          const picketGeo = new THREE.BoxGeometry(0.05, 1.15, 0.08);
-          appendSubGeo(picketGeo, px, py + 0.575, pz, segAng);
-        }
+        // Bottom Rail
+        const botRailGeo = new THREE.BoxGeometry(0.09, 0.14, segLen);
+        appendRotatedSubGeo(botRailGeo, midX, midY + 0.55, midZ, segPitch, segYaw);
+
+        // Center Vertical Stile (Clean mortise-and-tenon connector)
+        const stileGeo = new THREE.BoxGeometry(0.065, 0.68, 0.065);
+        appendRotatedSubGeo(stileGeo, midX, midY + 0.835, midZ, 0, segYaw);
 
         // Solid Physical Fence Collider (Preventing jumping off the green edge into the void)
         this.colliders.push({
@@ -11615,94 +11758,187 @@ getSafeRoomGroundY(wx, wz) {
 
       const fenceMat = new THREE.MeshStandardMaterial({
         map: barkTex,
-        color: 0x9a6b43,
-        roughness: 0.88,
-        metalness: 0.04
+        color: 0xa16207,
+        roughness: 0.82,
+        metalness: 0.05
       });
       const fenceMesh = new THREE.Mesh(mergedFenceGeo, fenceMat);
       fenceMesh.position.set(0, 0, 0);
       group.add(fenceMesh);
 
-      // 10. Ethereal Dreamlike Glade Illumination
-      const sunLight = new THREE.DirectionalLight(0xfffbf0, 1.15);
+      // 10. Valley-Wide Ethereal Dreamlike Illumination
+      // (A) Celestial Twilight Atmosphere
+      const sunLight = new THREE.DirectionalLight(0xfffbf0, 1.25);
       sunLight.position.set(16.0, 48.0, 18.0);
       sunLight.target.position.set(6.0, 0, -10.0);
       group.add(sunLight);
       group.add(sunLight.target);
 
-      // Mountain rim light: Casts a soft luminous ethereal glow along the mountain ridge silhouette
-      const sunRimLight = new THREE.DirectionalLight(0xe9d5ff, 0.45);
+      // Celestial rim light highlighting the mountain crest and mist
+      const sunRimLight = new THREE.DirectionalLight(0xd8b4fe, 0.70);
       sunRimLight.position.set(-25.0, 36.0, -28.0);
       group.add(sunRimLight);
 
-      const hemiLight = new THREE.HemisphereLight(0xdbeafe, 0x365314, 0.52);
+      // Aurora moonlight cascading softly from above
+      const auroraLight = new THREE.DirectionalLight(0xa5f3fc, 0.45);
+      auroraLight.position.set(0.0, 50.0, 0.0);
+      group.add(auroraLight);
+
+      const hemiLight = new THREE.HemisphereLight(0xede9fe, 0x1e3a8a, 0.78);
       hemiLight.position.set(0, 40.0, 0);
       group.add(hemiLight);
 
-      const ambLight = new THREE.AmbientLight(0xffffff, 0.24);
+      const ambLight = new THREE.AmbientLight(0xffffff, 0.30);
       group.add(ambLight);
 
-      // Radiant turquoise lagoon glow
-      const poolLight = new THREE.PointLight(0x38bdf8, 1.15, 18.0, 1.4);
-      poolLight.position.set(poolLocalCenter.x, 2.5, poolLocalCenter.z);
-      group.add(poolLight);
-
-      // Celestial return portal aura light
-      const portalLight = new THREE.PointLight(0xa78bfa, 0.95, 12.0, 1.3);
-      portalLight.position.set(retPortalLocalX, retPortalLocalY + 0.5, retPortalLocalZ);
-      group.add(portalLight);
-
-      // 11. Botanical Wildflowers & Foliage (Merged single draw call)
-      const floraGroup = new THREE.Group();
-      const floraPlacements = [
-        // Left Foreground framing (-X, lx in [-5.5, -2.8], lz in [-0.5, 2.0] - framing foreground)
-        [-4.8, 1.2, 1.8, 0.2],
-        [-3.8, 0.8, 1.6, -0.4],
-        [-3.0, 1.5, 1.7, 0.5],
-        [-4.2, -0.2, 1.5, 0.1],
-        [-5.2, 0.5, 1.8, 0.3],
-        // Right Foreground framing (+X, lx in [2.8, 5.5], lz in [-0.5, 2.0] - framing foreground)
-        [4.8, 1.2, 1.8, -0.3],
-        [3.8, 0.8, 1.65, 0.4],
-        [3.0, 1.5, 1.7, -0.2],
-        [4.2, -0.2, 1.55, 0.3],
-        [5.2, 0.5, 1.8, -0.4],
-        // Trailside and pool edge natural accents
-        [-4.5, -6.5, 1.3, 0.6],
-        [-2.5, -4.5, 1.35, -0.5],
-        [3.8, -2.2, 1.35, -0.4],
-        [4.8, -5.8, 1.4, 0.3],
-        [5.2, -8.5, 1.4, -0.2],
-        [4.2, -12.5, 1.3, 0.5],
-        [5.5, -16.5, 1.35, -0.3]
+      // (B) 10 Ethereal Luminescent Light Wisps Distributed Across the Entire Area
+      const wispConfigs = [
+        { x: retPortalLocalX, z: retPortalLocalZ, yOff: 1.8, color: 0xa855f7, intensity: 2.2, dist: 24.0 }, // Portal Glade
+        { x: 6.5, z: -6.5, yOff: 1.8, color: 0x38bdf8, intensity: 1.8, dist: 25.0 },                        // Lake Overlook
+        { x: 6.4, z: -13.2, yOff: 2.2, color: 0x06b6d4, intensity: 2.0, dist: 22.0 },                       // Plunge Pool
+        { x: 24.0, z: 19.5, yOff: 1.8, color: 0xfbbf24, intensity: 1.7, dist: 24.0 },                       // South Ridge Meadow
+        { x: 55.0, z: -10.0, yOff: 2.0, color: 0xe879f9, intensity: 1.8, dist: 28.0 },                      // Mountain Rear Valley
+        { x: 20.0, z: -45.0, yOff: 1.8, color: 0x22d3ee, intensity: 1.7, dist: 25.0 },                      // North Flank Pass
+        { x: -11.5, z: -11.5, yOff: 1.8, color: 0xf472b6, intensity: 1.6, dist: 24.0 },                     // North Blossom Clearing
+        { x: -6.5, z: 2.5, yOff: 1.8, color: 0xfde047, intensity: 1.6, dist: 24.0 },                        // Valley Center Crossroads
+        { x: -8.5, z: 15.0, yOff: 1.8, color: 0x34d399, intensity: 1.5, dist: 22.0 },                       // Southwest Foothills
+        { x: -4.5, z: -22.5, yOff: 1.8, color: 0x818cf8, intensity: 1.5, dist: 24.0 }                       // Far North Lookout
       ];
 
+      const crystalGeo = new THREE.OctahedronGeometry(0.24, 0);
+      wispConfigs.forEach(w => {
+        const gY = this.getSafeRoomGroundY(originX + w.x, originZ + w.z) - originY;
+        const pLight = new THREE.PointLight(w.color, w.intensity, w.dist, 1.25);
+        pLight.position.set(w.x, gY + w.yOff, w.z);
+        group.add(pLight);
+
+        const cMat = new THREE.MeshBasicMaterial({
+          color: w.color,
+          wireframe: false,
+          transparent: true,
+          opacity: 0.88,
+          blending: THREE.AdditiveBlending
+        });
+        const crystalMesh = new THREE.Mesh(crystalGeo, cMat);
+        crystalMesh.position.set(w.x, gY + w.yOff, w.z);
+        group.add(crystalMesh);
+      });
+
+      // 11. Botanical Wildflowers & Diverse Floral Tapestry (Merged single draw call with 6 distinct species)
+      const floraGroup = new THREE.Group();
       const flPos = [];
       const flUv = [];
+      const flColor = [];
       const flIndices = [];
       let flVertOffset = 0;
 
-      for (let i = 0; i < floraPlacements.length; i++) {
-        const [fx, fz, fs, fRot] = floraPlacements[i];
-        const gndY = this.getSafeRoomGroundY(originX + fx, originZ + fz) - originY;
-        const cy = gndY + fs * 0.55;
-        const hw = (fs * 1.3) * 0.5;
-        const hh = (fs * 1.2) * 0.5;
+      // 6 Distinct Alpine Floral Species Palettes
+      const flowerSpecies = [
+        new THREE.Color(0xfde047), // 0: Radiant Golden Sun Poppies
+        new THREE.Color(0x818cf8), // 1: Celestial Mountain Bluebells & Lavender
+        new THREE.Color(0xf8fafc), // 2: Snow-White Alpine Edelweiss & Daisies
+        new THREE.Color(0xf43f5e), // 3: Wild Mountain Rose & Heather (Vibrant Magenta)
+        new THREE.Color(0x38bdf8), // 4: Ethereal Forget-Me-Nots (Bright Cyan)
+        new THREE.Color(0xfb923c)  // 5: Sunset Mountain Lilies (Warm Coral Orange)
+      ];
 
-        const angles = [fRot, fRot + Math.PI * 0.45];
+      // Procedural organic distribution of 320+ flower clumps across meadows, glades, and trailsides
+      const flowerClumps = [];
+
+      // A. Drifts along all walking trails (flanking left and right)
+      const trailWaypoints = [
+        [-18.5, 9.5], [-13.0, 6.0], [-6.5, 2.5], [0.0, 0.0], [4.5, -3.0], [6.5, -6.5],
+        [4.8, -10.5], [3.6, -14.5], [4.5, -18.5], [6.0, -23.0], [3.5, -31.0], [4.0, -40.0],
+        [12.0, -45.0], [24.0, -45.5], [38.0, -44.0], [52.0, -36.0], [56.0, -22.0], [56.0, -8.0],
+        [53.0, 6.0], [42.0, 17.5], [28.0, 19.5], [14.0, 18.0], [0.0, 15.0], [-12.0, 12.0],
+        [-9.0, -4.5], [-11.5, -11.5], [-9.5, -18.5], [-4.5, -22.5],
+        [5.2, -12.0], [-14.0, 13.5], [-8.5, 15.5], [4.0, 17.5]
+      ];
+
+      for (let i = 0; i < trailWaypoints.length; i++) {
+        const [tx, tz] = trailWaypoints[i];
+        for (let side = -1; side <= 1; side += 2) {
+          for (let k = 0; k < 2; k++) {
+            const rOffset = 2.0 + Math.random() * 2.8;
+            const a = Math.random() * Math.PI * 2;
+            flowerClumps.push({
+              x: tx + Math.cos(a) * rOffset,
+              z: tz + Math.sin(a) * rOffset,
+              scale: 0.85 + Math.random() * 0.75,
+              rot: Math.random() * Math.PI,
+              species: Math.floor(Math.random() * 6)
+            });
+          }
+        }
+      }
+
+      // B. Expansive floral fields across North Meadow, South Ridge, and Mountain Rear Valley
+      const meadowSpawns = [
+        // North Meadow Blossom Field (80 clumps)
+        { minX: -36.0, maxX: -4.0, minZ: -42.0, maxZ: -6.0, count: 80 },
+        // South Ridge Wildflower Slopes (70 clumps)
+        { minX: -18.0, maxX: 36.0, minZ: 10.0, maxZ: 32.0, count: 70 },
+        // Mountain Rear Panoramic Meadow (65 clumps)
+        { minX: 48.0, maxX: 78.0, minZ: -42.0, maxZ: 15.0, count: 65 },
+        // Lake Overlook and Glade Surroundings (45 clumps)
+        { minX: -8.0, maxX: 12.0, minZ: -24.0, maxZ: 4.0, count: 45 }
+      ];
+
+      meadowSpawns.forEach(zone => {
+        for (let k = 0; k < zone.count; k++) {
+          const fx = zone.minX + Math.random() * (zone.maxX - zone.minX);
+          const fz = zone.minZ + Math.random() * (zone.maxZ - zone.minZ);
+
+          // Exclude points inside the mountain solid envelope
+          if (fz >= -41.4 && fz <= 15.0) {
+            const si = -fz - 13.2;
+            const siClamped = Math.max(-28.0, Math.min(28.0, si));
+            const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
+            const rockFrontX = 10.8 - canyonCurv - 0.7;
+            const rockBackX = 10.8 - canyonCurv + 38.4;
+            if (fx >= rockFrontX - 1.2 && fx <= rockBackX + 1.2) continue;
+          }
+
+          // Exclude points inside the deep lagoon water
+          const poolDist = Math.hypot(fx - 6.4, fz - (-13.2));
+          if (poolDist < 7.8) continue;
+
+          // Exclude points beyond the fence radius
+          if (Math.hypot(fx, fz) > 90.0) continue;
+
+          flowerClumps.push({
+            x: fx,
+            z: fz,
+            scale: 0.75 + Math.random() * 0.85,
+            rot: Math.random() * Math.PI,
+            species: Math.floor(Math.random() * 6)
+          });
+        }
+      });
+
+      // Construct multi-quad intersecting botanical billboards with vertex color tinting
+      for (let i = 0; i < flowerClumps.length; i++) {
+        const fc = flowerClumps[i];
+        const gndY = this.getSafeRoomGroundY(originX + fc.x, originZ + fc.z) - originY;
+        const cy = gndY + fc.scale * 0.55;
+        const hw = (fc.scale * 1.3) * 0.5;
+        const hh = (fc.scale * 1.2) * 0.5;
+        const col = flowerSpecies[fc.species];
+
+        // 3-quad intersecting billboard (0, 60, 120 degrees) for lush 3D floral volume
+        const angles = [fc.rot, fc.rot + Math.PI / 3, fc.rot + (Math.PI * 2) / 3];
         for (let a = 0; a < angles.length; a++) {
           const ang = angles[a];
           const cosA = Math.cos(ang);
           const sinA = Math.sin(ang);
-
           const dx = hw * cosA;
           const dz = -hw * sinA;
 
           flPos.push(
-            fx - dx, cy - hh, fz - dz,
-            fx + dx, cy - hh, fz + dz,
-            fx + dx, cy + hh, fz + dz,
-            fx - dx, cy + hh, fz - dz
+            fc.x - dx, cy - hh, fc.z - dz,
+            fc.x + dx, cy - hh, fc.z + dz,
+            fc.x + dx, cy + hh, fc.z + dz,
+            fc.x - dx, cy + hh, fc.z - dz
           );
           flUv.push(
             0, 0,
@@ -11710,6 +11946,9 @@ getSafeRoomGroundY(wx, wz) {
             1, 1,
             0, 1
           );
+          for (let v = 0; v < 4; v++) {
+            flColor.push(col.r, col.g, col.b);
+          }
           flIndices.push(
             flVertOffset, flVertOffset + 1, flVertOffset + 2,
             flVertOffset, flVertOffset + 2, flVertOffset + 3
@@ -11721,13 +11960,15 @@ getSafeRoomGroundY(wx, wz) {
       const mergedFloraGeo = new THREE.BufferGeometry();
       mergedFloraGeo.setAttribute('position', new THREE.Float32BufferAttribute(flPos, 3));
       mergedFloraGeo.setAttribute('uv', new THREE.Float32BufferAttribute(flUv, 2));
+      mergedFloraGeo.setAttribute('color', new THREE.Float32BufferAttribute(flColor, 3));
       mergedFloraGeo.setIndex(flIndices);
       mergedFloraGeo.computeVertexNormals();
 
       const floraMat = new THREE.MeshBasicMaterial({
         map: flowersTex,
+        vertexColors: true,
         transparent: true,
-        alphaTest: 0.22,
+        alphaTest: 0.32,
         side: THREE.DoubleSide,
         depthWrite: true
       });
@@ -11743,19 +11984,20 @@ getSafeRoomGroundY(wx, wz) {
         new THREE.Color(0xf472b6), // Wild Rose Pink
         new THREE.Color(0x5eead4), // Ethereal Mint
         new THREE.Color(0x93c5fd), // Periwinkle Azure
-        new THREE.Color(0xfdba74)  // Soft Peach
+        new THREE.Color(0xfdba74), // Soft Peach
+        new THREE.Color(0xa78bfa)  // Amethyst Violet
       ];
 
-      const orbCount = 70;
+      const orbCount = 120;
       const orbGeo = new THREE.BufferGeometry();
       const orbPos = new Float32Array(orbCount * 3);
       const orbColors = new Float32Array(orbCount * 3);
       const orbData = [];
 
       for (let i = 0; i < orbCount; i++) {
-        const ox = -28.0 + Math.random() * 56.0;
-        const oy = 0.8 + Math.random() * 8.5;
-        const oz = -28.0 + Math.random() * 56.0;
+        const ox = -65.0 + Math.random() * 130.0;
+        const oy = 0.8 + Math.random() * 9.5;
+        const oz = -65.0 + Math.random() * 130.0;
 
         orbPos[i * 3]     = ox;
         orbPos[i * 3 + 1] = oy;
@@ -11773,8 +12015,8 @@ getSafeRoomGroundY(wx, wz) {
           speedX: 0.18 + Math.random() * 0.28,
           speedY: 0.25 + Math.random() * 0.35,
           speedZ: 0.16 + Math.random() * 0.26,
-          radiusX: 1.2 + Math.random() * 2.4,
-          radiusZ: 1.2 + Math.random() * 2.4,
+          radiusX: 1.5 + Math.random() * 2.8,
+          radiusZ: 1.5 + Math.random() * 2.8,
           phaseX: Math.random() * Math.PI * 2,
           phaseY: Math.random() * Math.PI * 2,
           phaseZ: Math.random() * Math.PI * 2
@@ -11817,6 +12059,12 @@ getSafeRoomGroundY(wx, wz) {
         cliffLocalZ: cliffLocalZ,
         retDisc: retDisc,
         retRing: retRingMesh,
+        retTorus1: retTorus1,
+        retTorus2: retTorus2,
+        retTorus3: retTorus3,
+        retTorus4: retTorus4,
+        retFunnel: retFunnel,
+        retCoreSphere: retCoreSphere,
         retPortalUniforms: retPortalUniforms,
         portalMotePoints: portalMotePoints,
         portalMoteData: portalMoteData,
@@ -19016,17 +19264,41 @@ getSafeRoomGroundY(wx, wz) {
         sr.wfTex2.offset.y -= delta * 2.45;
       }
 
-      // Animate return portal shader
+      // Animate volumetric 3D fast-spinning return portal
       if (sr.retPortalUniforms) {
-        sr.retPortalUniforms.uTime.value = sr.time;
+        sr.retPortalUniforms.uTime.value = sr.time * 4.5;
       }
       if (sr.retRing) {
-        sr.retRing.rotation.z -= delta * 0.28;
-        const pScale = 1.0 + Math.sin(sr.time * 2.4) * 0.04;
+        sr.retRing.rotation.z -= delta * 3.4;
+        const pScale = 1.0 + Math.sin(sr.time * 5.2) * 0.05;
         sr.retRing.scale.set(pScale, pScale, 1.0);
       }
+      if (sr.retTorus1) {
+        sr.retTorus1.rotation.z -= delta * 3.2;
+        sr.retTorus1.rotation.x += delta * 0.9;
+      }
+      if (sr.retTorus2) {
+        sr.retTorus2.rotation.z += delta * 4.6;
+        sr.retTorus2.rotation.y -= delta * 1.5;
+      }
+      if (sr.retTorus3) {
+        sr.retTorus3.rotation.z -= delta * 6.0;
+        sr.retTorus3.rotation.x -= delta * 2.0;
+      }
+      if (sr.retTorus4) {
+        sr.retTorus4.rotation.z += delta * 7.2;
+      }
+      if (sr.retFunnel) {
+        sr.retFunnel.rotation.z += delta * 6.5;
+        const fScale = 1.0 + Math.sin(sr.time * 4.0) * 0.04;
+        sr.retFunnel.scale.set(fScale, fScale, 1.0 + Math.sin(sr.time * 3.5) * 0.08);
+      }
+      if (sr.retCoreSphere) {
+        const cScale = 1.0 + Math.sin(sr.time * 6.5) * 0.14;
+        sr.retCoreSphere.scale.setScalar(cScale);
+      }
 
-      // Animate portal orbiters (proper local coordinates)
+      // Animate fast-swirling portal orbiters (proper local coordinates)
       if (sr.portalMotePoints && sr.portalMoteData) {
         const posAttr = sr.portalMotePoints.geometry.attributes.position;
         const arr = posAttr.array;
@@ -19035,7 +19307,7 @@ getSafeRoomGroundY(wx, wz) {
           const m = sr.portalMoteData[i];
           m.angle += delta * m.speed;
           const lx = Math.cos(m.angle) * m.rad;
-          const ly = m.py + Math.sin(sr.time * 1.5 + i) * 0.25;
+          const ly = m.py + Math.sin(sr.time * 3.0 + i) * 0.35;
           const lz = Math.sin(m.angle) * m.rad;
 
           arr[i * 3]     = sr.retPortalLocalX + lx;
