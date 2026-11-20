@@ -74,12 +74,12 @@ ctrl.dance = **X**: Dance
 ctrl.smack = **Q**: Smack / Strike
 
 settings.spectator_heading = SPECTATOR MODE
-spec.toggle = **` or F2**: Toggle Spectator
-spec.noclip = **V**: Toggle No-Clip Mode
+spec.toggle = **~ or F2**: Spectator
+spec.noclip = **V**: No-Clip Mode
 spec.flight = **Space**: Ascend / **C**: Descend
-spec.outline = **B**: Toggle Curator Red Outline
-spec.xray = **B**: Toggle Curator Red Outline
-spec.hide_hud = **H**: Toggle Hide HUD & Arms
+spec.outline = **B**: Curator Red Outline
+spec.xray = **B**: Curator Red Outline
+spec.hide_hud = **H**: Hide HUD & Arms
 settings.done = DONE
 
 

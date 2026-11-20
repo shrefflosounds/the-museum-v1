@@ -4369,7 +4369,7 @@
       const savedMouseSens = localStorage.getItem('the_museum_mouse_sens_mult');
       const parsedMouseSens = Number(savedMouseSens);
       this.mouseSensitivityMultiplier = savedMouseSens !== null && Number.isFinite(parsedMouseSens)
-        ? THREE.MathUtils.clamp(parsedMouseSens, 0.2, 3.0)
+        ? THREE.MathUtils.clamp(parsedMouseSens, 0.5, 2.0)
         : 1.0;
       this.headBobTimer = 0;
       this.footstepTimer = 0;
@@ -20344,7 +20344,7 @@ window.game = this;
       this.thirdPersonCameraReady = false;
       this.updatePlayerViewVisibility();
       this.showSystemNotification(
-        this.thirdPersonFrontView ? 'PERSPECTIVE: FRONT (PLAYERMODEL)' : 'PERSPECTIVE: REAR (THIRD PERSON)'
+        this.thirdPersonFrontView ? 'P: FRONT VIEW' : 'P: REAR VIEW'
       );
     }
 
@@ -22193,6 +22193,9 @@ window.game = this;
       window.addEventListener('contextmenu', (e) => e.preventDefault());
 
       window.addEventListener('keydown', (e) => {
+        // Block all input during cutscene
+        if (this.isPlayingCutscene || this.isRelicCutscenePending) return;
+
         // If user is focused inside an input element (such as the Join Room Code box), do not capture or preventDefault
         if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) {
           if (e.code === 'Enter' && e.target === this.dom.joinRoomInput) {
@@ -22306,9 +22309,9 @@ window.game = this;
             this.toggleObjectiveModal();
           }
         } else if (e.code === 'KeyF') {
-          if (this.gameStarted) this.toggleFlashlight();
+          if (this.gameStarted && !this.isPlayingCutscene && !this.isRelicCutscenePending) this.toggleFlashlight();
         } else if (e.code === 'KeyR') {
-          if (this.gameStarted) {
+          if (this.gameStarted && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
             this.reloadPistol();
           }
         } else if (e.code === 'KeyE') {
@@ -22844,7 +22847,7 @@ window.game = this;
     }
 
     setMouseSensitivity(val) {
-      const clamped = THREE.MathUtils.clamp(val, 0.2, 3.0);
+      const clamped = THREE.MathUtils.clamp(val, 0.5, 2.0);
       this.mouseSensitivityMultiplier = clamped;
       try {
         localStorage.setItem('the_museum_mouse_sens_mult', String(clamped));
@@ -27144,7 +27147,7 @@ window.game = this;
 
       const delta = Math.min(this.clock.getDelta(), 0.05);
 
-      if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
+      if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isPlayingCutscene) {
         try {
           this.updatePlayer(delta);
         } catch (e) {
@@ -27344,7 +27347,7 @@ window.game = this;
           // Audio whisper when door begins to slide open
           if (shouldOpen && !d.isOpen && d.openProgress < 0.05) {
             d.isOpen = true;
-            if (this.playerFloor === d.floor && this.audio && this.audio.playSlidingDoor) {
+            if (this.playerFloor === d.floor && this.audio && this.audio.playSlidingDoor && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
               this.audio.playSlidingDoor();
             }
           } else if (!shouldOpen && d.isOpen && d.openProgress > 0.95) {
