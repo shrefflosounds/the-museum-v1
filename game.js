@@ -4565,11 +4565,17 @@
         aboutBuildTag: document.getElementById('about-build-tag'),
         smittyOnBtn: document.getElementById('smitty-on-btn'),
         smittyOffBtn: document.getElementById('smitty-off-btn'),
+        optionsSmittyToggleBtn: document.getElementById('options-smitty-toggle-btn'),
+        optionsSmittyTitle: document.getElementById('options-smitty-title'),
+        optionsStatuesToggleBtn: document.getElementById('options-statues-toggle-btn'),
+        optionsStatuesTitle: document.getElementById('options-statues-title'),
+        optionsHostOnlyNote: document.getElementById('options-host-only-note'),
+        optionsMusicToggleBtn: document.getElementById('options-music-toggle-btn'),
+        optionsMusicTitle: document.getElementById('options-music-title'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
         optionsSmittyOffBtn: document.getElementById('options-smitty-off-btn'),
         optionsStatuesOnBtn: document.getElementById('options-statues-on-btn'),
         optionsStatuesOffBtn: document.getElementById('options-statues-off-btn'),
-        optionsHostOnlyNote: document.getElementById('options-host-only-note'),
         optionsMusicOnBtn: document.getElementById('options-music-on-btn'),
         optionsMusicOffBtn: document.getElementById('options-music-off-btn'),
         vignetteOverlay: document.getElementById('vignette-overlay'),
@@ -21932,17 +21938,29 @@ window.game = this;
         });
       }
 
-      // Smitty Mode Toggles: Survival Horror vs Daytime Museum Tour
+      // Curator Mode Toggles: Survival Horror vs Daytime Museum Tour
       const handleSmittyToggle = (enabled) => {
         this.setSmittyMode(enabled);
       };
 
       if (this.dom.smittyOnBtn) this.dom.smittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
       if (this.dom.smittyOffBtn) this.dom.smittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
+      if (this.dom.optionsSmittyToggleBtn) {
+        this.dom.optionsSmittyToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setSmittyMode(!this.smittyEnabled);
+        });
+      }
       if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.addEventListener('click', () => handleSmittyToggle(true));
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.addEventListener('click', () => handleSmittyToggle(false));
 
       // Statues Mode Toggles
+      if (this.dom.optionsStatuesToggleBtn) {
+        this.dom.optionsStatuesToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setStatuesMode(!this.statuesEnabled);
+        });
+      }
       if (this.dom.optionsStatuesOnBtn) {
         this.dom.optionsStatuesOnBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -21957,6 +21975,12 @@ window.game = this;
       }
 
       // Music Mode Toggles
+      if (this.dom.optionsMusicToggleBtn) {
+        this.dom.optionsMusicToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.setMusicMode(!this.musicEnabled);
+        });
+      }
       if (this.dom.optionsMusicOnBtn) {
         this.dom.optionsMusicOnBtn.addEventListener('click', (e) => {
           e.stopPropagation();
@@ -22775,6 +22799,16 @@ window.game = this;
     updateStatuesModeUI() {
       const onBtn = this.dom.optionsStatuesOnBtn;
       const offBtn = this.dom.optionsStatuesOffBtn;
+      const toggleBtn = this.dom.optionsStatuesToggleBtn;
+      const titleEl = this.dom.optionsStatuesTitle;
+
+      if (toggleBtn) {
+        toggleBtn.classList.toggle('active', this.statuesEnabled);
+        toggleBtn.setAttribute('aria-pressed', this.statuesEnabled ? 'true' : 'false');
+      }
+      if (titleEl) {
+        titleEl.textContent = this.statuesEnabled ? 'Statues: ON' : 'Statues: OFF';
+      }
 
       if (onBtn) {
         if (this.statuesEnabled) {
@@ -22801,6 +22835,8 @@ window.game = this;
       if (this.dom.optionsHostOnlyNote) {
         this.dom.optionsHostOnlyNote.classList.toggle('hidden', !isCoopClient);
       }
+      if (toggleBtn) toggleBtn.style.opacity = isCoopClient ? '0.5' : '';
+      if (this.dom.optionsSmittyToggleBtn) this.dom.optionsSmittyToggleBtn.style.opacity = isCoopClient ? '0.5' : '';
       if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.style.opacity = isCoopClient ? '0.5' : '1';
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.style.opacity = isCoopClient ? '0.5' : '1';
       if (onBtn) onBtn.style.opacity = isCoopClient ? '0.5' : '1';
@@ -22836,12 +22872,23 @@ window.game = this;
     updateSmittyModeUI() {
       const onBtns = [this.dom.smittyOnBtn, this.dom.optionsSmittyOnBtn];
       const offBtns = [this.dom.smittyOffBtn, this.dom.optionsSmittyOffBtn];
+      const toggleBtn = this.dom.optionsSmittyToggleBtn;
+      const titleEl = this.dom.optionsSmittyTitle;
+
+      if (toggleBtn) {
+        toggleBtn.classList.toggle('active', this.smittyEnabled);
+        toggleBtn.setAttribute('aria-pressed', this.smittyEnabled ? 'true' : 'false');
+      }
+      if (titleEl) {
+        titleEl.textContent = this.smittyEnabled ? 'Curator: ON' : 'Curator: OFF';
+      }
 
       // Disallow Curator and Statues toggle for non-hosts in multiplayer
       const isCoopClient = (this.mp && this.mp.client && this.mp.client.connected && !this.mp.isHost);
       if (this.dom.optionsHostOnlyNote) {
         this.dom.optionsHostOnlyNote.classList.toggle('hidden', !isCoopClient);
       }
+      if (toggleBtn) toggleBtn.style.opacity = isCoopClient ? '0.5' : '';
       if (this.dom.optionsSmittyOnBtn) this.dom.optionsSmittyOnBtn.style.opacity = isCoopClient ? '0.5' : '1';
       if (this.dom.optionsSmittyOffBtn) this.dom.optionsSmittyOffBtn.style.opacity = isCoopClient ? '0.5' : '1';
 
@@ -22882,6 +22929,17 @@ window.game = this;
     updateMusicModeUI() {
       const onBtn = this.dom.optionsMusicOnBtn;
       const offBtn = this.dom.optionsMusicOffBtn;
+      const toggleBtn = this.dom.optionsMusicToggleBtn;
+      const titleEl = this.dom.optionsMusicTitle;
+
+      if (toggleBtn) {
+        toggleBtn.classList.toggle('active', this.musicEnabled);
+        toggleBtn.setAttribute('aria-pressed', this.musicEnabled ? 'true' : 'false');
+      }
+      if (titleEl) {
+        titleEl.textContent = this.musicEnabled ? 'Music: ON' : 'Music: OFF';
+      }
+
       if (onBtn) {
         if (this.musicEnabled) {
           onBtn.classList.add('active');

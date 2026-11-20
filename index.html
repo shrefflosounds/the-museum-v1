@@ -8,7 +8,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Shrefflo Museum</title>
   <link rel="icon" type="image/png" href="icon.png">
-  <link rel="stylesheet" href="style.css?v=2.5.2">
+  <link rel="stylesheet" href="style.css?v=2.5.3">
 </head>
 <body>
   <!-- 3D Render Canvas & Video Installation Layer -->
@@ -220,28 +220,15 @@
       <h2 class="horror-title" data-text="options.title">OPTIONS</h2>
 
       <div class="options-section">
-        <div class="smitty-mode-bar" id="curator-mode-bar">
-          <button id="options-smitty-on-btn" class="smitty-mode-btn active mode-on" type="button">
-            <span class="mode-title" data-text="options.curator_on">Curator: ON</span>
+        <div class="options-toggle-group">
+          <button id="options-smitty-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+            <span id="options-smitty-title" class="options-toggle-title">Curator: ON</span>
           </button>
-          <button id="options-smitty-off-btn" class="smitty-mode-btn mode-off" type="button">
-            <span class="mode-title" data-text="options.curator_off">Curator: OFF</span>
+          <button id="options-statues-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+            <span id="options-statues-title" class="options-toggle-title">Statues: ON</span>
           </button>
-        </div>
-        <div class="smitty-mode-bar" id="statues-mode-bar">
-          <button id="options-statues-on-btn" class="smitty-mode-btn active mode-on" type="button">
-            <span class="mode-title">Statues: ON</span>
-          </button>
-          <button id="options-statues-off-btn" class="smitty-mode-btn mode-off" type="button">
-            <span class="mode-title">Statues: OFF</span>
-          </button>
-        </div>
-        <div class="smitty-mode-bar" style="margin-bottom: 0;">
-          <button id="options-music-on-btn" class="smitty-mode-btn active mode-on" type="button">
-            <span class="mode-title" data-text="options.music_on">Music: ON</span>
-          </button>
-          <button id="options-music-off-btn" class="smitty-mode-btn mode-off" type="button">
-            <span class="mode-title" data-text="options.music_off">Music: OFF</span>
+          <button id="options-music-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+            <span id="options-music-title" class="options-toggle-title">Music: ON</span>
           </button>
         </div>
         <p id="options-host-only-note" class="player-character-status hidden" style="margin-top: 8px; font-size: 13px; color: #fbbf24;">Only the multiplayer host can toggle the Curator and Statues.</p>
@@ -249,17 +236,16 @@
 
       <div class="settings-card player-view-settings">
         <h3 class="settings-card-title">PLAYER VIEW</h3>
-        <div class="smitty-mode-bar player-view-mode-bar">
-          <button id="view-first-person-btn" class="smitty-mode-btn active mode-on" type="button" aria-pressed="true">FIRST PERSON</button>
-          <button id="view-third-person-btn" class="smitty-mode-btn mode-off" type="button" aria-pressed="false">THIRD PERSON</button>
+        <div class="player-view-mode-bar">
+          <button id="view-first-person-btn" class="player-view-toggle-btn" type="button" aria-pressed="false">FIRST PERSON</button>
+          <button id="view-third-person-btn" class="player-view-toggle-btn active" type="button" aria-pressed="true">THIRD PERSON</button>
         </div>
         <label class="player-character-label" for="player-character-select-btn">CHARACTER</label>
-        <button id="player-character-select-btn" class="smitty-mode-btn char-choose-trigger-btn" type="button">
+        <button id="player-character-select-btn" class="char-choose-trigger-btn" type="button">
           <span id="options-char-current-name">THE CLOWN</span>
           <span class="char-choose-subtext">(CLICK TO CHANGE)</span>
         </button>
         <p id="player-character-status" class="player-character-status" aria-live="polite">Choose a view and character.</p>
-        <p class="player-camera-help">In third person, move the mouse to look around and scroll to zoom.</p>
       </div>
 
       <div class="settings-slider-wrap">
@@ -275,7 +261,7 @@
         </div>
       </div>
 
-      <button id="options-back-btn" class="museum-btn" type="button" data-text="options.done">DONE</button>
+      <button id="options-back-btn" class="museum-btn options-done-btn" type="button" data-text="options.done">DONE</button>
     </div>
   </div>
 
@@ -473,9 +459,9 @@
   <script type="module">
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
-    window._ASSET_VERSION = '2.9.1795208000';
+    window._ASSET_VERSION = '2.9.1795209000';
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795208000';
+    gameScript.src = 'game.js?v=2.9.1795209000';
     document.body.appendChild(gameScript);
   </script>
 </body>
