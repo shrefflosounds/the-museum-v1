@@ -5142,8 +5142,9 @@ window.game = this;
           controlsMesh.castShadow = false;
           controlsMesh.receiveShadow = true;
           // Interior East wall surface is at x = 3.78; place at x = 3.77 facing West (-X) into REem8's room
+          // Shifted south (+Z) towards the front counter so the entire image is easier to see for walking players
           controlsMesh.rotation.y = -Math.PI / 2;
-          controlsMesh.position.set(3.77, y0 + 3.85, 10.65);
+          controlsMesh.position.set(3.77, y0 + 3.85, 9.85);
           this.scene.add(controlsMesh);
         }
 
@@ -22529,12 +22530,16 @@ window.game = this;
       // Fade out source modal contents
       fromBox.classList.add('content-fading-out');
 
+      // Expand morph blob bounds to match the blob pseudo-element bleed (-18px top/bottom, -24px left/right)
+      const bleedX = 24;
+      const bleedY = 18;
+
       // Position morph blob at source box position
       morphBlob.style.transition = 'none';
-      morphBlob.style.left = fromRect.left + 'px';
-      morphBlob.style.top = fromRect.top + 'px';
-      morphBlob.style.width = fromRect.width + 'px';
-      morphBlob.style.height = fromRect.height + 'px';
+      morphBlob.style.left = (fromRect.left - bleedX) + 'px';
+      morphBlob.style.top = (fromRect.top - bleedY) + 'px';
+      morphBlob.style.width = (fromRect.width + bleedX * 2) + 'px';
+      morphBlob.style.height = (fromRect.height + bleedY * 2) + 'px';
       morphBlob.classList.add('active');
 
       // Hide individual modal blobs during morph
@@ -22544,10 +22549,10 @@ window.game = this;
       // Trigger animation on next frame
       requestAnimationFrame(() => {
         morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease';
-        morphBlob.style.left = toRect.left + 'px';
-        morphBlob.style.top = toRect.top + 'px';
-        morphBlob.style.width = toRect.width + 'px';
-        morphBlob.style.height = toRect.height + 'px';
+        morphBlob.style.left = (toRect.left - bleedX) + 'px';
+        morphBlob.style.top = (toRect.top - bleedY) + 'px';
+        morphBlob.style.width = (toRect.width + bleedX * 2) + 'px';
+        morphBlob.style.height = (toRect.height + bleedY * 2) + 'px';
 
         // Halfway through (220ms), hide fromEl and show toEl with smooth fade-in
         setTimeout(() => {
