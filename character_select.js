@@ -46,6 +46,8 @@
       this.grid = document.getElementById('char-roster-grid');
       this.nameCallout = document.getElementById('char-selected-name');
       this.confirmBtn = document.getElementById('char-confirm-btn');
+      this.backBtn = document.getElementById('char-back-btn');
+      this.closeBtn = document.getElementById('char-select-close-btn');
       this.badge = document.getElementById('char-select-mode-tag');
       this.codeBadge = document.getElementById('char-select-code-badge');
       this.codeVal = document.getElementById('char-select-code-val');
@@ -56,6 +58,18 @@
       this.confirmBtn.addEventListener('click', () => {
         this.confirmSelection();
       });
+
+      if (this.backBtn) {
+        this.backBtn.addEventListener('click', () => {
+          this.cancelSelection();
+        });
+      }
+
+      if (this.closeBtn) {
+        this.closeBtn.addEventListener('click', () => {
+          this.cancelSelection();
+        });
+      }
     }
 
     renderRosterGrid() {
@@ -158,8 +172,9 @@
       });
     }
 
-    show(modeLabel, onConfirm, roomCode = null) {
+    show(modeLabel, onConfirm, roomCode = null, onCancel = null) {
       this.onConfirmCallback = onConfirm;
+      this.onCancelCallback = onCancel;
       if (this.badge) this.badge.textContent = modeLabel || 'COOPERATIVE';
       if (this.codeBadge && this.codeVal) {
         if (roomCode) {
@@ -289,6 +304,13 @@
       this.hide();
       if (this.onConfirmCallback) {
         this.onConfirmCallback(this.selectedIndex);
+      }
+    }
+
+    cancelSelection() {
+      this.hide();
+      if (typeof this.onCancelCallback === 'function') {
+        this.onCancelCallback();
       }
     }
 

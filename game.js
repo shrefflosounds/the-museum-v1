@@ -21697,7 +21697,9 @@ window.game = this;
               this.selectedPlayerCharacter = selectedIdx;
               this.loadPlayerCharacter();
               this.startMultiplayerGame();
-            }, roomCode);
+            }, roomCode, () => {
+              if (this.dom.hostLobbyModal) this.dom.hostLobbyModal.classList.remove('hidden');
+            });
           } else {
             this.startMultiplayerGame();
           }
@@ -21762,7 +21764,9 @@ window.game = this;
                 this.selectedPlayerCharacter = selectedIdx;
                 this.loadPlayerCharacter();
                 this.startMultiplayerGame();
-              }, roomCode);
+              }, roomCode, () => {
+                if (this.dom.joinCodeModal) this.dom.joinCodeModal.classList.remove('hidden');
+              });
             } else {
               this.startMultiplayerGame();
             }
@@ -21882,6 +21886,8 @@ window.game = this;
           if (this.charSelectUI) {
             this.charSelectUI.show('PLAYER VIEW', (chosenIndex) => {
               this.setPlayerCharacter(chosenIndex);
+              if (this.dom.optionsModal) this.dom.optionsModal.classList.remove('hidden');
+            }, null, () => {
               if (this.dom.optionsModal) this.dom.optionsModal.classList.remove('hidden');
             });
           }
@@ -22273,6 +22279,8 @@ window.game = this;
         } else if (e.code === 'KeyE') {
           if (this.isExaminingArt) {
             this.closeArtModal();
+          } else if (this.charSelectUI && this.charSelectUI.modal && !this.charSelectUI.modal.classList.contains('hidden')) {
+            this.charSelectUI.cancelSelection();
           } else if (this.isObjectiveModalOpen) {
             this.closeObjectiveModal();
           } else if (this.gameStarted) {
@@ -22292,6 +22300,8 @@ window.game = this;
           }
           if (this.isExaminingArt) {
             this.closeArtModal();
+          } else if (this.charSelectUI && this.charSelectUI.modal && !this.charSelectUI.modal.classList.contains('hidden')) {
+            this.charSelectUI.cancelSelection();
           } else if (this.isObjectiveModalOpen) {
             this.closeObjectiveModal();
           } else if (this.isOptionsModalOpen) {

@@ -2023,7 +2023,28 @@ body.cutscene-playing *,
   position: absolute;
   bottom: 24px;
   right: 24px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
   z-index: 10;
+}
+
+.char-back-btn {
+  padding: 12px 28px;
+  font-family: 'Caryn';
+  font-size: 20px;
+  letter-spacing: 1.5px;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  color: #cbd5e1;
+  border: none;
+  filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
+  cursor: pointer;
+}
+
+.char-back-btn:hover {
+  color: #ffffff;
+  transform: translateY(-2px) scale(1.03);
+  filter: drop-shadow(0 6px 18px rgba(255, 255, 255, 0.3));
 }
 
 .char-confirm-btn {

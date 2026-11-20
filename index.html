@@ -179,6 +179,7 @@
   <!-- Character Select Modal (Fighter Roster Grid + 3D Preview) -->
   <div id="char-select-modal" class="modal-overlay hidden">
     <div class="char-select-container">
+      <button id="char-select-close-btn" class="close-btn" title="Back [ESC]">&times;</button>
       <div class="char-select-header">
         <h2 class="char-select-title">SELECT CHARACTER</h2>
         <div class="char-select-header-right">
@@ -204,6 +205,7 @@
           <div id="char-preview-loading" class="char-preview-loading hidden">LOADING...</div>
           <div class="char-preview-halo"></div>
           <div class="char-preview-footer">
+            <button id="char-back-btn" class="museum-btn char-back-btn" type="button">BACK</button>
             <button id="char-confirm-btn" class="museum-btn char-confirm-btn" type="button">CONFIRM CHARACTER</button>
           </div>
         </div>
@@ -463,16 +465,16 @@
   <script src="libs/GLTFLoader.js"></script>
   <script src="libs/mqtt.min.js"></script>
   <script src="multiplayer.js?v=2.5.0"></script>
-  <script src="character_select.js?v=2.2.0"></script>
+  <script src="character_select.js?v=2.2.1"></script>
   <script src="finalfight.js?v=1.3.1"></script>
     <!-- Museum Game Engine -->
   <script src="text_loader.js?v=615_1795052000"></script>
   <script type="module">
     import * as CANNON from './libs/cannon-es.js';
     window.CANNON = CANNON;
-    window._ASSET_VERSION = '2.9.1795205000';
+    window._ASSET_VERSION = '2.9.1795206000';
     const gameScript = document.createElement('script');
-    gameScript.src = 'game.js?v=2.9.1795205000';
+    gameScript.src = 'game.js?v=2.9.1795206000';
     document.body.appendChild(gameScript);
   </script>
 </body>
