@@ -4464,6 +4464,7 @@
       this.smittyXrayWireMat = null;
       this.isFalling = false;
       this.fallVelocity = 0;
+      this.playerOnMountain = false;
       this.lastKnownPlayerPos = new THREE.Vector3(-10, 0, 22);
       this.lastKnownPlayerFloor = 0;
       this.investigatePos = new THREE.Vector3();
@@ -10393,21 +10394,21 @@ window.game = this;
       const lx = wx - originX;
       const lz = wz - originZ;
 
-      const minZ = -41.2;
-      const maxZ = 14.8;
-      if (lz < minZ || lz > maxZ) return null;
-
-      const si = -lz - 13.2;
+      // Span along mountain Z axis: si = -lz - 13.2. Clamped span is [-28.0, 28.0]
       const spanS = 28.0;
-      if (Math.abs(si) > spanS) return null;
+      const siRaw = -lz - 13.2;
+
+      // Generous buffer margin beyond flank boundaries so ridges/edges never experience single-frame dropouts
+      if (Math.abs(siRaw) > spanS + 1.5) return null;
+      const si = Math.max(-spanS, Math.min(spanS, siRaw));
 
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const baseX = 10.8 - canyonCurv;
       const backDist = 38.0;
       const backBaseX = baseX + backDist;
 
-      // Only active on the mountain rock surface (from the front crest lip back to the back ground line)
-      if (lx < baseX - 0.4 || lx > backBaseX + 1.2) return null;
+      // Active from front cliff crest lip back to the rear slope base
+      if (lx < baseX - 0.6 || lx > backBaseX + 2.5) return null;
 
       const frontGndY = this.getSafeRoomGroundY(originX + baseX, originZ + lz) - originY;
       const backGndY = this.getSafeRoomGroundY(originX + backBaseX, originZ + lz) - originY;
@@ -11695,58 +11696,7 @@ window.game = this;
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Sheer Front Cliff Face & Lateral Flank Solid Colliders
-      // Blocks walking through the vertical cliff wall from the ground, while keeping the back slope fully open to run up, and allowing standing & leaping off the summit!
-      const mSlices = 14;
-      for (let s = 0; s < mSlices; s++) {
-        const zFrac1 = s / mSlices;
-        const zFrac2 = (s + 1) / mSlices;
-        const sMinZ = -41.4 + zFrac1 * (15.0 - (-41.4));
-        const sMaxZ = -41.4 + zFrac2 * (15.0 - (-41.4));
-        const midZ = (sMinZ + sMaxZ) * 0.5;
-        const si = -midZ - 13.2;
-        const siClamped = Math.max(-28.0, Math.min(28.0, si));
-        const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
-        const sFrontX = 10.8 - canyonCurv - 0.7;
-
-        this.colliders.push({
-          type: 'box',
-          floor: 'all',
-          minX: originX + sFrontX - 0.6,
-          maxX: originX + sFrontX + 1.2,
-          minZ: originZ + sMinZ,
-          maxZ: originZ + sMaxZ,
-          minY: originY - 5.0,
-          maxY: originY + 18.0,
-          isWall: false
-        });
-      }
-
-      // North & South Flank Lateral Barriers (Blocks ground penetration into the rock massif sides)
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 5.0,
-        maxX: originX + 46.0,
-        minZ: originZ - 42.5,
-        maxZ: originZ - 40.5,
-        minY: originY - 2.0,
-        maxY: originY + 18.0,
-        isWall: false
-      });
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 5.0,
-        maxX: originX + 46.0,
-        minZ: originZ + 14.0,
-        maxZ: originZ + 16.0,
-        minY: originY - 2.0,
-        maxY: originY + 18.0,
-        isWall: false
-      });
-
-      // (B) Shoreline Boulders Colliders
+      // (A) Shoreline Boulders Colliders (Mountain massif solidity is handled dynamically by resolveMountainSolidCollision)
       boulders.forEach(([bx, by, bz, bs, bh]) => {
         this.colliders.push({
           type: 'cylinder',
@@ -19278,6 +19228,7 @@ window.game = this;
         const sr = this.safeRoomSanctuary;
         if (sr) {
           this.isSafeRoomActive = true;
+          this.playerOnMountain = false;
           // Spawn player safely on the natural sanctuary glade facing towards the mountain waterfall and scenic lake
           const spawnLocalX = -17.0;
           const spawnLocalZ = 12.0;
@@ -19506,6 +19457,7 @@ window.game = this;
 
       setTimeout(() => {
         this.isSafeRoomActive = false;
+        this.playerOnMountain = false;
         // Spawn player standing outside in front of the 3rd floor east office arched entrance (x = 16.5, z = 13.0, floor 2)
         const y0 = 2 * CONFIG.FLOOR_HEIGHT;
         this.playerFloor = 2;
@@ -23520,7 +23472,7 @@ window.game = this;
         if (this.isSafeRoomActive) {
           const sr = this.safeRoomSanctuary;
           const srBaseY = sr ? sr.originY : 50.0;
-          this.playerPos.y = Math.max(srBaseY - 2.0, Math.min(srBaseY + 35.0, this.playerPos.y));
+          this.playerPos.y = Math.max(srBaseY - 2.0, Math.min(srBaseY + 60.0, this.playerPos.y));
         } else {
           const maxMuseumY = CONFIG.NUM_FLOORS * CONFIG.FLOOR_HEIGHT;
           this.playerPos.y = Math.max(-1.0, Math.min(maxMuseumY, this.playerPos.y));
@@ -23674,9 +23626,44 @@ window.game = this;
         // In the sanctuary grotto: Follows natural meadow terrain, or elevated mountain surface when on/above it
         const meadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
         const mountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
-        if (mountainY !== null && currentFootElevation >= mountainY - 1.25) {
-          groundY = mountainY;
+
+        const originX = 300.0;
+        const originZ = 300.0;
+        const lx = this.playerPos.x - originX;
+        const lz = this.playerPos.z - originZ;
+        const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
+        const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
+        const frontLipX = 10.8 - canyonCurv;
+        const backBaseX = frontLipX + 38.0;
+
+        if (mountainY !== null) {
+          if (this.playerOnMountain) {
+            // Player is traversing the mountain rock surface
+            if (lx < frontLipX - 0.6) {
+              // Stepped or leaped off the front cliff crest into mid-air over the waterfall/pool gorge!
+              this.playerOnMountain = false;
+              groundY = meadowY;
+            } else if (lx > backBaseX + 0.5 && Math.abs(mountainY - meadowY) < 0.6) {
+              // Walked down the rear slope onto the open meadow
+              this.playerOnMountain = false;
+              groundY = meadowY;
+            } else {
+              // Stand solidly on the mountain rock surface (can NEVER fall through into the mountain)
+              groundY = mountainY;
+            }
+          } else {
+            // Player is approaching from the meadow or landing from above
+            const isNearBackRamp = (lx >= backBaseX - 4.5 && currentFootElevation >= meadowY - 0.6);
+            const isLandingFromAbove = (currentFootElevation >= mountainY - 1.5);
+            if (isNearBackRamp || isLandingFromAbove) {
+              this.playerOnMountain = true;
+              groundY = mountainY;
+            } else {
+              groundY = meadowY;
+            }
+          }
         } else {
+          this.playerOnMountain = false;
           groundY = meadowY;
         }
         this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, 'all', currentFootElevation, this.currentCamHeight);
@@ -23743,7 +23730,9 @@ window.game = this;
       } else {
         // Player is grounded. Check if they walked off a high cliff/edge into the air (e.g. running off summit over waterfall)
         const currentFootY = this.playerPos.y - this.currentCamHeight;
-        const dropThreshold = this.isSafeRoomActive ? 1.45 : 0.18;
+        // In sanctuary: rugged slopes can have steps up to 3.0m without treating it as free-fall cliff drop.
+        // Genuine cliff drops (like leaping off the 20m waterfall cliff) are > 3.5m!
+        const dropThreshold = this.isSafeRoomActive ? 3.5 : 0.18;
         if (!this.playerStairState.active && currentFootY > groundY + dropThreshold) {
           // Walked/ran off a genuine drop or cliff edge into the air!
           this.isGrounded = false;
@@ -23755,7 +23744,7 @@ window.game = this;
           this.jumpOffset = 0;
           if (this.isSafeRoomActive) {
             // Natural terrain slope following: smoothly follow terrain elevation (no teleporting up/down)
-            const vRate = isMoving ? 32.0 : 45.0;
+            const vRate = isMoving ? 38.0 : 45.0;
             this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * vRate));
           } else {
             const verticalFollowRate = this.playerStairState.active ? 42 : 18;
@@ -23963,56 +23952,54 @@ window.game = this;
       const lx = pos.x - originX;
       const lz = pos.z - originZ;
 
-      // Mountain Z extent in local space (north flank: -41.4, south flank: +15.0)
-      const minZ = -41.4;
-      const maxZ = 15.0;
+      // Mountain Z extent in local coordinates (North flank: -41.2, South flank: +14.8)
+      // Span si = -lz - 13.2, spanning [-28.0, 28.0]
+      const minZ = -41.2;
+      const maxZ = 14.8;
 
-      // Fast early rejection if position is outside the mountain envelope
+      // When outside the mountain in Z, player is on the open meadow/trails running around the flanks.
+      // Absolutely NO invisible walls or push vectors outside the rock envelope!
       if (lz < minZ - radius || lz > maxZ + radius) return;
-      if (lx < -1.0 - radius || lx > 52.0 + radius) return;
 
-      // If player is on or above the mountain surface, allow completely free movement on the rock slope and summit!
+      const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
+      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
+      const frontX = 10.8 - canyonCurv;
+      const backX = frontX + 38.0;
+
+      // In front of the cliff (pool basin/front trail) or behind the mountain (back meadow): zero push!
+      if (lx < frontX - radius - 1.5 || lx > backX + radius + 1.5) return;
+
+      // If player is on top of the mountain (or landing/jumping on the mountain rock surface):
+      // Complete 100% free movement across all summits, crags, ridges, and slopes!
+      if (this.playerOnMountain) return;
+
       const mSurfaceY = this.getMountainSurfaceElevation(pos.x, pos.z);
-      if (mSurfaceY !== null && footElevation !== -999) {
-        if (footElevation >= mSurfaceY - 0.85) {
-          return;
-        }
+      if (mSurfaceY !== null && footElevation !== -999 && footElevation >= mSurfaceY - 0.75) {
+        return;
       }
 
-      // Clamp lz to find the corresponding rock cross-section
-      const clampedZ = Math.max(minZ, Math.min(maxZ, lz));
-      const si = -clampedZ - 13.2;
-      const siClamped = Math.max(-28.0, Math.min(28.0, si));
-      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
+      // Player is at ground elevation below the mountain rock:
+      // (1) Approaching from the rear meadow:
+      // The mountain back is a natural ramp descending seamlessly into the terrain.
+      // Never push the player away from the back slope - let them step right onto it!
+      if (lx >= backX - 4.5) return;
 
-      // Front rock crag face and back rock slope boundary in local X
-      const frontX = 10.8 - canyonCurv - 0.7;
-      const backX = 10.8 - canyonCurv + 38.4;
+      // (2) Front cliff face:
+      // Physical sheer rock wall prevents player at pool/path level from walking through the cliff face
+      if (lx > frontX - radius - 0.4 && lx < frontX + 4.5) {
+        pos.x = originX + frontX - radius - 0.4;
+        return;
+      }
 
-      // Check penetration against the 4 mountain boundaries
-      const penFront = lx - (frontX - radius); // Distance penetrated past front cliff (> 0 if inside)
-      const penBack = (backX + radius) - lx;   // Distance penetrated past back slope (> 0 if inside)
-      const penNorth = lz - (minZ - radius);   // Distance penetrated past north flank (> 0 if inside)
-      const penSouth = (maxZ + radius) - lz;   // Distance penetrated past south flank (> 0 if inside)
-
-      if (penFront > 0 && penBack > 0 && penNorth > 0 && penSouth > 0) {
-        // Allow player approaching from the back meadow to step freely onto the back slope ramp
-        const meadowY = this.getSafeRoomGroundY(pos.x, pos.z);
-        if (footElevation !== -999 && footElevation >= meadowY - 0.45 && lx >= backX - 3.5) {
-          return;
-        }
-
-        // Player is touching or attempting to clip inside the mountain below its surface - push out
-        const minPen = Math.min(penFront, penNorth, penSouth, penBack);
-
-        if (minPen === penFront) {
-          pos.x = originX + (frontX - radius);
-        } else if (minPen === penBack) {
-          pos.x = originX + (backX + radius);
-        } else if (minPen === penNorth) {
-          pos.z = originZ + (minZ - radius);
-        } else {
-          pos.z = originZ + (maxZ + radius);
+      // (3) Lateral flank crags (North & South):
+      // Only prevents clipping deep into the side rock interior from ground level
+      if (lx >= frontX + 1.0 && lx <= backX - 4.5) {
+        const penNorth = lz - minZ;
+        const penSouth = maxZ - lz;
+        if (penNorth > -radius && penNorth < 2.0) {
+          pos.z = originZ + minZ - radius;
+        } else if (penSouth > -radius && penSouth < 2.0) {
+          pos.z = originZ + maxZ + radius;
         }
       }
     }
@@ -24398,12 +24385,30 @@ window.game = this;
       } else {
         // Seamless drop to ground like Garry's Mod
         if (this.isSafeRoomActive) {
-          const sr = this.safeRoomSanctuary;
-          const srBaseY = sr ? sr.originY : 50.0;
-          this.playerPos.y = srBaseY + CONFIG.PLAYER.CAMERA_HEIGHT;
-          this.isGrounded = true;
-          this.fallVelocity = 0;
-          this.isFalling = false;
+          const meadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
+          const mountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
+          let groundY = meadowY;
+          if (mountainY !== null && (this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT) >= mountainY - 1.5) {
+            groundY = mountainY;
+            this.playerOnMountain = true;
+          } else {
+            this.playerOnMountain = false;
+          }
+          const targetCamY = groundY + CONFIG.PLAYER.CAMERA_HEIGHT;
+          if (this.playerPos.y > targetCamY + 0.5) {
+            // Drop down to the ground/mountain under realistic gravity
+            this.isGrounded = false;
+            this.fallVelocity = 0;
+            this.isFalling = true;
+          } else {
+            // Seamless landing on meadow or mountain surface
+            this.playerPos.y = targetCamY;
+            this.isGrounded = true;
+            this.fallVelocity = 0;
+            this.isFalling = false;
+          }
+          this.jumpOffset = 0;
+          this.jumpVelocity = 0;
         } else {
           const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
           let groundFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
