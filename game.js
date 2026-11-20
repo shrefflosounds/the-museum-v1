@@ -10489,6 +10489,9 @@ window.game = this;
       const vistaTex = this.texLoader.load('assets/textures/sanctuary/mountain_vista.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
         tx.wrapT = THREE.ClampToEdgeWrapping;
+        tx.minFilter = THREE.LinearFilter;
+        tx.magFilter = THREE.LinearFilter;
+        tx.generateMipmaps = false;
       });
       const wfTex = this.texLoader.load('assets/textures/sanctuary/waterfall_cascade.png', (tx) => {
         tx.wrapS = THREE.RepeatWrapping;
@@ -10508,7 +10511,7 @@ window.game = this;
       const moteTex = this.texLoader.load('assets/textures/sanctuary/soft_pastel_mote.png');
 
       // 2. Boundless Panoramic Alpine Sky Dome (Smooth gradient blending with mountain vista)
-      const skyGeo = new THREE.SphereGeometry(185.0, 48, 32);
+      const skyGeo = new THREE.SphereGeometry(185.0, 64, 32);
       const skyMat = new THREE.ShaderMaterial({
         uniforms: {
           uVistaTex: { value: vistaTex },
@@ -10520,9 +10523,9 @@ window.game = this;
         },
         vertexShader: `
           varying vec3 vWorldPos;
-          varying vec2 vUv;
+          varying vec2 vTexUv;
           void main() {
-            vUv = uv;
+            vTexUv = vec2(uv.x + 0.32, uv.y);
             vec4 wp = modelMatrix * vec4(position, 1.0);
             vWorldPos = wp.xyz;
             gl_Position = projectionMatrix * viewMatrix * wp;
@@ -10536,16 +10539,13 @@ window.game = this;
           uniform vec3 uSunDir;
           uniform vec3 uSunColor;
           varying vec3 vWorldPos;
-          varying vec2 vUv;
+          varying vec2 vTexUv;
           void main() {
             vec3 dir = normalize(vWorldPos - vec3(300.0, 50.0, 300.0));
             float elevation = dir.y;
 
-            float angle = atan(dir.z, dir.x);
-            float u = fract((angle / (2.0 * 3.14159265)) + 0.32);
-
             float vTex = clamp((elevation + 0.04) / 0.52, 0.0, 1.0);
-            vec3 texCol = texture2D(uVistaTex, vec2(u, vTex)).rgb;
+            vec3 texCol = texture2D(uVistaTex, vec2(vTexUv.x, vTex)).rgb;
 
             float h = clamp(elevation, 0.0, 1.0);
             vec3 openSky = mix(uHorizonColor, uMidColor, pow(h, 0.40));
@@ -11705,8 +11705,8 @@ window.game = this;
           z: originZ + bz,
           radius: bs * 0.90,
           minY: originY + by - 2.0,
-          maxY: originY + by + bh + 2.0,
-          isWall: true
+          maxY: originY + by + bh,
+          isWall: false
         });
       });
 
@@ -12002,67 +12002,6 @@ window.game = this;
       floraGroup.add(floraMesh);
       group.add(floraGroup);
 
-      // 12. Floating Ethereal Hazy Particles & Multi-Hued Atmospheric Motes
-      const motePalette = [
-        new THREE.Color(0x67e8f9), // Shimmering Cyan
-        new THREE.Color(0xc084fc), // Soft Lavender
-        new THREE.Color(0xfde047), // Celestial Gold
-        new THREE.Color(0xf472b6), // Wild Rose Pink
-        new THREE.Color(0x5eead4), // Ethereal Mint
-        new THREE.Color(0x93c5fd), // Periwinkle Azure
-        new THREE.Color(0xfdba74), // Soft Peach
-        new THREE.Color(0xa78bfa)  // Amethyst Violet
-      ];
-
-      const orbCount = 120;
-      const orbGeo = new THREE.BufferGeometry();
-      const orbPos = new Float32Array(orbCount * 3);
-      const orbColors = new Float32Array(orbCount * 3);
-      const orbData = [];
-
-      for (let i = 0; i < orbCount; i++) {
-        const ox = -65.0 + Math.random() * 130.0;
-        const oy = 0.8 + Math.random() * 9.5;
-        const oz = -65.0 + Math.random() * 130.0;
-
-        orbPos[i * 3]     = ox;
-        orbPos[i * 3 + 1] = oy;
-        orbPos[i * 3 + 2] = oz;
-
-        const c = motePalette[Math.floor(Math.random() * motePalette.length)];
-        orbColors[i * 3]     = c.r;
-        orbColors[i * 3 + 1] = c.g;
-        orbColors[i * 3 + 2] = c.b;
-
-        orbData.push({
-          baseX: ox,
-          baseY: oy,
-          baseZ: oz,
-          speedX: 0.18 + Math.random() * 0.28,
-          speedY: 0.25 + Math.random() * 0.35,
-          speedZ: 0.16 + Math.random() * 0.26,
-          radiusX: 1.5 + Math.random() * 2.8,
-          radiusZ: 1.5 + Math.random() * 2.8,
-          phaseX: Math.random() * Math.PI * 2,
-          phaseY: Math.random() * Math.PI * 2,
-          phaseZ: Math.random() * Math.PI * 2
-        });
-      }
-      orbGeo.setAttribute('position', new THREE.BufferAttribute(orbPos, 3));
-      orbGeo.setAttribute('color', new THREE.BufferAttribute(orbColors, 3));
-
-      const orbMat = new THREE.PointsMaterial({
-        size: 1.15,
-        map: moteTex,
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.90,
-        blending: THREE.AdditiveBlending,
-        depthWrite: false
-      });
-      const orbPoints = new THREE.Points(orbGeo, orbMat);
-      group.add(orbPoints);
-
       if (this._rootSceneAdd) {
         this._rootSceneAdd(group);
       } else {
@@ -12104,8 +12043,6 @@ window.game = this;
         splashPlumes: splashPlumes,
         lipFoamMesh: lipFoamMesh,
         poolFoamMesh: poolFoam1,
-        orbPoints: orbPoints,
-        orbData: orbData,
         time: 0
       };
     }
@@ -19420,26 +19357,6 @@ window.game = this;
         }
         posAttr.needsUpdate = true;
       }
-
-      // Animate floating ethereal multi-hued hazy motes (calming 3D multi-frequency wafting drift)
-      if (sr.orbPoints && sr.orbData) {
-        const posAttr = sr.orbPoints.geometry.attributes.position;
-        const arr = posAttr.array;
-        const count = sr.orbData.length;
-        for (let i = 0; i < count; i++) {
-          const d = sr.orbData[i];
-          const tx = sr.time * d.speedX + d.phaseX;
-          const ty = sr.time * d.speedY + d.phaseY;
-          const tz = sr.time * d.speedZ + d.phaseZ;
-          arr[i * 3]     = d.baseX + Math.sin(tx) * d.radiusX + Math.sin(sr.time * 0.12) * 1.8;
-          arr[i * 3 + 1] = d.baseY + Math.sin(ty) * 0.75 + Math.cos(sr.time * 0.18) * 0.35;
-          arr[i * 3 + 2] = d.baseZ + Math.cos(tz) * d.radiusZ + Math.cos(sr.time * 0.14) * 1.8;
-        }
-        posAttr.needsUpdate = true;
-        if (sr.orbPoints.material) {
-          sr.orbPoints.material.opacity = 0.86 + Math.sin(sr.time * 0.6) * 0.08;
-        }
-      }
     }
 
     
@@ -23612,14 +23529,20 @@ window.game = this;
 
       // Jump mechanics (Space)
       const wantsJump = !!this.keys['Space'];
-      if (wantsJump && this.isGrounded && !isCrouching) {
+      const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
+
+      // In sanctuary: detect if player is in or wading across the plunge pool pond
+      const distToPool = this.isSafeRoomActive ? Math.hypot(this.playerPos.x - 307.8, this.playerPos.z - 287.0) : 999;
+      const isInPoolWater = this.isSafeRoomActive && distToPool < 10.2 && currentFootElevation < 51.0;
+
+      if (wantsJump && (this.isGrounded || isInPoolWater) && !isCrouching) {
         const jumpMultiplier = isTheBeing ? 1.2 : 1.0;
-        this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier;
+        // High jump boost when jumping out of the water to effortlessly leap high over the shoreline rocks
+        const waterBoost = isInPoolWater ? 2.05 : 1.0;
+        this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier * waterBoost;
         this.isGrounded = false;
         this.footstepTimer = 0;
       }
-
-      const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
       let groundY;
 
       if (this.isSafeRoomActive) {
@@ -23920,6 +23843,10 @@ window.game = this;
                 continue;
               }
             }
+
+            // If player's feet are above the top of the cylinder, allow jumping/leaping freely over it
+            if (c.maxY !== undefined && footElevation !== -999 && footElevation >= (c.maxY - 0.15)) continue;
+            if (c.minY !== undefined && footElevation !== -999 && (footElevation + camHeight) <= c.minY) continue;
 
             const dx = pos.x - c.x;
             const dz = pos.z - c.z;
