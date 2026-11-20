@@ -5148,9 +5148,9 @@ window.game = this;
           controlsMesh.castShadow = false;
           controlsMesh.receiveShadow = true;
           // Interior East wall surface is at x = 3.78; place at x = 3.77 facing West (-X) into REem8's room
-          // Shifted south (+Z) towards the front counter so the entire image is easier to see for walking players
+          // Shifted north (+Z) deeper into the room (to the left from player perspective) so the full poster is clearly visible past the counter arch
           controlsMesh.rotation.y = -Math.PI / 2;
-          controlsMesh.position.set(3.77, y0 + 3.85, 9.85);
+          controlsMesh.position.set(3.77, y0 + 3.85, 11.45);
           this.scene.add(controlsMesh);
         }
 
