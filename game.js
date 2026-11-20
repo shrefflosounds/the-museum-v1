@@ -11199,7 +11199,10 @@ window.game = this;
 
         // 1. Front cliff face (k = 0 .. segsFront - 1)
         for (let k = 0; k < segsFront; k++) {
-          const yNorm = k / segsFront;
+          const yNorm = k / (segsFront - 1);
+          // Taper cliff surface displacement cleanly to zero at the crest (yNorm -> 1)
+          // so the front cliff crest exactly coincides with the start of the back slope!
+          const crestTaper = (k === segsFront - 1) ? 0.0 : (1.0 - Math.pow(yNorm, 3.5));
           const strata = Math.sin(yNorm * frontLipH * 0.75) * 0.35 + Math.sin(si * 0.5 + yNorm * 3.8) * 0.30;
           const cliffRecess = Math.pow(yNorm, 1.3) * 1.3;
           let cragShelf = 0.0;
@@ -11208,28 +11211,28 @@ window.game = this;
             const cragY = Math.sin(yNorm * Math.PI);
             cragShelf = cragS * cragY * 1.5;
           }
-          const x = baseX + nx * (cragShelf - cliffRecess + strata);
-          const z = baseZ + nz * (cragShelf - cliffRecess + strata);
-          const y = (k === 0) ? (frontGndY - 1.2) : (frontGndY + yNorm * frontLipH + Math.sin(si * 0.4) * 0.25);
+          const x = (k === segsFront - 1) ? baseX : (baseX + nx * (cragShelf - cliffRecess + strata) * crestTaper);
+          const z = (k === segsFront - 1) ? baseZ : (baseZ + nz * (cragShelf - cliffRecess + strata) * crestTaper);
+          const y = (k === 0) ? (frontGndY - 1.2) : (frontGndY + yNorm * frontLipH);
           amphiPositions.push(x, y, z);
           amphiUvs.push((si + spanS) / 6.5, y / 6.5);
         }
 
         // 2. Solid sloping mountain back descending firmly into terrain (k = 0 .. segsBack - 1)
         for (let k = 0; k < segsBack; k++) {
-          const t = k / segsBack;
-          const strataBack = Math.sin(si * 0.45 + t * 3.2) * 0.45;
-          const x = baseX + t * backDist + px * strataBack;
-          const z = baseZ + pz * strataBack;
+          const t = k / (segsBack - 1);
+          const strataBack = Math.sin(si * 0.45 + t * 3.2) * 0.45 * Math.sin(t * Math.PI);
+          const x = (k === 0) ? baseX : (baseX + t * backDist + px * strataBack);
+          const z = (k === 0) ? baseZ : (baseZ + pz * strataBack);
           const summitY = frontGndY + summitH;
 
           // Behind the waterfall cleft, smooth transition into an alpine crest behind the spring
           const crestH = summitY * (1.0 - notch) + (frontLipH + 6.5 * Math.sin(Math.min(1.0, t / 0.22) * Math.PI * 0.5)) * notch;
           const arch = Math.sin(t * Math.PI) * (3.4 * (1.0 - notch * 0.4)) * (1.0 - t * 0.4);
           const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t * 0.75);
-          const h = crestH * (1.0 - Math.pow(t, 1.2)) + (backGndY - 1.2) * Math.pow(t, 1.2) + arch + ridgeRelief;
+          const h = (k === 0) ? frontLipH : (crestH * (1.0 - Math.pow(t, 1.2)) + (backGndY - 1.2) * Math.pow(t, 1.2) + arch + ridgeRelief);
 
-          const y = (k === 0) ? frontLipH : h;
+          const y = frontGndY + h;
           amphiPositions.push(x, y, z);
           amphiUvs.push((si + spanS) / 6.5, (y + t * backDist * 0.4) / 6.5);
         }
@@ -11244,7 +11247,7 @@ window.game = this;
           amphiUvs.push((si + spanS) / 6.5, 0.0);
         }
 
-        // Exact physical surface points for this slice (crest vertex at k=19, back slope k=20..41, and rear base)
+        // Exact physical surface points for this slice (crest vertex at k=19, back slope k=1..21, and rear base)
         const startIdx = i * loopPts;
         const crestIdx = startIdx + segsFront - 1;
         const slicePts = [{
@@ -11252,7 +11255,7 @@ window.game = this;
           y: amphiPositions[crestIdx * 3 + 1],
           z: amphiPositions[crestIdx * 3 + 2]
         }];
-        for (let bk = 0; bk < segsBack; bk++) {
+        for (let bk = 1; bk < segsBack; bk++) {
           const idx = startIdx + segsFront + bk;
           slicePts.push({
             x: amphiPositions[idx * 3],
@@ -11310,7 +11313,7 @@ window.game = this;
             const rx = bx * (1.0 - ringRatio) + cx * ringRatio;
             const ry = by * (1.0 - ringRatio) + cy * ringRatio;
             const normSign = isNorth ? -1.0 : 1.0;
-            const cragRelief = (Math.sin(rx * 0.45) * 1.2 + Math.cos(ry * 0.4) * 0.95 + Math.sin(rx * 0.9 + ry * 0.7) * 0.5) * Math.sin(ringRatio * Math.PI);
+            const cragRelief = (Math.sin(rx * 0.75) * 0.22 + Math.cos(ry * 0.65) * 0.18) * Math.sin(ringRatio * Math.PI);
             const rz = bz * (1.0 - ringRatio) + cz * ringRatio + normSign * cragRelief;
 
             const newIdx = amphiPositions.length / 3;
@@ -11338,7 +11341,7 @@ window.game = this;
         }
 
         const centerIdx = amphiPositions.length / 3;
-        const centerZRelief = (isNorth ? -1.0 : 1.0) * 1.4;
+        const centerZRelief = (isNorth ? -1.0 : 1.0) * 0.20;
         amphiPositions.push(cx, cy, cz + centerZRelief);
         amphiUvs.push(cx / 6.5, cy / 6.5);
 
@@ -11369,14 +11372,8 @@ window.game = this;
       const amphiMesh = new THREE.Mesh(amphiGeo, cMat);
       rockGroup.add(amphiMesh);
 
-      // Natural River Boulders Lining Plunge Pool Shoreline & Intermediate Crags (Merged into 1 draw call)
+      // Natural River Boulders Lining Plunge Pool Shoreline & Canyon Rocks (Merged into 1 draw call)
       const boulders = [
-        // Stepped crag boulders embedded in cliff face (zero floating!)
-        [cliffLocalX - 0.5, 9.0, cliffLocalZ - 3.8, 2.2, 1.3, 0.4],
-        [cliffLocalX - 0.4, 8.8, cliffLocalZ + 4.2, 2.4, 1.4, 1.1],
-        [cliffLocalX - 0.8, 9.2, cliffLocalZ - 1.5, 1.8, 1.1, 0.8],
-        [cliffLocalX - 0.7, 8.9, cliffLocalZ + 2.0, 2.0, 1.2, 1.4],
-
         // Shoreline river boulders forming an unbroken natural stone rim around the plunge pool
         [4.6,  0.2, -6.2,  1.9, 1.0, 0.4],
         [3.8,  0.2, -7.8,  1.8, 0.95, 0.8],
@@ -11409,12 +11406,12 @@ window.game = this;
         [8.8, -1.3, -11.2, 1.6, 0.8, 1.5],
         [8.0, -1.4, -13.5, 1.8, 0.9, 0.3],
 
-        // Natural Canyon Boulders Framing Waterfall Lip Crest & Chute (Natural carved stone channel)
-        [9.8, 19.5, cliffLocalZ - 3.6, 2.2, 1.4, 0.5], // Left gorge rim boulder
-        [9.8, 19.5, cliffLocalZ + 3.6, 2.2, 1.4, 0.9], // Right gorge rim boulder
-        [12.5, 20.6, cliffLocalZ - 2.8, 2.4, 1.5, 0.3], // Upper left canyon rock
-        [12.5, 20.6, cliffLocalZ + 2.8, 2.4, 1.5, 1.2], // Upper right canyon rock
-        [10.5, 19.7, cliffLocalZ + 0.6, 1.3, 0.8, 0.7]  // Central dividing rock outcrop in the channel
+        // Natural Canyon Boulders Framing Waterfall Lip Crest & Chute (Sitting solidly on mountain surface)
+        [9.8, 24.5, cliffLocalZ - 3.6, 2.2, 1.4, 0.5], // Left gorge rim boulder
+        [9.8, 24.5, cliffLocalZ + 3.6, 2.2, 1.4, 0.9], // Right gorge rim boulder
+        [12.5, 23.2, cliffLocalZ - 2.8, 2.4, 1.5, 0.3], // Upper left canyon rock
+        [12.5, 23.2, cliffLocalZ + 2.8, 2.4, 1.5, 1.2], // Upper right canyon rock
+        [10.5, 19.5, cliffLocalZ + 0.6, 1.3, 0.8, 0.7]  // Central dividing rock outcrop in the channel
       ];
 
       const mountainBoulders = [];
@@ -11816,19 +11813,16 @@ window.game = this;
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Shoreline Boulders Colliders (Mountain massif solidity is handled dynamically by resolveMountainSolidCollision)
+      // (A) Solid Boulders Colliders (Shoreline rocks and canyon rocks)
       boulders.forEach(([bx, by, bz, bs, bh]) => {
-        // Only shoreline river rocks at the pond basin get physical cylinder colliders;
-        // canyon rocks at the top of the waterfall and cliff face are natural crag features that must NOT trap the player!
-        if (by > 2.0) return;
         this.colliders.push({
           type: 'cylinder',
           floor: 'all',
           x: originX + bx,
           z: originZ + bz,
-          radius: bs * 0.90,
+          radius: bs * 0.88,
           minY: originY + by - 2.0,
-          maxY: originY + by + bh,
+          maxY: originY + by + bh * 0.70,
           isWall: false
         });
       });
