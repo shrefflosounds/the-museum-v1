@@ -10632,8 +10632,9 @@ getSafeRoomGroundY(wx, wz) {
       addEarthenGlade(-18.5, 9.5, 8.5, 36);   // Spawn & Portal Glade
       addEarthenGlade(6.5, -6.5, 5.8, 32);     // Lake Overlook Bluff
       addEarthenGlade(4.5, -18.5, 5.2, 28);    // South Lagoon Shoreline Bluff
-      addEarthenGlade(20.5, -21.0, 5.5, 28);   // Mountain South Shoulder Clearing
-      addEarthenGlade(31.0, -2.0, 6.0, 32);    // Mountain Rear Vista Glade
+      addEarthenGlade(24.0, 19.5, 5.5, 28);    // South Ridge Meadow Clearing
+      addEarthenGlade(55.0, -10.0, 6.0, 32);   // Mountain Rear Panoramic Vista Glade
+      addEarthenGlade(20.0, -45.0, 5.2, 28);   // North Flank Pass Clearing
       addEarthenGlade(-11.5, -11.5, 5.2, 28);  // North Meadow Blossom Clearing
       addEarthenGlade(-4.5, -22.5, 4.8, 28);   // Far North Meadow Lookout
       addEarthenGlade(-8.5, 15.0, 4.5, 28);    // Southwest Foothills Glade
@@ -10657,28 +10658,37 @@ getSafeRoomGroundY(wx, wz) {
         new THREE.Vector2(4.8, -10.5),
         new THREE.Vector2(3.6, -14.5),
         new THREE.Vector2(4.5, -18.5),
-        new THREE.Vector2(7.0, -21.5)
+        new THREE.Vector2(6.0, -23.0)
       ], 4.2, 36);
 
-      // Trail 3: Mountain Flank & Backtrail (Inviting free walking all the way around the mountain)
+      // Trail 3: Mountain Flank & Backtrail Circuit (Looping 360 degrees around the mountain on open meadow)
       addTrailRibbon([
-        new THREE.Vector2(7.0, -21.5),
-        new THREE.Vector2(13.5, -23.5),
-        new THREE.Vector2(20.5, -21.0),
-        new THREE.Vector2(26.5, -15.5),
-        new THREE.Vector2(30.0, -9.0),
-        new THREE.Vector2(31.0, -2.0),
-        new THREE.Vector2(28.0, 6.0)
-      ], 4.0, 48);
+        new THREE.Vector2(6.0, -23.0),
+        new THREE.Vector2(3.5, -31.0),
+        new THREE.Vector2(4.0, -40.0),
+        new THREE.Vector2(12.0, -45.0),
+        new THREE.Vector2(24.0, -45.5),
+        new THREE.Vector2(38.0, -44.0),
+        new THREE.Vector2(52.0, -36.0),
+        new THREE.Vector2(56.0, -22.0),
+        new THREE.Vector2(56.0, -8.0),
+        new THREE.Vector2(53.0, 6.0),
+        new THREE.Vector2(42.0, 17.5),
+        new THREE.Vector2(28.0, 19.5),
+        new THREE.Vector2(14.0, 18.0),
+        new THREE.Vector2(0.0, 15.0),
+        new THREE.Vector2(-12.0, 12.0),
+        new THREE.Vector2(-18.5, 9.5)
+      ], 4.0, 68);
 
-      // Trail 4: North Meadow Blossom Trail (Branching from crossroads across flower fields)
+      // Trail 4: North Meadow Blossom Trail (Branching from crossroads across flower fields to north pass)
       addTrailRibbon([
         new THREE.Vector2(-6.5, 2.5),
         new THREE.Vector2(-9.0, -4.5),
         new THREE.Vector2(-11.5, -11.5),
         new THREE.Vector2(-9.5, -18.5),
         new THREE.Vector2(-4.5, -22.5),
-        new THREE.Vector2(2.0, -24.0)
+        new THREE.Vector2(3.5, -31.0)
       ], 3.8, 44);
 
       const pathGeo = new THREE.BufferGeometry();
@@ -11464,55 +11474,33 @@ getSafeRoomGroundY(wx, wz) {
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Mountain Cliff Face Colliders (Tightened to rock face, permitting free 360-degree walking around flanks and rear)
-      // Central gorge & waterfall back wall
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 8.5,
-        maxX: originX + 14.5,
-        minZ: originZ - 17.5,
-        maxZ: originZ - 8.5,
-        minY: originY - 2.0,
-        maxY: originY + 35.0,
-        isWall: true
-      });
-      // North cliff face
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 4.5,
-        maxX: originX + 14.0,
-        minZ: originZ - 38.0,
-        maxZ: originZ - 17.5,
-        minY: originY - 2.0,
-        maxY: originY + 35.0,
-        isWall: true
-      });
-      // South cliff face
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 4.5,
-        maxX: originX + 14.0,
-        minZ: originZ - 8.5,
-        maxZ: originZ + 12.0,
-        minY: originY - 2.0,
-        maxY: originY + 35.0,
-        isWall: true
-      });
-      // Central steep mountain peak core
-      this.colliders.push({
-        type: 'box',
-        floor: 'all',
-        minX: originX + 14.0,
-        maxX: originX + 30.0,
-        minZ: originZ - 30.0,
-        maxZ: originZ + 4.0,
-        minY: originY - 2.0,
-        maxY: originY + 35.0,
-        isWall: true
-      });
+      // (A) Solid 3D Mountain Massif Colliders
+      // Contiguous airtight slices spanning the entire 3D mountain volume from front cliff to back slope, and north to south flank
+      const mSlices = 14;
+      for (let s = 0; s < mSlices; s++) {
+        const zFrac1 = s / mSlices;
+        const zFrac2 = (s + 1) / mSlices;
+        const sMinZ = -41.4 + zFrac1 * (15.0 - (-41.4));
+        const sMaxZ = -41.4 + zFrac2 * (15.0 - (-41.4));
+        const midZ = (sMinZ + sMaxZ) * 0.5;
+        const si = -midZ - 13.2;
+        const siClamped = Math.max(-28.0, Math.min(28.0, si));
+        const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
+        const sFrontX = 10.8 - canyonCurv - 0.7;
+        const sBackX = 10.8 - canyonCurv + 38.4;
+
+        this.colliders.push({
+          type: 'box',
+          floor: 'all',
+          minX: originX + sFrontX,
+          maxX: originX + sBackX,
+          minZ: originZ + sMinZ,
+          maxZ: originZ + sMaxZ,
+          minY: originY - 5.0,
+          maxY: originY + 45.0,
+          isWall: true
+        });
+      }
 
       // (B) Shoreline Boulders Colliders
       boulders.forEach(([bx, by, bz, bs, bh]) => {
@@ -23600,6 +23588,59 @@ getSafeRoomGroundY(wx, wz) {
               pos.z += (dz / dist) * overlap;
             }
           }
+        }
+
+        // Dedicated sanctuary mountain massif collision resolver:
+        // Guarantees the mountain is a 100% solid, impenetrable object that player can never clip through from any angle
+        if (this.isSafeRoomActive) {
+          this.resolveMountainSolidCollision(pos, radius);
+        }
+      }
+    }
+
+    resolveMountainSolidCollision(pos, radius) {
+      const sr = this.safeRoomSanctuary;
+      const originX = sr ? sr.originX : 300.0;
+      const originZ = sr ? sr.originZ : 300.0;
+      const lx = pos.x - originX;
+      const lz = pos.z - originZ;
+
+      // Mountain Z extent in local space (north flank: -41.2, south flank: +14.8)
+      const minZ = -41.4;
+      const maxZ = 15.0;
+
+      // Fast early rejection if position is outside the mountain envelope
+      if (lz < minZ - radius || lz > maxZ + radius) return;
+      if (lx < 0.5 - radius || lx > 50.0 + radius) return;
+
+      // Clamp lz to find the corresponding rock cross-section
+      const clampedZ = Math.max(minZ, Math.min(maxZ, lz));
+      const si = -clampedZ - 13.2;
+      const siClamped = Math.max(-28.0, Math.min(28.0, si));
+      const canyonCurv = Math.pow(Math.min(1.0, Math.abs(siClamped) / 18.0), 1.35) * 8.5;
+
+      // Front rock crag face and back rock slope boundary in local X
+      const frontX = 10.8 - canyonCurv - 0.7;
+      const backX = 10.8 - canyonCurv + 38.4;
+
+      // Check penetration against the 4 mountain boundaries
+      const penFront = lx - (frontX - radius); // Distance penetrated past front cliff (> 0 if inside)
+      const penBack = (backX + radius) - lx;   // Distance penetrated past back slope (> 0 if inside)
+      const penNorth = lz - (minZ - radius);   // Distance penetrated past north flank (> 0 if inside)
+      const penSouth = (maxZ + radius) - lz;   // Distance penetrated past south flank (> 0 if inside)
+
+      if (penFront > 0 && penBack > 0 && penNorth > 0 && penSouth > 0) {
+        // Player is touching or inside the mountain - push out along the minimum escape vector
+        const minPen = Math.min(penFront, penBack, penNorth, penSouth);
+
+        if (minPen === penFront) {
+          pos.x = originX + (frontX - radius);
+        } else if (minPen === penBack) {
+          pos.x = originX + (backX + radius);
+        } else if (minPen === penNorth) {
+          pos.z = originZ + (minZ - radius);
+        } else {
+          pos.z = originZ + (maxZ + radius);
         }
       }
     }
