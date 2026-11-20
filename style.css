@@ -1510,19 +1510,22 @@ body.cutscene-playing *,
   padding: 0 20px;
   background: rgba(14, 46, 60, 0.85);
   color: #ffffff;
-  border: 1px solid rgba(56, 189, 248, 0.25);
+  border: none;
+  outline: none;
+  box-shadow: none;
   border-radius: 19px;
   font-size: 12px !important;
   letter-spacing: 1px;
   cursor: pointer;
   box-sizing: border-box;
-  transition: transform 0.15s ease, filter 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease, filter 0.15s ease;
 }
 
 .options-box .char-choose-trigger-btn:hover {
   transform: translateY(-1px) scale(1.01);
-  border-color: rgba(56, 189, 248, 0.6);
-  filter: drop-shadow(0 0 12px rgba(56, 189, 248, 0.4));
+  border: none;
+  outline: none;
+  filter: brightness(1.15) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
 }
 
 .options-box .char-choose-subtext {
