@@ -723,6 +723,7 @@ body.cutscene-playing *,
   background: #000000 !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
+  z-index: 100001 !important;
 }
 
 #victory-modal {

@@ -27112,6 +27112,9 @@ window.game = this;
       // Victory UI fades in a few seconds after walking out the door
       setTimeout(() => {
         this.dom.victoryModal.classList.remove('hidden');
+        if (this.dom.cinemaFadeOverlay) {
+          this.dom.cinemaFadeOverlay.classList.remove('active');
+        }
         if (this.audio) {
           this.audio.playMenuMusic();
         }
