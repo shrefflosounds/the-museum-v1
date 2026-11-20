@@ -4346,6 +4346,7 @@
       this.keys = {};
       const savedViewMode = localStorage.getItem('the_museum_view_mode');
       this.viewMode = (savedViewMode === 'third-person') ? 'third-person' : 'first-person';
+      this.thirdPersonFrontView = false;
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
       this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 9 ? savedCharacter : 0;
       if ((this.selectedPlayerCharacter === 8 || this.selectedPlayerCharacter === 9) && localStorage.getItem('the_museum_game_completed') !== 'true') {
@@ -20221,6 +20222,16 @@ window.game = this;
       return this.viewMode === 'third-person';
     }
 
+    toggleThirdPersonPerspective() {
+      if (!this.isThirdPersonView()) return;
+      this.thirdPersonFrontView = !this.thirdPersonFrontView;
+      this.thirdPersonCameraReady = false;
+      this.updatePlayerViewVisibility();
+      this.showSystemNotification(
+        this.thirdPersonFrontView ? 'PERSPECTIVE: FRONT (PLAYERMODEL)' : 'PERSPECTIVE: REAR (THIRD PERSON)'
+      );
+    }
+
     updatePlayerViewUI() {
       const firstPerson = this.viewMode === 'first-person';
       [[this.dom.firstPersonViewBtn, firstPerson], [this.dom.thirdPersonViewBtn, !firstPerson]].forEach(([button, active]) => {
@@ -20248,13 +20259,17 @@ window.game = this;
       if (this.leftArmRig) this.leftArmRig.visible = showHands;
       // In third-person mode, character model is visible whenever loaded and not zoomed into head
       if (this.playerModelRoot) {
-        this.playerModelRoot.visible = thirdPerson && (this.thirdPersonCameraDistance > 0.405) && !!this.playerModel;
+        const minVisDist = this.thirdPersonFrontView ? 0.20 : 0.405;
+        this.playerModelRoot.visible = thirdPerson && (this.thirdPersonCameraDistance > minVisDist) && !!this.playerModel;
       }
     }
 
     setPlayerViewMode(mode) {
       if (mode !== 'first-person' && mode !== 'third-person') return;
       this.viewMode = mode;
+      if (mode === 'first-person') {
+        this.thirdPersonFrontView = false;
+      }
       localStorage.setItem('the_museum_view_mode', mode);
       this.thirdPersonCameraReady = false;
       this.updatePlayerViewUI();
@@ -20663,9 +20678,10 @@ window.game = this;
       }
     }
 
-                        updateThirdPersonCamera(delta) {
+    updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const isTheBeing = (this.selectedPlayerCharacter === 9);
+      const isFront = !!this.thirdPersonFrontView;
 
       // Camera target height and distance interpolation
       let targetYOffset = 1.3;
@@ -20684,7 +20700,9 @@ window.game = this;
       } else {
         targetYOffset = 1.3;
         distance = this.thirdPersonCameraDistance;
-        fade = THREE.MathUtils.clamp((distance - 0.42) / 0.18, 0, 1);
+        fade = isFront
+          ? THREE.MathUtils.clamp((distance - 0.25) / 0.15, 0, 1)
+          : THREE.MathUtils.clamp((distance - 0.42) / 0.18, 0, 1);
       }
 
       const target = new THREE.Vector3(
@@ -20696,10 +20714,12 @@ window.game = this;
       const sinPitch = Math.sin(this.playerPitch);
       const sinYaw = Math.sin(this.playerYaw);
       const cosYaw = Math.cos(this.playerYaw);
+      const camDirSign = isFront ? -1 : 1;
+
       const desired = new THREE.Vector3(
-        target.x + sinYaw * cosPitch * distance,
-        Math.max(footY + 0.35, target.y - sinPitch * distance),
-        target.z + cosYaw * cosPitch * distance
+        target.x + camDirSign * sinYaw * cosPitch * distance,
+        Math.max(footY + 0.35, target.y - camDirSign * sinPitch * distance),
+        target.z + camDirSign * cosYaw * cosPitch * distance
       );
       if (this.isSafeRoomActive) {
         const camGndY = this.getSafeRoomGroundY(desired.x, desired.z);
@@ -20715,9 +20735,9 @@ window.game = this;
         this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
       }
       const lookAhead = new THREE.Vector3(
-        target.x - sinYaw * cosPitch * 5,
-        target.y + sinPitch * 5,
-        target.z - cosYaw * cosPitch * 5
+        target.x - camDirSign * sinYaw * cosPitch * 5,
+        target.y + camDirSign * sinPitch * 5,
+        target.z - camDirSign * cosYaw * cosPitch * 5
       );
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       if (this.isSafeRoomActive) {
@@ -22118,7 +22138,13 @@ window.game = this;
             this.togglePlayerDance();
           }
         } else if (e.code === 'KeyP') {
-          if (this.gameStarted) this.togglePause();
+          if (this.gameStarted) {
+            if (this.isThirdPersonView() && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isPlayingCutscene) {
+              this.toggleThirdPersonPerspective();
+            } else {
+              this.togglePause();
+            }
+          }
         } else if (e.code === 'Tab') {
           if (this.gameStarted) {
             this.toggleObjectiveModal();
