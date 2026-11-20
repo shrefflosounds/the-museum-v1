@@ -16335,7 +16335,7 @@ window.game = this;
       });
     }
 
-    createMuseumEasel(x, y0, z, fl, rotY = 0) {
+    createMuseumEasel(x, y0, z, fl, rotY = 0, imagePath = 'assets/textures/museum-sign.jpeg') {
       const standGroup = new THREE.Group();
       standGroup.position.set(x, y0, z);
       standGroup.rotation.y = rotY;
@@ -16406,7 +16406,7 @@ window.game = this;
       headGroup.add(matBoard);
 
       // Face1 stand portrait print
-      const face1Texture = this.texLoader.load('assets/textures/museum-sign.jpeg', (texture) => {
+      const face1Texture = this.texLoader.load(imagePath, (texture) => {
         texture.colorSpace = THREE.SRGBColorSpace;
       });
       const face1 = new THREE.Mesh(
@@ -16512,9 +16512,9 @@ window.game = this;
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Polished Mahogany Easel stand moved to the left of the south entrance door
-        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0);
-        this.createMuseumEasel(-12.8, y0,  26.0, fl, Math.PI);
+        // Polished Mahogany Easel stands (north end of hall displays controls sign, south entrance displays portrait sign)
+        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0, 'assets/textures/museum-controls-sign.jpeg');
+        this.createMuseumEasel(-12.8, y0,  26.0, fl, Math.PI, 'assets/textures/museum-sign.jpeg');
 
         // 2. WEST WING (x: -36..-16, z: -6..18): Classical Antiquities Salon
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
