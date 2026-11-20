@@ -11356,6 +11356,7 @@ window.game = this;
       amphiGeo.computeVertexNormals();
 
       const amphiMesh = new THREE.Mesh(amphiGeo, cMat);
+      amphiMesh.frustumCulled = false;
       rockGroup.add(amphiMesh);
 
       // Natural River Boulders Lining Plunge Pool Shoreline & Canyon Rocks (Merged into 1 draw call)
@@ -11457,8 +11458,10 @@ window.game = this;
       mergedBoulderGeo.setIndex(mergedBIndices);
 
       const boulderMesh = new THREE.Mesh(mergedBoulderGeo, rMat2);
+      boulderMesh.frustumCulled = false;
       rockGroup.add(boulderMesh);
 
+      rockGroup.frustumCulled = false;
       group.add(rockGroup);
 
       // 7. Continuous Volumetric Cascading Waterfall Mesh
@@ -11467,43 +11470,36 @@ window.game = this;
       // Zero seams, zero gaps, zero disjointed floating planes!
       const wfGroup = new THREE.Group();
 
-      const wfMatCore = new THREE.MeshStandardMaterial({
+      const wfMatCore = new THREE.MeshPhongMaterial({
         map: wfTex,
         color: 0xffffff,
-        emissive: 0x93c5fd,
-        emissiveIntensity: 0.42,
-        emissiveMap: wfTex,
-        roughness: 0.08,
-        metalness: 0.10,
+        emissive: 0x60a5fa,
+        emissiveIntensity: 0.38,
+        specular: 0xffffff,
+        shininess: 90,
         transparent: true,
-        opacity: 0.95,
-        side: THREE.DoubleSide,
+        opacity: 0.88,
+        side: THREE.FrontSide,
         depthWrite: false
       });
-      const wfMatVeil = new THREE.MeshStandardMaterial({
+      const wfMatVeil = new THREE.MeshPhongMaterial({
         map: wfTex2,
         color: 0xbae6fd,
-        emissive: 0x7dd3fc,
-        emissiveIntensity: 0.25,
-        emissiveMap: wfTex2,
-        roughness: 0.04,
-        metalness: 0.15,
+        emissive: 0x38bdf8,
+        emissiveIntensity: 0.22,
+        specular: 0xffffff,
+        shininess: 120,
         transparent: true,
-        opacity: 0.55,
-        side: THREE.DoubleSide,
+        opacity: 0.50,
+        side: THREE.FrontSide,
         depthWrite: false
       });
-      const splashMat = new THREE.MeshStandardMaterial({
+      const splashMat = new THREE.MeshBasicMaterial({
         map: wfTex,
         color: 0xffffff,
-        emissive: 0xbae6fd,
-        emissiveIntensity: 0.45,
-        emissiveMap: wfTex,
-        roughness: 0.18,
-        metalness: 0.05,
         transparent: true,
-        opacity: 0.90,
-        side: THREE.DoubleSide,
+        opacity: 0.80,
+        side: THREE.FrontSide,
         depthWrite: false
       });
 
@@ -11511,8 +11507,8 @@ window.game = this;
       // Continuous parametric path from plunge pool (t=0) over the rounded rock crest (t=0.80)
       // and curving deep into the upstream mountain canyon river rapids (t=1.0). Zero straight knife-edges!
       function buildContinuousWaterfallGeo(isVeil) {
-        const nv = 64;
-        const nu = 32;
+        const nv = 36;
+        const nu = 18;
         const positions = [];
         const uvs = [];
         const indices = [];
@@ -11610,7 +11606,7 @@ window.game = this;
         transparent: true,
         opacity: 0.85,
         blending: THREE.AdditiveBlending,
-        side: THREE.DoubleSide,
+        side: THREE.FrontSide,
         depthWrite: false
       });
       const lipFoamMesh = new THREE.Mesh(lipFoamGeo, lipFoamMat);
@@ -11640,7 +11636,7 @@ window.game = this;
           transparent: true,
           opacity: 0.72,
           blending: THREE.AdditiveBlending,
-          side: THREE.DoubleSide,
+          side: THREE.FrontSide,
           depthWrite: false
         });
         const pMesh = new THREE.Mesh(pGeo, pMat);
@@ -11659,14 +11655,14 @@ window.game = this;
 
       // (E) Concentric Radiating Impact Ripples
       const rippleMeshes = [];
-      const rippleGeo = new THREE.RingGeometry(2.5, 4.2, 36);
+      const rippleGeo = new THREE.RingGeometry(2.5, 4.2, 32);
       rippleGeo.rotateX(-Math.PI / 2);
-      for (let r = 0; r < 5; r++) {
+      for (let r = 0; r < 3; r++) {
         const rMat = new THREE.MeshBasicMaterial({
           color: 0xffffff,
           transparent: true,
           opacity: 0.65,
-          side: THREE.DoubleSide,
+          side: THREE.FrontSide,
           depthWrite: false
         });
         const rMesh = new THREE.Mesh(rippleGeo, rMat);
@@ -11676,7 +11672,7 @@ window.game = this;
       }
 
       // (F) Dynamic Leaping Water Droplet Particles (Physics simulated spray drops)
-      const splashDropCount = 130;
+      const splashDropCount = 45;
       const splashDropGeo = new THREE.BufferGeometry();
       const splashDropPos = new Float32Array(splashDropCount * 3);
       const splashDropVel = [];
@@ -11698,11 +11694,11 @@ window.game = this;
       }
       splashDropGeo.setAttribute('position', new THREE.BufferAttribute(splashDropPos, 3));
       const splashDropMat = new THREE.PointsMaterial({
-        size: 0.72,
+        size: 0.45,
         map: moteTex,
         color: 0xf0f9ff,
         transparent: true,
-        opacity: 0.95,
+        opacity: 0.85,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -11710,14 +11706,14 @@ window.game = this;
       wfGroup.add(splashDropPoints);
 
       // (G) Volumetric Billowing Waterfall Base Mist Clouds
-      const mistCount = 65;
+      const mistCount = 28;
       const mistGeo = new THREE.BufferGeometry();
       const mistPos = new Float32Array(mistCount * 3);
       const mistVel = [];
       for (let i = 0; i < mistCount; i++) {
         mistPos[i * 3]     = 6.2 + (Math.random() - 0.5) * 3.5;
-        mistPos[i * 3 + 1] = 0.2 + Math.random() * 4.5;
-        mistPos[i * 3 + 2] = cliffLocalZ + (Math.random() - 0.5) * 5.5;
+        mistPos[i * 3 + 1] = 0.2 + Math.random() * 3.5;
+        mistPos[i * 3 + 2] = cliffLocalZ + (Math.random() - 0.5) * 5.0;
         mistVel.push({
           vx: -(0.25 + Math.random() * 0.40),
           vy: 0.55 + Math.random() * 0.85,
@@ -11726,11 +11722,11 @@ window.game = this;
       }
       mistGeo.setAttribute('position', new THREE.BufferAttribute(mistPos, 3));
       const mistMat = new THREE.PointsMaterial({
-        size: 3.5,
+        size: 1.8,
         map: moteTex,
         color: 0xf8fafc,
         transparent: true,
-        opacity: 0.55,
+        opacity: 0.38,
         blending: THREE.AdditiveBlending,
         depthWrite: false
       });
@@ -11778,12 +11774,15 @@ window.game = this;
       poolGeo.setIndex(poolIndices);
       poolGeo.computeVertexNormals();
 
-      const poolMat = new THREE.MeshStandardMaterial({
+      const poolMat = new THREE.MeshPhongMaterial({
         color: 0x0284c7,
-        roughness: 0.05,
-        metalness: 0.16,
+        emissive: 0x0369a1,
+        emissiveIntensity: 0.16,
+        specular: 0xbae6fd,
+        shininess: 120,
         transparent: true,
-        opacity: 0.82,
+        opacity: 0.78,
+        depthWrite: false,
         side: THREE.DoubleSide
       });
       const poolMesh = new THREE.Mesh(poolGeo, poolMat);
@@ -23733,8 +23732,31 @@ window.game = this;
           if (this.isSafeRoomActive && this.isGrounded && !this.isFalling) {
             const subMeadowY = this.getSafeRoomGroundY(this.playerPos.x, this.playerPos.z);
             const subMountainY = this.getMountainSurfaceElevation(this.playerPos.x, this.playerPos.z);
-            const subGroundY = (this.playerOnMountain && subMountainY !== null) ? subMountainY : subMeadowY;
-            this.playerPos.y = subGroundY + this.currentCamHeight;
+            if (this.playerOnMountain) {
+              if (subMountainY !== null) {
+                this.playerPos.y = subMountainY + this.currentCamHeight;
+              } else {
+                // Stepped or ran off the mountain crest/flank into mid-air over the waterfall/pool gorge!
+                this.playerOnMountain = false;
+                this.isGrounded = false;
+                this.isFalling = true;
+                this.fallVelocity = 0;
+                this.jumpOffset = 0;
+                this.jumpVelocity = 0;
+              }
+            } else {
+              const curFootY = this.playerPos.y - this.currentCamHeight;
+              if (curFootY > subMeadowY + 1.2) {
+                // Stepped off a high drop/bank into the air
+                this.isGrounded = false;
+                this.isFalling = true;
+                this.fallVelocity = 0;
+                this.jumpOffset = 0;
+                this.jumpVelocity = 0;
+              } else {
+                this.playerPos.y = subMeadowY + this.currentCamHeight;
+              }
+            }
           }
           const currentFootElevation = (this.playerPos.y - this.currentCamHeight) + this.jumpOffset;
           this.resolveCollisions(this.playerPos, CONFIG.PLAYER.RADIUS, activeFloor, currentFootElevation, this.currentCamHeight);
@@ -23859,7 +23881,14 @@ window.game = this;
             }
           }
         } else {
-          this.playerOnMountain = false;
+          if (this.playerOnMountain) {
+            this.playerOnMountain = false;
+            this.isGrounded = false;
+            this.isFalling = true;
+            this.fallVelocity = 0;
+            this.jumpOffset = 0;
+            this.jumpVelocity = 0;
+          }
           groundY = meadowY;
         }
 
