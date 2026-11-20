@@ -75,6 +75,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Vantage BRK';
+  src: local('Vantage BRK'), local('VantageBRK'), url('assets/fonts/vantage.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -2629,6 +2637,19 @@ body.cutscene-playing *,
 #about-modal .museum-btn,
 #about-modal .close-btn {
   font-family: 'tEggst', sans-serif !important;
+}
+
+/* Pause Menu -> Vantage BRK */
+#pause-modal,
+#pause-modal *,
+#pause-modal .horror-title,
+#pause-modal .pause-sub,
+#pause-modal .pause-coop-code-bar,
+#pause-modal .pause-coop-code-bar span,
+#pause-modal .pause-actions-list,
+#pause-modal .museum-btn,
+#pause-modal .pause-opt-btn {
+  font-family: 'Vantage BRK', sans-serif !important;
 }
 
 /* Responsive media queries for TV, projector, and standard screens */
