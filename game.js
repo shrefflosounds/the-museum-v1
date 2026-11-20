@@ -14913,6 +14913,7 @@ window.game = this;
       const mirrorBoundingSphere = new THREE.Sphere();
       const mirrorFloor = Math.round(y0 / CONFIG.FLOOR_HEIGHT);
       const savedVisibility = [];
+      const savedPlayerMats = [];
 
       glass.onBeforeRender = (renderer, scene, camera) => {
         // Recursion guard: never render mirrors inside other mirrors
@@ -14977,12 +14978,27 @@ window.game = this;
         projectionMatrix.elements[10] = clipPlane.z + 1.0 - clipBias;
         projectionMatrix.elements[14] = clipPlane.w;
 
-        // Ensure third-person player model root is visible in reflection WITHOUT mutating material.transparent
-        // (mutating material.transparent/depthWrite mid-frame forces WebGL shader program recompilation & stalls)
+        // In third-person mirror reflection, ensure the player model is fully visible and 100% opaque
+        // (even when the primary camera is zoomed in close so the real player fades/disappears).
+        // We only update opacity/depthWrite (uniforms/GL state) and never flip material.transparent mid-frame,
+        // which keeps the reflection completely visible up close with zero shader recompilation freeze!
         const isThirdPerson = this.isThirdPersonView();
         const prevRootVis = this.playerModelRoot ? this.playerModelRoot.visible : false;
+        savedPlayerMats.length = 0;
         if (this.playerModelRoot && isThirdPerson && this.playerModel) {
           this.playerModelRoot.visible = true;
+          this.playerModel.traverse((c) => {
+            if (c.isMesh && c.material) {
+              const mats = Array.isArray(c.material) ? c.material : [c.material];
+              for (let m = 0; m < mats.length; m++) {
+                const mat = mats[m];
+                if (!mat) continue;
+                savedPlayerMats.push(mat, mat.opacity, mat.depthWrite);
+                mat.opacity = 1.0;
+                mat.depthWrite = true;
+              }
+            }
+          });
         }
 
         // Temporarily cull distant paintings, relics, statues, and off-floor groups that cannot appear in this mirror
@@ -15048,6 +15064,12 @@ window.game = this;
             savedVisibility[i].visible = true;
           }
           savedVisibility.length = 0;
+          for (let i = 0; i < savedPlayerMats.length; i += 3) {
+            const mat = savedPlayerMats[i];
+            mat.opacity = savedPlayerMats[i + 1];
+            mat.depthWrite = savedPlayerMats[i + 2];
+          }
+          savedPlayerMats.length = 0;
           if (this.playerModelRoot) {
             this.playerModelRoot.visible = prevRootVis;
           }
@@ -16335,8 +16357,9 @@ window.game = this;
       });
     }
 
-    createMuseumEasel(x, y0, z, fl, rotY = 0, imagePath = 'assets/textures/museum-sign.jpeg') {
+    createMuseumEasel(x, y0, z, fl, rotY = 0, imagePath = 'assets/textures/easel-face-1.jpeg', easelName = 'easel-face-1') {
       const standGroup = new THREE.Group();
+      standGroup.name = easelName;
       standGroup.position.set(x, y0, z);
       standGroup.rotation.y = rotY;
 
@@ -16427,6 +16450,7 @@ window.game = this;
       // Accurate compact cylinder obstacle collider for the pedestal sign stand
       this.colliders.push({
         type: 'cylinder',
+        name: easelName,
         floor: fl,
         x: x,
         z: z,
@@ -16512,9 +16536,9 @@ window.game = this;
           this.createPottedMuseumPlant(px, y0, pz, fl);
         });
 
-        // Polished Mahogany Easel stands (north end of hall displays controls sign, south entrance displays portrait sign)
-        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0, 'assets/textures/museum-controls-sign.jpeg');
-        this.createMuseumEasel(-12.8, y0,  26.0, fl, Math.PI, 'assets/textures/museum-sign.jpeg');
+        // Polished Mahogany Easel stands ("easel-controls-1" at north end of hall, "easel-face-1" at south entrance)
+        this.createMuseumEasel(-10.0, y0, -16.5, fl, 0, 'assets/textures/easel-controls-1.jpeg', 'easel-controls-1');
+        this.createMuseumEasel(-12.8, y0,  26.0, fl, Math.PI, 'assets/textures/easel-face-1.jpeg', 'easel-face-1');
 
         // 2. WEST WING (x: -36..-16, z: -6..18): Classical Antiquities Salon
         this.createGalleryRunnerRug(-26.0, y0, 6.0, 4.4, 20.0, 0x7e8bb2, 0xc6bc99);
