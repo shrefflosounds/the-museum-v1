@@ -10394,6 +10394,26 @@ window.game = this;
       return originY + h;
     }
 
+    getSafeRoomPortalSlabY(wx, wz) {
+      const sr = this.safeRoomSanctuary;
+      const originX = sr ? sr.originX : 300.0;
+      const originY = sr ? sr.originY : 50.0;
+      const originZ = sr ? sr.originZ : 300.0;
+      const lx = wx - originX;
+      const lz = wz - originZ;
+      const daisLocalX = -20.5;
+      const daisLocalZ = 7.5;
+      const daisDist = Math.hypot(lx - daisLocalX, lz - daisLocalZ);
+      if (daisDist > 3.92) return null;
+      const baseGndY = this.getSafeRoomGroundY(originX + daisLocalX, originZ + daisLocalZ);
+      const topY = baseGndY + 0.45;
+      if (daisDist <= 3.60) return topY;
+      // Smooth beveled step up along the 3.60m..3.92m stone rim
+      const tRim = 1.0 - (daisDist - 3.60) / 0.32;
+      const curGndY = this.getSafeRoomGroundY(wx, wz);
+      return curGndY + (topY - curGndY) * (tRim * tRim * (3.0 - 2.0 * tRim));
+    }
+
     getMountainSurfaceElevation(wx, wz) {
       const sr = this.safeRoomSanctuary;
       const originX = sr ? sr.originX : 300.0;
@@ -19423,16 +19443,16 @@ window.game = this;
           this.updateHud();
         }
 
-        // Check proximity to the Return Portal (located at retPortalX, retPortalZ)
+        // Check proximity to the Return Portal & Portal Stone Slab (located at retPortalX, retPortalZ; top slab radius 3.6m, bottom rim 3.9m)
         const distToRetPortal = Math.hypot(this.playerPos.x - sr.retPortalX, this.playerPos.z - sr.retPortalZ);
         if (distToRetPortal < 6.0) {
-          this.setInteractPrompt('WALK THROUGH OR PRESS [E] TO RETURN TO MUSEUM');
+          this.setInteractPrompt('STEP ONTO PORTAL SLAB OR PRESS [E] TO RETURN TO MUSEUM');
         } else if (this._currentPromptText && this._currentPromptText.includes('RETURN TO MUSEUM')) {
           this.setInteractPrompt(null);
         }
 
-        // When walking into the portal (< 3.2m) or pressing [E] near it (< 6.0m), trigger return teleport immediately
-        if (!this._isTeleportingPortal && (distToRetPortal < 3.2 || (distToRetPortal < 6.0 && this.keys['KeyE']))) {
+        // Standing anywhere on the portal slab (< 3.85m) or pressing [E] near it (< 6.0m) triggers return teleport immediately
+        if (!this._isTeleportingPortal && (distToRetPortal < 3.85 || (distToRetPortal < 6.0 && this.keys['KeyE']))) {
           if (this.keys) this.keys['KeyE'] = false;
           this._isTeleportingPortal = true;
           this.setInteractPrompt(null);
@@ -23844,6 +23864,10 @@ window.game = this;
               }
             } else {
               let subGndY = subMeadowY;
+              const subSlabY = this.getSafeRoomPortalSlabY(this.playerPos.x, this.playerPos.z);
+              if (subSlabY !== null && subSlabY > subGndY) {
+                subGndY = subSlabY;
+              }
               if (this.safeRoomSanctuary && this.safeRoomSanctuary.groundBoulders) {
                 const gRocks = this.safeRoomSanctuary.groundBoulders;
                 const slx = this.playerPos.x - 300.0;
@@ -24011,6 +24035,14 @@ window.game = this;
             this.jumpVelocity = 0;
           }
           groundY = meadowY;
+        }
+
+        // Incorporate portal stone dais slab as a solid walkable surface
+        if (!this.playerOnMountain) {
+          const slabY = this.getSafeRoomPortalSlabY(this.playerPos.x, this.playerPos.z);
+          if (slabY !== null && slabY > groundY && currentFootElevation >= slabY - 0.75) {
+            groundY = slabY;
+          }
         }
 
         // Incorporate shoreline river boulders and basin stones as solid walkable surfaces
@@ -24475,6 +24507,19 @@ window.game = this;
       // Held crate status prompt
       if (this.heldCrate) {
         this.setInteractPrompt('[E] RELEASE TO PLACE / DROP  •  [LMB] THROW');
+        return;
+      }
+
+      if (this.isSafeRoomActive) {
+        const sr = this.safeRoomSanctuary;
+        if (sr) {
+          const distToRetPortal = Math.hypot(this.playerPos.x - sr.retPortalX, this.playerPos.z - sr.retPortalZ);
+          if (distToRetPortal < 6.0) {
+            this.setInteractPrompt('STEP ONTO PORTAL SLAB OR PRESS [E] TO RETURN TO MUSEUM');
+            return;
+          }
+        }
+        this.setInteractPrompt(null);
         return;
       }
 
