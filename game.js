@@ -10403,15 +10403,79 @@ window.game = this;
       if (Math.abs(siRaw) > spanS) return null;
 
       const si = siRaw;
+
+      // When the exact 3D mesh surface grid is available, sample directly from the mesh vertices
+      if (sr && sr.mountainSurfaceSlices && sr.mountainSurfaceSlices.length === 41) {
+        const slices = sr.mountainSurfaceSlices;
+        const segsS = 40;
+        const u = (si + spanS) / (spanS * 2.0);
+        const s = Math.max(0.0, Math.min(segsS - 0.0001, u * segsS));
+        const i0 = Math.floor(s);
+        const i1 = Math.min(segsS, i0 + 1);
+        const wi = s - i0;
+
+        const slice0 = slices[i0];
+        const slice1 = slices[i1];
+
+        // Physical front crest boundary (minimum X along the summit crest)
+        const crestX0 = Math.min(slice0[0].x, slice0[1].x);
+        const crestX1 = Math.min(slice1[0].x, slice1[1].x);
+        const frontCrestX = crestX0 * (1.0 - wi) + crestX1 * wi;
+
+        // Physical rear base boundary (where mountain slope meets the meadow)
+        const backX0 = slice0[slice0.length - 1].x;
+        const backX1 = slice1[slice1.length - 1].x;
+        const backBaseX = backX0 * (1.0 - wi) + backX1 * wi;
+
+        // In front of cliff crest: returns null (air over waterfall plunge pool/gorge)
+        if (lx < frontCrestX - 0.4) return null;
+        // Beyond rear base: mountain has completely merged into the rear meadow terrain
+        if (lx > backBaseX + 0.3) return null;
+
+        const sampleSliceY = (pts, targetX) => {
+          const n = pts.length;
+          if (targetX <= pts[0].x) return pts[0].y;
+          if (targetX >= pts[n - 1].x) return pts[n - 1].y;
+          for (let j = 0; j < n - 1; j++) {
+            const pA = pts[j];
+            const pB = pts[j + 1];
+            const minX = Math.min(pA.x, pB.x);
+            const maxX = Math.max(pA.x, pB.x);
+            if (targetX >= minX && targetX <= maxX) {
+              const dx = pB.x - pA.x;
+              const t = Math.abs(dx) > 0.0001 ? (targetX - pA.x) / dx : 0.0;
+              return pA.y + t * (pB.y - pA.y);
+            }
+          }
+          return pts[n - 1].y;
+        };
+
+        const y0 = sampleSliceY(slice0, lx);
+        const y1 = sampleSliceY(slice1, lx);
+        let localY = y0 * (1.0 - wi) + y1 * wi;
+
+        // Incorporate natural top canyon rock outcrops framing the waterfall crest so player never gets wedged/stuck
+        if (sr.topRockOutcrops) {
+          for (let b = 0; b < sr.topRockOutcrops.length; b++) {
+            const rock = sr.topRockOutcrops[b];
+            const dist = Math.hypot(lx - rock.x, lz - rock.z);
+            if (dist < rock.radius) {
+              const rockCapY = rock.y + rock.height * Math.cos((dist / rock.radius) * Math.PI * 0.5);
+              if (rockCapY > localY) localY = rockCapY;
+            }
+          }
+        }
+
+        return originY + localY;
+      }
+
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const baseX = 10.8 - canyonCurv;
       const backDist = 38.0;
       const backBaseX = baseX + backDist;
 
-      // In front of cliff crest: returns null (air over waterfall plunge pool/gorge)
-      if (lx < baseX - 0.3) return null;
-      // Beyond rear base: mountain has completely merged into the rear meadow terrain
-      if (lx > backBaseX + 0.1) return null;
+      if (lx < baseX - 0.4) return null;
+      if (lx > backBaseX + 0.3) return null;
 
       const frontGndY = this.getSafeRoomGroundY(originX + baseX, originZ + lz) - originY;
       const backGndY = this.getSafeRoomGroundY(originX + backBaseX, originZ + lz) - originY;
@@ -10433,7 +10497,6 @@ window.game = this;
       summitH += (Math.sin(si * 0.55) * 1.2 + Math.cos(si * 1.1) * 0.6);
       if (Math.abs(si) >= 4.2) frontLipH = summitH;
 
-      // Parametric elevation along the back slope (t = 0 at crest, t = 1 at back ground base)
       const t = Math.max(0.0, Math.min(1.0, (lx - baseX) / backDist));
       const summitY = frontGndY + summitH;
 
@@ -10453,7 +10516,6 @@ window.game = this;
       const ridgeRelief = (Math.sin(si * 0.35 + t * 4.5) * 1.4 + Math.cos(si * 0.65 - t * 3.0) * 0.9) * (1.0 - t);
       h += ridgeRelief;
 
-      // At back base, perfectly matches meadow elevation
       if (lx >= backBaseX) {
         h = localMeadowY;
       }
@@ -10554,7 +10616,26 @@ window.game = this;
             float elevation = dir.y;
 
             float vTex = clamp((elevation + 0.04) / 0.52, 0.0, 1.0);
-            vec3 texCol = texture2D(uVistaTex, vec2(vTexUv.x, vTex)).rgb;
+
+            // Continuous seamless horizontal blend across the 360 panorama texture boundary
+            float uRaw = fract(vTexUv.x);
+            float blendW = 0.05;
+            vec3 texCol;
+            if (uRaw < blendW) {
+              float t = uRaw / blendW;
+              float blend = 0.5 + 0.5 * smoothstep(0.0, 1.0, t);
+              vec3 colLeft = texture2D(uVistaTex, vec2(uRaw, vTex)).rgb;
+              vec3 colRight = texture2D(uVistaTex, vec2(1.0 - blendW * (1.0 - t), vTex)).rgb;
+              texCol = mix(colRight, colLeft, blend);
+            } else if (uRaw > 1.0 - blendW) {
+              float t = (uRaw - (1.0 - blendW)) / blendW;
+              float blend = 1.0 - 0.5 * smoothstep(0.0, 1.0, t);
+              vec3 colRight = texture2D(uVistaTex, vec2(uRaw, vTex)).rgb;
+              vec3 colLeft = texture2D(uVistaTex, vec2(blendW * t, vTex)).rgb;
+              texCol = mix(colLeft, colRight, blend);
+            } else {
+              texCol = texture2D(uVistaTex, vec2(uRaw, vTex)).rgb;
+            }
 
             float h = clamp(elevation, 0.0, 1.0);
             vec3 openSky = mix(uHorizonColor, uMidColor, pow(h, 0.40));
@@ -10787,24 +10868,25 @@ window.game = this;
         new THREE.Vector2(6.0, -23.0)
       ], 4.2, 36);
 
-      // Trail 3: Mountain Flank & Backtrail Circuit (Looping 360 degrees around the mountain on open meadow)
+      // Trail 3: Mountain Flank & Backtrail Circuit (Looping 360 degrees around the mountain on open meadow with generous rock clearance)
       addTrailRibbon([
         new THREE.Vector2(6.0, -23.0),
         new THREE.Vector2(0.5, -31.0),
-        new THREE.Vector2(-0.5, -40.0),
-        new THREE.Vector2(4.5, -45.0),
-        new THREE.Vector2(12.0, -45.0),
-        new THREE.Vector2(24.0, -45.5),
-        new THREE.Vector2(38.0, -44.0),
+        new THREE.Vector2(-1.0, -41.0),
+        new THREE.Vector2(3.5, -46.5),
+        new THREE.Vector2(12.0, -46.5),
+        new THREE.Vector2(24.0, -46.5),
+        new THREE.Vector2(38.0, -45.0),
         new THREE.Vector2(52.0, -36.0),
         new THREE.Vector2(56.0, -22.0),
         new THREE.Vector2(56.0, -8.0),
         new THREE.Vector2(53.0, 6.0),
-        new THREE.Vector2(42.0, 17.5),
-        new THREE.Vector2(28.0, 19.5),
-        new THREE.Vector2(14.0, 18.0),
-        new THREE.Vector2(0.0, 15.0),
-        new THREE.Vector2(-12.0, 12.0),
+        new THREE.Vector2(42.0, 18.5),
+        new THREE.Vector2(28.0, 20.0),
+        new THREE.Vector2(14.0, 19.5),
+        new THREE.Vector2(2.0, 19.0),
+        new THREE.Vector2(-6.0, 16.5),
+        new THREE.Vector2(-13.0, 13.0),
         new THREE.Vector2(-18.5, 9.5)
       ], 4.0, 68);
 
@@ -11073,6 +11155,7 @@ window.game = this;
       const amphiPositions = [];
       const amphiUvs = [];
       const amphiIndices = [];
+      const mountainSurfaceSlices = [];
 
       for (let i = 0; i <= segsS; i++) {
         const si = -spanS + (i / segsS) * (spanS * 2.0);
@@ -11164,6 +11247,25 @@ window.game = this;
           amphiPositions.push(x, y, z);
           amphiUvs.push((si + spanS) / 6.5, 0.0);
         }
+
+        // Exact physical surface points for this slice (crest vertex at k=19, back slope k=20..41, and rear base)
+        const startIdx = i * loopPts;
+        const crestIdx = startIdx + segsFront - 1;
+        const slicePts = [{
+          x: amphiPositions[crestIdx * 3],
+          y: amphiPositions[crestIdx * 3 + 1],
+          z: amphiPositions[crestIdx * 3 + 2]
+        }];
+        for (let bk = 0; bk < segsBack; bk++) {
+          const idx = startIdx + segsFront + bk;
+          slicePts.push({
+            x: amphiPositions[idx * 3],
+            y: amphiPositions[idx * 3 + 1],
+            z: amphiPositions[idx * 3 + 2]
+          });
+        }
+        slicePts.push({ x: backBaseX, y: backGndY, z: backBaseZ });
+        mountainSurfaceSlices.push(slicePts);
       }
 
       // Watertight quads along the mountain tube
@@ -12064,11 +12166,21 @@ window.game = this;
       }
       group.visible = false;
 
+      const topRockOutcrops = [
+        { x: 9.8, y: 19.5, z: cliffLocalZ - 3.6, radius: 2.2, height: 1.4 },
+        { x: 9.8, y: 19.5, z: cliffLocalZ + 3.6, radius: 2.2, height: 1.4 },
+        { x: 12.5, y: 20.6, z: cliffLocalZ - 2.8, radius: 2.4, height: 1.5 },
+        { x: 12.5, y: 20.6, z: cliffLocalZ + 2.8, radius: 2.4, height: 1.5 },
+        { x: 10.5, y: 19.7, z: cliffLocalZ + 0.6, radius: 1.3, height: 0.8 }
+      ];
+
       this.safeRoomSanctuary = {
         group: group,
         originX: originX,
         originY: originY,
         originZ: originZ,
+        mountainSurfaceSlices: mountainSurfaceSlices,
+        topRockOutcrops: topRockOutcrops,
         retPortalX: originX + retPortalLocalX,
         retPortalY: originY + retPortalLocalY,
         retPortalZ: originZ + retPortalLocalZ,
@@ -23610,12 +23722,12 @@ window.game = this;
 
       // In sanctuary: detect if player is in or wading across the plunge pool pond
       const distToPool = this.isSafeRoomActive ? Math.hypot(this.playerPos.x - 307.8, this.playerPos.z - 287.0) : 999;
-      const isInPoolWater = this.isSafeRoomActive && distToPool < 10.2 && currentFootElevation < 51.0;
+      const isInPoolWater = this.isSafeRoomActive && distToPool < 12.5 && currentFootElevation < 51.5;
 
       if (wantsJump && (this.isGrounded || isInPoolWater) && !isCrouching) {
         const jumpMultiplier = isTheBeing ? 1.2 : 1.0;
         // High jump boost when jumping out of the water to effortlessly leap high over the shoreline rocks
-        const waterBoost = isInPoolWater ? 2.05 : 1.0;
+        const waterBoost = isInPoolWater ? 2.15 : 1.0;
         this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier * waterBoost;
         this.isGrounded = false;
         this.footstepTimer = 0;
@@ -23631,32 +23743,40 @@ window.game = this;
         const originZ = 300.0;
         const lx = this.playerPos.x - originX;
         const lz = this.playerPos.z - originZ;
-        const si = Math.max(-28.0, Math.min(28.0, -lz - 13.2));
+        const si = -lz - 13.2;
         const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
-        const frontLipX = 10.8 - canyonCurv;
-        const backBaseX = frontLipX + 38.0;
+        const frontBaseX = 10.8 - canyonCurv;
+        const backBaseX = frontBaseX + 38.0;
 
         if (mountainY !== null) {
-          // Player steps onto the mountain from the rear slope ramp, lands from above, or is traversing
-          const isAtBackRamp = (lx >= backBaseX - 3.5 && currentFootElevation >= meadowY - 0.6);
-          const isLandingFromAbove = (currentFootElevation >= mountainY - 2.0);
+          // Conditions to enter mountain from ground meadow or land on it:
+          const isAtBackRamp = (lx >= backBaseX - 3.5 && currentFootElevation >= meadowY - 0.6 && currentFootElevation <= meadowY + 3.5);
+          const isLandingFromAbove = (this.fallVelocity <= 0 && currentFootElevation >= mountainY - 1.2 && currentFootElevation <= mountainY + 3.0);
 
-          if (this.playerOnMountain || isAtBackRamp || isLandingFromAbove) {
-            // Player is traversing the mountain rock surface
-            if (lx < frontLipX - 0.3 && currentFootElevation > meadowY + 2.5) {
+          if (this.playerOnMountain) {
+            // Player is traversing the mountain rock surface:
+            if (lx < frontBaseX - 0.4 && currentFootElevation > meadowY + 2.5) {
               // Stepped or leaped off the front cliff crest into mid-air over the waterfall/pool gorge!
               this.playerOnMountain = false;
               groundY = meadowY;
-            } else if (lx >= backBaseX - 0.5 && Math.abs(mountainY - meadowY) < 0.35) {
+            } else if (Math.abs(si) > 28.0) {
+              // Stepped off the side flank
+              this.playerOnMountain = false;
+              groundY = meadowY;
+            } else if (lx >= backBaseX - 0.5 && Math.abs(mountainY - meadowY) < 0.6) {
               // Walked down the rear slope onto the open meadow
               this.playerOnMountain = false;
               groundY = meadowY;
             } else {
-              // Stand solidly on the mountain rock surface (can NEVER fall through into the mountain)
+              // Stand solidly on the mountain rock surface (matches 3D mesh to the millimeter)
               this.playerOnMountain = true;
               groundY = mountainY;
             }
+          } else if (isAtBackRamp || isLandingFromAbove) {
+            this.playerOnMountain = true;
+            groundY = mountainY;
           } else {
+            this.playerOnMountain = false;
             groundY = meadowY;
           }
         } else {
@@ -23966,7 +24086,7 @@ window.game = this;
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const frontX = 10.8 - canyonCurv;
       const backX = frontX + 38.0;
-      if (lx >= backX - 3.0) return;
+      if (lx >= backX - 2.5) return;
 
       // Corner vertices where front cliff meets side flanks
       const cornerNorthX = 2.30;
@@ -24000,21 +24120,22 @@ window.game = this;
         }
       }
 
-      // 5. North flank rock wall (lz <= minZ)
-      if (lz <= minZ && lz > minZ - radius && lx >= cornerNorthX) {
+      // 5. North flank rock wall (smooth normal push outward along -Z)
+      if (lx >= cornerNorthX && lz >= minZ - radius && lz < minZ + 2.0) {
         pos.z = originZ + minZ - radius;
         return;
       }
 
-      // 6. South flank rock wall (lz >= maxZ)
-      if (lz >= maxZ && lz < maxZ + radius && lx >= cornerSouthX) {
+      // 6. South flank rock wall (smooth normal push outward along +Z)
+      if (lx >= cornerSouthX && lz <= maxZ + radius && lz > maxZ - 2.0) {
         pos.z = originZ + maxZ + radius;
         return;
       }
 
-      // 7. Front cliff face (between minZ and maxZ)
-      if (lz > minZ && lz < maxZ) {
-        if (lx > frontX - radius && lx < backX - 3.0) {
+      // 7. Front cliff face (smooth normal push outward along -X)
+      // Only pushes if player is actually touching the front cliff face
+      if (lz >= minZ && lz <= maxZ) {
+        if (lx >= frontX - radius && lx < frontX + 2.0) {
           pos.x = originX + frontX - radius;
         }
       }
