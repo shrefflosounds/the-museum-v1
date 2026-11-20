@@ -10798,8 +10798,9 @@ window.game = this;
       // Trail 3: Mountain Flank & Backtrail Circuit (Looping 360 degrees around the mountain on open meadow)
       addTrailRibbon([
         new THREE.Vector2(6.0, -23.0),
-        new THREE.Vector2(3.5, -31.0),
-        new THREE.Vector2(4.0, -40.0),
+        new THREE.Vector2(0.5, -31.0),
+        new THREE.Vector2(-0.5, -40.0),
+        new THREE.Vector2(4.5, -45.0),
         new THREE.Vector2(12.0, -45.0),
         new THREE.Vector2(24.0, -45.5),
         new THREE.Vector2(38.0, -44.0),
@@ -10822,7 +10823,7 @@ window.game = this;
         new THREE.Vector2(-11.5, -11.5),
         new THREE.Vector2(-9.5, -18.5),
         new THREE.Vector2(-4.5, -22.5),
-        new THREE.Vector2(3.5, -31.0)
+        new THREE.Vector2(0.5, -31.0)
       ], 3.8, 44);
 
       // Trail 5: Plunge Pool Shore Spur (Branching from Promenade directly into pool landing)
@@ -23744,11 +23745,8 @@ window.game = this;
           this.jumpOffset = 0;
           if (this.isSafeRoomActive) {
             // Natural terrain slope following: smoothly follow terrain elevation (no teleporting up/down)
-            const vRate = isMoving ? 38.0 : 45.0;
+            const vRate = isMoving ? 48.0 : 54.0;
             this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * vRate));
-            if (this.playerOnMountain && this.playerPos.y < targetCamY) {
-              this.playerPos.y = Math.max(this.playerPos.y, targetCamY - 0.04);
-            }
           } else {
             const verticalFollowRate = this.playerStairState.active ? 42 : 18;
             this.playerPos.y = THREE.MathUtils.lerp(this.playerPos.y, targetCamY, Math.min(1, delta * verticalFollowRate));
@@ -23956,34 +23954,42 @@ window.game = this;
       const originX = sr ? sr.originX : 300.0;
       const originY = sr ? sr.originY : 50.0;
       const originZ = sr ? sr.originZ : 300.0;
+
+      // 1. If player is on top of mountain or high in the air leaping off the cliff / flying:
+      // Complete free movement, zero obstruction!
+      if (this.playerOnMountain || (footElevation !== -999 && footElevation > originY + 2.5)) return;
+
       const lx = pos.x - originX;
       const lz = pos.z - originZ;
-
-      // Span along mountain Z axis: si = -lz - 13.2
-      const siRaw = -lz - 13.2;
       const spanS = 28.0;
+      const minZ = -41.2;
+      const maxZ = 14.8;
 
-      // When outside the mountain canyon gorge (|si| > spanS), player is on open meadow or flank trails.
-      // Absolutely ZERO push vectors, ZERO boxes, and ZERO invisible borders on or around the flanks!
-      if (Math.abs(siRaw) > spanS) return;
-
-      const si = Math.max(-spanS, Math.min(spanS, siRaw));
+      const si = Math.max(-spanS, Math.min(spanS, -13.2 - lz));
       const canyonCurv = Math.pow(Math.min(1.0, Math.abs(si) / 18.0), 1.35) * 8.5;
       const frontX = 10.8 - canyonCurv;
+      const backX = frontX + 38.0;
+      const rampThresholdX = backX - 3.0;
 
-      // If player is traversing, jumping, or landing on the mountain rock surface:
-      // Complete 100% free movement across all summits, crags, ridges, and slopes!
-      if (this.playerOnMountain) return;
+      // 2. Solid impenetrable mountain rock mass at ground level:
+      // Completely seals the front cliff face and lateral rock flanks from ground level entry,
+      // while leaving the back ramp wide open for players to run right up the mountain!
+      if (lx > frontX - radius && lx < rampThresholdX && lz > minZ - radius && lz < maxZ + radius) {
+        const dFront = lx - (frontX - radius);
+        const dNorth = lz - (minZ - radius);
+        const dSouth = (maxZ + radius) - lz;
+        const dBack = rampThresholdX - lx;
 
-      const mSurfaceY = this.getMountainSurfaceElevation(pos.x, pos.z);
-      if (mSurfaceY !== null && footElevation !== -999 && footElevation >= mSurfaceY - 2.0) {
-        return;
-      }
-
-      // Front cliff face:
-      // Physical vertical rock wall prevents player standing down in the pool/path from walking through the cliff face
-      if (lx > frontX - radius - 0.2 && lx < frontX + 2.5) {
-        pos.x = originX + frontX - radius - 0.2;
+        const minD = Math.min(dFront, dNorth, dSouth, dBack);
+        if (minD === dFront) {
+          pos.x = originX + frontX - radius;
+        } else if (minD === dNorth) {
+          pos.z = originZ + minZ - radius;
+        } else if (minD === dSouth) {
+          pos.z = originZ + maxZ + radius;
+        } else {
+          pos.x = originX + rampThresholdX;
+        }
       }
     }
 
