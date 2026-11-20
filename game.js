@@ -11784,21 +11784,7 @@ window.game = this;
       group.add(poolGroup);
 
       // 9. Solid Physical Colliders & Complete Rustic Wooden Perimeter Fence
-      // (A) Solid Boulders Colliders (Shoreline rocks and canyon rocks)
-      boulders.forEach(([bx, by, bz, bs, bh]) => {
-        this.colliders.push({
-          type: 'cylinder',
-          floor: 'all',
-          x: originX + bx,
-          z: originZ + bz,
-          radius: bs * 0.88,
-          minY: originY + by - 2.0,
-          maxY: originY + by + bh * 0.70,
-          isWall: false
-        });
-      });
-
-      // (C) Clean Rustic Wooden Post-and-Rail Perimeter Fence (Seamlessly interconnected mortise-and-tenon timber fence at radius 93.5m)
+      // (A) Clean Rustic Wooden Post-and-Rail Perimeter Fence (Seamlessly interconnected mortise-and-tenon timber fence at radius 93.5m)
       const fenceRad = 93.5;
       const fenceSegs = 144;
       const fPostPos = [];
@@ -23691,12 +23677,12 @@ window.game = this;
 
       // In sanctuary: detect if player is in or wading across the plunge pool pond
       const distToPool = this.isSafeRoomActive ? Math.hypot(this.playerPos.x - 307.8, this.playerPos.z - 287.0) : 999;
-      const isInPoolWater = this.isSafeRoomActive && distToPool < 12.5 && currentFootElevation < 51.5;
+      const isInPoolWater = this.isSafeRoomActive && distToPool < 9.0 && currentFootElevation <= 50.2;
 
       if (wantsJump && (this.isGrounded || isInPoolWater) && !isCrouching) {
         const jumpMultiplier = isTheBeing ? 1.2 : 1.0;
-        // High jump boost when jumping out of the water to effortlessly leap high over the shoreline rocks
-        const waterBoost = isInPoolWater ? 2.15 : 1.0;
+        // Clean jump boost when leaping out of the water
+        const waterBoost = isInPoolWater ? 1.25 : 1.0;
         this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier * waterBoost;
         this.isGrounded = false;
         this.footstepTimer = 0;
@@ -23718,11 +23704,6 @@ window.game = this;
         const backBaseX = frontBaseX + 38.0;
 
         if (mountainY !== null) {
-          // Conditions to enter mountain from ground meadow or land on it:
-          // Player can ONLY walk onto the mountain from behind at the base of the rear slope (|si| <= 25.5), NOT from the side flanks
-          const isAtBackRamp = (lx >= backBaseX - 0.5 && lx <= backBaseX + 3.0 && Math.abs(si) <= 25.5 && Math.abs(currentFootElevation - meadowY) < 1.0);
-          const isLandingFromAbove = (this.isFalling && currentFootElevation <= mountainY + 0.6 && currentFootElevation >= mountainY - 1.5 && currentFootElevation > meadowY + 2.0);
-
           if (this.playerOnMountain) {
             // Player is traversing the mountain rock surface:
             if (lx < frontBaseX - 0.4 && currentFootElevation > meadowY + 2.5) {
@@ -23750,12 +23731,18 @@ window.game = this;
               this.playerOnMountain = true;
               groundY = mountainY;
             }
-          } else if (isAtBackRamp || isLandingFromAbove) {
-            this.playerOnMountain = true;
-            groundY = mountainY;
           } else {
-            this.playerOnMountain = false;
-            groundY = meadowY;
+            // Entering mountain from meadow or landing on it:
+            // Allowed if feet are at or near the surface slope (e.g. running up the rear ramp, or jumping onto the slope)
+            // and within the mountain slope span (|si| <= 27.0)
+            const isAtSurfaceSlope = (currentFootElevation >= mountainY - 1.2 && Math.abs(si) <= 27.0);
+            if (isAtSurfaceSlope) {
+              this.playerOnMountain = true;
+              groundY = mountainY;
+            } else {
+              this.playerOnMountain = false;
+              groundY = meadowY;
+            }
           }
         } else {
           this.playerOnMountain = false;
@@ -24082,6 +24069,18 @@ window.game = this;
       const minZ = -41.2;
       const maxZ = 14.8;
 
+      // If player's feet are at or above the mountain surface slope, they are walking or leaping onto it!
+      const mountainY = this.getMountainSurfaceElevation(pos.x, pos.z);
+      if (mountainY !== null && footElevation !== -999 && footElevation >= mountainY - 1.2) {
+        return;
+      }
+
+      // Swimming in the plunge pool: do NOT push horizontally against water waders
+      const distToPool = Math.hypot(lx - 7.8, lz - (-13.0));
+      if (distToPool < 9.2 && footElevation !== -999 && footElevation < originY + 0.3) {
+        return;
+      }
+
       // Flank wall corners:
       // North flank: lz = minZ (-41.2), extending from frontNorthX (2.30) to backNorthX (40.30)
       // South flank: lz = maxZ (14.8), extending from frontSouthX (2.30) to backSouthX (40.30)
@@ -24147,13 +24146,13 @@ window.game = this;
       }
 
       // 6. North flank rock wall: solid barrier from front corner all the way to back corner
-      if (lx >= frontNorthX && lx <= backNorthX && lz >= minZ - radius && lz <= minZ) {
+      if (lx >= frontNorthX && lx <= backNorthX - 0.5 && lz >= minZ - radius && lz <= minZ) {
         pos.z = originZ + minZ - radius;
         return;
       }
 
       // 7. South flank rock wall: solid barrier from front corner all the way to back corner
-      if (lx >= frontSouthX && lx <= backSouthX && lz <= maxZ + radius && lz >= maxZ) {
+      if (lx >= frontSouthX && lx <= backSouthX - 0.5 && lz <= maxZ + radius && lz >= maxZ) {
         pos.z = originZ + maxZ + radius;
         return;
       }
@@ -24169,21 +24168,19 @@ window.game = this;
         return;
       }
 
-      // 9. Solid Interior Protection: If ground player somehow penetrated inside mountain volume, push out along shortest exit
-      if (lz >= minZ && lz <= maxZ && lx >= frontX && lx < backX) {
+      // 9. Solid Interior Protection: If ground player somehow penetrated inside mountain volume from below
+      // (Only applies deep under the mountain where lx < backX - 2.5; the rear ramp is completely open)
+      if (lz >= minZ && lz <= maxZ && lx >= frontX && lx < backX - 2.5) {
         const penFront = lx - frontX;
-        const penBack = backX - lx;
         const penNorth = lz - minZ;
         const penSouth = maxZ - lz;
-        const minPen = Math.min(penFront, penBack, penNorth, penSouth);
+        const minPen = Math.min(penFront, penNorth, penSouth);
         if (minPen === penSouth) {
           pos.z = originZ + maxZ + radius;
         } else if (minPen === penNorth) {
           pos.z = originZ + minZ - radius;
-        } else if (minPen === penFront) {
-          pos.x = originX + frontX - radius;
         } else {
-          pos.x = originX + backX + radius;
+          pos.x = originX + frontX - radius;
         }
       }
     }
