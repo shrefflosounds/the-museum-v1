@@ -60,15 +60,15 @@
 
       this.ctx = new AudioCtx();
       this.masterGain = this.ctx.createGain();
-      this.masterGain.gain.value = 1.65; // Normalized & loud master output
+      this.masterGain.gain.value = 1.36; // Boosted by +60% (from 0.85)
 
-      // Dynamics compressor prevents digital clipping at normalized volume across overlapping tracks
+      // Dynamics compressor prevents digital clipping at +60% volume across overlapping tracks
       this.compressor = this.ctx.createDynamicsCompressor();
-      this.compressor.threshold.setValueAtTime(-3, this.ctx.currentTime);
-      this.compressor.knee.setValueAtTime(10, this.ctx.currentTime);
-      this.compressor.ratio.setValueAtTime(10, this.ctx.currentTime);
-      this.compressor.attack.setValueAtTime(0.002, this.ctx.currentTime);
-      this.compressor.release.setValueAtTime(0.14, this.ctx.currentTime);
+      this.compressor.threshold.setValueAtTime(-4, this.ctx.currentTime);
+      this.compressor.knee.setValueAtTime(12, this.ctx.currentTime);
+      this.compressor.ratio.setValueAtTime(8, this.ctx.currentTime);
+      this.compressor.attack.setValueAtTime(0.003, this.ctx.currentTime);
+      this.compressor.release.setValueAtTime(0.15, this.ctx.currentTime);
       this.masterGain.connect(this.compressor);
       this.compressor.connect(this.ctx.destination);
 
@@ -561,7 +561,7 @@
       osc.type = hit ? 'triangle' : 'sine';
       osc.frequency.setValueAtTime(hit ? 175 : 120, now);
       osc.frequency.exponentialRampToValueAtTime(32, now + (hit ? 0.12 : 0.09));
-      gain.gain.setValueAtTime(hit ? 0.95 : 0.56, now);
+      gain.gain.setValueAtTime(hit ? 0.75 : 0.42, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + (hit ? 0.13 : 0.10));
       osc.connect(gain);
       gain.connect(this.masterGain);
@@ -577,7 +577,7 @@
         filter.frequency.setValueAtTime(hit ? 1800 : 700, now);
         filter.frequency.exponentialRampToValueAtTime(hit ? 320 : 160, now + (hit ? 0.11 : 0.14));
         const nGain = this.ctx.createGain();
-        nGain.gain.setValueAtTime(hit ? 0.85 : 0.40, now);
+        nGain.gain.setValueAtTime(hit ? 0.65 : 0.28, now);
         nGain.gain.exponentialRampToValueAtTime(0.001, now + (hit ? 0.12 : 0.15));
         src.connect(filter);
         filter.connect(nGain);
@@ -596,7 +596,7 @@
       osc.type = 'triangle';
       osc.frequency.setValueAtTime(160, now);
       osc.frequency.exponentialRampToValueAtTime(40, now + 0.08);
-      gain.gain.setValueAtTime(0.38, now);
+      gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
       osc.connect(gain);
       gain.connect(this.masterGain);
@@ -612,7 +612,7 @@
       osc.type = 'sine';
       osc.frequency.setValueAtTime(220, now);
       osc.frequency.exponentialRampToValueAtTime(360, now + 0.07);
-      gain.gain.setValueAtTime(0.38, now);
+      gain.gain.setValueAtTime(0.22, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
       osc.connect(gain);
       gain.connect(this.masterGain);
@@ -631,7 +631,7 @@
       osc.frequency.setValueAtTime(85, now);
       osc.frequency.linearRampToValueAtTime(110, now + 0.06);
       osc.frequency.linearRampToValueAtTime(75, now + 0.12);
-      gain.gain.setValueAtTime(0.16, now);
+      gain.gain.setValueAtTime(0.08, now);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.13);
       osc.connect(gain);
       gain.connect(this.masterGain);
@@ -641,7 +641,7 @@
 
     playMarbleFootstep() {
       if (!this.ctx) return;
-      if (this.playCustom('player_footstep.wav', null, 0.85)) return;
+      if (this.playCustom('player_footstep.wav', null, 0.72)) return; // Boosted by +60% (from 0.45)
       const now = this.ctx.currentTime;
       this.stepToggle = !this.stepToggle;
 
@@ -654,7 +654,7 @@
       heelOsc.frequency.exponentialRampToValueAtTime(24, now + 0.09);
 
       heelGain.gain.setValueAtTime(0.0001, now);
-      heelGain.gain.linearRampToValueAtTime(0.075, now + 0.018);
+      heelGain.gain.linearRampToValueAtTime(0.045, now + 0.018); // Boosted by +60%
       heelGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.095);
 
       heelOsc.connect(heelGain);
@@ -667,7 +667,7 @@
       if (!this.ctx || distance > 24) return;
       if (soundFloor !== null && soundFloor !== undefined && soundFloor !== this.playerFloor) return;
       const atten = Math.max(0, 1 - distance / 24);
-      const vol = atten * atten * 0.65;
+      const vol = atten * atten * 0.45; // Gentle muffled footfall to prevent repetitive thumping
       if (this.playCustom('smitty_footstep.wav', null, vol)) return;
       if (!this.noiseBuffer) return;
       const now = this.ctx.currentTime;
@@ -690,7 +690,7 @@
 
     playPistolShot() {
       if (!this.ctx) return;
-      if (this.playCustom('weapon_shot.wav', null, 1.55)) return;
+      if (this.playCustom('weapon_shot.wav', null, 1.44)) return; // Boosted by +60% (from 0.9)
       if (!this.noiseBuffer) return;
       const now = this.ctx.currentTime;
 
@@ -700,7 +700,7 @@
       punchOsc.frequency.setValueAtTime(190, now);
       punchOsc.frequency.exponentialRampToValueAtTime(36, now + 0.09);
 
-      punchGain.gain.setValueAtTime(1.15, now);
+      punchGain.gain.setValueAtTime(1.04, now); // Boosted by +60% (from 0.65)
       punchGain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
 
       punchOsc.connect(punchGain);
@@ -717,7 +717,7 @@
       filter.frequency.exponentialRampToValueAtTime(420, now + 0.26);
 
       const crackGain = this.ctx.createGain();
-      crackGain.gain.setValueAtTime(0.95, now);
+      crackGain.gain.setValueAtTime(0.88, now); // Boosted by +60% (from 0.55)
       crackGain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
 
       crackSrc.connect(filter);
@@ -730,7 +730,7 @@
 
     playEmptyClick() {
       if (!this.ctx) return;
-      if (this.playCustom('weapon_empty_click.wav', null, 1.0)) return;
+      if (this.playCustom('weapon_empty_click.wav', null, 0.80)) return; // Boosted by +60% (from 0.5)
       if (!this.noiseBuffer) return;
       const now = this.ctx.currentTime;
       const src = this.ctx.createBufferSource();
@@ -742,7 +742,7 @@
       bp.Q.value = 6.0;
 
       const gain = this.ctx.createGain();
-      gain.gain.setValueAtTime(0.42, now);
+      gain.gain.setValueAtTime(0.29, now); // Boosted by +60% (from 0.18)
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.02);
 
       src.connect(bp);
@@ -756,9 +756,9 @@
       const now = this.ctx.currentTime;
       // High-pitched brass desk bell ping with harmonic ringing and slow natural decay
       const tones = [
-        { f: 2093.0, gain: 0.52, decay: 1.8 }, // C7
-        { f: 4186.0, gain: 0.28, decay: 1.2 }, // C8 harmonic
-        { f: 6280.0, gain: 0.14, decay: 0.7 }  // 3rd metallic overtone
+        { f: 2093.0, gain: 0.35, decay: 1.8 }, // C7
+        { f: 4186.0, gain: 0.18, decay: 1.2 }, // C8 harmonic
+        { f: 6280.0, gain: 0.08, decay: 0.7 }  // 3rd metallic overtone
       ];
       tones.forEach(t => {
         const osc = this.ctx.createOscillator();
@@ -781,7 +781,7 @@
 
     playReloadSound() {
       if (!this.ctx) return;
-      if (this.playCustom('weapon_reload.wav', null, 1.15)) return;
+      if (this.playCustom('weapon_reload.wav', null, 0.96)) return; // Boosted by +60% (from 0.6)
       if (!this.noiseBuffer) return;
       const triggerSlide = (delay, freq) => {
         const now = this.ctx.currentTime + delay;
@@ -794,7 +794,7 @@
         bp.Q.value = 4.5;
 
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.42, now);
+        gain.gain.setValueAtTime(0.29, now); // Boosted by +60% (from 0.18)
         gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
 
         src.connect(bp);
@@ -809,13 +809,13 @@
 
     playFlashlightClick() {
       if (!this.ctx) return;
-      if (this.playCustom('flashlight_click.wav', null, 0.95)) return;
+      if (this.playCustom('flashlight_click.wav', null, 0.80)) return; // Boosted by +60% (from 0.5)
       this.playEmptyClick();
     }
 
     playRelicChime() {
       if (!this.ctx) return;
-      if (this.playCustom('relic_chime.wav', null, 1.35)) return;
+      if (this.playCustom('relic_chime.wav', null, 1.20)) return; // Boosted by +60% (from 0.75)
       const now = this.ctx.currentTime;
       const freqs = [528, 792];
       freqs.forEach((f) => {
@@ -825,7 +825,7 @@
         osc.frequency.setValueAtTime(f, now);
 
         gain.gain.setValueAtTime(0.001, now);
-        gain.gain.linearRampToValueAtTime(0.28, now + 0.02);
+        gain.gain.linearRampToValueAtTime(0.18, now + 0.02); // Boosted by +60% (from 0.11)
         gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.4);
 
         osc.connect(gain);
@@ -971,7 +971,7 @@
       filter.frequency.setValueAtTime(320, now);
 
       gain.gain.setValueAtTime(0.001, now);
-      gain.gain.linearRampToValueAtTime(0.11, now + 0.06);
+      gain.gain.linearRampToValueAtTime(0.05, now + 0.06);
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.50);
 
       osc.connect(filter);
@@ -991,7 +991,7 @@
         nFilter.Q.value = 1.2;
         const nGain = this.ctx.createGain();
         nGain.gain.setValueAtTime(0.001, now);
-        nGain.gain.linearRampToValueAtTime(0.055, now + 0.05);
+        nGain.gain.linearRampToValueAtTime(0.025, now + 0.05);
         nGain.gain.exponentialRampToValueAtTime(0.001, now + 0.48);
         noise.connect(nFilter);
         nFilter.connect(nGain);
@@ -27108,7 +27108,6 @@ window.game = this;
         this.colliders.push(colliderObj);
       }
 
-      const dogAudioVer = window._ASSET_VERSION || APP_VERSION;
       const dogObj = {
         group: group,
         dogRoot: dogRoot,
@@ -27142,28 +27141,28 @@ window.game = this;
         baseY: y0,
         sfx: {
           steps: [
-            new Audio(encodeURI("assets/audio/robotdog/servo_step_1.wav") + `?v=${dogAudioVer}`),
-            new Audio(encodeURI("assets/audio/robotdog/servo_step_2.wav") + `?v=${dogAudioVer}`),
-            new Audio(encodeURI("assets/audio/robotdog/servo_step_3.wav") + `?v=${dogAudioVer}`),
-            new Audio(encodeURI("assets/audio/robotdog/servo_step_4.wav") + `?v=${dogAudioVer}`)
+            new Audio(encodeURI("assets/audio/robotdog/servo_step_1.wav")),
+            new Audio(encodeURI("assets/audio/robotdog/servo_step_2.wav")),
+            new Audio(encodeURI("assets/audio/robotdog/servo_step_3.wav")),
+            new Audio(encodeURI("assets/audio/robotdog/servo_step_4.wav"))
           ],
           barks: [
-            new Audio(encodeURI("assets/audio/robotdog/robot_bark_1.wav") + `?v=${dogAudioVer}`),
-            new Audio(encodeURI("assets/audio/robotdog/robot_bark_2.wav") + `?v=${dogAudioVer}`),
-            new Audio(encodeURI("assets/audio/robotdog/robot_bark_3.wav") + `?v=${dogAudioVer}`)
+            new Audio(encodeURI("assets/audio/robotdog/robot_bark_1.wav")),
+            new Audio(encodeURI("assets/audio/robotdog/robot_bark_2.wav")),
+            new Audio(encodeURI("assets/audio/robotdog/robot_bark_3.wav"))
           ],
-          attack: new Audio(encodeURI("assets/audio/robotdog/robot_attack.wav") + `?v=${dogAudioVer}`),
-          angryAttack: new Audio(encodeURI("assets/audio/robotdog/robot_angry_attack.wav") + `?v=${dogAudioVer}`),
-          whimper: new Audio(encodeURI("assets/audio/robotdog/robot_whimper.wav") + `?v=${dogAudioVer}`)
+          attack: new Audio(encodeURI("assets/audio/robotdog/robot_attack.wav")),
+          angryAttack: new Audio(encodeURI("assets/audio/robotdog/robot_angry_attack.wav")),
+          whimper: new Audio(encodeURI("assets/audio/robotdog/robot_whimper.wav"))
         }
       };
 
       // Crisp, audible volumes
-      dogObj.sfx.steps.forEach(a => { a.volume = 0.42; a.preload = "auto"; });
-      dogObj.sfx.barks.forEach(a => { a.volume = 0.78; a.preload = "auto"; });
-      dogObj.sfx.attack.volume = 0.72; dogObj.sfx.attack.preload = "auto";
-      dogObj.sfx.angryAttack.volume = 0.85; dogObj.sfx.angryAttack.preload = "auto";
-      dogObj.sfx.whimper.volume = 0.78; dogObj.sfx.whimper.preload = "auto";
+      dogObj.sfx.steps.forEach(a => { a.volume = 0.22; a.preload = "auto"; });
+      dogObj.sfx.barks.forEach(a => { a.volume = 0.45; a.preload = "auto"; });
+      dogObj.sfx.attack.volume = 0.40; dogObj.sfx.attack.preload = "auto";
+      dogObj.sfx.angryAttack.volume = 0.55; dogObj.sfx.angryAttack.preload = "auto";
+      dogObj.sfx.whimper.volume = 0.52; dogObj.sfx.whimper.preload = "auto";
 
       const gltfLoader = new THREE.GLTFLoader();
       const dogModelPath = "assets/RobotDog.glb";
@@ -28082,22 +28081,21 @@ window.game = this;
           statueObj.aiTimer = 0.6 + Math.random() * 1.8;
         };
 
-        const v = window._ASSET_VERSION || APP_VERSION;
         if (cfg.audioPool && cfg.audioPool.length > 0) {
           statueObj.audioPoolEls = cfg.audioPool.map(item => {
-            const a = new Audio(encodeURI(item.src) + `?v=${v}`);
+            const a = new Audio(encodeURI(item.src));
             a.preload = "auto";
             a.onended = resetStatuePose;
             return { el: a, duration: item.duration || 2.0 };
           });
         } else if (cfg.audio) {
-          const audio = new Audio(encodeURI(cfg.audio) + `?v=${v}`);
+          const audio = new Audio(encodeURI(cfg.audio));
           audio.preload = "auto";
           audio.onended = resetStatuePose;
           statueObj.audioEl = audio;
 
           if (cfg.audioAlt) {
-            const audioAlt = new Audio(encodeURI(cfg.audioAlt) + `?v=${v}`);
+            const audioAlt = new Audio(encodeURI(cfg.audioAlt));
             audioAlt.preload = "auto";
             audioAlt.onended = resetStatuePose;
             statueObj.audioElAlt = audioAlt;
@@ -28673,7 +28671,7 @@ window.game = this;
 
       if (chosenAudio) {
         chosenAudio.currentTime = 0;
-        chosenAudio.volume = 1.0;
+        chosenAudio.volume = 0.88;
         chosenAudio.play().catch(() => {});
       }
       // Song title notification only for statues with a song title (JLB3, Heknah, R3E4)
@@ -28805,7 +28803,7 @@ window.game = this;
             this.activeStatueAudio = track;
             if (track) {
               track.currentTime = Math.max(0, now - s.danceStartTime);
-              track.volume = 1.0;
+              track.volume = 0.88;
               track.play().catch(() => {});
             }
           }
