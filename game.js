@@ -22607,19 +22607,18 @@ window.game = this;
 
       // Helper to determine target palette theme class
       const getPaletteTheme = (el) => {
-        if (!el) return '';
+        if (!el) return 'theme-palette-pause';
         if (el.id === 'settings-modal' || el.classList.contains('settings-box')) return 'theme-palette-green';
         if (el.id === 'about-modal' || el.classList.contains('about-box')) return 'theme-palette-pink';
         if (el.id === 'options-modal' || el.classList.contains('options-box')) return 'theme-palette-blue';
-        return 'theme-palette-blue';
+        return 'theme-palette-pause';
       };
 
       const fromTheme = getPaletteTheme(fromEl);
       const toTheme = getPaletteTheme(toEl);
 
-      // Reset morph blob theme classes to source modal theme initially
-      morphBlob.classList.remove('theme-palette-blue', 'theme-palette-green', 'theme-palette-pink');
-      if (fromTheme) morphBlob.classList.add(fromTheme);
+      // Immediately set morph blob theme directly to the source menu's palette
+      morphBlob.className = 'active ' + fromTheme;
 
       // Expand morph blob bounds to match the blob pseudo-element bleed (-18px top/bottom, -24px left/right)
       const bleedX = 24;
@@ -22631,24 +22630,25 @@ window.game = this;
       morphBlob.style.top = (fromRect.top - bleedY) + 'px';
       morphBlob.style.width = (fromRect.width + bleedX * 2) + 'px';
       morphBlob.style.height = (fromRect.height + bleedY * 2) + 'px';
-      morphBlob.classList.add('active');
 
       // Hide individual modal blobs during morph
       fromBox.classList.add('blob-morphing');
       toBox.classList.add('blob-morphing');
 
+      // Force synchronous reflow so fromTheme is rendered before transition begins
+      void morphBlob.offsetWidth;
+
       // Trigger animation on next frame
       requestAnimationFrame(() => {
-        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease, filter 0.35s ease';
+        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease, filter 0.38s ease';
         morphBlob.style.left = (toRect.left - bleedX) + 'px';
         morphBlob.style.top = (toRect.top - bleedY) + 'px';
         morphBlob.style.width = (toRect.width + bleedX * 2) + 'px';
         morphBlob.style.height = (toRect.height + bleedY * 2) + 'px';
 
-        // Switch morph blob palette color during transition when text and buttons fade
-        if (toTheme) {
-          morphBlob.classList.remove('theme-palette-blue', 'theme-palette-green', 'theme-palette-pink');
-          morphBlob.classList.add(toTheme);
+        // Smoothly transition morph blob palette color directly to target menu's palette
+        if (toTheme && toTheme !== fromTheme) {
+          morphBlob.className = 'active ' + toTheme;
         }
 
         // Halfway through (220ms), hide fromEl and show toEl with smooth fade-in
@@ -22663,7 +22663,7 @@ window.game = this;
 
           // Cleanup after morph finishes
           setTimeout(() => {
-            morphBlob.classList.remove('active');
+            morphBlob.className = toTheme;
             fromBox.classList.remove('blob-morphing');
             toBox.classList.remove('blob-morphing');
             toBox.classList.remove('content-fading-in');

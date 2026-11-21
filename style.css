@@ -820,6 +820,12 @@ body.cutscene-playing *,
 }
 
 /* Palette Morph Colors for Transition Blob */
+#menu-morph-blob.theme-palette-pause {
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
+          drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
+}
+
 #menu-morph-blob.theme-palette-blue {
   filter: hue-rotate(-25deg) saturate(2.4) brightness(0.95)
           drop-shadow(0 0 16px rgba(30, 144, 255, 0.6))
