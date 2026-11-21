@@ -9248,29 +9248,32 @@ window.game = this;
         }
       }
 
-      // Pure counter-clockwise lap around the mountain massif. No random aimless
-      // walking — the farmer walks waypoint-to-waypoint in CCW order around the
-      // mountain, pausing briefly at each corner before continuing the lap.
-      // Every waypoint sits outside the mountain body so getMountainSurfaceElevation()
-      // returns null and the lap path is never blocked by the mountain check.
+      // Counter-clockwise lap around the mountain massif with a buffer so the
+      // farmer never hugs the mountain edge. Waypoints sit clear of the massif;
+      // when a step would put him on the mountain he smoothly steers away from the
+      // mountain center and flows around the contour instead of stopping and
+      // snapping a random turn.
+      const MOUNTAIN_CX = 15.0;
+      const MOUNTAIN_CZ = -20.0;
+      const MOUNTAIN_EDGE_BUFFER = 6.0;
+
       const LAP_WAYPOINTS = [
-        { x: -14.0, z: 8.0 },   // west / spawn side
-        { x: -14.0, z: -42.0 }, // north-west (past mountain's north end)
-        { x: 52.0, z: -42.0 },  // north-east (past mountain's east end)
-        { x: 52.0, z: 18.0 },   // south-east (past mountain's south end)
-        { x: -14.0, z: 18.0 },  // south-west
+        { x: -24.0, z: 14.0 },   // west / spawn side (well clear of mountain)
+        { x: -24.0, z: -52.0 },  // north-west (past mountain's north end)
+        { x: 62.0, z: -52.0 },   // north-east (past mountain's east end)
+        { x: 62.0, z: 26.0 },    // south-east (past mountain's south end)
+        { x: -24.0, z: 26.0 },   // south-west
       ];
-      const LAP_RADIUS = 1.5;
+      const LAP_RADIUS = 2.0;
 
       // Lap timer: pause briefly at each waypoint before continuing the lap.
       this.sanctuaryFarmerLapTimer -= delta;
 
       if (this.sanctuaryFarmerLapTimer <= 0 && this.sanctuaryFarmerState === 'IDLE') {
-        // Advance to the next counter-clockwise lap waypoint
         this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
         this.sanctuaryFarmerState = 'WALK';
         this.sanctuaryFarmerMoveSpeed = 1.8;
-        this.sanctuaryFarmerStateTimer = 999.0; // waypoint arrival drives transitions
+        this.sanctuaryFarmerStateTimer = 999.0;
         if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
           this._fadeFarmerAction('walk');
         }
@@ -9283,7 +9286,6 @@ window.game = this;
         const distToWp = Math.hypot(dx, dz);
 
         if (distToWp < LAP_RADIUS) {
-          // Arrived at waypoint — pause, then lap timer advances on next cycle
           this.sanctuaryFarmerState = 'IDLE';
           this.sanctuaryFarmerMoveSpeed = 0;
           this.sanctuaryFarmerLapTimer = 2.0 + Math.random() * 1.5;
@@ -9292,8 +9294,27 @@ window.game = this;
             this._fadeFarmerAction('idle');
           }
         } else {
-          // Steer toward the current waypoint
-          const targetRotY = Math.atan2(dx, dz);
+          // Base heading: steer toward the current waypoint
+          let targetRotY = Math.atan2(dx, dz);
+
+          // Mountain-edge avoidance: if the next step would be on the mountain,
+          // smoothly steer away from the mountain center so he flows around the
+          // contour instead of walking into the edge.
+          const step = this.sanctuaryFarmerMoveSpeed * delta;
+          const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
+          const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
+          const wx = originX + nx;
+          const wz = originZ + nz;
+          const onMountain = this.getMountainSurfaceElevation(wx, wz) !== null;
+
+          if (onMountain) {
+            const awayX = wx - MOUNTAIN_CX;
+            const awayZ = wz - MOUNTAIN_CZ;
+            const awayRotY = Math.atan2(awayX, awayZ);
+            // Blend toward walking away from the mountain (along the contour)
+            let rDiff = Math.atan2(Math.sin(awayRotY - targetRotY), Math.cos(awayRotY - targetRotY));
+            targetRotY += Math.sign(rDiff) * Math.min(Math.abs(rDiff), 1.6);
+          }
 
           // Smoothly rotate toward target heading
           let rDiff = Math.atan2(Math.sin(targetRotY - this.sanctuaryFarmerRotY), Math.cos(targetRotY - this.sanctuaryFarmerRotY));
@@ -9304,51 +9325,51 @@ window.game = this;
             this.sanctuaryFarmerRotY = targetRotY;
           }
 
-          // Move forward while turning (natural, not tank-like)
-          const step = this.sanctuaryFarmerMoveSpeed * delta;
-          const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
-          const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
-          const wx = originX + nx;
-          const wz = originZ + nz;
+          // Recompute candidate step with the (possibly adjusted) heading
+          const step2 = this.sanctuaryFarmerMoveSpeed * delta;
+          const nx2 = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step2;
+          const nz2 = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step2;
+          const wx2 = originX + nx2;
+          const wz2 = originZ + nz2;
 
           // Collision checks BEFORE committing the step
-          const dPortal = Math.hypot(nx - (-20.5), nz - 7.5);
-          const dWf = Math.hypot(nx - 8.0, nz - (-13.0));
-          const onMountain = this.getMountainSurfaceElevation(wx, wz) !== null;
-          const ngY = this.getSafeRoomGroundY(wx, wz);
-          const hitBoulder = this._farmerWouldHitBoulder(nx, nz);
+          const dPortal = Math.hypot(nx2 - (-20.5), nz2 - 7.5);
+          const dWf = Math.hypot(nx2 - 8.0, nz2 - (-13.0));
+          const onMountain2 = this.getMountainSurfaceElevation(wx2, wz2) !== null;
+          const ngY = this.getSafeRoomGroundY(wx2, wz2);
+          const hitBoulder = this._farmerWouldHitBoulder(nx2, nz2);
 
           let blocked = false;
           if (dPortal < 4.5) blocked = true;
           else if (dWf < 7.0) blocked = true;
-          else if (onMountain) blocked = true;
+          else if (onMountain2) blocked = true;
           else if (Math.abs(ngY - sr.originY) > 1.0) blocked = true;
           else if (hitBoulder) blocked = true;
 
           if (blocked) {
-            // Do NOT go idle — that traps the farmer in place. Rotate away from the
-            // obstacle and keep trying, so he flows around boulders instead of
-            // getting stuck touching them.
             if (hitBoulder) {
-              // Find the nearest boulder and rotate directly away from its center
               let nearestBoulder = null;
               let nearestDist = 999;
               for (let i = 0; i < this.colliders.length; i++) {
                 const c = this.colliders[i];
                 if (!c || c.type !== 'cylinder' || !c.isBoulder) continue;
-                const d = Math.hypot(wx - c.x, wz - c.z);
+                const d = Math.hypot(wx2 - c.x, wz2 - c.z);
                 if (d < nearestDist) { nearestDist = d; nearestBoulder = c; }
               }
               if (nearestBoulder) {
-                const awayX = wx - nearestBoulder.x;
-                const awayZ = wz - nearestBoulder.z;
+                const awayX = wx2 - nearestBoulder.x;
+                const awayZ = wz2 - nearestBoulder.z;
                 this.sanctuaryFarmerRotY = Math.atan2(awayX, awayZ);
               } else {
                 this.sanctuaryFarmerRotY += (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
               }
             } else {
-              // Blocked by mountain / portal / waterfall / terrain — rotate 90 deg
-              this.sanctuaryFarmerRotY += (Math.random() < 0.5 ? 1 : -1) * Math.PI / 2;
+              // Still blocked by mountain after contour-steer: turn away from mountain center smoothly
+              const awayX = wx2 - MOUNTAIN_CX;
+              const awayZ = wz2 - MOUNTAIN_CZ;
+              const awayRotY = Math.atan2(awayX, awayZ);
+              let rDiff2 = Math.atan2(Math.sin(awayRotY - this.sanctuaryFarmerRotY), Math.cos(awayRotY - this.sanctuaryFarmerRotY));
+              this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
             }
             this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
             this.sanctuaryFarmerMoveSpeed = 0;
@@ -9358,8 +9379,8 @@ window.game = this;
               this._fadeFarmerAction('idle');
             }
           } else {
-            this.sanctuaryFarmerX = nx;
-            this.sanctuaryFarmerZ = nz;
+            this.sanctuaryFarmerX = nx2;
+            this.sanctuaryFarmerZ = nz2;
           }
         }
       } else {
