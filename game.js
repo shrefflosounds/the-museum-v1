@@ -21581,8 +21581,9 @@ window.game = this;
       let sens = CONFIG.PLAYER.MOUSE_SENS * (this.mouseSensitivityMultiplier || 1.0);
       if (this.isAiming) sens *= 0.52;
 
+      const invertVertical = this.isThirdPersonView() && this.thirdPersonFrontView;
       this.playerYaw -= mx * sens;
-      this.playerPitch -= my * sens;
+      this.playerPitch += (invertVertical ? my : -my) * sens;
       const pitchLimit = this.isThirdPersonView() ? 1.05 : 1.42;
       this.playerPitch = Math.max(-pitchLimit, Math.min(pitchLimit, this.playerPitch));
     }
