@@ -4349,7 +4349,7 @@
       this.thirdPersonFrontView = false;
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
       this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 10 ? savedCharacter : 0;
-      if ((this.selectedPlayerCharacter === 9 || this.selectedPlayerCharacter === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') {
+      if ((this.selectedPlayerCharacter === 8 || this.selectedPlayerCharacter === 9 || this.selectedPlayerCharacter === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') {
         this.selectedPlayerCharacter = 0;
       }
       this.playerModelRoot = null;
@@ -9177,20 +9177,26 @@ window.game = this;
     // Sanctuary Farmer: calm wandering AI. Walks between meadow spots, idles/looks around,
     // occasionally runs, and avoids boulder colliders so it never clips through rocks.
     updateSanctuaryFarmer(delta) {
-      if (!this.isSafeRoomActive) {
-        if (this.sanctuaryFarmerGroup) this.sanctuaryFarmerGroup.visible = false;
-        return;
-      }
-      if (!this.sanctuaryFarmerGroup || !this.sanctuaryFarmer) return;
-      this.sanctuaryFarmerGroup.visible = true;
+      if (!this.sanctuaryFarmerGroup) return;
 
       const sr = this.safeRoomSanctuary;
+      const inSafeRoom = this.isSafeRoomActive && sr;
+
+      if (!inSafeRoom) {
+        this.sanctuaryFarmerGroup.visible = false;
+        return;
+      }
+
+      this.sanctuaryFarmerGroup.visible = true;
+
       const originX = sr.originX;
       const originZ = sr.originZ;
 
       // Snap to sanctuary ground
       const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
       this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
+
+      if (!this.sanctuaryFarmer) return; // model still loading
 
       this.sanctuaryFarmerStateTimer -= delta;
 
@@ -20636,7 +20642,7 @@ window.game = this;
     setPlayerCharacter(index) {
       const next = Number(index);
       if (!Number.isInteger(next) || next < 0 || next > 10) return;
-      if ((next === 9 || next === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
+      if ((next === 8 || next === 9 || next === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
