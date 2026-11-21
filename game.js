@@ -4716,7 +4716,7 @@ window.game = this;
       this.flashlightTarget = new THREE.Object3D();
       this.scene.add(this.flashlightTarget);
       this.flashlight.target = this.flashlightTarget;
-      this.camera.add(this.flashlight);
+      this.scene.add(this.flashlight);
 
       const viewmodelLight = new THREE.PointLight(0xffeedd, 0.85, 2.5);
       viewmodelLight.position.set(0.12, 0.05, -0.25);
@@ -23462,6 +23462,40 @@ window.game = this;
       }, 150);
     }
 
+    updateFlashlight() {
+      if (!this.flashlight || !this.flashlightTarget) return;
+
+      if (!this._flashlightCamPos) {
+        this._flashlightCamPos = new THREE.Vector3();
+        this._flashlightCamDir = new THREE.Vector3();
+        this._flashlightLightPos = new THREE.Vector3();
+      }
+
+      this.camera.getWorldPosition(this._flashlightCamPos);
+      this.camera.getWorldDirection(this._flashlightCamDir);
+
+      const frontView = this.isThirdPersonView() && this.thirdPersonFrontView && !this.isSpectatorMode && !this.isNoClipMode;
+
+      if (frontView) {
+        // Float the beam above and just behind the character's head, aimed where the camera looks.
+        // This lights the scene the player is actually viewing without blasting the character's face.
+        const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
+        const headHeight = (this.selectedPlayerCharacter === 9) ? 3.6 : 1.65;
+        this._flashlightLightPos.set(
+          this.playerPos.x,
+          footY + headHeight + 0.8,
+          this.playerPos.z
+        );
+        this._flashlightLightPos.addScaledVector(this._flashlightCamDir, 0.7);
+        this.flashlight.position.copy(this._flashlightLightPos);
+        this.flashlightTarget.position.copy(this._flashlightLightPos).addScaledVector(this._flashlightCamDir, 12);
+      } else {
+        // Camera-mounted headlamp (first person, rear third person, and spectator flight)
+        this.flashlight.position.copy(this._flashlightCamPos);
+        this.flashlightTarget.position.copy(this._flashlightCamPos).addScaledVector(this._flashlightCamDir, 12);
+      }
+    }
+
     toggleFlashlight() {
       this.flashlightOn = !this.flashlightOn;
       this.flashlight.intensity = this.flashlightOn ? 1.65 : 0;
@@ -24110,11 +24144,7 @@ window.game = this;
         this.updatePlayerCharacter(delta, moveLen > 0.001);
         if (thirdPerson) this.updateThirdPersonCamera(delta);
 
-        this.flashlightTarget.position.set(
-          this.camera.position.x - Math.sin(this.playerYaw) * 10,
-          this.camera.position.y + Math.tan(this.playerPitch) * 10,
-          this.camera.position.z - Math.cos(this.playerYaw) * 10
-        );
+        this.updateFlashlight();
 
         this.updateWeaponViewmodel(delta, moveLen > 0.001);
         this.updateLeftHandViewmodel(delta, moveLen > 0.001);
@@ -24509,11 +24539,7 @@ window.game = this;
       this.updatePlayerCharacter(delta, isMoving);
       if (thirdPerson) this.updateThirdPersonCamera(delta);
 
-      this.flashlightTarget.position.set(
-        this.camera.position.x - Math.sin(this.playerYaw) * 10,
-        this.camera.position.y + Math.tan(this.playerPitch) * 10,
-        this.camera.position.z - Math.cos(this.playerYaw) * 10
-      );
+      this.updateFlashlight();
 
       this.updateWeaponViewmodel(delta, isMoving);
       this.updateLeftHandViewmodel(delta, isMoving);
