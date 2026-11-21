@@ -22588,6 +22588,12 @@ window.game = this;
       if (!morphBlob) {
         morphBlob = document.createElement('div');
         morphBlob.id = 'menu-morph-blob';
+        morphBlob.innerHTML = `
+          <div class="morph-blob-layer layer-pause"></div>
+          <div class="morph-blob-layer layer-blue"></div>
+          <div class="morph-blob-layer layer-green"></div>
+          <div class="morph-blob-layer layer-pink"></div>
+        `;
         document.body.appendChild(morphBlob);
       }
 
@@ -22607,18 +22613,26 @@ window.game = this;
 
       // Helper to determine target palette theme class
       const getPaletteTheme = (el) => {
-        if (!el) return 'theme-palette-pause';
-        if (el.id === 'settings-modal' || el.classList.contains('settings-box')) return 'theme-palette-green';
-        if (el.id === 'about-modal' || el.classList.contains('about-box')) return 'theme-palette-pink';
-        if (el.id === 'options-modal' || el.classList.contains('options-box')) return 'theme-palette-blue';
-        return 'theme-palette-pause';
+        if (!el) return 'pause';
+        if (el.id === 'settings-modal' || el.classList.contains('settings-box')) return 'green';
+        if (el.id === 'about-modal' || el.classList.contains('about-box')) return 'pink';
+        if (el.id === 'options-modal' || el.classList.contains('options-box')) return 'blue';
+        return 'pause';
       };
 
       const fromTheme = getPaletteTheme(fromEl);
       const toTheme = getPaletteTheme(toEl);
 
-      // Immediately set morph blob theme directly to the source menu's palette
-      morphBlob.className = 'active ' + fromTheme;
+      // Set morph blob layers: source layer visible, target layer invisible before transition
+      const layers = morphBlob.querySelectorAll('.morph-blob-layer');
+      layers.forEach(layer => {
+        layer.style.transition = 'none';
+        if (layer.classList.contains('layer-' + fromTheme)) {
+          layer.classList.add('layer-active');
+        } else {
+          layer.classList.remove('layer-active');
+        }
+      });
 
       // Expand morph blob bounds to match the blob pseudo-element bleed (-18px top/bottom, -24px left/right)
       const bleedX = 24;
@@ -22630,26 +22644,32 @@ window.game = this;
       morphBlob.style.top = (fromRect.top - bleedY) + 'px';
       morphBlob.style.width = (fromRect.width + bleedX * 2) + 'px';
       morphBlob.style.height = (fromRect.height + bleedY * 2) + 'px';
+      morphBlob.classList.add('active');
 
       // Hide individual modal blobs during morph
       fromBox.classList.add('blob-morphing');
       toBox.classList.add('blob-morphing');
 
-      // Force synchronous reflow so fromTheme is rendered before transition begins
+      // Force synchronous reflow so initial state is rendered before transition begins
       void morphBlob.offsetWidth;
 
       // Trigger animation on next frame
       requestAnimationFrame(() => {
-        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease, filter 0.38s ease';
+        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease';
         morphBlob.style.left = (toRect.left - bleedX) + 'px';
         morphBlob.style.top = (toRect.top - bleedY) + 'px';
         morphBlob.style.width = (toRect.width + bleedX * 2) + 'px';
         morphBlob.style.height = (toRect.height + bleedY * 2) + 'px';
 
-        // Smoothly transition morph blob palette color directly to target menu's palette
-        if (toTheme && toTheme !== fromTheme) {
-          morphBlob.className = 'active ' + toTheme;
-        }
+        // Smooth cross-fade between source and target color layers
+        layers.forEach(layer => {
+          layer.style.transition = 'opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1)';
+          if (layer.classList.contains('layer-' + toTheme)) {
+            layer.classList.add('layer-active');
+          } else {
+            layer.classList.remove('layer-active');
+          }
+        });
 
         // Halfway through (220ms), hide fromEl and show toEl with smooth fade-in
         setTimeout(() => {
@@ -22663,7 +22683,7 @@ window.game = this;
 
           // Cleanup after morph finishes
           setTimeout(() => {
-            morphBlob.className = toTheme;
+            morphBlob.classList.remove('active');
             fromBox.classList.remove('blob-morphing');
             toBox.classList.remove('blob-morphing');
             toBox.classList.remove('content-fading-in');

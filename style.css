@@ -801,50 +801,57 @@ body.cutscene-playing *,
   position: fixed;
   pointer-events: none;
   z-index: 10050;
-  background: url('assets/ui/blob_blue.png') center center / 100% 100% no-repeat;
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
-          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
-          drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
   opacity: 0;
   transform-origin: center center;
   transition: top 0.42s cubic-bezier(0.22, 1, 0.36, 1),
               left 0.42s cubic-bezier(0.22, 1, 0.36, 1),
               width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
               height 0.42s cubic-bezier(0.22, 1, 0.36, 1),
-              opacity 0.22s ease,
-              filter 0.35s ease;
+              opacity 0.22s ease;
 }
 
 #menu-morph-blob.active {
   opacity: 1;
 }
 
-/* Palette Morph Colors for Transition Blob */
-#menu-morph-blob.theme-palette-pause {
+.morph-blob-layer {
+  position: absolute;
+  inset: 0;
+  background: url('assets/ui/blob_blue.png') center center / 100% 100% no-repeat;
+  pointer-events: none;
+  transition: opacity 0.40s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 0;
+}
+
+.morph-blob-layer.layer-pause {
   filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
           drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
 }
 
-#menu-morph-blob.theme-palette-blue {
+.morph-blob-layer.layer-blue {
   filter: hue-rotate(-25deg) saturate(2.4) brightness(0.95)
           drop-shadow(0 0 16px rgba(30, 144, 255, 0.6))
           drop-shadow(0 0 35px rgba(0, 71, 171, 0.45))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
 }
 
-#menu-morph-blob.theme-palette-green {
+.morph-blob-layer.layer-green {
   filter: hue-rotate(-140deg) saturate(1.8) brightness(0.95)
           drop-shadow(0 0 16px rgba(132, 204, 22, 0.6))
           drop-shadow(0 0 35px rgba(74, 222, 128, 0.4))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
 }
 
-#menu-morph-blob.theme-palette-pink {
+.morph-blob-layer.layer-pink {
   filter: hue-rotate(100deg) saturate(1.4) brightness(0.95)
           drop-shadow(0 0 16px rgba(244, 114, 182, 0.6))
           drop-shadow(0 0 35px rgba(236, 72, 153, 0.4))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
+}
+
+.morph-blob-layer.layer-active {
+  opacity: 1 !important;
 }
 
 .modal-box.blob-morphing::before,
