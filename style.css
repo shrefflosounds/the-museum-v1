@@ -821,8 +821,9 @@ body.cutscene-playing *,
 
 /* Palette Morph Colors for Transition Blob */
 #menu-morph-blob.theme-palette-blue {
-  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
-          drop-shadow(0 0 35px rgba(56, 189, 248, 0.4))
+  filter: hue-rotate(-25deg) saturate(2.4) brightness(0.95)
+          drop-shadow(0 0 16px rgba(30, 144, 255, 0.6))
+          drop-shadow(0 0 35px rgba(0, 71, 171, 0.45))
           drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85));
 }
 
@@ -1384,15 +1385,29 @@ body.cutscene-playing *,
   text-align: center;
 }
 
+.options-box::before {
+  filter: hue-rotate(-25deg) saturate(2.4) brightness(0.95)
+          drop-shadow(0 0 16px rgba(30, 144, 255, 0.6))
+          drop-shadow(0 0 35px rgba(0, 71, 171, 0.45))
+          drop-shadow(0 20px 45px rgba(0, 0, 0, 0.85)) !important;
+}
+
 .options-box .close-btn {
   top: 24px;
   right: 28px;
   width: 32px;
   height: 32px;
   font-size: 20px;
-  background: rgba(15, 23, 42, 0.85);
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 35, 102, 0.90) 0%, rgba(0, 0, 77, 0.85) 100%);
+  border: 1px solid rgba(115, 194, 251, 0.4);
+  color: #73c2fb;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.options-box .close-btn:hover {
+  background: rgba(0, 71, 171, 0.95);
+  border-color: rgba(30, 144, 255, 0.8);
+  color: #ffffff;
 }
 
 .options-box .horror-title {
@@ -1400,17 +1415,17 @@ body.cutscene-playing *,
   letter-spacing: 2.5px;
   margin-top: 0;
   margin-bottom: 20px;
-  color: #ffffff;
-  text-shadow: 0 0 12px rgba(255, 255, 255, 0.35);
+  color: #73c2fb;
+  text-shadow: 0 0 14px rgba(0, 71, 171, 0.7);
 }
 
 .options-box .options-section {
   padding: 14px 20px;
   margin-bottom: 14px;
   border-radius: 20px;
-  background: rgba(22, 28, 48, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 35, 102, 0.80) 0%, rgba(0, 0, 77, 0.65) 80%, rgba(0, 0, 40, 0) 100%);
+  border: 1px solid rgba(30, 144, 255, 0.25);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.55);
 }
 
 .options-toggle-group {
@@ -1435,26 +1450,26 @@ body.cutscene-playing *,
   user-select: none;
 }
 
-/* Active State: bright purple strip, normal size */
+/* Active State: bright vivid cerulean / dodger blue strip, normal size */
 .options-toggle-btn.active {
-  background: url('assets/ui/blob_strip_purple.png') center center / 100% 100% no-repeat;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
   color: #ffffff;
   transform: scale(1);
   opacity: 1;
-  filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.55)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
+  filter: hue-rotate(-25deg) saturate(2.2) drop-shadow(0 0 14px rgba(30, 144, 255, 0.7)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
 }
 
-/* Off State: dulled, smaller, translucent dark teal/slate pill */
+/* Off State: dulled, smaller, translucent deep navy / cobalt pill */
 .options-toggle-btn:not(.active) {
-  background: rgba(18, 54, 68, 0.75);
-  color: #8da4b4;
+  background: rgba(0, 35, 102, 0.75);
+  color: #87ceeb;
   transform: scale(0.92);
-  opacity: 0.68;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+  opacity: 0.72;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .options-toggle-btn:hover {
-  filter: brightness(1.15) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35));
+  filter: brightness(1.2) drop-shadow(0 0 16px rgba(30, 144, 255, 0.5));
 }
 
 .options-toggle-title {
@@ -1467,15 +1482,15 @@ body.cutscene-playing *,
   margin-top: 12px;
   margin-bottom: 14px;
   border-radius: 20px;
-  background: rgba(22, 28, 48, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 35, 102, 0.80) 0%, rgba(0, 0, 77, 0.65) 80%, rgba(0, 0, 40, 0) 100%);
+  border: 1px solid rgba(30, 144, 255, 0.25);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.55);
 }
 
 .options-box .settings-card-title {
   font-size: 13px;
   letter-spacing: 1.5px;
-  color: #9bbcd0;
+  color: #73c2fb;
   margin-bottom: 10px;
   text-align: center;
 }
@@ -1505,30 +1520,30 @@ body.cutscene-playing *,
 }
 
 .player-view-toggle-btn.active {
-  background: url('assets/ui/blob_strip_purple.png') center center / 100% 100% no-repeat;
+  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
   color: #ffffff;
   transform: scale(1);
   opacity: 1;
-  filter: drop-shadow(0 0 14px rgba(192, 132, 252, 0.55)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
+  filter: hue-rotate(-25deg) saturate(2.2) drop-shadow(0 0 14px rgba(30, 144, 255, 0.7)) drop-shadow(0 3px 8px rgba(0, 0, 0, 0.6));
 }
 
 .player-view-toggle-btn:not(.active) {
-  background: rgba(18, 54, 68, 0.75);
-  color: #8da4b4;
+  background: rgba(0, 35, 102, 0.75);
+  color: #87ceeb;
   transform: scale(0.92);
-  opacity: 0.68;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+  opacity: 0.72;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
 }
 
 .player-view-toggle-btn:hover {
-  filter: brightness(1.15) drop-shadow(0 0 16px rgba(255, 255, 255, 0.35));
+  filter: brightness(1.2) drop-shadow(0 0 16px rgba(30, 144, 255, 0.5));
 }
 
 .options-box .player-character-label {
   display: block;
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: #9bbcd0;
+  color: #87ceeb;
   margin-top: 4px;
   margin-bottom: 6px;
   text-align: center;
@@ -1541,9 +1556,9 @@ body.cutscene-playing *,
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
-  background: rgba(14, 46, 60, 0.85);
+  background: rgba(0, 35, 102, 0.85);
   color: #ffffff;
-  border: none;
+  border: 1px solid rgba(30, 144, 255, 0.3);
   outline: none;
   box-shadow: none;
   border-radius: 19px;
@@ -1556,20 +1571,20 @@ body.cutscene-playing *,
 
 .options-box .char-choose-trigger-btn:hover {
   transform: translateY(-1px) scale(1.01);
-  border: none;
+  border-color: rgba(30, 144, 255, 0.7);
   outline: none;
-  filter: brightness(1.15) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  filter: brightness(1.2) drop-shadow(0 2px 10px rgba(0, 71, 171, 0.6));
 }
 
 .options-box .char-choose-subtext {
   font-size: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  color: #89cff0;
   letter-spacing: 0.8px;
 }
 
 .options-box .player-character-status {
   font-size: 10px;
-  color: #7b94a8;
+  color: #74b3ce;
   min-height: 14px;
   margin-top: 6px;
   margin-bottom: 0;
@@ -1581,9 +1596,9 @@ body.cutscene-playing *,
   margin-bottom: 16px;
   padding: 14px 22px 12px 22px;
   border-radius: 20px;
-  background: rgba(22, 28, 48, 0.60);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.45);
+  background: radial-gradient(ellipse at 50% 50%, rgba(0, 35, 102, 0.80) 0%, rgba(0, 0, 77, 0.65) 80%, rgba(0, 0, 40, 0) 100%);
+  border: 1px solid rgba(30, 144, 255, 0.25);
+  box-shadow: inset 0 0 18px rgba(0, 0, 0, 0.55);
 }
 
 .options-box .settings-slider-header {
@@ -1596,12 +1611,12 @@ body.cutscene-playing *,
 .options-box .settings-slider-label {
   font-size: 12px;
   letter-spacing: 1.5px;
-  color: #ffffff;
+  color: #87ceeb;
 }
 
 .options-box .settings-slider-value {
   font-size: 12px;
-  color: #38bdf8;
+  color: #1e90ff;
   font-weight: bold;
 }
 
@@ -1609,7 +1624,7 @@ body.cutscene-playing *,
   display: flex;
   justify-content: space-between;
   font-size: 9px;
-  color: #64748b;
+  color: #74b3ce;
   margin-top: 6px;
 }
 
@@ -1623,9 +1638,9 @@ body.cutscene-playing *,
   line-height: 44px;
   font-size: 16px;
   letter-spacing: 2px;
-  background: rgba(14, 46, 60, 0.90) !important;
+  background: rgba(0, 35, 102, 0.90) !important;
   color: #ffffff !important;
-  border: 1px solid rgba(56, 189, 248, 0.3) !important;
+  border: 1px solid rgba(30, 144, 255, 0.4) !important;
   border-radius: 22px !important;
   filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
   transition: transform 0.16s ease, filter 0.16s ease, background 0.16s ease;
@@ -1633,8 +1648,8 @@ body.cutscene-playing *,
 
 .options-done-btn:hover {
   transform: translateY(-2px) scale(1.02);
-  filter: drop-shadow(0 0 16px rgba(56, 189, 248, 0.6));
-  border-color: rgba(56, 189, 248, 0.8) !important;
+  filter: drop-shadow(0 0 16px rgba(30, 144, 255, 0.7));
+  border-color: rgba(30, 144, 255, 0.9) !important;
 }
 
 .settings-box {
