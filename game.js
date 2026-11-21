@@ -4509,6 +4509,9 @@
       this.sanctuaryFarmerStateTimer = 0;
       this.sanctuaryFarmerMoveSpeed = 0.9;
       this.sanctuaryFarmerLookTimer = 0;
+      // Explicit knowledge of the sanctuary layout: the giant mountain begins rising
+      // at distFromCenter > 36 from origin; the Farmer stays well inside the flat meadow.
+      this.sanctuaryFarmerMountainRadius = 30.0;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
@@ -9225,10 +9228,11 @@ window.game = this;
           const nz = (dz / dist) * step;
           const nextX = this.sanctuaryFarmerX + nx;
           const nextZ = this.sanctuaryFarmerZ + nz;
+          const nextDistFromCenter = Math.hypot(nextX, nextZ);
           const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
-          // Player-style collision: never clip through boulders, and never walk off
-          // flat meadow onto rising mountain terrain (reject any non-level ground).
-          if (Math.abs(nextGY - originY) > 1.0 || this._farmerWouldHitBoulder(nextX, nextZ)) {
+          // Player-style collision: never cross the explicit mountain boundary, never clip
+          // through boulders, and never step onto rising mountain terrain.
+          if (nextDistFromCenter > this.sanctuaryFarmerMountainRadius || this._farmerWouldHitBoulder(nextX, nextZ) || Math.abs(nextGY - originY) > 1.0) {
             this._pickFarmerDestination();
           } else {
             this.sanctuaryFarmerX = nextX;
@@ -9274,8 +9278,8 @@ window.game = this;
         const r = 6.0 + Math.random() * 18.0;
         const cx = Math.cos(angle) * r;
         const cz = Math.sin(angle) * r;
-        // Stay well inside the flat meadow, clear of the mountain rim (rises at distFromCenter > 36)
-        if (Math.hypot(cx, cz) > 34.0) continue;
+        // Stay well inside the flat meadow, clear of the mountain boundary (rises at distFromCenter > 36)
+        if (Math.hypot(cx, cz) > this.sanctuaryFarmerMountainRadius) continue;
         const gY = this.getSafeRoomGroundY(originX + cx, originZ + cz);
         // Only accept level meadow ground near originY; reject rising mountain terrain
         if (Math.abs(gY - sr.originY) > 1.6) continue;
