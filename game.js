@@ -4506,27 +4506,9 @@
       this.sanctuaryFarmerRotY = 0;
       this.sanctuaryFarmerTargetRotY = 0;
       this.sanctuaryFarmerTurnSpeed = 2.5; // rad/s, smooth turning (no snapping)
-      this.sanctuaryFarmerState = 'WALK'; // 'WALK' | 'JOG' | 'IDLE'
+      this.sanctuaryFarmerState = 'WALK'; // 'WALK' | 'IDLE'
       this.sanctuaryFarmerStateTimer = 0;
       this.sanctuaryFarmerMoveSpeed = 1.8;
-      this.sanctuaryFarmerLapTimer = 0;
-      this.sanctuaryFarmerTrailIdx = 0;
-      this.sanctuaryFarmerJogAngle = 0;
-      // Explicit knowledge of sanctuary layout: where NOT to walk
-      // Mountain massif avoid: center local ~(+15, -20), radius 20
-      this.sanctuaryFarmerMountainAvoidX = 15.0;
-      this.sanctuaryFarmerMountainAvoidZ = -20.0;
-      this.sanctuaryFarmerMountainAvoidRadius = 20.0;
-      // Portal slab avoid: local (-20.5, 7.5), radius 4.5
-      this.sanctuaryFarmerPortalAvoidX = -20.5;
-      this.sanctuaryFarmerPortalAvoidZ = 7.5;
-      this.sanctuaryFarmerPortalAvoidRadius = 4.5;
-      // Waterfall rocks / plunge pool avoid: local ~(+7, -13), radius 7
-      this.sanctuaryFarmerWaterfallAvoidX = 7.0;
-      this.sanctuaryFarmerWaterfallAvoidZ = -13.0;
-      this.sanctuaryFarmerWaterfallAvoidRadius = 7.0;
-      // Intro greeting: farmer waves once when the player first enters the sanctuary
-      // and walks up to him
       this.sanctuaryFarmerHasWaved = false;
       this.sanctuaryFarmerWaveTimer = 0;
       this.leftHandShakeTimer = 0;
@@ -9263,10 +9245,13 @@ window.game = this;
       }
 
       // Natural wandering: turn and move simultaneously (no tank-like rotation).
-      // Pauses to look around, sometimes jogs, jogs a lap around the mountain every few minutes.
-      // Avoids mountain massif, portal slab, and waterfall rocks.
-      // Safe wander box (local coords): x [-16, 10], z [-4, 22] — clear of portal (-20.5,7.5),
-      // mountain massif (~15,-20), and waterfall rocks (~7,-13).
+      // Pauses to look around, sometimes jogs.
+      // Every step is collision-checked before being committed:
+      //   1. Mountain massif — authoritative 3D mesh check via getMountainSurfaceElevation()
+      //   2. Portal slab — local (-20.5, 7.5), radius ~4.5m
+      //   3. Waterfall rocks / plunge pool — local (~8, -13), radius ~7m
+      //   4. Boulders — cylinder colliders with isBoulder === true
+      //   5. Rising terrain — ground Y deviating >1m from sanctuary floor
       const SAFE_X_MIN = -16.0;
       const SAFE_X_MAX = 10.0;
       const SAFE_Z_MIN = -4.0;
@@ -9326,21 +9311,24 @@ window.game = this;
         const hitBoundary = (clampedX !== nx || clampedZ !== nz);
 
         // Avoid-zone checks BEFORE committing the step
-        const dPortal = Math.hypot(clampedX - this.sanctuaryFarmerPortalAvoidX, clampedZ - this.sanctuaryFarmerPortalAvoidZ);
-        const dMtn = Math.hypot(clampedX - this.sanctuaryFarmerMountainAvoidX, clampedZ - this.sanctuaryFarmerMountainAvoidZ);
-        const dWf = Math.hypot(clampedX - this.sanctuaryFarmerWaterfallAvoidX, clampedZ - this.sanctuaryFarmerWaterfallAvoidZ);
+        const ndX = clampedX;
+        const ndZ = clampedZ;
+        const wx = originX + ndX;
+        const wz = originZ + ndZ;
 
-        const onMountain = this.getMountainSurfaceElevation(originX + clampedX, originZ + clampedZ) !== null;
-        const ngY = this.getSafeRoomGroundY(originX + clampedX, originZ + clampedZ);
+        const dPortal = Math.hypot(ndX - (-20.5), ndZ - 7.5);
+        const dWf = Math.hypot(ndX - 8.0, ndZ - (-13.0));
+
+        const onMountain = this.getMountainSurfaceElevation(wx, wz) !== null;
+        const ngY = this.getSafeRoomGroundY(wx, wz);
 
         let blocked = false;
         if (hitBoundary) blocked = true;
-        else if (dPortal < this.sanctuaryFarmerPortalAvoidRadius) blocked = true;
-        else if (dMtn < this.sanctuaryFarmerMountainAvoidRadius) blocked = true;
-        else if (dWf < this.sanctuaryFarmerWaterfallAvoidRadius) blocked = true;
+        else if (dPortal < 4.5) blocked = true;
+        else if (dWf < 7.0) blocked = true;
         else if (onMountain) blocked = true;
-        else if (Math.abs(ngY - sr.originY) > 1.2) blocked = true;
-        else if (this._farmerWouldHitBoulder(clampedX, clampedZ)) blocked = true;
+        else if (Math.abs(ngY - sr.originY) > 1.0) blocked = true;
+        else if (this._farmerWouldHitBoulder(ndX, ndZ)) blocked = true;
 
         if (blocked) {
           // Stop and pick a new heading (no snapping, just stop and rotate next cycle)
