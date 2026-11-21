@@ -9265,77 +9265,47 @@ window.game = this;
       // Natural wandering: turn and move simultaneously (no tank-like rotation).
       // Pauses to look around, sometimes jogs, jogs a lap around the mountain every few minutes.
       // Avoids mountain massif, portal slab, and waterfall rocks.
-      const SAFE_WANDER_R = 22.0; // max distance from origin for wandering
-
-      // Jog timer: every few minutes, jog a lap around the mountain
-      this.sanctuaryFarmerLapTimer -= delta;
-      if (this.sanctuaryFarmerLapTimer <= 0 && this.sanctuaryFarmerState !== 'JOG') {
-        this.sanctuaryFarmerLapTimer = 180.0 + Math.random() * 120.0; // next jog in 3-5 min
-        this.sanctuaryFarmerState = 'JOG';
-        this.sanctuaryFarmerMoveSpeed = 3.8;
-        this.sanctuaryFarmerStateTimer = 14.0 + Math.random() * 6.0; // jog duration
-        this.sanctuaryFarmerJogAngle = (this.sanctuaryFarmerJogAngle || 0) + Math.PI * 0.5;
-        if (this.sanctuaryFarmerCurrentAction !== 'run' && this.sanctuaryFarmerActions['run']) {
-          this._fadeFarmerAction('run');
-        }
-      }
+      // Safe wander box (local coords): x [-16, 10], z [-4, 22] — clear of portal (-20.5,7.5),
+      // mountain massif (~15,-20), and waterfall rocks (~7,-13).
+      const SAFE_X_MIN = -16.0;
+      const SAFE_X_MAX = 10.0;
+      const SAFE_Z_MIN = -4.0;
+      const SAFE_Z_MAX = 22.0;
 
       // Main state timer: walk/idle cycles
-      if (this.sanctuaryFarmerState !== 'JOG') {
-        this.sanctuaryFarmerStateTimer -= delta;
+      this.sanctuaryFarmerStateTimer -= delta;
 
-        if (this.sanctuaryFarmerStateTimer <= 0) {
-          const roll = Math.random();
-          if (roll < 0.25) {
-            // Pause to look around at surroundings
-            this.sanctuaryFarmerState = 'IDLE';
-            this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
-            this.sanctuaryFarmerMoveSpeed = 0;
-            if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
-              this._fadeFarmerAction('idle');
-            }
-          } else {
-            // Walk or jog toward a random direction
-            this.sanctuaryFarmerState = 'WALK';
-            const willRun = Math.random() < 0.35; // 35% chance to jog
-            this.sanctuaryFarmerMoveSpeed = willRun ? 3.0 : 1.8;
-            this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
-            if (willRun) {
-              if (this.sanctuaryFarmerCurrentAction !== 'run' && this.sanctuaryFarmerActions['run']) {
-                this._fadeFarmerAction('run');
-              }
-            } else {
-              if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
-                this._fadeFarmerAction('walk');
-              }
-            }
-            // Pick a new heading, biased slightly toward current facing so it's not erratic
-            const jitter = (Math.random() - 0.5) * 2.2;
-            this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY + jitter;
-          }
-        }
-      }
-
-      // Jog lap around the mountain (circular path)
-      if (this.sanctuaryFarmerState === 'JOG') {
-        const cx = -8.0, cz = 0.0; // lap center, west of origin, clear of mountain
-        const r = 14.0;
-        this.sanctuaryFarmerJogAngle = (this.sanctuaryFarmerJogAngle || 0) + (Math.PI * 2 / this.sanctuaryFarmerStateTimer) * delta;
-        const nx = cx + Math.sin(this.sanctuaryFarmerJogAngle) * r;
-        const nz = cz + Math.cos(this.sanctuaryFarmerJogAngle) * r;
-        this.sanctuaryFarmerStateTimer -= delta;
-        this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerJogAngle + Math.PI / 2;
-        this.sanctuaryFarmerRotY = this.sanctuaryFarmerTargetRotY;
-        this.sanctuaryFarmerX = nx;
-        this.sanctuaryFarmerZ = nz;
-        if (this.sanctuaryFarmerStateTimer <= 0) {
+      if (this.sanctuaryFarmerStateTimer <= 0) {
+        const roll = Math.random();
+        if (roll < 0.25) {
+          // Pause to look around at surroundings
           this.sanctuaryFarmerState = 'IDLE';
-          this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
+          this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
+          this.sanctuaryFarmerMoveSpeed = 0;
           if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
             this._fadeFarmerAction('idle');
           }
+        } else {
+          // Walk or jog toward a random direction
+          this.sanctuaryFarmerState = 'WALK';
+          const willRun = Math.random() < 0.30; // 30% chance to jog
+          this.sanctuaryFarmerMoveSpeed = willRun ? 3.2 : 1.8;
+          this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
+          if (willRun) {
+            if (this.sanctuaryFarmerCurrentAction !== 'run' && this.sanctuaryFarmerActions['run']) {
+              this._fadeFarmerAction('run');
+            }
+          } else {
+            if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
+              this._fadeFarmerAction('walk');
+            }
+          }
+          // Pick a new heading
+          this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
         }
-      } else if (this.sanctuaryFarmerState === 'WALK') {
+      }
+
+      if (this.sanctuaryFarmerState === 'WALK') {
         // Smoothly rotate toward target heading
         let rDiff = Math.atan2(Math.sin(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY), Math.cos(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY));
         const maxTurn = this.sanctuaryFarmerTurnSpeed * delta;
@@ -9344,47 +9314,48 @@ window.game = this;
         } else {
           this.sanctuaryFarmerRotY = this.sanctuaryFarmerTargetRotY;
         }
-        this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
 
         // Move forward while turning (natural, not tank-like)
         const step = this.sanctuaryFarmerMoveSpeed * delta;
         const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
         const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
 
-        // Keep within wander radius
-        const d = Math.hypot(nx, nz);
-        if (d > SAFE_WANDER_R) {
-          this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY + Math.PI; // turn back inward
-          this.sanctuaryFarmerStateTimer = 0; // force new heading soon
-        }
+        // Keep within safe wander box
+        let clampedX = Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX);
+        let clampedZ = Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX);
+        const hitBoundary = (clampedX !== nx || clampedZ !== nz);
 
         // Avoid-zone checks BEFORE committing the step
-        const dPortal = Math.hypot(nx - this.sanctuaryFarmerPortalAvoidX, nz - this.sanctuaryFarmerPortalAvoidZ);
-        const dMtn = Math.hypot(nx - this.sanctuaryFarmerMountainAvoidX, nz - this.sanctuaryFarmerMountainAvoidZ);
-        const dWf = Math.hypot(nx - this.sanctuaryFarmerWaterfallAvoidX, nz - this.sanctuaryFarmerWaterfallAvoidZ);
+        const dPortal = Math.hypot(clampedX - this.sanctuaryFarmerPortalAvoidX, clampedZ - this.sanctuaryFarmerPortalAvoidZ);
+        const dMtn = Math.hypot(clampedX - this.sanctuaryFarmerMountainAvoidX, clampedZ - this.sanctuaryFarmerMountainAvoidZ);
+        const dWf = Math.hypot(clampedX - this.sanctuaryFarmerWaterfallAvoidX, clampedZ - this.sanctuaryFarmerWaterfallAvoidZ);
 
-        const onMountain = this.getMountainSurfaceElevation(originX + nx, originZ + nz) !== null;
-        const ngY = this.getSafeRoomGroundY(originX + nx, originZ + nz);
+        const onMountain = this.getMountainSurfaceElevation(originX + clampedX, originZ + clampedZ) !== null;
+        const ngY = this.getSafeRoomGroundY(originX + clampedX, originZ + clampedZ);
 
         let blocked = false;
-        if (dPortal < this.sanctuaryFarmerPortalAvoidRadius) blocked = true;
+        if (hitBoundary) blocked = true;
+        else if (dPortal < this.sanctuaryFarmerPortalAvoidRadius) blocked = true;
         else if (dMtn < this.sanctuaryFarmerMountainAvoidRadius) blocked = true;
         else if (dWf < this.sanctuaryFarmerWaterfallAvoidRadius) blocked = true;
         else if (onMountain) blocked = true;
         else if (Math.abs(ngY - sr.originY) > 1.2) blocked = true;
-        else if (this._farmerWouldHitBoulder(nx, nz)) blocked = true;
+        else if (this._farmerWouldHitBoulder(clampedX, clampedZ)) blocked = true;
 
         if (blocked) {
-          // Turn away gradually, don't snap
-          this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY + (Math.random() < 0.5 ? 2.2 : -2.2);
-          this.sanctuaryFarmerStateTimer = 0.5; // pick new heading soon
+          // Stop and pick a new heading (no snapping, just stop and rotate next cycle)
+          this.sanctuaryFarmerState = 'IDLE';
+          this.sanctuaryFarmerStateTimer = 0.8 + Math.random() * 1.2;
+          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+            this._fadeFarmerAction('idle');
+          }
         } else {
-          this.sanctuaryFarmerX = nx;
-          this.sanctuaryFarmerZ = nz;
+          this.sanctuaryFarmerX = clampedX;
+          this.sanctuaryFarmerZ = clampedZ;
         }
       } else {
-        // IDLE: just rotate slightly to look around
-        this.sanctuaryFarmerTargetRotY += (Math.random() - 0.5) * 0.4;
+        // IDLE: rotate slightly to look around
+        this.sanctuaryFarmerTargetRotY += (Math.random() - 0.5) * 0.3;
         let rDiff = Math.atan2(Math.sin(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY), Math.cos(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY));
         const maxTurn = this.sanctuaryFarmerTurnSpeed * delta * 0.5;
         if (Math.abs(rDiff) > maxTurn) {
@@ -9392,7 +9363,6 @@ window.game = this;
         } else {
           this.sanctuaryFarmerRotY = this.sanctuaryFarmerTargetRotY;
         }
-        this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
       }
 
       // Snap to sanctuary ground
