@@ -4511,6 +4511,13 @@
       this.sanctuaryFarmerMoveSpeed = 1.8;
       this.sanctuaryFarmerHasWaved = false;
       this.sanctuaryFarmerWaveTimer = 0;
+      // Gradual counter-clockwise orbit around the mountain massif (local ~15, -20).
+      this.sanctuaryFarmerOrbitAngle = 0;
+      this.sanctuaryFarmerOrbitRadius = 16;
+      this.sanctuaryFarmerOrbitTimer = 0;
+      this.sanctuaryFarmerOrbitTargetX = 0;
+      this.sanctuaryFarmerOrbitTargetZ = 0;
+      this.sanctuaryFarmerOrbiting = false;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
@@ -9256,23 +9263,47 @@ window.game = this;
       const SAFE_X_MAX = 10.0;
       const SAFE_Z_MIN = -4.0;
       const SAFE_Z_MAX = 22.0;
+      // Mountain massif center (local) — orbited counter-clockwise.
+      const MOUNTAIN_CX = 15.0;
+      const MOUNTAIN_CZ = -20.0;
 
       // Main state timer: walk/idle cycles
       this.sanctuaryFarmerStateTimer -= delta;
+
+      // Orbit timer: periodically advance the counter-clockwise orbit around the mountain.
+      this.sanctuaryFarmerOrbitTimer -= delta;
+      if (this.sanctuaryFarmerOrbitTimer <= 0) {
+        this.sanctuaryFarmerOrbitTimer = 5.0 + Math.random() * 3.0;
+        // Advance angle counter-clockwise (positive angle = CCW in x-z plane).
+        this.sanctuaryFarmerOrbitAngle += 0.35;
+        this.sanctuaryFarmerOrbitTargetX = MOUNTAIN_CX + this.sanctuaryFarmerOrbitRadius * Math.cos(this.sanctuaryFarmerOrbitAngle);
+        this.sanctuaryFarmerOrbitTargetZ = MOUNTAIN_CZ + this.sanctuaryFarmerOrbitRadius * Math.sin(this.sanctuaryFarmerOrbitAngle);
+      }
 
       if (this.sanctuaryFarmerStateTimer <= 0) {
         const roll = Math.random();
         if (roll < 0.25) {
           // Pause to look around at surroundings
           this.sanctuaryFarmerState = 'IDLE';
+          this.sanctuaryFarmerOrbiting = false;
           this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
           this.sanctuaryFarmerMoveSpeed = 0;
           if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
             this._fadeFarmerAction('idle');
           }
+        } else if (roll < 0.55) {
+          // Walk toward the next counter-clockwise orbit point around the mountain
+          this.sanctuaryFarmerState = 'WALK';
+          this.sanctuaryFarmerOrbiting = true;
+          this.sanctuaryFarmerMoveSpeed = 1.8;
+          this.sanctuaryFarmerStateTimer = 3.0 + Math.random() * 2.0;
+          if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
+            this._fadeFarmerAction('walk');
+          }
         } else {
           // Walk or jog toward a random direction
           this.sanctuaryFarmerState = 'WALK';
+          this.sanctuaryFarmerOrbiting = false;
           const willRun = Math.random() < 0.30; // 30% chance to jog
           this.sanctuaryFarmerMoveSpeed = willRun ? 3.2 : 1.8;
           this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
@@ -9291,13 +9322,29 @@ window.game = this;
       }
 
       if (this.sanctuaryFarmerState === 'WALK') {
+        let targetRotY = this.sanctuaryFarmerTargetRotY;
+        let useSafeBox = true;
+
+        // If heading toward an orbit point, steer directly at it and allow leaving the safe box.
+        if (this.sanctuaryFarmerOrbiting && this.sanctuaryFarmerMoveSpeed > 0) {
+          const dxOrbit = this.sanctuaryFarmerOrbitTargetX - this.sanctuaryFarmerX;
+          const dzOrbit = this.sanctuaryFarmerOrbitTargetZ - this.sanctuaryFarmerZ;
+          if (Math.hypot(dxOrbit, dzOrbit) > 0.5) {
+            targetRotY = Math.atan2(dxOrbit, dzOrbit);
+            useSafeBox = false;
+          } else {
+            // Reached orbit point; stop orbiting this lap
+            this.sanctuaryFarmerOrbiting = false;
+          }
+        }
+
         // Smoothly rotate toward target heading
-        let rDiff = Math.atan2(Math.sin(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY), Math.cos(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY));
+        let rDiff = Math.atan2(Math.sin(targetRotY - this.sanctuaryFarmerRotY), Math.cos(targetRotY - this.sanctuaryFarmerRotY));
         const maxTurn = this.sanctuaryFarmerTurnSpeed * delta;
         if (Math.abs(rDiff) > maxTurn) {
           this.sanctuaryFarmerRotY += Math.sign(rDiff) * maxTurn;
         } else {
-          this.sanctuaryFarmerRotY = this.sanctuaryFarmerTargetRotY;
+          this.sanctuaryFarmerRotY = targetRotY;
         }
 
         // Move forward while turning (natural, not tank-like)
@@ -9305,10 +9352,10 @@ window.game = this;
         const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
         const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
 
-        // Keep within safe wander box
-        let clampedX = Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX);
-        let clampedZ = Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX);
-        const hitBoundary = (clampedX !== nx || clampedZ !== nz);
+        // Keep within safe wander box (unless orbiting the mountain)
+        let clampedX = useSafeBox ? Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX) : nx;
+        let clampedZ = useSafeBox ? Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX) : nz;
+        const hitBoundary = useSafeBox && (clampedX !== nx || clampedZ !== nz);
 
         // Avoid-zone checks BEFORE committing the step
         const ndX = clampedX;
