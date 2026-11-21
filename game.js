@@ -9223,13 +9223,17 @@ window.game = this;
           const step = Math.min(dist, this.sanctuaryFarmerMoveSpeed * delta);
           const nx = (dx / dist) * step;
           const nz = (dz / dist) * step;
-          if (!this._farmerWouldHitBoulder(this.sanctuaryFarmerX + nx, this.sanctuaryFarmerZ + nz)) {
-            this.sanctuaryFarmerX += nx;
-            this.sanctuaryFarmerZ += nz;
-            this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
-          } else {
-            // Boulder in path: pick a new destination rather than clipping
+          const nextX = this.sanctuaryFarmerX + nx;
+          const nextZ = this.sanctuaryFarmerZ + nz;
+          const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
+          const curGY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
+          // Player-style collision: never clip through boulders or walk up onto the mountain
+          if (nextGY - curGY > 1.2 || this._farmerWouldHitBoulder(nextX, nextZ)) {
             this._pickFarmerDestination();
+          } else {
+            this.sanctuaryFarmerX = nextX;
+            this.sanctuaryFarmerZ = nextZ;
+            this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
           }
           const actName = isRun ? 'run' : 'walk';
           if (this.sanctuaryFarmerActions[actName] && this.sanctuaryFarmerCurrentAction !== actName) {
@@ -9256,13 +9260,38 @@ window.game = this;
     }
 
     _pickFarmerDestination() {
-      const angle = Math.random() * Math.PI * 2;
-      const r = 5.0 + Math.random() * 22.0;
-      let tx = Math.cos(angle) * r;
-      let tz = Math.sin(angle) * r;
-      // Keep within the sanctuary meadow area
-      tx = Math.max(-52, Math.min(52, tx));
-      tz = Math.max(-52, Math.min(52, tz));
+      const sr = this.safeRoomSanctuary;
+      if (!sr) return;
+      const originX = sr.originX;
+      const originZ = sr.originZ;
+
+      // Pick a flat meadow destination: clear of the mountain rim and not on/near a boulder
+      let tx = this.sanctuaryFarmerTargetX;
+      let tz = this.sanctuaryFarmerTargetZ;
+      let found = false;
+      for (let i = 0; i < 40; i++) {
+        const angle = Math.random() * Math.PI * 2;
+        const r = 6.0 + Math.random() * 18.0;
+        const cx = Math.cos(angle) * r;
+        const cz = Math.sin(angle) * r;
+        // Stay well inside the flat meadow, clear of the mountain rim (rises at distFromCenter > 36)
+        if (Math.hypot(cx, cz) > 34.0) continue;
+        const gY = this.getSafeRoomGroundY(originX + cx, originZ + cz);
+        // Only accept level meadow ground near originY; reject rising mountain terrain
+        if (Math.abs(gY - sr.originY) > 1.6) continue;
+        // Avoid boulders at the destination (player-style cylinder collision)
+        if (this._farmerWouldHitBoulder(cx, cz)) continue;
+        tx = cx;
+        tz = cz;
+        found = true;
+        break;
+      }
+      if (!found) {
+        // No valid meadow spot this turn: stay put and try again later
+        this.sanctuaryFarmerState = 'IDLE_LOOK';
+        this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
+        return;
+      }
       this.sanctuaryFarmerTargetX = tx;
       this.sanctuaryFarmerTargetZ = tz;
       // Calm NPC: mostly walking, occasionally a short run (~10% chance)
