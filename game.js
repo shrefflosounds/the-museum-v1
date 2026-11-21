@@ -9299,26 +9299,39 @@ window.game = this;
           // Base heading: steer toward the current waypoint.
           const targetRotY = Math.atan2(dx, dz);
 
-          // Mountain-edge avoidance: if the next step would land on the mountain,
-          // blend the heading to slide along the contour (away from mountain center).
-          let adjustedRotY = targetRotY;
+          // Proactive lookahead: steer away from surfaces before reaching them,
+          // as if the farmer can see them ahead. Check several points along the
+          // current heading; if any would be blocked, blend the heading toward a
+          // safe tangent early so he curves around instead of touching.
           const step = this.sanctuaryFarmerMoveSpeed * delta;
-          const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
-          const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
-          const wx = originX + nx;
-          const wz = originZ + nz;
-          if (this.getMountainSurfaceElevation(wx, wz) !== null) {
-            const awayX = wx - MOUNTAIN_CX;
-            const awayZ = wz - MOUNTAIN_CZ;
-            const awayRotY = Math.atan2(awayX, awayZ);
-            // Tangent slide: 90 deg from the away-from-center vector keeps him
-            // moving along the mountain edge rather than into it.
-            const slideRotY = awayRotY - Math.PI / 2;
-            let rDiff = Math.atan2(Math.sin(slideRotY - targetRotY), Math.cos(slideRotY - targetRotY));
-            adjustedRotY = targetRotY + Math.sign(rDiff) * Math.min(Math.abs(rDiff), 1.4);
+          const lookAheadCount = 3;
+          let blockedAhead = false;
+          let avoidRotY = targetRotY;
+          for (let k = 1; k <= lookAheadCount; k++) {
+            const laStep = step * k;
+            const lx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * laStep;
+            const lz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * laStep;
+            const lwx = originX + lx;
+            const lwz = originZ + lz;
+            if (this._farmerPointBlocked(lx, lz, lwx, lwz)) {
+              blockedAhead = true;
+              const awayX = lwx - MOUNTAIN_CX;
+              const awayZ = lwz - MOUNTAIN_CZ;
+              const awayRotY = Math.atan2(awayX, awayZ);
+              const slideRotY = awayRotY - Math.PI / 2;
+              // Stronger avoidance the closer the blocked point is.
+              const weight = 1.0 - (k - 1) / lookAheadCount;
+              let rDiff = Math.atan2(Math.sin(slideRotY - targetRotY), Math.cos(slideRotY - targetRotY));
+              avoidRotY = targetRotY + Math.sign(rDiff) * Math.min(Math.abs(rDiff), 1.6 * weight);
+              break;
+            }
           }
 
-          // Smoothly rotate toward the (possibly slide-adjusted) heading.
+          // Use the lookahead-adjusted heading when something is ahead; otherwise
+          // head straight for the waypoint.
+          const adjustedRotY = blockedAhead ? avoidRotY : targetRotY;
+
+          // Smoothly rotate toward the heading.
           let rDiff = Math.atan2(Math.sin(adjustedRotY - this.sanctuaryFarmerRotY), Math.cos(adjustedRotY - this.sanctuaryFarmerRotY));
           const maxTurn = this.sanctuaryFarmerTurnSpeed * delta;
           if (Math.abs(rDiff) > maxTurn) {
@@ -9334,53 +9347,23 @@ window.game = this;
           const wx2 = originX + nx2;
           const wz2 = originZ + nz2;
 
-          // Collision checks before committing the step.
-          const dPortal = Math.hypot(nx2 - (-20.5), nz2 - 7.5);
-          const dWf = Math.hypot(nx2 - 8.0, nz2 - (-13.0));
-          const onMountain2 = this.getMountainSurfaceElevation(wx2, wz2) !== null;
-          const ngY = this.getSafeRoomGroundY(wx2, wz2);
-          const hitBoulder = this._farmerWouldHitBoulder(nx2, nz2);
-
-          const blocked = dPortal < 4.5 || dWf < 7.0 || onMountain2 ||
-            Math.abs(ngY - sr.originY) > 1.0 || hitBoulder;
-
-          if (blocked) {
+          // Final backstop: never commit a step into a blocked surface.
+          if (this._farmerPointBlocked(nx2, nz2, wx2, wz2)) {
             this.sanctuaryFarmerStuckTimer += delta;
-            // Try to slide around the obstacle instead of stopping dead.
-            if (hitBoulder) {
-              let nearestBoulder = null;
-              let nearestDist = 999;
-              for (let i = 0; i < this.colliders.length; i++) {
-                const c = this.colliders[i];
-                if (!c || c.type !== 'cylinder' || !c.isBoulder) continue;
-                const d = Math.hypot(wx2 - c.x, wz2 - c.z);
-                if (d < nearestDist) { nearestDist = d; nearestBoulder = c; }
-              }
-              if (nearestBoulder) {
-                const awayX = wx2 - nearestBoulder.x;
-                const awayZ = wz2 - nearestBoulder.z;
-                const awayRotY = Math.atan2(awayX, awayZ);
-                const slideRotY = awayRotY - Math.PI / 2;
-                let rDiff2 = Math.atan2(Math.sin(slideRotY - this.sanctuaryFarmerRotY), Math.cos(slideRotY - this.sanctuaryFarmerRotY));
-                this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
-              } else {
-                this.sanctuaryFarmerRotY += this.sanctuaryFarmerTurnSpeed * delta;
-              }
-            } else if (onMountain2) {
+            // Slide tangentially along the obstacle.
+            let slideRotY = this.sanctuaryFarmerRotY;
+            if (this.getMountainSurfaceElevation(wx2, wz2) !== null) {
               const awayX = wx2 - MOUNTAIN_CX;
               const awayZ = wz2 - MOUNTAIN_CZ;
-              const awayRotY = Math.atan2(awayX, awayZ);
-              const slideRotY = awayRotY - Math.PI / 2;
-              let rDiff2 = Math.atan2(Math.sin(slideRotY - this.sanctuaryFarmerRotY), Math.cos(slideRotY - this.sanctuaryFarmerRotY));
-              this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
+              slideRotY = Math.atan2(awayX, awayZ) - Math.PI / 2;
             } else {
-              // Portal / waterfall / terrain: turn away from the blocked area.
-              this.sanctuaryFarmerRotY += this.sanctuaryFarmerTurnSpeed * delta;
+              // Boulder / portal / terrain: turn away from the blocked area.
+              slideRotY += this.sanctuaryFarmerTurnSpeed * delta;
             }
+            let rDiff2 = Math.atan2(Math.sin(slideRotY - this.sanctuaryFarmerRotY), Math.cos(slideRotY - this.sanctuaryFarmerRotY));
+            this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
             this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
-            // Keep walking while sliding; don't go fully idle.
             if (this.sanctuaryFarmerStuckTimer > 4.0) {
-              // Been blocked too long — skip to the next waypoint to recover.
               this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
               this.sanctuaryFarmerStuckTimer = 0;
             }
@@ -9427,6 +9410,22 @@ window.game = this;
         const d = Math.hypot(wx - c.x, wz - c.z);
         if (d < (c.radius + 0.85)) return true;
       }
+      return false;
+    }
+
+    // Returns true if the local (x, z) step would place the farmer on a blocked
+    // surface (mountain, boulder, portal, waterfall, or off-level terrain).
+    _farmerPointBlocked(x, z, wx, wz) {
+      const sr = this.safeRoomSanctuary;
+      if (!sr) return true;
+      const dPortal = Math.hypot(x - (-20.5), z - 7.5);
+      const dWf = Math.hypot(x - 8.0, z - (-13.0));
+      if (dPortal < 4.5) return true;
+      if (dWf < 7.0) return true;
+      if (this.getMountainSurfaceElevation(wx, wz) !== null) return true;
+      const ngY = this.getSafeRoomGroundY(wx, wz);
+      if (Math.abs(ngY - sr.originY) > 1.0) return true;
+      if (this._farmerWouldHitBoulder(x, z)) return true;
       return false;
     }
 
