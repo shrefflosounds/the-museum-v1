@@ -9258,7 +9258,7 @@ window.game = this;
       const MOUNTAIN_CZ = -20.0;
 
       const LAP_WAYPOINTS = [
-        { x: -24.0, z: 14.0 },   // west / spawn side
+        { x: -30.0, z: 20.0 },   // west / spawn side (clear of portal slab)
         { x: -24.0, z: -52.0 },  // north-west (past mountain's north end)
         { x: 62.0, z: -52.0 },   // north-east (past mountain's east end)
         { x: 62.0, z: 26.0 },    // south-east (past mountain's south end)
@@ -9354,24 +9354,38 @@ window.game = this;
           const wz2 = originZ + nz2;
 
           // Final backstop: never commit a step into a blocked surface.
+          const dPortal2 = Math.hypot(nx2 - (-20.5), nz2 - 7.5);
           if (this._farmerPointBlocked(nx2, nz2, wx2, wz2, curGndY, MAX_STEP)) {
             this.sanctuaryFarmerStuckTimer += delta;
-            // Slide tangentially along the obstacle.
-            let slideRotY = this.sanctuaryFarmerRotY;
-            if (this.getMountainSurfaceElevation(wx2, wz2) !== null) {
-              const awayX = wx2 - MOUNTAIN_CX;
-              const awayZ = wz2 - MOUNTAIN_CZ;
-              slideRotY = Math.atan2(awayX, awayZ) - Math.PI / 2;
-            } else {
-              // Boulder / portal / terrain: turn away from the blocked area.
-              slideRotY += this.sanctuaryFarmerTurnSpeed * delta;
-            }
-            let rDiff2 = Math.atan2(Math.sin(slideRotY - this.sanctuaryFarmerRotY), Math.cos(slideRotY - this.sanctuaryFarmerRotY));
-            this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
-            this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
-            if (this.sanctuaryFarmerStuckTimer > 4.0) {
+            // Permanent obstacles (portal slab) never clear — skip straight to the
+            // next waypoint instead of sliding back and forth forever.
+            const portalBlocked = dPortal2 < 4.5;
+            if (portalBlocked) {
               this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
               this.sanctuaryFarmerStuckTimer = 0;
+              this.sanctuaryFarmerMoveSpeed = 0;
+              this.sanctuaryFarmerState = 'IDLE';
+              this.sanctuaryFarmerLapTimer = 2.0 + Math.random() * 1.5;
+              if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+                this._fadeFarmerAction('idle');
+              }
+            } else {
+              // Slide tangentially along the obstacle (mountain / boulder / terrain).
+              let slideRotY = this.sanctuaryFarmerRotY;
+              if (this.getMountainSurfaceElevation(wx2, wz2) !== null) {
+                const awayX = wx2 - MOUNTAIN_CX;
+                const awayZ = wz2 - MOUNTAIN_CZ;
+                slideRotY = Math.atan2(awayX, awayZ) - Math.PI / 2;
+              } else {
+                slideRotY += this.sanctuaryFarmerTurnSpeed * delta;
+              }
+              let rDiff2 = Math.atan2(Math.sin(slideRotY - this.sanctuaryFarmerRotY), Math.cos(slideRotY - this.sanctuaryFarmerRotY));
+              this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
+              this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
+              if (this.sanctuaryFarmerStuckTimer > 4.0) {
+                this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
+                this.sanctuaryFarmerStuckTimer = 0;
+              }
             }
           } else {
             this.sanctuaryFarmerStuckTimer = 0;
