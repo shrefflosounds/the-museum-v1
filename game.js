@@ -9195,11 +9195,9 @@ window.game = this;
       const originX = sr.originX;
       const originZ = sr.originZ;
 
-      // Snap to sanctuary ground
+      // Snap to sanctuary ground (always, even while model loads)
       const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
       this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
-
-      if (!this.sanctuaryFarmer) return; // model still loading
 
       this.sanctuaryFarmerStateTimer -= delta;
 
@@ -9210,7 +9208,7 @@ window.game = this;
           this.sanctuaryFarmerLookTimer = 0;
           this.sanctuaryFarmerTargetRotY += (Math.random() - 0.5) * 0.8;
         }
-        if (this.sanctuaryFarmerActions['idle'] && this.sanctuaryFarmerCurrentAction !== 'idle') {
+        if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
           this._fadeFarmerAction('idle');
         }
         if (this.sanctuaryFarmerStateTimer <= 0) {
@@ -9242,7 +9240,7 @@ window.game = this;
             this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
           }
           const actName = isRun ? 'run' : 'walk';
-          if (this.sanctuaryFarmerActions[actName] && this.sanctuaryFarmerCurrentAction !== actName) {
+          if (this.sanctuaryFarmerCurrentAction !== actName && this.sanctuaryFarmerActions[actName]) {
             this._fadeFarmerAction(actName);
           }
         } else {
@@ -9251,7 +9249,7 @@ window.game = this;
           this.sanctuaryFarmerZ = this.sanctuaryFarmerTargetZ;
           this.sanctuaryFarmerState = 'IDLE_LOOK';
           this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 4.0;
-          if (this.sanctuaryFarmerActions['idle'] && this.sanctuaryFarmerCurrentAction !== 'idle') {
+          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
             this._fadeFarmerAction('idle');
           }
         }
