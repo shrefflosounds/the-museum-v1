@@ -9383,8 +9383,17 @@ window.game = this;
               this.sanctuaryFarmerRotY += Math.sign(rDiff2) * Math.min(Math.abs(rDiff2), this.sanctuaryFarmerTurnSpeed * delta);
               this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
               if (this.sanctuaryFarmerStuckTimer > 4.0) {
+                // Been blocked too long — pause briefly, then continue to the next
+                // waypoint. Going to IDLE (instead of staying WALK at the same spot)
+                // prevents stuttering in place when the next leg is also blocked.
                 this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
                 this.sanctuaryFarmerStuckTimer = 0;
+                this.sanctuaryFarmerMoveSpeed = 0;
+                this.sanctuaryFarmerState = 'IDLE';
+                this.sanctuaryFarmerLapTimer = 2.0 + Math.random() * 1.5;
+                if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+                  this._fadeFarmerAction('idle');
+                }
               }
             }
           } else {
