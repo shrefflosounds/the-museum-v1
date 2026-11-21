@@ -4511,12 +4511,9 @@
       this.sanctuaryFarmerMoveSpeed = 1.8;
       this.sanctuaryFarmerHasWaved = false;
       this.sanctuaryFarmerWaveTimer = 0;
-      // Gradual counter-clockwise orbit around the mountain massif (local ~15, -20).
-      this.sanctuaryFarmerOrbitAngle = 0;
-      this.sanctuaryFarmerOrbitRadius = 16;
-      this.sanctuaryFarmerOrbitTimer = 0;
-      this.sanctuaryFarmerOrbitTargetX = 0;
-      this.sanctuaryFarmerOrbitTargetZ = 0;
+      // Gradual counter-clockwise lap around the mountain massif (local ~15, -20).
+      this.sanctuaryFarmerLapIdx = 0;
+      this.sanctuaryFarmerLapTimer = 0;
       this.sanctuaryFarmerOrbiting = false;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
@@ -9263,48 +9260,58 @@ window.game = this;
       const SAFE_X_MAX = 10.0;
       const SAFE_Z_MIN = -4.0;
       const SAFE_Z_MAX = 22.0;
-      // Mountain massif center (local) — orbited counter-clockwise.
-      const MOUNTAIN_CX = 15.0;
-      const MOUNTAIN_CZ = -20.0;
+
+      // Counter-clockwise lap waypoints around the mountain massif. Every waypoint
+      // sits outside the mountain body (X in ~[2,50], Z in ~[-41,15]) so
+      // getMountainSurfaceElevation() returns null and the lap path is never blocked
+      // by the mountain check. Portal slab (-20.5, 7.5) and waterfall (8, -13) are
+      // also clear of all waypoints and connecting segments.
+      const LAP_WAYPOINTS = [
+        { x: -14.0, z: 8.0 },   // west / spawn side
+        { x: -14.0, z: -42.0 }, // north-west (past mountain's north end)
+        { x: 52.0, z: -42.0 },  // north-east (past mountain's east end)
+        { x: 52.0, z: 18.0 },   // south-east (past mountain's south end)
+        { x: -14.0, z: 18.0 },  // south-west
+      ];
+      const LAP_RADIUS = 1.5;
 
       // Main state timer: walk/idle cycles
       this.sanctuaryFarmerStateTimer -= delta;
 
-      // Orbit timer: periodically advance the counter-clockwise orbit around the mountain.
-      this.sanctuaryFarmerOrbitTimer -= delta;
-      if (this.sanctuaryFarmerOrbitTimer <= 0) {
-        this.sanctuaryFarmerOrbitTimer = 5.0 + Math.random() * 3.0;
-        // Advance angle counter-clockwise (positive angle = CCW in x-z plane).
-        this.sanctuaryFarmerOrbitAngle += 0.35;
-        this.sanctuaryFarmerOrbitTargetX = MOUNTAIN_CX + this.sanctuaryFarmerOrbitRadius * Math.cos(this.sanctuaryFarmerOrbitAngle);
-        this.sanctuaryFarmerOrbitTargetZ = MOUNTAIN_CZ + this.sanctuaryFarmerOrbitRadius * Math.sin(this.sanctuaryFarmerOrbitAngle);
-      }
+      // Lap timer: pause briefly at each waypoint before continuing the lap.
+      this.sanctuaryFarmerLapTimer -= delta;
 
-      if (this.sanctuaryFarmerStateTimer <= 0) {
+      if (this.sanctuaryFarmerLapTimer <= 0 && this.sanctuaryFarmerState === 'IDLE') {
+        // Advance to the next counter-clockwise lap waypoint
+        this.sanctuaryFarmerLapIdx = (this.sanctuaryFarmerLapIdx + 1) % LAP_WAYPOINTS.length;
+        this.sanctuaryFarmerState = 'WALK';
+        this.sanctuaryFarmerMoveSpeed = 1.8;
+        this.sanctuaryFarmerStateTimer = 999.0; // waypoint arrival drives transitions
+        if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
+          this._fadeFarmerAction('walk');
+        }
+      } else if (this.sanctuaryFarmerStateTimer <= 0) {
         const roll = Math.random();
-        if (roll < 0.25) {
+        if (roll < 0.30) {
           // Pause to look around at surroundings
           this.sanctuaryFarmerState = 'IDLE';
-          this.sanctuaryFarmerOrbiting = false;
           this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
           this.sanctuaryFarmerMoveSpeed = 0;
           if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
             this._fadeFarmerAction('idle');
           }
-        } else if (roll < 0.55) {
-          // Walk toward the next counter-clockwise orbit point around the mountain
+        } else if (roll < 0.60) {
+          // Walk toward the next counter-clockwise lap waypoint around the mountain
           this.sanctuaryFarmerState = 'WALK';
-          this.sanctuaryFarmerOrbiting = true;
           this.sanctuaryFarmerMoveSpeed = 1.8;
-          this.sanctuaryFarmerStateTimer = 3.0 + Math.random() * 2.0;
+          this.sanctuaryFarmerStateTimer = 999.0;
           if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
             this._fadeFarmerAction('walk');
           }
         } else {
           // Walk or jog toward a random direction
           this.sanctuaryFarmerState = 'WALK';
-          this.sanctuaryFarmerOrbiting = false;
-          const willRun = Math.random() < 0.30; // 30% chance to jog
+          const willRun = Math.random() < 0.30;
           this.sanctuaryFarmerMoveSpeed = willRun ? 3.2 : 1.8;
           this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
           if (willRun) {
@@ -9316,7 +9323,6 @@ window.game = this;
               this._fadeFarmerAction('walk');
             }
           }
-          // Pick a new heading
           this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
         }
       }
@@ -9325,16 +9331,24 @@ window.game = this;
         let targetRotY = this.sanctuaryFarmerTargetRotY;
         let useSafeBox = true;
 
-        // If heading toward an orbit point, steer directly at it and allow leaving the safe box.
-        if (this.sanctuaryFarmerOrbiting && this.sanctuaryFarmerMoveSpeed > 0) {
-          const dxOrbit = this.sanctuaryFarmerOrbitTargetX - this.sanctuaryFarmerX;
-          const dzOrbit = this.sanctuaryFarmerOrbitTargetZ - this.sanctuaryFarmerZ;
-          if (Math.hypot(dxOrbit, dzOrbit) > 0.5) {
-            targetRotY = Math.atan2(dxOrbit, dzOrbit);
-            useSafeBox = false;
+        // If walking a lap leg, steer toward the current waypoint and leave the safe box.
+        if (this.sanctuaryFarmerStateTimer > 0 && this.sanctuaryFarmerStateTimer > 10.0) {
+          const wp = LAP_WAYPOINTS[this.sanctuaryFarmerLapIdx];
+          const dx = wp.x - this.sanctuaryFarmerX;
+          const dz = wp.z - this.sanctuaryFarmerZ;
+          const distToWp = Math.hypot(dx, dz);
+          if (distToWp < LAP_RADIUS) {
+            // Arrived at waypoint: pause, lap advances on next cycle
+            this.sanctuaryFarmerState = 'IDLE';
+            this.sanctuaryFarmerLapTimer = 2.0 + Math.random() * 1.5;
+            this.sanctuaryFarmerMoveSpeed = 0;
+            this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
+            if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+              this._fadeFarmerAction('idle');
+            }
           } else {
-            // Reached orbit point; stop orbiting this lap
-            this.sanctuaryFarmerOrbiting = false;
+            targetRotY = Math.atan2(dx, dz);
+            useSafeBox = false;
           }
         }
 
@@ -9352,7 +9366,7 @@ window.game = this;
         const nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
         const nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
 
-        // Keep within safe wander box (unless orbiting the mountain)
+        // Keep within safe wander box (unless walking a lap leg)
         let clampedX = useSafeBox ? Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX) : nx;
         let clampedZ = useSafeBox ? Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX) : nz;
         const hitBoundary = useSafeBox && (clampedX !== nx || clampedZ !== nz);
@@ -9374,8 +9388,8 @@ window.game = this;
         else if (dPortal < 4.5) blocked = true;
         else if (dWf < 7.0) blocked = true;
         else if (onMountain) blocked = true;
-        else if (Math.abs(ngY - sr.originY) > 1.0) blocked = true;
         else if (this._farmerWouldHitBoulder(ndX, ndZ)) blocked = true;
+        else if (useSafeBox && Math.abs(ngY - sr.originY) > 1.0) blocked = true;
 
         if (blocked) {
           // Stop and pick a new heading (no snapping, just stop and rotate next cycle)
