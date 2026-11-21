@@ -9198,7 +9198,14 @@ window.game = this;
       const originX = sr.originX;
       const originZ = sr.originZ;
 
-      // Lap timer: every few minutes, run a full circuit around the meadow
+      // Safe meadow zone (local coords): west & north of origin, clear of the mountain massif
+      // which sits at local ~(+10, -13). Farmer starts at (-12, 8), safely inside this box.
+      const SAFE_X_MIN = -24.0;
+      const SAFE_X_MAX = 0.0;
+      const SAFE_Z_MIN = -8.0;
+      const SAFE_Z_MAX = 24.0;
+
+      // Lap timer: every few minutes, run a full circuit around the meadow center
       this.sanctuaryFarmerLapTimer -= delta;
       if (this.sanctuaryFarmerLapTimer <= 0 && this.sanctuaryFarmerState !== 'LAP') {
         this.sanctuaryFarmerLapTimer = 180.0 + Math.random() * 120.0; // next lap in 3-5 min
@@ -9242,10 +9249,10 @@ window.game = this;
       let targetRotY = this.sanctuaryFarmerTargetRotY;
 
       if (this.sanctuaryFarmerState === 'LAP') {
-        // Run in a circle around the meadow center (radius ~16)
+        // Run in a circle around meadow center (-10, 4), radius 10 — entirely inside safe zone
         this.sanctuaryFarmerLapAngle += (Math.PI * 2 / this.sanctuaryFarmerLapDuration) * delta;
-        nx = Math.sin(this.sanctuaryFarmerLapAngle) * 16.0;
-        nz = Math.cos(this.sanctuaryFarmerLapAngle) * 16.0;
+        nx = -10.0 + Math.sin(this.sanctuaryFarmerLapAngle) * 10.0;
+        nz = 4.0 + Math.cos(this.sanctuaryFarmerLapAngle) * 10.0;
         targetRotY = this.sanctuaryFarmerLapAngle + Math.PI / 2; // face direction of travel
         this.sanctuaryFarmerLapDuration -= delta;
         if (this.sanctuaryFarmerLapDuration <= 0) {
@@ -9261,33 +9268,23 @@ window.game = this;
         nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerTargetRotY) * step;
       }
 
-      // Player-style collision: check BEFORE committing the step
-      // 1. Never cross mountain radius boundary
-      // 2. Never step onto the 3D mountain massif (getMountainSurfaceElevation non-null)
-      // 3. Never step onto rising terrain (>1.0 above base)
-      // 4. Never clip through boulders
-      const nd = Math.hypot(nx, nz);
-      const ngY = this.getSafeRoomGroundY(originX + nx, originZ + nz);
-      const onMountain = this.getMountainSurfaceElevation(originX + nx, originZ + nz) !== null;
+      // Clamp to safe meadow zone (never enter mountain area at x > 0, z < -8)
+      nx = Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX);
+      nz = Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX);
 
-      let blocked = false;
-      if (nd > this.sanctuaryFarmerMountainRadius) blocked = true;
-      else if (onMountain) blocked = true;
-      else if (Math.abs(ngY - sr.originY) > 1.0) blocked = true;
-      else if (this._farmerWouldHitBoulder(nx, nz)) blocked = true;
+      // Boulder check before committing
+      let blocked = this._farmerWouldHitBoulder(nx, nz);
 
       if (blocked) {
         if (this.sanctuaryFarmerState === 'LAP') {
-          // End lap early if blocked
           this.sanctuaryFarmerState = 'IDLE';
           this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
           if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
             this._fadeFarmerAction('idle');
           }
         } else {
-          // Turn away and pick new direction
           this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
-          this.sanctuaryFarmerStateTimer = 0; // re-evaluate immediately
+          this.sanctuaryFarmerStateTimer = 0;
         }
       } else {
         this.sanctuaryFarmerX = nx;
