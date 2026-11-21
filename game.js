@@ -4513,6 +4513,7 @@
       // Lap running: every few minutes, run a full circuit around the meadow
       this.sanctuaryFarmerLapTimer = 0;
       this.sanctuaryFarmerLapInterval = 180.0 + Math.random() * 120.0; // 3-5 minutes
+      this.sanctuaryFarmerTrailIdx = 0;
       this.sanctuaryFarmerLapAngle = 0;
       this.sanctuaryFarmerLapDuration = 0;
       this.leftHandShakeTimer = 0;
@@ -9181,9 +9182,9 @@ window.game = this;
     }
 
     // Sanctuary Farmer: calm wandering NPC in the saferoom/sanctuary.
-    // Mostly walks around the meadow, sometimes pauses to look around, sometimes runs.
-    // Every few minutes, runs a full lap around the meadow area.
-    // Never walks onto the 3D mountain massif or into boulders.
+    // Follows the dirt trail waypoints around the meadow with natural wandering between nodes.
+    // Pauses to look around, sometimes runs, runs laps every few minutes.
+    // Never enters the mountain massif (safe zone: x <= 0, z >= -8).
     updateSanctuaryFarmer(delta) {
       if (!this.sanctuaryFarmerGroup) return;
 
@@ -9199,11 +9200,23 @@ window.game = this;
       const originZ = sr.originZ;
 
       // Safe meadow zone (local coords): west & north of origin, clear of the mountain massif
-      // which sits at local ~(+10, -13). Farmer starts at (-12, 8), safely inside this box.
-      const SAFE_X_MIN = -24.0;
+      // which sits at local ~(+10, -13).
       const SAFE_X_MAX = 0.0;
       const SAFE_Z_MIN = -8.0;
-      const SAFE_Z_MAX = 24.0;
+
+      // Dirt trail waypoints (local coords) forming a loop through the meadow
+      const TRAIL = [
+        { x: -18.5, z:  9.5 }, // spawn & portal glade
+        { x: -13.0, z:  6.0 },
+        { x:  -6.5, z:  2.5 },
+        { x:   0.0, z:  0.0 },
+        { x:  -4.5, z: 15.0 }, // southwest foothills glade
+        { x: -12.5, z: -2.5 }  // forest border clearing
+      ];
+
+      // Initialize trail target on first run
+      if (!this.sanctuaryFarmerTrailIdx) this.sanctuaryFarmerTrailIdx = 0;
+      if (this.sanctuaryFarmerTrailIdx >= TRAIL.length) this.sanctuaryFarmerTrailIdx = 0;
 
       // Lap timer: every few minutes, run a full circuit around the meadow center
       this.sanctuaryFarmerLapTimer -= delta;
@@ -9211,7 +9224,7 @@ window.game = this;
         this.sanctuaryFarmerLapTimer = 180.0 + Math.random() * 120.0; // next lap in 3-5 min
         this.sanctuaryFarmerState = 'LAP';
         this.sanctuaryFarmerLapAngle = 0;
-        this.sanctuaryFarmerLapDuration = 14.0 + Math.random() * 6.0; // ~14-20s lap
+        this.sanctuaryFarmerLapDuration = 14.0 + Math.random() * 6.0;
         this.sanctuaryFarmerMoveSpeed = 4.0;
         if (this.sanctuaryFarmerCurrentAction !== 'run' && this.sanctuaryFarmerActions['run']) {
           this._fadeFarmerAction('run');
@@ -9223,19 +9236,18 @@ window.game = this;
         this.sanctuaryFarmerStateTimer -= delta;
 
         if (this.sanctuaryFarmerStateTimer <= 0) {
-          if (Math.random() < 0.20) {
-            // Brief pause to look around
+          if (Math.random() < 0.25) {
+            // Pause to look around
             this.sanctuaryFarmerState = 'IDLE';
             this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
             if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
               this._fadeFarmerAction('idle');
             }
           } else {
-            // Walk in a random direction (sometimes run)
+            // Walk toward next trail waypoint
             this.sanctuaryFarmerState = 'WALK';
-            this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
             this.sanctuaryFarmerMoveSpeed = Math.random() < 0.15 ? 3.0 : 1.6;
-            this.sanctuaryFarmerStateTimer = 2.5 + Math.random() * 3.5;
+            this.sanctuaryFarmerStateTimer = 3.0 + Math.random() * 4.0;
             if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
               this._fadeFarmerAction('walk');
             }
@@ -9243,17 +9255,19 @@ window.game = this;
         }
       }
 
-      // Compute movement
+      // Compute movement target
       let nx = this.sanctuaryFarmerX;
       let nz = this.sanctuaryFarmerZ;
       let targetRotY = this.sanctuaryFarmerTargetRotY;
+
+      const trailPt = TRAIL[this.sanctuaryFarmerTrailIdx];
 
       if (this.sanctuaryFarmerState === 'LAP') {
         // Run in a circle around meadow center (-10, 4), radius 10 — entirely inside safe zone
         this.sanctuaryFarmerLapAngle += (Math.PI * 2 / this.sanctuaryFarmerLapDuration) * delta;
         nx = -10.0 + Math.sin(this.sanctuaryFarmerLapAngle) * 10.0;
         nz = 4.0 + Math.cos(this.sanctuaryFarmerLapAngle) * 10.0;
-        targetRotY = this.sanctuaryFarmerLapAngle + Math.PI / 2; // face direction of travel
+        targetRotY = this.sanctuaryFarmerLapAngle + Math.PI / 2;
         this.sanctuaryFarmerLapDuration -= delta;
         if (this.sanctuaryFarmerLapDuration <= 0) {
           this.sanctuaryFarmerState = 'IDLE';
@@ -9263,14 +9277,31 @@ window.game = this;
           }
         }
       } else if (this.sanctuaryFarmerState === 'WALK') {
-        const step = this.sanctuaryFarmerMoveSpeed * delta;
-        nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerTargetRotY) * step;
-        nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerTargetRotY) * step;
+        // Natural trail-following: aim at waypoint with small random drift
+        const dx = trailPt.x - this.sanctuaryFarmerX;
+        const dz = trailPt.z - this.sanctuaryFarmerZ;
+        const dist = Math.hypot(dx, dz);
+        if (dist < 1.5) {
+          // Reached waypoint: advance to next
+          this.sanctuaryFarmerTrailIdx = (this.sanctuaryFarmerTrailIdx + 1) % TRAIL.length;
+        } else {
+          // Aim at waypoint plus slight wander so path isn't perfectly straight
+          const wanderX = Math.sin(this.sanctuaryFarmerStateTimer * 2.0) * 0.8;
+          const wanderZ = Math.cos(this.sanctuaryFarmerStateTimer * 1.7) * 0.8;
+          const aimX = trailPt.x + wanderX;
+          const aimZ = trailPt.z + wanderZ;
+          const aimDx = aimX - this.sanctuaryFarmerX;
+          const aimDz = aimZ - this.sanctuaryFarmerZ;
+          targetRotY = Math.atan2(aimDx, aimDz);
+          const step = this.sanctuaryFarmerMoveSpeed * delta;
+          nx = this.sanctuaryFarmerX + Math.sin(targetRotY) * step;
+          nz = this.sanctuaryFarmerZ + Math.cos(targetRotY) * step;
+        }
       }
 
-      // Clamp to safe meadow zone (never enter mountain area at x > 0, z < -8)
-      nx = Math.min(Math.max(nx, SAFE_X_MIN), SAFE_X_MAX);
-      nz = Math.min(Math.max(nz, SAFE_Z_MIN), SAFE_Z_MAX);
+      // Clamp to safe meadow zone (never enter mountain area)
+      nx = Math.min(nx, SAFE_X_MAX);
+      nz = Math.max(nz, SAFE_Z_MIN);
 
       // Boulder check before committing
       let blocked = this._farmerWouldHitBoulder(nx, nz);
@@ -9283,6 +9314,7 @@ window.game = this;
             this._fadeFarmerAction('idle');
           }
         } else {
+          // Pick a nearby alternative direction
           this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
           this.sanctuaryFarmerStateTimer = 0;
         }
