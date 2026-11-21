@@ -2366,35 +2366,39 @@ body.cutscene-playing *,
 
 #char-preview-canvas {
   width: 100%;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
   display: block;
 }
 
 .char-preview-footer {
-  position: absolute;
-  bottom: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 12px;
-  align-items: center;
+  margin-top: 16px;
+  flex-shrink: 0;
+  align-self: center;
+  width: fit-content;
   z-index: 10;
-  width: auto;
 }
 
 .char-confirm-btn {
+  width: auto;
   padding: 12px 34px;
   font-family: 'Caryn';
   font-size: 22px;
   letter-spacing: 1.5px;
-  background: #22c55e url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  background-color: #22c55e;
   color: #ffffff;
   border: none;
+  -webkit-mask-image: url('assets/ui/blob_strip.png');
+  mask-image: url('assets/ui/blob_strip.png');
+  -webkit-mask-size: 100% 100%;
+  mask-size: 100% 100%;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6));
 }
 
 .char-confirm-btn:hover {
-  background: #16a34a url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  background-color: #16a34a;
   transform: translateY(-2px) scale(1.03);
   filter: drop-shadow(0 6px 20px rgba(34, 197, 94, 0.4));
 }
