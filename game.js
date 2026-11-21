@@ -22638,32 +22638,41 @@ window.game = this;
       const bleedX = 24;
       const bleedY = 18;
 
-      // Position morph blob at source box position
+      const fromW = fromRect.width + bleedX * 2;
+      const fromH = fromRect.height + bleedY * 2;
+      const fromX = fromRect.left - bleedX;
+      const fromY = fromRect.top - bleedY;
+
+      const toW = toRect.width + bleedX * 2;
+      const toH = toRect.height + bleedY * 2;
+      const toX = toRect.left - bleedX;
+      const toY = toRect.top - bleedY;
+
+      // Base size in DOM pixels is fromW x fromH, with scale 1.0 initially
       morphBlob.style.transition = 'none';
-      morphBlob.style.left = (fromRect.left - bleedX) + 'px';
-      morphBlob.style.top = (fromRect.top - bleedY) + 'px';
-      morphBlob.style.width = (fromRect.width + bleedX * 2) + 'px';
-      morphBlob.style.height = (fromRect.height + bleedY * 2) + 'px';
+      morphBlob.style.width = fromW + 'px';
+      morphBlob.style.height = fromH + 'px';
+      morphBlob.style.transform = `translate3d(${fromX}px, ${fromY}px, 0px) scale(1, 1)`;
       morphBlob.classList.add('active');
 
       // Hide individual modal blobs during morph
       fromBox.classList.add('blob-morphing');
       toBox.classList.add('blob-morphing');
 
-      // Force synchronous reflow so initial state is rendered before transition begins
+      // Force synchronous reflow so initial hardware-accelerated transform is applied
       void morphBlob.offsetWidth;
 
-      // Trigger animation on next frame
+      // Trigger GPU-accelerated translate3d + scale and color cross-fade
       requestAnimationFrame(() => {
-        morphBlob.style.transition = 'top 0.42s cubic-bezier(0.22, 1, 0.36, 1), left 0.42s cubic-bezier(0.22, 1, 0.36, 1), width 0.42s cubic-bezier(0.22, 1, 0.36, 1), height 0.42s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease';
-        morphBlob.style.left = (toRect.left - bleedX) + 'px';
-        morphBlob.style.top = (toRect.top - bleedY) + 'px';
-        morphBlob.style.width = (toRect.width + bleedX * 2) + 'px';
-        morphBlob.style.height = (toRect.height + bleedY * 2) + 'px';
+        const scaleX = toW / fromW;
+        const scaleY = toH / fromH;
+
+        morphBlob.style.transition = 'transform 0.42s cubic-bezier(0.2, 0, 0.2, 1), opacity 0.22s ease';
+        morphBlob.style.transform = `translate3d(${toX}px, ${toY}px, 0px) scale(${scaleX}, ${scaleY})`;
 
         // Smooth cross-fade between source and target color layers
         layers.forEach(layer => {
-          layer.style.transition = 'opacity 0.38s cubic-bezier(0.22, 1, 0.36, 1)';
+          layer.style.transition = 'opacity 0.40s cubic-bezier(0.2, 0, 0.2, 1)';
           if (layer.classList.contains('layer-' + toTheme)) {
             layer.classList.add('layer-active');
           } else {
@@ -22671,7 +22680,7 @@ window.game = this;
           }
         });
 
-        // Halfway through (220ms), hide fromEl and show toEl with smooth fade-in
+        // Halfway through (210ms), switch modals and fade in new content smoothly
         setTimeout(() => {
           fromEl.classList.add('hidden');
           fromBox.classList.remove('content-fading-out');
@@ -22681,14 +22690,14 @@ window.game = this;
           toEl.classList.remove('hidden');
           toBox.classList.add('content-fading-in');
 
-          // Cleanup after morph finishes
+          // Cleanup after morph completes
           setTimeout(() => {
             morphBlob.classList.remove('active');
             fromBox.classList.remove('blob-morphing');
             toBox.classList.remove('blob-morphing');
             toBox.classList.remove('content-fading-in');
           }, 240);
-        }, 220);
+        }, 210);
       });
     }
 
