@@ -2296,6 +2296,19 @@ body.cutscene-playing *,
   border-color: rgba(255, 215, 0, 0.4);
 }
 
+/* Unique-character marker: soft white star in the top-right of the icon frame */
+.char-card-unique-star {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  background: url('assets/ui/star_unique.png') center center / contain no-repeat;
+  opacity: 0.15;
+  pointer-events: none;
+  z-index: 2;
+}
+
 .char-card img {
   width: 100%;
   height: 100%;

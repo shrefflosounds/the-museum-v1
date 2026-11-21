@@ -13,7 +13,7 @@
         { id: 6, name: 'The Student', file: 'The Student.glb', portrait: 'assets/ui/portraits/7.png' },
         { id: 7, name: 'Heknah', file: 'Heknah.glb', portrait: 'assets/ui/portraits/8.png' },
         { id: 8, name: 'REem8', file: 'REem8.glb', portrait: 'assets/ui/portraits/9.png', isUnlockable: true },
-        { id: 9, name: 'The Being', file: 'The Being.glb', portrait: 'assets/ui/portraits/10.png', isUnlockable: true }
+        { id: 9, name: 'The Being', file: 'The Being.glb', portrait: 'assets/ui/portraits/10.png', isUnlockable: true, isUnique: true }
       ];
 
       this.selectedIndex = this.game.selectedPlayerCharacter || 0;
@@ -92,6 +92,13 @@
 
         card.appendChild(img);
         card.appendChild(label);
+
+        if (char.isUnique) {
+          const star = document.createElement('div');
+          star.className = 'char-card-unique-star';
+          star.title = 'Unique Character';
+          card.appendChild(star);
+        }
 
         card.addEventListener('click', () => {
           this.selectCharacter(index);

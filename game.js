@@ -20338,6 +20338,12 @@ window.game = this;
       return this.viewMode === 'third-person';
     }
 
+    isUniquePlayerCharacter(index = this.selectedPlayerCharacter) {
+      // Unique characters have bespoke stats/behavior and a star on their select icon.
+      // Add future unique character indices here so special handling stays centralized.
+      return index === 9; // The Being
+    }
+
     toggleThirdPersonPerspective() {
       if (!this.isThirdPersonView()) return;
       this.thirdPersonFrontView = !this.thirdPersonFrontView;
@@ -20461,7 +20467,7 @@ window.game = this;
           this.playerModel = gltf.scene;
 
           // The Being is a towering character (~4.15m), just a little bit shorter than the NPC FinalFight (~4.64m)
-          const isTheBeing = (character.name === 'The Being' || this.selectedPlayerCharacter === 9);
+          const isTheBeing = (character.name === 'The Being' || this.isUniquePlayerCharacter());
           const targetHeight = isTheBeing ? 4.15 : 1.75;
           const scale = targetHeight / size.y;
           this.playerModel.scale.setScalar(scale);
@@ -20577,11 +20583,6 @@ window.game = this;
       this.playerCurrentAction = next;
     }
 
-    getLocomotionAnimTimeScale() {
-      // Match stride cadence to actual ground speed so fast characters (The Being moves at 2.5x) plant their feet instead of sliding.
-      return (this.selectedPlayerCharacter === 9) ? 2.5 : 1.0;
-    }
-
     updatePlayerCharacter(delta, isMoving) {
       if (this.isPlayerDancing) {
         this.playerDanceTimer += delta;
@@ -20589,15 +20590,7 @@ window.game = this;
       if (!this.playerModelRoot) return;
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       this.playerModelRoot.position.set(this.playerPos.x, footY, this.playerPos.z);
-      const targetModelYaw = this.playerYaw + Math.PI;
-      if (!Number.isFinite(this._smoothModelYaw)) {
-        this._smoothModelYaw = targetModelYaw;
-      } else {
-        let yawDiff = targetModelYaw - this._smoothModelYaw;
-        yawDiff = Math.atan2(Math.sin(yawDiff), Math.cos(yawDiff));
-        this._smoothModelYaw += yawDiff * Math.min(1, delta * 22);
-      }
-      this.playerModelRoot.rotation.y = this._smoothModelYaw;
+      this.playerModelRoot.rotation.y = this.playerYaw + Math.PI;
       this.updatePlayerViewVisibility();
       if (!this.playerModel || !this.isThirdPersonView()) return;
 
@@ -20605,9 +20598,6 @@ window.game = this;
         ? 'Jump'
         : (isMoving ? (this.isSprinting ? 'Run' : 'Walk') : 'Idle');
       this.playPlayerAnimation(animation);
-      if (this.playerCurrentAction && (animation === 'Walk' || animation === 'Run')) {
-        this.playerCurrentAction.setEffectiveTimeScale(this.getLocomotionAnimTimeScale());
-      }
       if (this.playerMixer) this.playerMixer.update(delta);
 
       // Procedural dance overlay on player humanoid skeleton
@@ -20681,7 +20671,7 @@ window.game = this;
         const p = THREE.MathUtils.clamp(1.0 - (this.leftHandPunchTimer / dur), 0.0, 1.0); // 0.0 -> 1.0
         const b = this.playerBones;
         const rq = this.playerRestQuats || {};
-        const isTheBeing = (this.selectedPlayerCharacter === 9);
+        const isTheBeing = this.isUniquePlayerCharacter();
 
         // Standard Humanoid Character Smack (Left Arm wide back-to-front horizontal slap)
         if (!isTheBeing) {
@@ -20813,7 +20803,7 @@ window.game = this;
 
     updateThirdPersonCamera(delta) {
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
-      const isTheBeing = (this.selectedPlayerCharacter === 9);
+      const isTheBeing = this.isUniquePlayerCharacter();
       const isFront = !!this.thirdPersonFrontView;
 
       // Camera target height and distance interpolation
@@ -20860,27 +20850,18 @@ window.game = this;
           desired.y = camGndY + 0.45;
         }
       }
+      if (!this.thirdPersonCameraReady) {
+        this.camera.position.copy(desired);
+        this.thirdPersonCameraReady = true;
+      } else {
+        const camFollowRate = this.isSafeRoomActive ? 18 : 12;
+        this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
+      }
       const lookAhead = new THREE.Vector3(
         target.x - camDirSign * sinYaw * cosPitch * 5,
         target.y + camDirSign * sinPitch * 5,
         target.z - camDirSign * cosYaw * cosPitch * 5
       );
-      if (!this.thirdPersonCameraReady) {
-        this.camera.position.copy(desired);
-        this._smoothLookTarget = lookAhead.clone();
-        this.thirdPersonCameraReady = true;
-      } else {
-        // Follow faster for fast characters (The Being) so the camera keeps up instead of lagging and jittering.
-        const camFollowRate = (this.isSafeRoomActive ? 18 : 12) * (isTheBeing ? 1.45 : 1.0);
-        this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
-        if (!this._smoothLookTarget) {
-          this._smoothLookTarget = lookAhead.clone();
-        } else {
-          // Softly damp the look target so fast walking, running, and jumping don't produce rotational jitter.
-          const lookFollowRate = isTheBeing ? 28 : 34;
-          this._smoothLookTarget.lerp(lookAhead, Math.min(1, delta * lookFollowRate));
-        }
-      }
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       if (this.isSafeRoomActive) {
         const curCamGndY = this.getSafeRoomGroundY(this.camera.position.x, this.camera.position.z);
@@ -20888,7 +20869,7 @@ window.game = this;
           this.camera.position.y = curCamGndY + 0.35;
         }
       }
-      this.camera.lookAt(this._smoothLookTarget);
+      this.camera.lookAt(lookAhead);
       if (this.playerModelRoot) {
         this.playerModelRoot.visible = (fade > 0.001);
       }
@@ -23480,7 +23461,7 @@ window.game = this;
         // Float the beam above and just behind the character's head, aimed where the camera looks.
         // This lights the scene the player is actually viewing without blasting the character's face.
         const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
-        const headHeight = (this.selectedPlayerCharacter === 9) ? 3.6 : 1.65;
+        const headHeight = this.isUniquePlayerCharacter() ? 3.6 : 1.65;
         this._flashlightLightPos.set(
           this.playerPos.x,
           footY + headHeight + 0.8,
@@ -24181,7 +24162,7 @@ window.game = this;
       }
 
       // The Being has 2.5x speed and 2.4x jump (2x more powerful)
-      const isTheBeing = (this.selectedPlayerCharacter === 9);
+      const isTheBeing = this.isUniquePlayerCharacter();
       const charSpeedMultiplier = isTheBeing ? 2.5 : 1.0;
 
       const baseSpeed = (isCrouching
@@ -25560,7 +25541,7 @@ window.game = this;
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       const punchOrigin = new THREE.Vector3(this.playerPos.x, footY + 1.25, this.playerPos.z);
       // The Being (character index 9) wields the deadly snake arm punch
-      const isTheBeing = (this.selectedPlayerCharacter === 9);
+      const isTheBeing = this.isUniquePlayerCharacter();
       const punchRange = isTheBeing ? 2.8 : 2.4; // Extended melee reach for snake arm
       const punchDamage = isTheBeing ? 99999 : 25;
       const playerKnockback = isTheBeing ? 10.0 : 3.5;
