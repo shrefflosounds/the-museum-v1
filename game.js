@@ -20577,6 +20577,11 @@ window.game = this;
       this.playerCurrentAction = next;
     }
 
+    getLocomotionAnimTimeScale() {
+      // Match stride cadence to actual ground speed so fast characters (The Being moves at 2.5x) plant their feet instead of sliding.
+      return (this.selectedPlayerCharacter === 9) ? 2.5 : 1.0;
+    }
+
     updatePlayerCharacter(delta, isMoving) {
       if (this.isPlayerDancing) {
         this.playerDanceTimer += delta;
@@ -20584,7 +20589,15 @@ window.game = this;
       if (!this.playerModelRoot) return;
       const footY = this.playerPos.y - this.currentCamHeight + this.jumpOffset;
       this.playerModelRoot.position.set(this.playerPos.x, footY, this.playerPos.z);
-      this.playerModelRoot.rotation.y = this.playerYaw + Math.PI;
+      const targetModelYaw = this.playerYaw + Math.PI;
+      if (!Number.isFinite(this._smoothModelYaw)) {
+        this._smoothModelYaw = targetModelYaw;
+      } else {
+        let yawDiff = targetModelYaw - this._smoothModelYaw;
+        yawDiff = Math.atan2(Math.sin(yawDiff), Math.cos(yawDiff));
+        this._smoothModelYaw += yawDiff * Math.min(1, delta * 22);
+      }
+      this.playerModelRoot.rotation.y = this._smoothModelYaw;
       this.updatePlayerViewVisibility();
       if (!this.playerModel || !this.isThirdPersonView()) return;
 
@@ -20592,6 +20605,9 @@ window.game = this;
         ? 'Jump'
         : (isMoving ? (this.isSprinting ? 'Run' : 'Walk') : 'Idle');
       this.playPlayerAnimation(animation);
+      if (this.playerCurrentAction && (animation === 'Walk' || animation === 'Run')) {
+        this.playerCurrentAction.setEffectiveTimeScale(this.getLocomotionAnimTimeScale());
+      }
       if (this.playerMixer) this.playerMixer.update(delta);
 
       // Procedural dance overlay on player humanoid skeleton
@@ -20844,18 +20860,27 @@ window.game = this;
           desired.y = camGndY + 0.45;
         }
       }
-      if (!this.thirdPersonCameraReady) {
-        this.camera.position.copy(desired);
-        this.thirdPersonCameraReady = true;
-      } else {
-        const camFollowRate = this.isSafeRoomActive ? 18 : 12;
-        this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
-      }
       const lookAhead = new THREE.Vector3(
         target.x - camDirSign * sinYaw * cosPitch * 5,
         target.y + camDirSign * sinPitch * 5,
         target.z - camDirSign * cosYaw * cosPitch * 5
       );
+      if (!this.thirdPersonCameraReady) {
+        this.camera.position.copy(desired);
+        this._smoothLookTarget = lookAhead.clone();
+        this.thirdPersonCameraReady = true;
+      } else {
+        // Follow faster for fast characters (The Being) so the camera keeps up instead of lagging and jittering.
+        const camFollowRate = (this.isSafeRoomActive ? 18 : 12) * (isTheBeing ? 1.45 : 1.0);
+        this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
+        if (!this._smoothLookTarget) {
+          this._smoothLookTarget = lookAhead.clone();
+        } else {
+          // Softly damp the look target so fast walking, running, and jumping don't produce rotational jitter.
+          const lookFollowRate = isTheBeing ? 28 : 34;
+          this._smoothLookTarget.lerp(lookAhead, Math.min(1, delta * lookFollowRate));
+        }
+      }
       if (this.camera.position.y < footY + 0.35) this.camera.position.y = footY + 0.35;
       if (this.isSafeRoomActive) {
         const curCamGndY = this.getSafeRoomGroundY(this.camera.position.x, this.camera.position.z);
@@ -20863,7 +20888,7 @@ window.game = this;
           this.camera.position.y = curCamGndY + 0.35;
         }
       }
-      this.camera.lookAt(lookAhead);
+      this.camera.lookAt(this._smoothLookTarget);
       if (this.playerModelRoot) {
         this.playerModelRoot.visible = (fade > 0.001);
       }
