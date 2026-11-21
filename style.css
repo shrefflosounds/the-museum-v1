@@ -2227,6 +2227,7 @@ body.cutscene-playing *,
 .char-select-body {
   flex: 1;
   display: flex;
+  flex-wrap: wrap;
   gap: 30px;
   margin-top: 16px;
   overflow: hidden;
@@ -2371,13 +2372,14 @@ body.cutscene-playing *,
 }
 
 .char-preview-footer {
-  position: absolute;
-  bottom: 24px;
-  right: 24px;
+  width: 100%;
+  margin-top: 16px;
   display: flex;
+  justify-content: center;
   gap: 12px;
   align-items: center;
   z-index: 10;
+  position: relative;
 }
 
 .char-confirm-btn {
@@ -2385,15 +2387,16 @@ body.cutscene-playing *,
   font-family: 'Caryn';
   font-size: 22px;
   letter-spacing: 1.5px;
-  background: url('assets/ui/blob_strip.png') center center / 100% 100% no-repeat;
+  background: #22c55e;
   color: #ffffff;
   border: none;
   filter: drop-shadow(0 4px 16px rgba(0, 0, 0, 0.6));
 }
 
 .char-confirm-btn:hover {
+  background: #16a34a;
   transform: translateY(-2px) scale(1.03);
-  filter: drop-shadow(0 6px 20px rgba(255, 255, 255, 0.4));
+  filter: drop-shadow(0 6px 20px rgba(34, 197, 94, 0.4));
 }
 
 /* Loading Indicator for Character Selection */
