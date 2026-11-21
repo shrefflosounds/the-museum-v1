@@ -4348,8 +4348,8 @@
       this.viewMode = (savedViewMode === 'third-person') ? 'third-person' : 'first-person';
       this.thirdPersonFrontView = false;
       const savedCharacter = Number(localStorage.getItem('the_museum_player_character'));
-      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 9 ? savedCharacter : 0;
-      if ((this.selectedPlayerCharacter === 8 || this.selectedPlayerCharacter === 9) && localStorage.getItem('the_museum_game_completed') !== 'true') {
+      this.selectedPlayerCharacter = Number.isInteger(savedCharacter) && savedCharacter >= 0 && savedCharacter <= 10 ? savedCharacter : 0;
+      if ((this.selectedPlayerCharacter === 9 || this.selectedPlayerCharacter === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') {
         this.selectedPlayerCharacter = 0;
       }
       this.playerModelRoot = null;
@@ -20342,7 +20342,7 @@ window.game = this;
     isUniquePlayerCharacter(index = this.selectedPlayerCharacter) {
       // Unique characters have bespoke stats/behavior and a star on their select icon.
       // Add future unique character indices here so special handling stays centralized.
-      return index === 9; // The Being
+      return index === 10; // The Being
     }
 
     getMaxThirdPersonCameraDistance() {
@@ -20373,7 +20373,7 @@ window.game = this;
         this.dom.playerCharacterSelect.value = String(this.selectedPlayerCharacter);
       }
       if (this.dom.optionsCharCurrentName) {
-        const charNames = ['The Animal', 'The Earth', 'The Cook', 'The Arse', 'Sand', 'SF', 'The Student', 'Heknah', 'REem8', 'The Being'];
+        const charNames = ['The Animal', 'The Earth', 'The Cook', 'The Arse', 'Sand', 'SF', 'The Student', 'Heknah', 'The Farmer', 'REem8', 'The Being'];
         this.dom.optionsCharCurrentName.textContent = charNames[this.selectedPlayerCharacter] || 'The Animal';
       }
       this.updatePlayerViewVisibility();
@@ -20411,8 +20411,8 @@ window.game = this;
 
     setPlayerCharacter(index) {
       const next = Number(index);
-      if (!Number.isInteger(next) || next < 0 || next > 9) return;
-      if ((next === 8 || next === 9) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
+      if (!Number.isInteger(next) || next < 0 || next > 10) return;
+      if ((next === 9 || next === 10) && localStorage.getItem('the_museum_game_completed') !== 'true') return;
       this.selectedPlayerCharacter = next;
       localStorage.setItem('the_museum_player_character', String(next));
       this.updatePlayerViewUI();
@@ -20446,6 +20446,7 @@ window.game = this;
         { name: 'SF', file: 'The Clown.glb' },
         { name: 'The Student', file: 'The Student.glb' },
         { name: 'Heknah', file: 'Heknah.glb' },
+        { name: 'The Farmer', file: 'The Farmer.glb' },
         { name: 'REem8', file: 'REem8.glb' },
         { name: 'The Being', file: 'The Being.glb' }
       ];
