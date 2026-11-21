@@ -27499,10 +27499,11 @@ window.game = this;
         }
         try {
           if (this.isSafeRoomActive) {
-            if (this.updateSafeRoomSanctuary) {
-              this.updateSafeRoomSanctuary(delta);
-            }
-            if (this.updatePortalRoomLogic) {
+          if (this.updateSafeRoomSanctuary) {
+            this.updateSafeRoomSanctuary(delta);
+          }
+          if (this.updateSanctuaryFarmer) this.updateSanctuaryFarmer(delta);
+          if (this.updatePortalRoomLogic) {
               this.updatePortalRoomLogic(delta);
             }
           } else {
