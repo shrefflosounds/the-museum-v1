@@ -9299,6 +9299,12 @@ window.game = this;
           // Base heading: steer toward the current waypoint.
           const targetRotY = Math.atan2(dx, dz);
 
+          // Current ground Y at the farmer's position, used so the step-height
+          // check compares against the ground he's already standing on rather
+          // than the sanctuary origin (the meadow rolls ±18 m around originY).
+          const curGndY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
+          const MAX_STEP = 0.6;
+
           // Proactive lookahead: steer away from surfaces before reaching them,
           // as if the farmer can see them ahead. Check several points along the
           // current heading; if any would be blocked, blend the heading toward a
@@ -9313,7 +9319,7 @@ window.game = this;
             const lz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * laStep;
             const lwx = originX + lx;
             const lwz = originZ + lz;
-            if (this._farmerPointBlocked(lx, lz, lwx, lwz)) {
+            if (this._farmerPointBlocked(lx, lz, lwx, lwz, curGndY, MAX_STEP)) {
               blockedAhead = true;
               const awayX = lwx - MOUNTAIN_CX;
               const awayZ = lwz - MOUNTAIN_CZ;
@@ -9348,7 +9354,7 @@ window.game = this;
           const wz2 = originZ + nz2;
 
           // Final backstop: never commit a step into a blocked surface.
-          if (this._farmerPointBlocked(nx2, nz2, wx2, wz2)) {
+          if (this._farmerPointBlocked(nx2, nz2, wx2, wz2, curGndY, MAX_STEP)) {
             this.sanctuaryFarmerStuckTimer += delta;
             // Slide tangentially along the obstacle.
             let slideRotY = this.sanctuaryFarmerRotY;
@@ -9414,8 +9420,11 @@ window.game = this;
     }
 
     // Returns true if the local (x, z) step would place the farmer on a blocked
-    // surface (mountain, boulder, portal, waterfall, or off-level terrain).
-    _farmerPointBlocked(x, z, wx, wz) {
+    // surface (mountain, boulder, portal, waterfall, or a step too steep).
+    // curGndY / MAX_STEP let the ground check compare against the ground the
+    // farmer is already standing on rather than the sanctuary origin (the meadow
+    // rolls ±18 m around originY, so comparing to originY blocks most of it).
+    _farmerPointBlocked(x, z, wx, wz, curGndY, MAX_STEP) {
       const sr = this.safeRoomSanctuary;
       if (!sr) return true;
       const dPortal = Math.hypot(x - (-20.5), z - 7.5);
@@ -9424,7 +9433,7 @@ window.game = this;
       if (dWf < 7.0) return true;
       if (this.getMountainSurfaceElevation(wx, wz) !== null) return true;
       const ngY = this.getSafeRoomGroundY(wx, wz);
-      if (Math.abs(ngY - sr.originY) > 1.0) return true;
+      if (Math.abs(ngY - curGndY) > MAX_STEP) return true;
       if (this._farmerWouldHitBoulder(x, z)) return true;
       return false;
     }
