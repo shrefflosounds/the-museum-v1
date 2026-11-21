@@ -9178,140 +9178,66 @@ window.game = this;
     }
 
     // Sanctuary Farmer: calm wandering NPC in the saferoom/sanctuary.
-    // Dead-simple visible wandering: pick a nearby spot, walk there, pause, repeat.
+    // Simple timer-based wandering: pick a direction, walk for a few seconds, pause, repeat.
     updateSanctuaryFarmer(delta) {
       if (!this.sanctuaryFarmerGroup) return;
 
-      const sr = this.safeRoomSanctuary;
-      const inSafeRoom = this.isSafeRoomActive && sr;
-
-      if (!inSafeRoom) {
+      if (!this.isSafeRoomActive || !this.safeRoomSanctuary) {
         this.sanctuaryFarmerGroup.visible = false;
         return;
       }
 
       this.sanctuaryFarmerGroup.visible = true;
 
+      const sr = this.safeRoomSanctuary;
       const originX = sr.originX;
       const originZ = sr.originZ;
 
-      // Snap to sanctuary ground (always, even while model loads)
-      const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
-      this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
-
+      // Timer-based state: walk for a few seconds, then idle for a few seconds
       this.sanctuaryFarmerStateTimer -= delta;
 
-      if (this.sanctuaryFarmerState === 'IDLE') {
-        // Stand still and look around briefly
-        this.sanctuaryFarmerLookTimer += delta;
-        if (this.sanctuaryFarmerLookTimer > 0.2) {
-          this.sanctuaryFarmerLookTimer = 0;
-          this.sanctuaryFarmerTargetRotY += (Math.random() - 0.5) * 1.0;
+      if (this.sanctuaryFarmerStateTimer <= 0) {
+        if (Math.random() < 0.30) {
+          // Idle pause
+          this.sanctuaryFarmerState = 'IDLE';
+          this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
+        } else {
+          // Walk in a random direction
+          this.sanctuaryFarmerState = 'WALK';
+          this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
+          this.sanctuaryFarmerMoveSpeed = Math.random() < 0.20 ? 3.0 : 1.5;
+          this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
+
+          if (this.sanctuaryFarmerCurrentAction !== 'walk' && this.sanctuaryFarmerActions['walk']) {
+            this._fadeFarmerAction('walk');
+          }
         }
+      }
+
+      if (this.sanctuaryFarmerState === 'WALK') {
+        // Move forward in current direction
+        this.sanctuaryFarmerX += Math.sin(this.sanctuaryFarmerTargetRotY) * this.sanctuaryFarmerMoveSpeed * delta;
+        this.sanctuaryFarmerZ += Math.cos(this.sanctuaryFarmerTargetRotY) * this.sanctuaryFarmerMoveSpeed * delta;
+
+        // Keep inside the mountain boundary (clamp to radius)
+        const d = Math.hypot(this.sanctuaryFarmerX, this.sanctuaryFarmerZ);
+        if (d > this.sanctuaryFarmerMountainRadius) {
+          this.sanctuaryFarmerX = (this.sanctuaryFarmerX / d) * this.sanctuaryFarmerMountainRadius;
+          this.sanctuaryFarmerZ = (this.sanctuaryFarmerZ / d) * this.sanctuaryFarmerMountainRadius;
+          this.sanctuaryFarmerStateTimer = 0; // force new direction
+        }
+      } else {
         if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
           this._fadeFarmerAction('idle');
         }
-        if (this.sanctuaryFarmerStateTimer <= 0) {
-          this._pickFarmerDestination();
-        }
-      } else {
-        // WALK or RUN toward destination
-        const dx = this.sanctuaryFarmerTargetX - this.sanctuaryFarmerX;
-        const dz = this.sanctuaryFarmerTargetZ - this.sanctuaryFarmerZ;
-        const dist = Math.hypot(dx, dz);
-        const isRun = this.sanctuaryFarmerState === 'RUN';
-        if (dist > 0.3) {
-          const step = Math.min(dist, this.sanctuaryFarmerMoveSpeed * delta);
-          const nx = (dx / dist) * step;
-          const nz = (dz / dist) * step;
-          const nextX = this.sanctuaryFarmerX + nx;
-          const nextZ = this.sanctuaryFarmerZ + nz;
-          const nextDistFromCenter = Math.hypot(nextX, nextZ);
-          const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
-          // Never cross the mountain boundary or step onto rising terrain; boulders just pause this frame.
-          if (nextDistFromCenter > this.sanctuaryFarmerMountainRadius || Math.abs(nextGY - originY) > 1.2) {
-            this._pickFarmerDestination();
-          } else if (!this._farmerWouldHitBoulder(nextX, nextZ)) {
-            this.sanctuaryFarmerX = nextX;
-            this.sanctuaryFarmerZ = nextZ;
-            this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
-          }
-          const actName = isRun ? 'run' : 'walk';
-          if (this.sanctuaryFarmerCurrentAction !== actName && this.sanctuaryFarmerActions[actName]) {
-            this._fadeFarmerAction(actName);
-          }
-        } else {
-          // Arrived: pause, then pick a new destination
-          this.sanctuaryFarmerX = this.sanctuaryFarmerTargetX;
-          this.sanctuaryFarmerZ = this.sanctuaryFarmerTargetZ;
-          this.sanctuaryFarmerState = 'IDLE';
-          this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
-          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
-            this._fadeFarmerAction('idle');
-          }
-        }
       }
 
-      // Smooth rotation
-      let rDiff = Math.atan2(Math.sin(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY), Math.cos(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY));
-      this.sanctuaryFarmerRotY += rDiff * Math.min(1.0, delta * 6.0);
-      this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerRotY;
+      // Snap to sanctuary ground
+      const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
+      this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
+      this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerTargetRotY;
 
       if (this.sanctuaryFarmerMixer) this.sanctuaryFarmerMixer.update(delta);
-    }
-
-    // Picks a wandering destination near the farmer's current position, inside the flat meadow
-    // and inside the mountain boundary.
-    _pickFarmerDestination() {
-      const sr = this.safeRoomSanctuary;
-      if (!sr) return;
-      const originX = sr.originX;
-      const originZ = sr.originZ;
-
-      let tx = this.sanctuaryFarmerX;
-      let tz = this.sanctuaryFarmerZ;
-      let found = false;
-      for (let i = 0; i < 30; i++) {
-        const angle = Math.random() * Math.PI * 2;
-        const r = 3.0 + Math.random() * 7.0;
-        const cx = this.sanctuaryFarmerX + Math.cos(angle) * r;
-        const cz = this.sanctuaryFarmerZ + Math.sin(angle) * r;
-        if (Math.hypot(cx, cz) > this.sanctuaryFarmerMountainRadius) continue;
-        const gY = this.getSafeRoomGroundY(originX + cx, originZ + cz);
-        if (Math.abs(gY - sr.originY) > 1.4) continue;
-        if (this._farmerWouldHitBoulder(cx, cz)) continue;
-        tx = cx;
-        tz = cz;
-        found = true;
-        break;
-      }
-      if (!found) {
-        // Fallback: any spot near the farmer inside the mountain boundary
-        const angle = Math.random() * Math.PI * 2;
-        const r = 3.0 + Math.random() * 7.0;
-        tx = this.sanctuaryFarmerX + Math.cos(angle) * r;
-        tz = this.sanctuaryFarmerZ + Math.sin(angle) * r;
-        const d = Math.hypot(tx, tz);
-        if (d > this.sanctuaryFarmerMountainRadius && d > 0) {
-          tx = (tx / d) * this.sanctuaryFarmerMountainRadius;
-          tz = (tz / d) * this.sanctuaryFarmerMountainRadius;
-        }
-      }
-      this.sanctuaryFarmerTargetX = tx;
-      this.sanctuaryFarmerTargetZ = tz;
-      // ~20% chance to run, otherwise walk
-      if (Math.random() < 0.20) {
-        this.sanctuaryFarmerState = 'RUN';
-        this.sanctuaryFarmerMoveSpeed = 2.6;
-        this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 1.5;
-      } else {
-        this.sanctuaryFarmerState = 'WALK';
-        this.sanctuaryFarmerMoveSpeed = 1.4;
-        this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
-      }
-      const dx = tx - this.sanctuaryFarmerX;
-      const dz = tz - this.sanctuaryFarmerZ;
-      if (Math.hypot(dx, dz) > 0.01) this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
     }
 
     _fadeFarmerAction(name) {
