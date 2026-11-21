@@ -4492,6 +4492,23 @@
 
       this.smittyEnabled = true;
       this.smittyHasBeenShot = false;
+      // Sanctuary Farmer NPC: calm wandering NPC in the nature saferoom/sanctuary
+      this.sanctuaryFarmer = null;
+      this.sanctuaryFarmerGroup = null;
+      this.sanctuaryFarmerMixer = null;
+      this.sanctuaryFarmerActions = {};
+      this.sanctuaryFarmerCurrentAction = 'idle';
+      this.sanctuaryFarmerX = 0;
+      this.sanctuaryFarmerZ = 0;
+      this.sanctuaryFarmerY = 0;
+      this.sanctuaryFarmerTargetX = 0;
+      this.sanctuaryFarmerTargetZ = 0;
+      this.sanctuaryFarmerRotY = 0;
+      this.sanctuaryFarmerTargetRotY = 0;
+      this.sanctuaryFarmerState = 'IDLE_LOOK'; // 'WALK' | 'IDLE_LOOK' | 'RUN'
+      this.sanctuaryFarmerStateTimer = 0;
+      this.sanctuaryFarmerMoveSpeed = 0.9;
+      this.sanctuaryFarmerLookTimer = 0;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
@@ -5343,6 +5360,7 @@ window.game = this;
       this.buildSilverSmitty(fl, y0, mats);
       this.buildRobotDog(fl, y0, mats);
       this.buildMuseumClerk(fl, y0, mats);
+      this.buildSanctuaryFarmer();
 
       // East Office ("Arts & Music Office" brown box x: 19..33, z: 8..18)
       // Floor 0: Petting zoo with live animals & short wooden fence
@@ -8638,6 +8656,65 @@ window.game = this;
       this.museumClerk = clerk;
     }
 
+    buildSanctuaryFarmer() {
+      if (this.sanctuaryFarmerGroup) return;
+      const group = new THREE.Group();
+      // Spawn near the west glade / trail area of the sanctuary (local coords relative to origin)
+      group.position.set(-12.0, 0.0, 8.0);
+      this.scene.add(group);
+      this.sanctuaryFarmerGroup = group;
+      this.sanctuaryFarmerX = -12.0;
+      this.sanctuaryFarmerZ = 8.0;
+      this.sanctuaryFarmerTargetX = -12.0;
+      this.sanctuaryFarmerTargetZ = 8.0;
+
+      const loader = new THREE.GLTFLoader();
+      loader.load(
+        'assets/playermodels/The Farmer.glb',
+        (gltf) => {
+          const model = gltf.scene;
+          const box = new THREE.Box3().setFromObject(model);
+          const size = new THREE.Vector3();
+          box.getSize(size);
+          if (size.y > 0) {
+            const scale = 1.75 / size.y;
+            model.scale.setScalar(scale);
+            model.position.y = -box.min.y * scale;
+          }
+          model.traverse((child) => {
+            if (child.isMesh) {
+              child.castShadow = true;
+              child.receiveShadow = true;
+              child.frustumCulled = false;
+            }
+          });
+          group.add(model);
+          this.sanctuaryFarmer = model;
+
+          if (gltf.animations && gltf.animations.length > 0) {
+            this.sanctuaryFarmerMixer = new THREE.AnimationMixer(model);
+            gltf.animations.forEach((clip) => {
+              const action = this.sanctuaryFarmerMixer.clipAction(clip);
+              const raw = clip.name.toLowerCase();
+              this.sanctuaryFarmerActions[raw] = action;
+              if (raw.includes('idle')) this.sanctuaryFarmerActions['idle'] = action;
+              if (raw.includes('walk')) this.sanctuaryFarmerActions['walk'] = action;
+              if (raw.includes('run')) this.sanctuaryFarmerActions['run'] = action;
+              if (raw.includes('jump')) this.sanctuaryFarmerActions['jump'] = action;
+            });
+            if (this.sanctuaryFarmerActions['idle']) {
+              this.sanctuaryFarmerActions['idle'].play();
+              this.sanctuaryFarmerCurrentAction = 'idle';
+            }
+          }
+        },
+        undefined,
+        (err) => {
+          console.error('Failed to load Sanctuary Farmer model:', err);
+        }
+      );
+    }
+
     updateMuseumClerk(delta) {
       const clerk = this.museumClerk;
       if (!clerk || !clerk.group) return;
@@ -9094,6 +9171,132 @@ window.game = this;
       }
     }
 
+    // Sanctuary Farmer: calm wandering AI. Walks between meadow spots, idles/looks around,
+    // occasionally runs, and avoids boulder colliders so it never clips through rocks.
+    updateSanctuaryFarmer(delta) {
+      if (!this.isSafeRoomActive) {
+        if (this.sanctuaryFarmerGroup) this.sanctuaryFarmerGroup.visible = false;
+        return;
+      }
+      if (!this.sanctuaryFarmerGroup || !this.sanctuaryFarmer) return;
+      this.sanctuaryFarmerGroup.visible = true;
+
+      const sr = this.safeRoomSanctuary;
+      const originX = sr.originX;
+      const originZ = sr.originZ;
+
+      // Snap to sanctuary ground
+      const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
+      this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
+
+      this.sanctuaryFarmerStateTimer -= delta;
+
+      if (this.sanctuaryFarmerState === 'IDLE_LOOK') {
+        // Drift yaw so the farmer looks around while standing still
+        this.sanctuaryFarmerLookTimer += delta;
+        if (this.sanctuaryFarmerLookTimer > 0.15) {
+          this.sanctuaryFarmerLookTimer = 0;
+          this.sanctuaryFarmerTargetRotY += (Math.random() - 0.5) * 0.8;
+        }
+        if (this.sanctuaryFarmerActions['idle'] && this.sanctuaryFarmerCurrentAction !== 'idle') {
+          this._fadeFarmerAction('idle');
+        }
+        if (this.sanctuaryFarmerStateTimer <= 0) {
+          this._pickFarmerDestination();
+        }
+      } else {
+        // WALK or RUN toward destination
+        const dx = this.sanctuaryFarmerTargetX - this.sanctuaryFarmerX;
+        const dz = this.sanctuaryFarmerTargetZ - this.sanctuaryFarmerZ;
+        const dist = Math.hypot(dx, dz);
+        const isRun = this.sanctuaryFarmerState === 'RUN';
+        if (dist > 0.25) {
+          const step = Math.min(dist, this.sanctuaryFarmerMoveSpeed * delta);
+          const nx = (dx / dist) * step;
+          const nz = (dz / dist) * step;
+          if (!this._farmerWouldHitBoulder(this.sanctuaryFarmerX + nx, this.sanctuaryFarmerZ + nz)) {
+            this.sanctuaryFarmerX += nx;
+            this.sanctuaryFarmerZ += nz;
+            this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
+          } else {
+            // Boulder in path: pick a new destination rather than clipping
+            this._pickFarmerDestination();
+          }
+          const actName = isRun ? 'run' : 'walk';
+          if (this.sanctuaryFarmerActions[actName] && this.sanctuaryFarmerCurrentAction !== actName) {
+            this._fadeFarmerAction(actName);
+          }
+        } else {
+          // Arrived at destination: settle into idle look
+          this.sanctuaryFarmerX = this.sanctuaryFarmerTargetX;
+          this.sanctuaryFarmerZ = this.sanctuaryFarmerTargetZ;
+          this.sanctuaryFarmerState = 'IDLE_LOOK';
+          this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 4.0;
+          if (this.sanctuaryFarmerActions['idle'] && this.sanctuaryFarmerCurrentAction !== 'idle') {
+            this._fadeFarmerAction('idle');
+          }
+        }
+      }
+
+      // Smooth rotation
+      let rDiff = Math.atan2(Math.sin(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY), Math.cos(this.sanctuaryFarmerTargetRotY - this.sanctuaryFarmerRotY));
+      this.sanctuaryFarmerRotY += rDiff * Math.min(1.0, delta * 5.0);
+      this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerRotY;
+
+      if (this.sanctuaryFarmerMixer) this.sanctuaryFarmerMixer.update(delta);
+    }
+
+    _pickFarmerDestination() {
+      const angle = Math.random() * Math.PI * 2;
+      const r = 5.0 + Math.random() * 22.0;
+      let tx = Math.cos(angle) * r;
+      let tz = Math.sin(angle) * r;
+      // Keep within the sanctuary meadow area
+      tx = Math.max(-52, Math.min(52, tx));
+      tz = Math.max(-52, Math.min(52, tz));
+      this.sanctuaryFarmerTargetX = tx;
+      this.sanctuaryFarmerTargetZ = tz;
+      // Calm NPC: mostly walking, occasionally a short run (~10% chance)
+      if (Math.random() < 0.10) {
+        this.sanctuaryFarmerState = 'RUN';
+        this.sanctuaryFarmerMoveSpeed = 3.2;
+        this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
+      } else {
+        this.sanctuaryFarmerState = 'WALK';
+        this.sanctuaryFarmerMoveSpeed = 0.9;
+        this.sanctuaryFarmerStateTimer = 3.0 + Math.random() * 5.0;
+      }
+      const dx = tx - this.sanctuaryFarmerX;
+      const dz = tz - this.sanctuaryFarmerZ;
+      if (Math.hypot(dx, dz) > 0.01) this.sanctuaryFarmerTargetRotY = Math.atan2(dx, dz);
+    }
+
+    _fadeFarmerAction(name) {
+      const cur = this.sanctuaryFarmerCurrentAction;
+      if (this.sanctuaryFarmerActions[cur]) this.sanctuaryFarmerActions[cur].fadeOut(0.2);
+      const act = this.sanctuaryFarmerActions[name];
+      if (act) {
+        act.reset().fadeIn(0.2).play();
+        this.sanctuaryFarmerCurrentAction = name;
+      }
+    }
+
+    _farmerWouldHitBoulder(x, z) {
+      const sr = this.safeRoomSanctuary;
+      if (!sr) return false;
+      const originX = sr.originX;
+      const originZ = sr.originZ;
+      const wx = originX + x;
+      const wz = originZ + z;
+      for (let i = 0; i < this.colliders.length; i++) {
+        const c = this.colliders[i];
+        if (!c || c.type !== 'cylinder' || !c.isBoulder) continue;
+        const d = Math.hypot(wx - c.x, wz - c.z);
+        if (d < (c.radius + 0.85)) return true;
+      }
+      return false;
+    }
+
     ringClerkDeskBell() {
       if (this.audio && this.audio.playDeskServiceBell) {
         this.audio.playDeskServiceBell();
@@ -9173,6 +9376,24 @@ window.game = this;
       const toPx = this.playerPos.x - clerk.x;
       const toPz = this.playerPos.z - clerk.z;
       clerk.targetRotY = Math.atan2(toPx, toPz);
+    }
+
+    interactSanctuaryFarmer() {
+      const sr = this.safeRoomSanctuary;
+      if (!this.sanctuaryFarmerGroup || !this.sanctuaryFarmer) return;
+      // The only text shown is a question mark
+      this.showSystemNotification('?', 3000);
+      // Face the player while calm
+      const wx = sr ? sr.originX + this.sanctuaryFarmerX : this.sanctuaryFarmerX;
+      const wz = sr ? sr.originZ + this.sanctuaryFarmerZ : this.sanctuaryFarmerZ;
+      const toPx = this.playerPos.x - wx;
+      const toPz = this.playerPos.z - wz;
+      this.sanctuaryFarmerTargetRotY = Math.atan2(toPx, toPz);
+      this.sanctuaryFarmerState = 'IDLE_LOOK';
+      this.sanctuaryFarmerStateTimer = 2.0;
+      if (this.sanctuaryFarmerActions['idle'] && this.sanctuaryFarmerCurrentAction !== 'idle') {
+        this._fadeFarmerAction('idle');
+      }
     }
 
     createEastOffice(fl, y0, mats) {
@@ -23529,6 +23750,16 @@ window.game = this;
             return;
           }
         }
+        // Sanctuary Farmer interaction: only a question mark appears in the text bubble
+        if (sr && this.sanctuaryFarmerGroup && this.sanctuaryFarmer) {
+          const wx = sr.originX + this.sanctuaryFarmerX;
+          const wz = sr.originZ + this.sanctuaryFarmerZ;
+          const dFarmer = Math.hypot(this.playerPos.x - wx, this.playerPos.z - wz);
+          if (dFarmer < 4.2) {
+            this.interactSanctuaryFarmer();
+            return;
+          }
+        }
       }
 
       // 1. Check Relics (takes priority over NPCs/statues and paintings)
@@ -24865,6 +25096,16 @@ window.game = this;
           const distToRetPortal = Math.hypot(this.playerPos.x - sr.retPortalX, this.playerPos.z - sr.retPortalZ);
           if (distToRetPortal < 6.0) {
             this.setInteractPrompt('STEP ONTO PORTAL SLAB OR PRESS [E] TO RETURN TO MUSEUM');
+            return;
+          }
+        }
+        // Sanctuary Farmer interaction prompt
+        if (this.sanctuaryFarmerGroup && this.sanctuaryFarmer && sr) {
+          const wx = sr.originX + this.sanctuaryFarmerX;
+          const wz = sr.originZ + this.sanctuaryFarmerZ;
+          const dFarmer = Math.hypot(this.playerPos.x - wx, this.playerPos.z - wz);
+          if (dFarmer < 4.2) {
+            this.setInteractPrompt('[E] INTERACT');
             return;
           }
         }
@@ -27283,6 +27524,7 @@ window.game = this;
               if (this.updateSilverSmitty) this.updateSilverSmitty(delta);
               if (this.updateRobotDog) this.updateRobotDog(delta);
               if (this.updateMuseumClerk) this.updateMuseumClerk(delta);
+              if (this.updateSanctuaryFarmer) this.updateSanctuaryFarmer(delta);
             } else if (this.statues) {
               // Client smoothly interpolates statue positions and plays synced animation
               const now = performance.now() / 1000;
