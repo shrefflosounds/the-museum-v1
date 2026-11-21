@@ -9230,10 +9230,13 @@ window.game = this;
           const nextZ = this.sanctuaryFarmerZ + nz;
           const nextDistFromCenter = Math.hypot(nextX, nextZ);
           const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
-          // Player-style collision: never cross the explicit mountain boundary, never clip
-          // through boulders, and never step onto rising mountain terrain.
-          if (nextDistFromCenter > this.sanctuaryFarmerMountainRadius || this._farmerWouldHitBoulder(nextX, nextZ) || Math.abs(nextGY - originY) > 1.0) {
+          // Player-style collision: never cross the explicit mountain boundary, never step
+          // onto rising mountain terrain, and never clip through boulders.
+          if (nextDistFromCenter > this.sanctuaryFarmerMountainRadius || Math.abs(nextGY - originY) > 1.0) {
+            // Mountain boundary or terrain: pick a new destination
             this._pickFarmerDestination();
+          } else if (this._farmerWouldHitBoulder(nextX, nextZ)) {
+            // Boulder blocks this step: pause this frame, keep destination (timer will force a new one)
           } else {
             this.sanctuaryFarmerX = nextX;
             this.sanctuaryFarmerZ = nextZ;
@@ -9291,10 +9294,12 @@ window.game = this;
         break;
       }
       if (!found) {
-        // No valid meadow spot this turn: stay put and try again later
-        this.sanctuaryFarmerState = 'IDLE_LOOK';
-        this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
-        return;
+        // Fallback: any random spot inside the mountain boundary.
+        // Movement-time boulder/terrain checks (below) still prevent clipping.
+        const angle = Math.random() * Math.PI * 2;
+        const r = 6.0 + Math.random() * 24.0;
+        tx = Math.cos(angle) * r;
+        tz = Math.sin(angle) * r;
       }
       this.sanctuaryFarmerTargetX = tx;
       this.sanctuaryFarmerTargetZ = tz;
