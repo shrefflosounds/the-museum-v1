@@ -4505,11 +4505,25 @@
       this.sanctuaryFarmerTargetZ = 0;
       this.sanctuaryFarmerRotY = 0;
       this.sanctuaryFarmerTargetRotY = 0;
-      this.sanctuaryFarmerState = 'WALK'; // 'WALK' | 'JOG' | 'IDLE'
+      this.sanctuaryFarmerTurnSpeed = 2.0; // rad/s, smooth turning (no snapping)
+      this.sanctuaryFarmerState = 'IDLE'; // 'WALK' | 'JOG' | 'IDLE'
       this.sanctuaryFarmerStateTimer = 0;
       this.sanctuaryFarmerMoveSpeed = 1.6;
       this.sanctuaryFarmerLapTimer = 0;
       this.sanctuaryFarmerTrailIdx = 0;
+      // Explicit knowledge of sanctuary layout
+      // Mountain massif avoid: center local ~(+15, -20), radius 26 (keeps farmer off the 3D massif)
+      this.sanctuaryFarmerMountainAvoidX = 15.0;
+      this.sanctuaryFarmerMountainAvoidZ = -20.0;
+      this.sanctuaryFarmerMountainAvoidRadius = 26.0;
+      // Portal slab avoid: local (-20.5, 7.5), radius 4.5 (never walks onto the return portal)
+      this.sanctuaryFarmerPortalAvoidX = -20.5;
+      this.sanctuaryFarmerPortalAvoidZ = 7.5;
+      this.sanctuaryFarmerPortalAvoidRadius = 4.5;
+      // Waterfall rocks / plunge pool avoid: local ~(+7, -13), radius 7
+      this.sanctuaryFarmerWaterfallAvoidX = 7.0;
+      this.sanctuaryFarmerWaterfallAvoidZ = -13.0;
+      this.sanctuaryFarmerWaterfallAvoidRadius = 7.0;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
@@ -9176,9 +9190,11 @@ window.game = this;
     }
 
     // Sanctuary Farmer: calm wandering NPC in the saferoom/sanctuary.
-    // Follows the actual dirt trail network with natural wandering between waypoints.
-    // Pauses to look around, sometimes jogs, and every few minutes jogs a full circuit
-    // around the mountain on Trail 3 without ever stepping onto the massif.
+    // Follows the actual dirt trail network with smooth, human-like motion:
+    //   - Never snaps direction (rotation lerps smoothly, pauses before turning)
+    //   - Pauses to look around between waypoints
+    //   - Sometimes jogs, every few minutes jogs a full circuit around the mountain
+    //   - Never steps onto the mountain massif, portal slab, or waterfall rocks
     updateSanctuaryFarmer(delta) {
       if (!this.sanctuaryFarmerGroup) return;
 
@@ -9238,6 +9254,7 @@ window.game = this;
         this.sanctuaryFarmerLapTimer = 180.0 + Math.random() * 120.0; // next jog in 3-5 min
         this.sanctuaryFarmerState = 'JOG';
         this.sanctuaryFarmerMoveSpeed = 4.0;
+        this.sanctuaryFarmerStateTimer = 0; // force target refresh below
         if (this.sanctuaryFarmerCurrentAction !== 'run' && this.sanctuaryFarmerActions['run']) {
           this._fadeFarmerAction('run');
         }
@@ -9267,89 +9284,87 @@ window.game = this;
         }
       }
 
-      // Compute movement target toward current trail waypoint
+      // Determine desired facing target toward current trail waypoint
+      const trailPt = TRAIL[this.sanctuaryFarmerTrailIdx];
+      const dxTo = trailPt.x - this.sanctuaryFarmerX;
+      const dzTo = trailPt.z - this.sanctuaryFarmerZ;
+      const distTo = Math.hypot(dxTo, dzTo);
+      const desiredRotY = Math.atan2(dxTo, dzTo);
+
+      // Smooth rotation: always lerp toward desired facing (no snapping)
+      let rDiff = Math.atan2(Math.sin(desiredRotY - this.sanctuaryFarmerRotY), Math.cos(desiredRotY - this.sanctuaryFarmerRotY));
+      const maxTurn = this.sanctuaryFarmerTurnSpeed * delta;
+      if (Math.abs(rDiff) > maxTurn) {
+        this.sanctuaryFarmerRotY += Math.sign(rDiff) * maxTurn;
+      } else {
+        this.sanctuaryFarmerRotY = desiredRotY;
+      }
+      this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
+
+      // Compute movement candidate
       let nx = this.sanctuaryFarmerX;
       let nz = this.sanctuaryFarmerZ;
-      let targetRotY = this.sanctuaryFarmerTargetRotY;
 
-      const trailPt = TRAIL[this.sanctuaryFarmerTrailIdx];
+      const isJogging = this.sanctuaryFarmerState === 'JOG';
+      const isWalking = this.sanctuaryFarmerState === 'WALK';
 
-      if (this.sanctuaryFarmerState === 'JOG') {
-        // Jog toward the waypoint at run speed (follows trail around the mountain)
-        const dx = trailPt.x - this.sanctuaryFarmerX;
-        const dz = trailPt.z - this.sanctuaryFarmerZ;
-        const dist = Math.hypot(dx, dz);
-        if (dist < 1.5) {
-          this.sanctuaryFarmerTrailIdx = (this.sanctuaryFarmerTrailIdx + 1) % TRAIL.length;
-        } else {
-          targetRotY = Math.atan2(dx, dz);
+      if (isJogging || isWalking) {
+        // Only advance if facing the waypoint closely (within ~30 degrees), so he never
+        // walks forward then suddenly snaps around the other way
+        const faceDiff = Math.abs(Math.atan2(Math.sin(desiredRotY - this.sanctuaryFarmerRotY), Math.cos(desiredRotY - this.sanctuaryFarmerRotY)));
+        const moving = faceDiff < 0.75;
+        if (moving && distTo > 1.5) {
           const step = this.sanctuaryFarmerMoveSpeed * delta;
-          nx = this.sanctuaryFarmerX + Math.sin(targetRotY) * step;
-          nz = this.sanctuaryFarmerZ + Math.cos(targetRotY) * step;
-        }
-      } else if (this.sanctuaryFarmerState === 'WALK') {
-        // Natural trail-following: aim at waypoint with slight wander (not robotic straight line)
-        const dx = trailPt.x - this.sanctuaryFarmerX;
-        const dz = trailPt.z - this.sanctuaryFarmerZ;
-        const dist = Math.hypot(dx, dz);
-        if (dist < 1.5) {
-          // Reached waypoint: advance to next, brief pause
-          this.sanctuaryFarmerTrailIdx = (this.sanctuaryFarmerTrailIdx + 1) % TRAIL.length;
-          this.sanctuaryFarmerState = 'IDLE';
-          this.sanctuaryFarmerStateTimer = 0.8 + Math.random() * 1.5;
-          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
-            this._fadeFarmerAction('idle');
-          }
-        } else {
-          // Add slight wander so path meanders naturally around the trail
-          const wanderX = Math.sin(this.sanctuaryFarmerStateTimer * 1.5) * 1.0;
-          const wanderZ = Math.cos(this.sanctuaryFarmerStateTimer * 1.3) * 1.0;
-          const aimX = trailPt.x + wanderX;
-          const aimZ = trailPt.z + wanderZ;
-          const aimDx = aimX - this.sanctuaryFarmerX;
-          const aimDz = aimZ - this.sanctuaryFarmerZ;
-          targetRotY = Math.atan2(aimDx, aimDz);
-          const step = this.sanctuaryFarmerMoveSpeed * delta;
-          nx = this.sanctuaryFarmerX + Math.sin(targetRotY) * step;
-          nz = this.sanctuaryFarmerZ + Math.cos(targetRotY) * step;
+          nx = this.sanctuaryFarmerX + Math.sin(this.sanctuaryFarmerRotY) * step;
+          nz = this.sanctuaryFarmerZ + Math.cos(this.sanctuaryFarmerRotY) * step;
         }
       }
 
-      // Player-style collision: check BEFORE committing each step
-      // 1. Never step onto the 3D mountain massif
-      // 2. Never step onto rising terrain (>1.0 above base)
-      // 3. Never clip through boulders
-      const ngY = this.getSafeRoomGroundY(originX + nx, originZ + nz);
-      const onMountain = this.getMountainSurfaceElevation(originX + nx, originZ + nz) !== null;
+      // Avoid-zone checks BEFORE committing the step
+      const ndX = nx;
+      const ndZ = nz;
+      const dPortal = Math.hypot(ndX - this.sanctuaryFarmerPortalAvoidX, ndZ - this.sanctuaryFarmerPortalAvoidZ);
+      const dMtn = Math.hypot(ndX - this.sanctuaryFarmerMountainAvoidX, ndZ - this.sanctuaryFarmerMountainAvoidZ);
+      const dWf = Math.hypot(ndX - this.sanctuaryFarmerWaterfallAvoidX, ndZ - this.sanctuaryFarmerWaterfallAvoidZ);
+
+      const onMountain = this.getMountainSurfaceElevation(originX + ndX, originZ + ndZ) !== null;
+      const ngY = this.getSafeRoomGroundY(originX + ndX, originZ + ndZ);
 
       let blocked = false;
-      if (onMountain) blocked = true;
+      if (dPortal < this.sanctuaryFarmerPortalAvoidRadius) blocked = true;
+      else if (dMtn < this.sanctuaryFarmerMountainAvoidRadius) blocked = true;
+      else if (dWf < this.sanctuaryFarmerWaterfallAvoidRadius) blocked = true;
+      else if (onMountain) blocked = true;
       else if (Math.abs(ngY - sr.originY) > 1.2) blocked = true;
-      else if (this._farmerWouldHitBoulder(nx, nz)) blocked = true;
+      else if (this._farmerWouldHitBoulder(ndX, ndZ)) blocked = true;
 
       if (blocked) {
-        if (this.sanctuaryFarmerState === 'JOG') {
-          // End jog early, return to walking
-          this.sanctuaryFarmerState = 'IDLE';
-          this.sanctuaryFarmerStateTimer = 2.0 + Math.random() * 3.0;
-          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
-            this._fadeFarmerAction('idle');
-          }
-        } else {
-          // Turn away from obstacle, pick new direction briefly
-          this.sanctuaryFarmerTargetRotY = Math.random() * Math.PI * 2;
-          this.sanctuaryFarmerStateTimer = 0;
+        // Don't snap around. Stop, go idle, and pick a new facing slowly.
+        this.sanctuaryFarmerState = 'IDLE';
+        this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.0;
+        if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+          this._fadeFarmerAction('idle');
         }
+        // Face away from the blocked area gradually (lerp handles it next frame)
       } else {
         this.sanctuaryFarmerX = nx;
         this.sanctuaryFarmerZ = nz;
-        this.sanctuaryFarmerTargetRotY = targetRotY;
+
+        // Reached waypoint: advance + pause to look around (no direction snap)
+        if (distTo < 1.5) {
+          this.sanctuaryFarmerTrailIdx = (this.sanctuaryFarmerTrailIdx + 1) % TRAIL.length;
+          this.sanctuaryFarmerState = 'IDLE';
+          this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
+          if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
+            this._fadeFarmerAction('idle');
+          }
+        }
       }
 
       // Snap to sanctuary ground
       const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
       this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
-      this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerTargetRotY;
+      this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerRotY;
 
       if (this.sanctuaryFarmerMixer) this.sanctuaryFarmerMixer.update(delta);
     }
