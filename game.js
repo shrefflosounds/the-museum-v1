@@ -4363,8 +4363,9 @@
       this.thirdPersonCameraReady = false;
       const savedCameraDistance = localStorage.getItem('the_museum_camera_distance');
       const parsedCameraDistance = Number(savedCameraDistance);
+      const maxCamDist = this.getMaxThirdPersonCameraDistance();
       this.thirdPersonCameraDistance = savedCameraDistance !== null && Number.isFinite(parsedCameraDistance)
-        ? THREE.MathUtils.clamp(parsedCameraDistance, 0.6, 2.6)
+        ? THREE.MathUtils.clamp(parsedCameraDistance, 0.6, maxCamDist)
         : 2.0;
       const savedMouseSens = localStorage.getItem('the_museum_mouse_sens_mult');
       const parsedMouseSens = Number(savedMouseSens);
@@ -20344,6 +20345,11 @@ window.game = this;
       return index === 9; // The Being
     }
 
+    getMaxThirdPersonCameraDistance() {
+      // The Being is much larger, so allow zooming out a little further to frame it fully.
+      return this.isUniquePlayerCharacter() ? 3.4 : 2.6;
+    }
+
     toggleThirdPersonPerspective() {
       if (!this.isThirdPersonView()) return;
       this.thirdPersonFrontView = !this.thirdPersonFrontView;
@@ -20814,15 +20820,16 @@ window.game = this;
       if (isTheBeing) {
         // The Being (~4.15m tall): eye height is at ~3.88m above foot elevation
         // Zoom factor t: 0 = fully zoomed in (first person eyes), 1 = fully zoomed out
-        const t = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / (2.6 - 0.4), 0, 1);
+        const maxDist = this.getMaxThirdPersonCameraDistance();
+        const t = THREE.MathUtils.clamp((this.thirdPersonCameraDistance - 0.4) / (maxDist - 0.4), 0, 1);
         // At t = 0 (first person), target is right at eye level (footY + 3.88); at full zoom out, upper torso (footY + 2.50)
         targetYOffset = THREE.MathUtils.lerp(3.88, 2.50, t);
-        // Distance smoothly scales from 0.0 (right at the eyes) up to 5.0m (full body framing)
-        distance = THREE.MathUtils.lerp(0.0, 5.0, t);
+        // Distance smoothly scales from 0.0 (right at the eyes) up to 6.5m (full body framing with extra room)
+        distance = THREE.MathUtils.lerp(0.0, 6.5, t);
         fade = THREE.MathUtils.clamp((distance - 0.35) / 0.25, 0, 1);
       } else {
         targetYOffset = 1.3;
-        distance = this.thirdPersonCameraDistance;
+        distance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance, 0.4, 2.6);
         fade = isFront
           ? THREE.MathUtils.clamp((distance - 0.25) / 0.15, 0, 1)
           : THREE.MathUtils.clamp((distance - 0.42) / 0.18, 0, 1);
@@ -20854,7 +20861,8 @@ window.game = this;
         this.camera.position.copy(desired);
         this.thirdPersonCameraReady = true;
       } else {
-        const camFollowRate = this.isSafeRoomActive ? 18 : 12;
+        // Follow faster for The Being so the camera keeps up with its 2.5x movement instead of lagging/stuttering.
+        const camFollowRate = (this.isSafeRoomActive ? 18 : 12) * (isTheBeing ? 1.6 : 1.0);
         this.camera.position.lerp(desired, Math.min(1, delta * camFollowRate));
       }
       const lookAhead = new THREE.Vector3(
@@ -20888,7 +20896,8 @@ window.game = this;
     zoomThirdPersonCamera(deltaY) {
       if (!Number.isFinite(deltaY) || deltaY === 0) return;
       const zoomStep = Math.sign(deltaY) * Math.min(0.65, Math.max(0.025, Math.abs(deltaY) * 0.012));
-      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 0.4, 2.6);
+      const maxDist = this.getMaxThirdPersonCameraDistance();
+      this.thirdPersonCameraDistance = THREE.MathUtils.clamp(this.thirdPersonCameraDistance + zoomStep, 0.4, maxDist);
       localStorage.setItem('the_museum_camera_distance', String(this.thirdPersonCameraDistance));
     }
 
