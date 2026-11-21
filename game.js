@@ -8661,7 +8661,10 @@ window.game = this;
       const group = new THREE.Group();
       // Spawn near the west glade / trail area of the sanctuary (local coords relative to origin)
       group.position.set(-12.0, 0.0, 8.0);
-      this.scene.add(group);
+      // Add to the root scene directly (not a floor group) so it is NOT hidden when
+      // updateFloorGroupVisibility() hides floor groups inside the saferoom/sanctuary.
+      if (this._rootSceneAdd) this._rootSceneAdd(group);
+      else this.scene.add(group);
       this.sanctuaryFarmerGroup = group;
       this.sanctuaryFarmerX = -12.0;
       this.sanctuaryFarmerZ = 8.0;
