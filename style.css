@@ -2228,7 +2228,6 @@ body.cutscene-playing *,
   flex: 1;
   display: flex;
   gap: 30px;
-  flex-wrap: wrap;
   margin-top: 16px;
   overflow: hidden;
 }
@@ -2373,10 +2372,8 @@ body.cutscene-playing *,
 }
 
 .char-preview-footer {
-  flex: 0 0 auto;
-  max-width: 380px;
-  margin-left: auto;
   margin-top: 16px;
+  flex-shrink: 0;
   display: flex;
   justify-content: center;
   z-index: 10;
