@@ -9230,13 +9230,12 @@ window.game = this;
           const nextZ = this.sanctuaryFarmerZ + nz;
           const nextDistFromCenter = Math.hypot(nextX, nextZ);
           const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
-          // Player-style collision: never cross the explicit mountain boundary, never step
-          // onto rising mountain terrain, and never clip through boulders.
+          // Player-style collision: never cross the mountain boundary, never step onto rising
+          // mountain terrain, and never clip through boulders.
           if (nextDistFromCenter > this.sanctuaryFarmerMountainRadius || Math.abs(nextGY - originY) > 1.0) {
-            // Mountain boundary or terrain: pick a new destination
             this._pickFarmerDestination();
           } else if (this._farmerWouldHitBoulder(nextX, nextZ)) {
-            // Boulder blocks this step: pause this frame, keep destination (timer will force a new one)
+            // Boulder blocks this step: pause this frame, keep destination
           } else {
             this.sanctuaryFarmerX = nextX;
             this.sanctuaryFarmerZ = nextZ;
@@ -9266,27 +9265,28 @@ window.game = this;
       if (this.sanctuaryFarmerMixer) this.sanctuaryFarmerMixer.update(delta);
     }
 
+    // Picks a wandering destination relative to the farmer's current position, within the flat
+    // meadow area and clear of the mountain boundary and boulders.
     _pickFarmerDestination() {
       const sr = this.safeRoomSanctuary;
       if (!sr) return;
       const originX = sr.originX;
       const originZ = sr.originZ;
 
-      // Pick a flat meadow destination: clear of the mountain rim and not on/near a boulder
-      let tx = this.sanctuaryFarmerTargetX;
-      let tz = this.sanctuaryFarmerTargetZ;
+      let tx = this.sanctuaryFarmerX;
+      let tz = this.sanctuaryFarmerZ;
       let found = false;
       for (let i = 0; i < 40; i++) {
         const angle = Math.random() * Math.PI * 2;
-        const r = 6.0 + Math.random() * 18.0;
-        const cx = Math.cos(angle) * r;
-        const cz = Math.sin(angle) * r;
-        // Stay well inside the flat meadow, clear of the mountain boundary (rises at distFromCenter > 36)
+        const r = 4.0 + Math.random() * 12.0;
+        const cx = this.sanctuaryFarmerX + Math.cos(angle) * r;
+        const cz = this.sanctuaryFarmerZ + Math.sin(angle) * r;
+        // Stay inside the mountain boundary (rises at distFromCenter > 36)
         if (Math.hypot(cx, cz) > this.sanctuaryFarmerMountainRadius) continue;
         const gY = this.getSafeRoomGroundY(originX + cx, originZ + cz);
         // Only accept level meadow ground near originY; reject rising mountain terrain
         if (Math.abs(gY - sr.originY) > 1.6) continue;
-        // Avoid boulders at the destination (player-style cylinder collision)
+        // Avoid boulders at the destination
         if (this._farmerWouldHitBoulder(cx, cz)) continue;
         tx = cx;
         tz = cz;
@@ -9294,17 +9294,22 @@ window.game = this;
         break;
       }
       if (!found) {
-        // Fallback: any random spot inside the mountain boundary.
-        // Movement-time boulder/terrain checks (below) still prevent clipping.
+        // Fallback: any random spot near the farmer inside the mountain boundary.
         const angle = Math.random() * Math.PI * 2;
-        const r = 6.0 + Math.random() * 24.0;
-        tx = Math.cos(angle) * r;
-        tz = Math.sin(angle) * r;
+        const r = 4.0 + Math.random() * 12.0;
+        tx = this.sanctuaryFarmerX + Math.cos(angle) * r;
+        tz = this.sanctuaryFarmerZ + Math.sin(angle) * r;
+        // Clamp to mountain boundary
+        const d = Math.hypot(tx, tz);
+        if (d > this.sanctuaryFarmerMountainRadius) {
+          tx = (tx / d) * this.sanctuaryFarmerMountainRadius;
+          tz = (tz / d) * this.sanctuaryFarmerMountainRadius;
+        }
       }
       this.sanctuaryFarmerTargetX = tx;
       this.sanctuaryFarmerTargetZ = tz;
-      // Calm NPC: mostly walking, occasionally a short run (~10% chance)
-      if (Math.random() < 0.10) {
+      // Calm NPC: mostly walking, occasionally a short run (~15% chance)
+      if (Math.random() < 0.15) {
         this.sanctuaryFarmerState = 'RUN';
         this.sanctuaryFarmerMoveSpeed = 3.2;
         this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.5;
