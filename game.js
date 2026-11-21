@@ -9211,7 +9211,9 @@ window.game = this;
 
       // Master trail: Trails 1+2+3 form a continuous loop around the sanctuary and mountain.
       // Waypoints come from addTrailRibbon() in buildSafeRoomSanctuary().
-      const TRAIL = [
+      // Filter out any waypoint that falls inside an avoid zone so the farmer never
+      // gets stuck trying to reach a blocked point.
+      const TRAIL_RAW = [
         // Trail 1: Main Valley Parkway
         { x: -18.5, z:  9.5 },
         { x: -13.0, z:  6.0 },
@@ -9243,6 +9245,16 @@ window.game = this;
         { x: -13.0, z:  13.0 },
         { x: -18.5, z:  9.5 } // back to Trail 1 start, closes the loop
       ];
+
+      // Build filtered trail: remove waypoints inside any avoid zone
+      const TRAIL = TRAIL_RAW.filter(p => {
+        const dPortal = Math.hypot(p.x - this.sanctuaryFarmerPortalAvoidX, p.z - this.sanctuaryFarmerPortalAvoidZ);
+        const dMtn = Math.hypot(p.x - this.sanctuaryFarmerMountainAvoidX, p.z - this.sanctuaryFarmerMountainAvoidZ);
+        const dWf = Math.hypot(p.x - this.sanctuaryFarmerWaterfallAvoidX, p.z - this.sanctuaryFarmerWaterfallAvoidZ);
+        return dPortal > this.sanctuaryFarmerPortalAvoidRadius + 1.0
+          && dMtn > this.sanctuaryFarmerMountainAvoidRadius + 1.0
+          && dWf > this.sanctuaryFarmerWaterfallAvoidRadius + 1.0;
+      });
 
       // Initialize trail target on first run
       if (this.sanctuaryFarmerTrailIdx === undefined) this.sanctuaryFarmerTrailIdx = 0;
@@ -9339,13 +9351,14 @@ window.game = this;
       else if (this._farmerWouldHitBoulder(ndX, ndZ)) blocked = true;
 
       if (blocked) {
-        // Don't snap around. Stop, go idle, and pick a new facing slowly.
+        // Don't snap around. Stop, go idle briefly, then advance to next waypoint
+        // so the farmer never gets stuck trying to reach a blocked point.
         this.sanctuaryFarmerState = 'IDLE';
-        this.sanctuaryFarmerStateTimer = 1.5 + Math.random() * 2.0;
+        this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 1.5;
         if (this.sanctuaryFarmerCurrentAction !== 'idle' && this.sanctuaryFarmerActions['idle']) {
           this._fadeFarmerAction('idle');
         }
-        // Face away from the blocked area gradually (lerp handles it next frame)
+        this.sanctuaryFarmerTrailIdx = (this.sanctuaryFarmerTrailIdx + 1) % TRAIL.length;
       } else {
         this.sanctuaryFarmerX = nx;
         this.sanctuaryFarmerZ = nz;
