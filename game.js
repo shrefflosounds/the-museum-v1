@@ -24124,7 +24124,7 @@ window.game = this;
         this.stamina = Math.min(CONFIG.PLAYER.MAX_STAMINA, this.stamina + delta * 16);
       }
 
-      // The Being has 2.5x speed and 1.2x jump
+      // The Being has 2.5x speed and 2.4x jump (2x more powerful)
       const isTheBeing = (this.selectedPlayerCharacter === 9);
       const charSpeedMultiplier = isTheBeing ? 2.5 : 1.0;
 
@@ -24265,7 +24265,7 @@ window.game = this;
       const isInPoolWater = this.isSafeRoomActive && distToPool < 9.0 && currentFootElevation <= 50.2;
 
       if (wantsJump && (this.isGrounded || isInPoolWater) && !isCrouching) {
-        const jumpMultiplier = isTheBeing ? 1.2 : 1.0;
+        const jumpMultiplier = isTheBeing ? 2.4 : 1.0;
         // Clean jump boost when leaping out of the water
         const waterBoost = isInPoolWater ? 1.25 : 1.0;
         this.jumpVelocity = CONFIG.PLAYER.JUMP_FORCE * jumpMultiplier * waterBoost;
