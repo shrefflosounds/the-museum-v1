@@ -864,6 +864,7 @@ body.cutscene-playing *,
   font-size: 24px;
   color: #f1f5f9;
   margin-bottom: 24px;
+  letter-spacing: 2px;
 }
 
 .pause-actions-list {
@@ -879,6 +880,7 @@ body.cutscene-playing *,
   filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.4));
   font-size: 24px;
   padding: 16px 36px;
+  letter-spacing: 2px;
 }
 }
 
@@ -2651,6 +2653,7 @@ body.cutscene-playing *,
 #pause-modal .museum-btn,
 #pause-modal .pause-opt-btn {
   font-family: 'Vantage BRK', sans-serif !important;
+  letter-spacing: 2px;
 }
 
 /* Responsive media queries for TV, projector, and standard screens */
