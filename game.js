@@ -4524,6 +4524,10 @@
       this.sanctuaryFarmerWaterfallAvoidX = 7.0;
       this.sanctuaryFarmerWaterfallAvoidZ = -13.0;
       this.sanctuaryFarmerWaterfallAvoidRadius = 7.0;
+      // Intro greeting: farmer waves once when the player first enters the sanctuary
+      // and walks up to him
+      this.sanctuaryFarmerHasWaved = false;
+      this.sanctuaryFarmerWaveTimer = 0;
       this.leftHandShakeTimer = 0;
       this.isObjectiveModalOpen = false;
       this.isOptionsModalOpen = false;
@@ -9208,6 +9212,54 @@ window.game = this;
       const sr = this.safeRoomSanctuary;
       const originX = sr.originX;
       const originZ = sr.originZ;
+
+      // Intro greeting: when the player first enters the sanctuary and walks up to
+      // the farmer, he looks at them and gives a 4-second wave (only once).
+      if (!this.sanctuaryFarmerHasWaved && this.sanctuaryFarmer && this.sanctuaryFarmerActions['wave']) {
+        const dPlayer = Math.hypot(
+          this.playerPos.x - (originX + this.sanctuaryFarmerX),
+          this.playerPos.z - (originZ + this.sanctuaryFarmerZ)
+        );
+        if (dPlayer < 6.0) {
+          // Face the player smoothly
+          const desiredRotY = Math.atan2(
+            this.playerPos.x - (originX + this.sanctuaryFarmerX),
+            this.playerPos.z - (originZ + this.sanctuaryFarmerZ)
+          );
+          let rDiff = Math.atan2(Math.sin(desiredRotY - this.sanctuaryFarmerRotY), Math.cos(desiredRotY - this.sanctuaryFarmerRotY));
+          const maxTurn = this.sanctuaryFarmerTurnSpeed * delta;
+          if (Math.abs(rDiff) > maxTurn) {
+            this.sanctuaryFarmerRotY += Math.sign(rDiff) * maxTurn;
+          } else {
+            this.sanctuaryFarmerRotY = desiredRotY;
+          }
+          this.sanctuaryFarmerTargetRotY = this.sanctuaryFarmerRotY;
+
+          if (this.sanctuaryFarmerWaveTimer <= 0) {
+            this.sanctuaryFarmerWaveTimer = 4.0;
+            this.sanctuaryFarmerState = 'WAVE';
+            this.sanctuaryFarmerCurrentAction = 'wave';
+            this.sanctuaryFarmerActions['wave'].reset().fadeIn(0.1).play();
+          }
+
+          this.sanctuaryFarmerWaveTimer -= delta;
+          if (this.sanctuaryFarmerWaveTimer <= 0) {
+            this.sanctuaryFarmerHasWaved = true;
+            this.sanctuaryFarmerState = 'IDLE';
+            this.sanctuaryFarmerStateTimer = 1.0 + Math.random() * 2.0;
+            this.sanctuaryFarmerCurrentAction = 'idle';
+            this.sanctuaryFarmerActions['idle'].reset().fadeIn(0.2).play();
+            this.sanctuaryFarmerActions['wave'].fadeOut(0.2);
+          }
+
+          // Snap to ground while waving
+          const gY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
+          this.sanctuaryFarmerGroup.position.set(originX + this.sanctuaryFarmerX, gY, originZ + this.sanctuaryFarmerZ);
+          this.sanctuaryFarmerGroup.rotation.y = this.sanctuaryFarmerRotY;
+          if (this.sanctuaryFarmerMixer) this.sanctuaryFarmerMixer.update(delta);
+          return; // skip trail logic during greeting
+        }
+      }
 
       // Master trail: Trails 1+2+3 form a continuous loop around the sanctuary and mountain.
       // Waypoints come from addTrailRibbon() in buildSafeRoomSanctuary().
