@@ -9226,9 +9226,9 @@ window.game = this;
           const nextX = this.sanctuaryFarmerX + nx;
           const nextZ = this.sanctuaryFarmerZ + nz;
           const nextGY = this.getSafeRoomGroundY(originX + nextX, originZ + nextZ);
-          const curGY = this.getSafeRoomGroundY(originX + this.sanctuaryFarmerX, originZ + this.sanctuaryFarmerZ);
-          // Player-style collision: never clip through boulders or walk up onto the mountain
-          if (nextGY - curGY > 1.2 || this._farmerWouldHitBoulder(nextX, nextZ)) {
+          // Player-style collision: never clip through boulders, and never walk off
+          // flat meadow onto rising mountain terrain (reject any non-level ground).
+          if (Math.abs(nextGY - originY) > 1.0 || this._farmerWouldHitBoulder(nextX, nextZ)) {
             this._pickFarmerDestination();
           } else {
             this.sanctuaryFarmerX = nextX;
