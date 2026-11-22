@@ -516,7 +516,7 @@
         const now = this.ctx.currentTime;
         this.deathMusicGain.gain.cancelScheduledValues(now);
         this.deathMusicGain.gain.setValueAtTime(this.deathMusicGain.gain.value, now);
-        this.deathMusicGain.gain.linearRampToValueAtTime(0.9, now + 0.25);
+        this.deathMusicGain.gain.linearRampToValueAtTime(0.585, now + 0.25);
         return;
       }
 
@@ -526,7 +526,7 @@
 
       const gain = this.ctx.createGain();
       gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
-      gain.gain.linearRampToValueAtTime(0.9, this.ctx.currentTime + 0.6);
+      gain.gain.linearRampToValueAtTime(0.585, this.ctx.currentTime + 0.6);
 
       src.connect(gain);
       gain.connect(this.masterGain);
