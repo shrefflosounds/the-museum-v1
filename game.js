@@ -5735,7 +5735,6 @@ window.game = this;
         const floorMat = mats.floorMarble;
         const wallMat = mats.wallPlasterCool;
         const tableMat = mats.floorParquet;
-        const standMat = mats.ceiling;
         const yc = y0 + ceilH / 2;
 
         this.createFloor(cx, y0, cz, w, d, floorMat);
@@ -5803,32 +5802,6 @@ window.game = this;
         for (const tx of tableXs) {
           for (const tz of tableZs) addTable(tx, tz, tableW, tableD);
         }
-
-        // White product boxes on the tables
-        const prodMat = standMat;
-        for (const tx of tableXs) {
-          for (const tz of tableZs) {
-            for (const ox of [-2.4, 0, 2.4]) {
-              const p = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.34), prodMat);
-              p.position.set(tx + ox, tableTopY + 0.18, tz);
-              atticGroup.add(p);
-            }
-          }
-        }
-
-        // Freestanding white display pedestals around the perimeter
-        const addStand = (sx, sz, sw, sh, sd) => {
-          const m = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, sd), standMat);
-          m.position.set(sx, y0 + sh / 2, sz);
-          atticGroup.add(m);
-          this.colliders.push({ type: 'box', floor: fl, minX: sx - sw / 2, maxX: sx + sw / 2, minZ: sz - sd / 2, maxZ: sz + sd / 2, minY: y0, maxY: y0 + sh, isWall: false });
-        };
-        addStand(28.0, -24.0, 0.9, 1.2, 0.9);
-        addStand(-4.0, -24.0, 0.9, 1.2, 0.9);
-        addStand(28.0, -34.0, 0.9, 1.2, 0.9);
-        addStand(-4.0, -34.0, 0.9, 1.2, 0.9);
-        addStand(28.0, -44.0, 0.9, 1.2, 0.9);
-        addStand(-4.0, -44.0, 0.9, 1.2, 0.9);
       } finally {
         this.scene.add = rootSceneAdd;
       }
@@ -5913,7 +5886,7 @@ window.game = this;
             model.updateMatrixWorld(true);
             const size = new THREE.Vector3();
             new THREE.Box3().setFromObject(model).getSize(size);
-            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5 * 2.5;
+            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5 * 1.875;
             if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
 
             // Drop the model so its feet rest on the attic floor (local y = 0).
