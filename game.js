@@ -1232,9 +1232,9 @@
     ATTIC_FLOOR: 4,
     NUM_LEVELS: 5,
     ATTIC: {
-      MIN_X: 2, MAX_X: 22,
-      MIN_Z: -40, MAX_Z: -28,
-      WALL_H: 3.2,
+      MIN_X: -8, MAX_X: 32,
+      MIN_Z: -46, MAX_Z: -22,
+      WALL_H: 6.4,
       LADDER_X: 8, LADDER_Z: -30,
       LAND_Z: -32
     },
@@ -5757,7 +5757,7 @@ window.game = this;
         atticLight2.position.set(A.LADDER_X, y0 + 2.6, -33.0);
         this.scene.add(atticLight2);
 
-        // Display tables (light wood) with an open central aisle
+        // Display tables (light wood) in two columns with a wide central aisle
         const legH = 0.82, topT = 0.09;
         const tableTopY = y0 + legH + topT;
         const addTable = (tx, tz, tw, td) => {
@@ -5772,30 +5772,38 @@ window.game = this;
           }
           this.colliders.push({ type: 'box', floor: fl, minX: tx - tw / 2, maxX: tx + tw / 2, minZ: tz - td / 2, maxZ: tz + td / 2, minY: y0, maxY: tableTopY, isWall: false });
         };
-        addTable(13.0, -33.0, 8.0, 1.5);
-        addTable(13.0, -36.0, 8.0, 1.5);
+        const tableXs = [3.0, 21.0];
+        const tableZs = [-25.0, -29.0, -35.0, -39.0, -43.0];
+        const tableW = 7.0, tableD = 1.4;
+        for (const tx of tableXs) {
+          for (const tz of tableZs) addTable(tx, tz, tableW, tableD);
+        }
 
         // White product boxes on the tables
         const prodMat = standMat;
-        for (const tz of [-33.0, -36.0]) {
-          for (const ox of [-2.6, 0, 2.6]) {
-            const p = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.34), prodMat);
-            p.position.set(13.0 + ox, tableTopY + 0.18, tz);
-            atticGroup.add(p);
+        for (const tx of tableXs) {
+          for (const tz of tableZs) {
+            for (const ox of [-2.4, 0, 2.4]) {
+              const p = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.34), prodMat);
+              p.position.set(tx + ox, tableTopY + 0.18, tz);
+              atticGroup.add(p);
+            }
           }
         }
 
-        // Freestanding white display pedestals near the walls
+        // Freestanding white display pedestals around the perimeter
         const addStand = (sx, sz, sw, sh, sd) => {
           const m = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, sd), standMat);
           m.position.set(sx, y0 + sh / 2, sz);
           atticGroup.add(m);
           this.colliders.push({ type: 'box', floor: fl, minX: sx - sw / 2, maxX: sx + sw / 2, minZ: sz - sd / 2, maxZ: sz + sd / 2, minY: y0, maxY: y0 + sh, isWall: false });
         };
-        addStand(19.6, -38.2, 0.8, 1.1, 0.8);
-        addStand(4.4, -38.2, 0.8, 1.1, 0.8);
-        addStand(19.6, -29.6, 0.8, 1.1, 0.8);
-        addStand(4.4, -29.6, 0.8, 1.1, 0.8);
+        addStand(28.0, -24.0, 0.9, 1.2, 0.9);
+        addStand(-4.0, -24.0, 0.9, 1.2, 0.9);
+        addStand(28.0, -34.0, 0.9, 1.2, 0.9);
+        addStand(-4.0, -34.0, 0.9, 1.2, 0.9);
+        addStand(28.0, -44.0, 0.9, 1.2, 0.9);
+        addStand(-4.0, -44.0, 0.9, 1.2, 0.9);
       } finally {
         this.scene.add = rootSceneAdd;
       }
@@ -5855,10 +5863,12 @@ window.game = this;
       atticGroup.add(npcGroup);
       this.atticNpcGroup = npcGroup;
 
-      // Patrol the open central aisle between the two display tables.
+      // Patrol the open central aisle between the two display-table columns.
       this.atticNpcWaypoints = [
-        { x: 9.0, z: -34.5 },
-        { x: 18.0, z: -34.5 }
+        { x: 10.0, z: -24.0 },
+        { x: 10.0, z: -44.0 },
+        { x: 16.0, z: -44.0 },
+        { x: 16.0, z: -24.0 }
       ];
       this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, mode: 'walk', timer: 0 };
 
@@ -5919,7 +5929,7 @@ window.game = this;
       const A = CONFIG.ATTIC;
       const y0 = CONFIG.ATTIC_FLOOR * CONFIG.FLOOR_HEIGHT;
       const cx = A.LADDER_X, cz = A.LADDER_Z;
-      const cw = 400, ch = 400;
+      const cw = 256, ch = 256;
       const canvas = document.createElement('canvas');
       canvas.width = cw; canvas.height = ch;
       const ctx = canvas.getContext('2d');
@@ -5931,9 +5941,10 @@ window.game = this;
       tex.minFilter = THREE.LinearFilter;
       tex.magFilter = THREE.LinearFilter;
 
-      const mat = new THREE.MeshBasicMaterial({
-        map: tex, transparent: true, side: THREE.FrontSide,
-        toneMapped: false, depthWrite: false
+      const mat = new THREE.MeshStandardMaterial({
+        map: tex, roughness: 0.8, metalness: 0.0,
+        emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.22,
+        transparent: true, side: THREE.FrontSide, depthWrite: false
       });
       const geo = new THREE.PlaneGeometry(2.0, 2.0);
 
@@ -5949,23 +5960,91 @@ window.game = this;
       ceilPlane.position.set(cx, y0 - 0.12, cz);
       if (this.floorGroups[CONFIG.NUM_FLOORS - 1]) this.floorGroups[CONFIG.NUM_FLOORS - 1].add(ceilPlane);
 
-      const img = new Image();
-      const state = { tex, ctx, canvas, img, planes: [atticPlane, ceilPlane], acc: 0, ready: false };
-      img.onload = () => { state.ready = true; };
-      img.src = `assets/magicportal.gif?v=${window._ASSET_VERSION || Date.now()}`;
+      const state = {
+        tex, ctx, canvas, planes: [atticPlane, ceilPlane],
+        frames: [], times: [], total: 0, elapsed: 0, lastIdx: -1,
+        mode: 'none', acc: 0, ready: false, img: null
+      };
       this.atticPortal = state;
+      this._loadAtticPortalGif(state, `assets/magicportal.gif?v=${window._ASSET_VERSION || Date.now()}`);
+    }
+
+    _drawPortalFrame(state, idx) {
+      const f = state.frames[idx];
+      if (!f) return;
+      state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+      try { state.ctx.drawImage(f, 0, 0, state.canvas.width, state.canvas.height); } catch (e) {}
+      state.tex.needsUpdate = true;
+      state.lastIdx = idx;
+    }
+
+    async _loadAtticPortalGif(state, url) {
+      // Preferred path: decode the GIF's frames explicitly. This is frame-accurate
+      // and does not depend on the browser's live <img> animation (which is often
+      // throttled to frame 0, leaving a static texture).
+      try {
+        if (typeof ImageDecoder === 'undefined') throw new Error('ImageDecoder unavailable');
+        const res = await fetch(url);
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const buf = await res.arrayBuffer();
+        const dec = new ImageDecoder({ data: buf, type: 'image/gif' });
+        await dec.tracks.ready;
+        const n = (dec.tracks.selectedTrack && dec.tracks.selectedTrack.frameCount) || 1;
+        const step = Math.max(1, Math.ceil(n / 120));
+        let acc = 0;
+        for (let i = 0; i < n; i += step) {
+          const { image } = await dec.decode({ frameIndex: i });
+          const dur = (image.duration || 100000) / 1000; // microseconds -> ms
+          state.frames.push(image);
+          state.times.push(acc);
+          acc += Math.max(16, dur);
+        }
+        if (!state.frames.length) throw new Error('no frames decoded');
+        state.total = acc;
+        state.mode = 'frames';
+        state.ready = true;
+        this._drawPortalFrame(state, 0);
+        return;
+      } catch (e) {
+        console.warn('Attic portal: ImageDecoder path failed, using <img> fallback:', e);
+      }
+      this._loadAtticPortalImgFallback(state, url);
+    }
+
+    _loadAtticPortalImgFallback(state, url) {
+      const img = new Image();
+      img.setAttribute('aria-hidden', 'true');
+      img.style.cssText = 'position:fixed;left:0;top:0;width:6px;height:6px;opacity:0.03;pointer-events:none;z-index:2147483647;';
+      document.body.appendChild(img);
+      state.img = img;
+      state.mode = 'img';
+      img.onload = () => {
+        state.ready = true;
+        state.ctx.clearRect(0, 0, state.canvas.width, state.canvas.height);
+        try { state.ctx.drawImage(img, 0, 0, state.canvas.width, state.canvas.height); } catch (e) {}
+        state.tex.needsUpdate = true;
+      };
+      img.src = url;
     }
 
     updateAtticPortal(delta) {
       const p = this.atticPortal;
       if (!p || !p.ready) return;
-      p.acc += delta;
-      if (p.acc < 1 / 30) return;
-      p.acc = 0;
-      if (!p.img.naturalWidth) return;
-      p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
-      try { p.ctx.drawImage(p.img, 0, 0, p.canvas.width, p.canvas.height); } catch (e) {}
-      p.tex.needsUpdate = true;
+      if (p.mode === 'frames' && p.frames.length) {
+        p.elapsed = (p.elapsed + delta * 1000) % p.total;
+        let idx = 0;
+        for (let i = 0; i < p.times.length; i++) { if (p.times[i] <= p.elapsed) idx = i; else break; }
+        if (idx !== p.lastIdx) this._drawPortalFrame(p, idx);
+        return;
+      }
+      if (p.mode === 'img' && p.img && p.img.naturalWidth) {
+        p.acc += delta;
+        if (p.acc < 1 / 30) return;
+        p.acc = 0;
+        p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
+        try { p.ctx.drawImage(p.img, 0, 0, p.canvas.width, p.canvas.height); } catch (e) {}
+        p.tex.needsUpdate = true;
+      }
     }
 
     updateAtticNpc(delta) {
@@ -20054,9 +20133,9 @@ window.game = this;
         const af = CONFIG.ATTIC_FLOOR;
         const ay = af * CONFIG.FLOOR_HEIGHT;
         const aLand = addNode(CONFIG.ATTIC.LADDER_X, ay, CONFIG.ATTIC.LAND_Z, af, 'attic_land');
-        const aMid = addNode(8.0, ay, -35.0, af, 'attic_mid');
-        const aEast = addNode(16.0, ay, -34.0, af, 'attic_east');
-        const aWest = addNode(5.0, ay, -33.5, af, 'attic_west');
+        const aMid = addNode(12.0, ay, -34.0, af, 'attic_mid');
+        const aEast = addNode(24.0, ay, -34.0, af, 'attic_east');
+        const aWest = addNode(0.0, ay, -34.0, af, 'attic_west');
         connect(aLand, aMid);
         connect(aMid, aEast);
         connect(aMid, aWest);
@@ -23273,7 +23352,7 @@ window.game = this;
       ctx.font = 'bold 11px Caryn';
       ctx.textAlign = 'left';
       const levelLabel = (this.playerFloor === CONFIG.ATTIC_FLOOR)
-        ? T('map.current_level_attic', 'CURRENT LEVEL: ATTIC')
+        ? T('map.current_level_attic', 'CURRENT LEVEL: GIFT SHOP')
         : T('map.current_level', 'CURRENT LEVEL: FLOOR {number} OF 4', { number: this.playerFloor + 1 });
       ctx.fillText(levelLabel, 14, 22);
     }
@@ -24320,7 +24399,7 @@ window.game = this;
       const b = this.getAtticLadderBase();
       const d = Math.hypot(this.playerPos.x - b.x, this.playerPos.z - b.z);
       if (this.playerFloor === CONFIG.NUM_FLOORS - 1 && d < 2.2) {
-        return T('hud.prompt_climb_attic', '[E] CLIMB LADDER TO ATTIC');
+        return T('hud.prompt_climb_attic', '[E] CLIMB LADDER TO GIFT SHOP');
       }
       if (this.playerFloor === CONFIG.ATTIC_FLOOR && d < 2.2) {
         return T('hud.prompt_climb_down', '[E] CLIMB DOWN');
@@ -25997,7 +26076,7 @@ window.game = this;
       this.updateRelicFloorVisibility();
       if (!this.dom.floorIndicator) return;
       if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
-      const names = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR', 'ATTIC'];
+      const names = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR', 'GIFT SHOP'];
       const text = names[floor] || `FLOOR ${floor + 1}`;
       this.dom.floorIndicator.textContent = text;
       this.dom.floorIndicator.style.opacity = '1';
@@ -26247,13 +26326,13 @@ window.game = this;
       const pz = this.playerPos.z;
       const fl = this.playerFloor;
       if (fl === CONFIG.ATTIC_FLOOR) {
-        const atticArea = T('area.attic', 'THE ATTIC');
+        const atticArea = T('area.attic', 'THE GIFT SHOP');
         if (this.dom.roomIndicator && this.dom.roomIndicator.textContent !== atticArea) {
           this.dom.roomIndicator.textContent = atticArea;
           this.dom.roomIndicator.style.color = '#f59e0b';
         }
         const atticRoomEl = document.getElementById('room-name');
-        if (atticRoomEl) atticRoomEl.textContent = T('floor.attic', 'ATTIC') + ' • ' + atticArea;
+        if (atticRoomEl) atticRoomEl.textContent = T('floor.attic', 'GIFT SHOP') + ' • ' + atticArea;
         this.currentRoom = atticArea;
         return;
       }
