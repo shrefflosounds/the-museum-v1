@@ -5861,14 +5861,19 @@ window.game = this;
       atticGroup.add(npcGroup);
       this.atticNpcGroup = npcGroup;
 
-      // Patrol the open central aisle between the two display-table columns.
-      this.atticNpcWaypoints = [
-        { x: 10.0, z: -24.0 },
-        { x: 10.0, z: -44.0 },
-        { x: 16.0, z: -44.0 },
-        { x: 16.0, z: -24.0 }
-      ];
-      this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, mode: 'walk', timer: 0 };
+      // Serpentine shopping path: stroll down the aisles between the table rows,
+      // pausing at each table to face it as if browsing the items on display.
+      // West column (x=3) browsed walking south->north, then cross at the north
+      // end and browse the east column (x=21) walking north->south.
+      const browseRows = [-25, -29, -35, -39, -43];
+      const wps = [];
+      for (const z of browseRows) wps.push({ x: 8, z, bx: 3, bz: z });
+      for (let i = browseRows.length - 1; i >= 0; i--) {
+        const z = browseRows[i];
+        wps.push({ x: 16, z, bx: 21, bz: z });
+      }
+      this.atticNpcWaypoints = wps;
+      this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, mode: 'walk', timer: 0, browse: null };
 
       const cacheKey = window._ASSET_VERSION || Date.now();
       fetch(`assets/Yellow-Creature.glb?v=${cacheKey}`)
@@ -6073,6 +6078,19 @@ window.game = this;
         return;
       }
 
+      // "Browsing" — stand at the table and face it, as if looking at the items.
+      if (st.mode === 'browse') {
+        const b = st.browse;
+        if (b) {
+          const bdx = b.x - g.position.x;
+          const bdz = b.z - g.position.z;
+          if (bdx * bdx + bdz * bdz > 1e-4) this._npcTurn(st, Math.atan2(bdx, bdz), delta * 3);
+        }
+        g.rotation.y = st.yaw;
+        if (st.timer <= 0) st.mode = 'walk';
+        return;
+      }
+
       // Walk the aisle toward the current waypoint.
       const wp = wps[st.idx];
       const dx = wp.x - g.position.x;
@@ -6083,10 +6101,17 @@ window.game = this;
       if (dist <= step || dist < 1e-4) {
         g.position.x = wp.x;
         g.position.z = wp.z;
+        const reached = wp;
         st.idx = (st.idx + 1) % wps.length;
-        const r = Math.random();
-        if (r < 0.30) { st.mode = 'look'; st.timer = 1.2 + Math.random() * 1.8; }
-        else if (r < 0.62) { st.mode = 'idle'; st.timer = 1.0 + Math.random() * 2.2; }
+        if (reached.bx !== undefined && reached.bz !== undefined) {
+          st.mode = 'browse';
+          st.browse = { x: reached.bx, z: reached.bz };
+          st.timer = reached.pause || (1.8 + Math.random() * 1.4);
+        } else {
+          const r = Math.random();
+          if (r < 0.30) { st.mode = 'look'; st.timer = 1.2 + Math.random() * 1.8; }
+          else if (r < 0.62) { st.mode = 'idle'; st.timer = 1.0 + Math.random() * 2.2; }
+        }
         return;
       }
 
@@ -6094,9 +6119,6 @@ window.game = this;
       g.position.z += (dz / dist) * step;
       this._npcTurn(st, Math.atan2(dx, dz), delta * 5);
       g.rotation.y = st.yaw;
-
-      // Occasionally stop mid-aisle to glance at the player.
-      if (Math.random() < delta * 0.12) { st.mode = 'look'; st.timer = 0.8 + Math.random() * 1.2; }
     }
 
     // --- MULTI-STORY U-STAIRWELL CONTINUOUS SURFACE ELEVATION SOLVER ---
