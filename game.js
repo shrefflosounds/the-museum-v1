@@ -5747,15 +5747,40 @@ window.game = this;
         this.createWall(minX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
         this.createWall(maxX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
 
-        // Clean, bright Apple-Store-style lighting (recessed, no visible bulb)
-        const atticLight = new THREE.PointLight(0xfff6ea, 1.15, 24.0, 1.15);
-        atticLight._origIntensity = 1.15;
-        atticLight.position.set(cx, y0 + ceilH - 0.55, cz);
-        this.scene.add(atticLight);
-        const atticLight2 = new THREE.PointLight(0xffffff, 0.55, 16.0, 1.4);
-        atticLight2._origIntensity = 0.55;
-        atticLight2.position.set(A.LADDER_X, y0 + 2.6, -33.0);
-        this.scene.add(atticLight2);
+        // Bright, even Apple-Store-style lighting: white ambient + hemisphere fill
+        // for shadowless brightness, a grid of recessed ceiling downlights, and a
+        // few real point lights for soft modeling. All are attic-scoped (culled by
+        // updateRelicFloorVisibility so they only light the gift shop).
+        const atticAmbient = new THREE.AmbientLight(0xffffff, 0.45);
+        atticAmbient._origIntensity = 0.45;
+        this.scene.add(atticAmbient);
+
+        const atticHemi = new THREE.HemisphereLight(0xffffff, 0xdfe1e4, 0.35);
+        atticHemi._origIntensity = 0.35;
+        atticHemi.position.set(cx, y0 + ceilH, cz);
+        this.scene.add(atticHemi);
+
+        // Visual recessed downlights (emissive discs) in a grid across the ceiling
+        const downlightMat = new THREE.MeshBasicMaterial({ color: 0xfff6e8 });
+        const dlGeo = new THREE.CircleGeometry(0.24, 14);
+        for (const dx of [-2, 6, 14, 22, 30]) {
+          for (const dz of [-26, -32, -38, -44]) {
+            const disc = new THREE.Mesh(dlGeo, downlightMat);
+            disc.rotation.x = Math.PI / 2; // face down
+            disc.position.set(dx, y0 + ceilH - 0.03, dz);
+            atticGroup.add(disc);
+          }
+        }
+
+        // Real lights co-located with a subset of downlights for soft modeling
+        for (const lx of [6, 22]) {
+          for (const lz of [-29, -41]) {
+            const pl = new THREE.PointLight(0xfff4e6, 0.45, 26.0, 1.2);
+            pl._origIntensity = 0.45;
+            pl.position.set(lx, y0 + ceilH - 0.6, lz);
+            this.scene.add(pl);
+          }
+        }
 
         // Display tables (light wood) in two columns with a wide central aisle
         const legH = 0.82, topT = 0.09;
@@ -5888,7 +5913,7 @@ window.game = this;
             model.updateMatrixWorld(true);
             const size = new THREE.Vector3();
             new THREE.Box3().setFromObject(model).getSize(size);
-            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5 * 1.25;
+            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5 * 2.5;
             if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
 
             // Drop the model so its feet rest on the attic floor (local y = 0).
@@ -5946,7 +5971,7 @@ window.game = this;
         emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.22,
         transparent: true, side: THREE.FrontSide, depthWrite: false
       });
-      const geo = new THREE.PlaneGeometry(2.0, 2.0);
+      const geo = new THREE.PlaneGeometry(4.0, 4.0);
 
       // Attic hatch (faces up) — the portal you step into to warp back down.
       const atticPlane = new THREE.Mesh(geo, mat);
