@@ -48,7 +48,7 @@ options.done = DONE
 [ ABOUT ]
 about.title = ABOUT
 about.description = **Shrefflo Museum** - An interactive art exhibit
-about.byline = By Smitty Fantastic, built with Antigravity.
+about.byline = By Smitty Fantastic, built with Antigravity, Kilo, Github Copilot, and Three.js.
 about.build = Version 1.1.0 (Build 110)
 about.done = DONE
 
