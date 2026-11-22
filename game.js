@@ -5732,9 +5732,10 @@ window.game = this;
       };
 
       try {
-        const floorMat = mats.floorDarkWood;
-        const wallMat = mats.wallBrick;
-        const beamMat = mats.mahogany;
+        const floorMat = mats.floorMarble;
+        const wallMat = mats.wallPlasterCool;
+        const tableMat = mats.floorParquet;
+        const standMat = mats.ceiling;
         const yc = y0 + ceilH / 2;
 
         this.createFloor(cx, y0, cz, w, d, floorMat);
@@ -5746,59 +5747,65 @@ window.game = this;
         this.createWall(minX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
         this.createWall(maxX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
 
-        // Exposed wooden rafters
-        for (let i = 0; i < 5; i++) {
-          const rz = minZ + 1.6 + i * 2.3;
-          const beam = new THREE.Mesh(new THREE.BoxGeometry(w - 0.9, 0.18, 0.22), beamMat);
-          beam.position.set(cx, y0 + ceilH - 0.28, rz);
-          atticGroup.add(beam);
-        }
-        // Support posts in the corners
-        for (const [px, pz] of [[minX + 0.5, minZ + 0.5], [maxX - 0.5, minZ + 0.5], [minX + 0.5, maxZ - 0.5], [maxX - 0.5, maxZ - 0.5]]) {
-          const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, ceilH, 0.22), beamMat);
-          post.position.set(px, yc, pz);
-          atticGroup.add(post);
-          this.colliders.push({ type: 'box', floor: fl, minX: px - 0.11, maxX: px + 0.11, minZ: pz - 0.11, maxZ: pz + 0.11, minY: y0, maxY: y0 + ceilH, isWall: false });
-        }
-
-        // Hanging bare bulb
-        const cordMat = new THREE.MeshBasicMaterial({ color: 0x1a1712 });
-        const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.75, 6), cordMat);
-        cord.position.set(cx, y0 + ceilH - 0.45, cz);
-        atticGroup.add(cord);
-        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffdca0 }));
-        bulb.position.set(cx, y0 + ceilH - 0.86, cz);
-        atticGroup.add(bulb);
-        const atticLight = new THREE.PointLight(0xffcf8a, 0.95, 18.0, 1.35);
-        atticLight._origIntensity = 0.95;
-        atticLight.position.set(cx, y0 + ceilH - 0.95, cz);
+        // Clean, bright Apple-Store-style lighting (recessed, no visible bulb)
+        const atticLight = new THREE.PointLight(0xfff6ea, 1.15, 24.0, 1.15);
+        atticLight._origIntensity = 1.15;
+        atticLight.position.set(cx, y0 + ceilH - 0.55, cz);
         this.scene.add(atticLight);
+        const atticLight2 = new THREE.PointLight(0xffffff, 0.55, 16.0, 1.4);
+        atticLight2._origIntensity = 0.55;
+        atticLight2.position.set(A.LADDER_X, y0 + 2.6, -33.0);
+        this.scene.add(atticLight2);
 
-        // Stored clutter: crates & trunks along the walls
-        const addAtticBox = (bx, bz, bw, bh, bd, mat) => {
-          const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), mat);
-          m.position.set(bx, y0 + bh / 2, bz);
-          atticGroup.add(m);
-          this.colliders.push({ type: 'box', floor: fl, minX: bx - bw / 2, maxX: bx + bw / 2, minZ: bz - bd / 2, maxZ: bz + bd / 2, minY: y0, maxY: y0 + bh, isWall: false });
+        // Display tables (light wood) with an open central aisle
+        const legH = 0.82, topT = 0.09;
+        const tableTopY = y0 + legH + topT;
+        const addTable = (tx, tz, tw, td) => {
+          const top = new THREE.Mesh(new THREE.BoxGeometry(tw, topT, td), tableMat);
+          top.position.set(tx, y0 + legH + topT / 2, tz);
+          atticGroup.add(top);
+          const lx = tw / 2 - 0.14, lz = td / 2 - 0.14;
+          for (const [sx, sz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+            const leg = new THREE.Mesh(new THREE.BoxGeometry(0.09, legH, 0.09), tableMat);
+            leg.position.set(tx + sx * lx, y0 + legH / 2, tz + sz * lz);
+            atticGroup.add(leg);
+          }
+          this.colliders.push({ type: 'box', floor: fl, minX: tx - tw / 2, maxX: tx + tw / 2, minZ: tz - td / 2, maxZ: tz + td / 2, minY: y0, maxY: tableTopY, isWall: false });
         };
-        addAtticBox(4.2, -38.2, 1.4, 1.0, 1.4, mats.floorDarkWood);
-        addAtticBox(5.9, -38.4, 1.1, 0.7, 1.1, mats.mahogany);
-        addAtticBox(19.8, -38.0, 1.5, 1.2, 1.5, mats.floorDarkWood);
-        addAtticBox(20.0, -30.0, 1.2, 0.9, 1.2, mats.mahogany);
-        addAtticBox(4.0, -29.6, 1.3, 1.1, 1.0, mats.floorDarkWood);
-        addAtticBox(17.5, -29.5, 1.0, 0.8, 1.0, mats.mahogany);
+        addTable(13.0, -33.0, 8.0, 1.5);
+        addTable(13.0, -36.0, 8.0, 1.5);
 
-        // Old sheet-covered shape (a dusty chair / mannequin)
-        const sheet = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.5, 10), new THREE.MeshLambertMaterial({ color: 0xcfc9bd }));
-        sheet.position.set(13.5, y0 + 0.75, -36.0);
-        atticGroup.add(sheet);
-        this.colliders.push({ type: 'cylinder', floor: fl, x: 13.5, z: -36.0, radius: 0.6, minY: y0, maxY: y0 + 1.5, isWall: false });
+        // White product boxes on the tables
+        const prodMat = standMat;
+        for (const tz of [-33.0, -36.0]) {
+          for (const ox of [-2.6, 0, 2.6]) {
+            const p = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.36, 0.34), prodMat);
+            p.position.set(13.0 + ox, tableTopY + 0.18, tz);
+            atticGroup.add(p);
+          }
+        }
+
+        // Freestanding white display pedestals near the walls
+        const addStand = (sx, sz, sw, sh, sd) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(sw, sh, sd), standMat);
+          m.position.set(sx, y0 + sh / 2, sz);
+          atticGroup.add(m);
+          this.colliders.push({ type: 'box', floor: fl, minX: sx - sw / 2, maxX: sx + sw / 2, minZ: sz - sd / 2, maxZ: sz + sd / 2, minY: y0, maxY: y0 + sh, isWall: false });
+        };
+        addStand(19.6, -38.2, 0.8, 1.1, 0.8);
+        addStand(4.4, -38.2, 0.8, 1.1, 0.8);
+        addStand(19.6, -29.6, 0.8, 1.1, 0.8);
+        addStand(4.4, -29.6, 0.8, 1.1, 0.8);
       } finally {
         this.scene.add = rootSceneAdd;
       }
 
-      // Ladder + hatch (lower half on the 4th floor, upper frame in the attic)
+      // Ladder (lower half on the 4th floor)
       this.buildAtticLadder(mats);
+
+      // Animated magic portal at the top of the ladder (4th-floor ceiling) and
+      // at the attic hatch, replacing the old wooden hatch frame.
+      this.buildAtticPortals();
 
       // Wandering attic NPC (glides along the floor, no rigging/animation)
       this.buildAtticNpc();
@@ -5830,18 +5837,8 @@ window.game = this;
       }
       if (this.floorGroups[CONFIG.NUM_FLOORS - 1]) this.floorGroups[CONFIG.NUM_FLOORS - 1].add(lower);
 
-      // Hatch frame in the attic floor around the ladder opening
-      const frameMat = mats.mahogany;
-      const fw = 1.4;
-      const addFrame = (fx, fz, fw2, fd2) => {
-        const m = new THREE.Mesh(new THREE.BoxGeometry(fw2, 0.08, fd2), frameMat);
-        m.position.set(fx, topY + 0.02, fz);
-        if (this.floorGroups[CONFIG.ATTIC_FLOOR]) this.floorGroups[CONFIG.ATTIC_FLOOR].add(m);
-      };
-      addFrame(lx, lz - fw / 2, fw + 0.24, 0.12);
-      addFrame(lx, lz + fw / 2, fw + 0.24, 0.12);
-      addFrame(lx - fw / 2, lz, 0.12, fw + 0.24);
-      addFrame(lx + fw / 2, lz, 0.12, fw + 0.24);
+      // Hatch opening in the attic floor around the ladder: the animated magic
+      // portal plane (added by buildAtticPortals) replaces the old wooden frame.
     }
 
     buildAtticNpc() {
@@ -5858,15 +5855,12 @@ window.game = this;
       atticGroup.add(npcGroup);
       this.atticNpcGroup = npcGroup;
 
-      // Patrol waypoints, kept clear of the crates, corner posts and the
-      // sheet-covered shape so the creature never clips through clutter.
+      // Patrol the open central aisle between the two display tables.
       this.atticNpcWaypoints = [
-        { x: 10.0, z: -32.5 },
-        { x: 17.0, z: -32.5 },
-        { x: 17.0, z: -35.0 },
-        { x: 10.0, z: -35.0 }
+        { x: 9.0, z: -34.5 },
+        { x: 18.0, z: -34.5 }
       ];
-      this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, moving: false };
+      this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, mode: 'walk', timer: 0 };
 
       const cacheKey = window._ASSET_VERSION || Date.now();
       fetch(`assets/Yellow-Creature.glb?v=${cacheKey}`)
@@ -5880,11 +5874,11 @@ window.game = this;
             const model = gltf.scene;
             model.name = 'YellowCreature';
 
-            // Scale to roughly half the player's height.
+            // Scale to roughly 5/8 of the player's height (half, +25%).
             model.updateMatrixWorld(true);
             const size = new THREE.Vector3();
             new THREE.Box3().setFromObject(model).getSize(size);
-            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5;
+            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5 * 1.25;
             if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
 
             // Drop the model so its feet rest on the attic floor (local y = 0).
@@ -5914,44 +5908,118 @@ window.game = this;
         });
     }
 
+    _npcTurn(st, targetYaw, rate) {
+      let diff = targetYaw - st.yaw;
+      while (diff > Math.PI) diff -= Math.PI * 2;
+      while (diff < -Math.PI) diff += Math.PI * 2;
+      st.yaw += diff * Math.min(1, rate);
+    }
+
+    buildAtticPortals() {
+      const A = CONFIG.ATTIC;
+      const y0 = CONFIG.ATTIC_FLOOR * CONFIG.FLOOR_HEIGHT;
+      const cx = A.LADDER_X, cz = A.LADDER_Z;
+      const cw = 400, ch = 400;
+      const canvas = document.createElement('canvas');
+      canvas.width = cw; canvas.height = ch;
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#0b0b12';
+      ctx.fillRect(0, 0, cw, ch);
+
+      const tex = new THREE.CanvasTexture(canvas);
+      if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+      tex.minFilter = THREE.LinearFilter;
+      tex.magFilter = THREE.LinearFilter;
+
+      const mat = new THREE.MeshBasicMaterial({
+        map: tex, transparent: true, side: THREE.FrontSide,
+        toneMapped: false, depthWrite: false
+      });
+      const geo = new THREE.PlaneGeometry(2.0, 2.0);
+
+      // Attic hatch (faces up) — the portal you step into to warp back down.
+      const atticPlane = new THREE.Mesh(geo, mat);
+      atticPlane.rotation.x = -Math.PI / 2;
+      atticPlane.position.set(cx, y0 + 0.035, cz);
+      if (this.floorGroups[CONFIG.ATTIC_FLOOR]) this.floorGroups[CONFIG.ATTIC_FLOOR].add(atticPlane);
+
+      // 4th-floor ceiling at the top of the ladder (faces down) — the warp point.
+      const ceilPlane = new THREE.Mesh(geo, mat);
+      ceilPlane.rotation.x = Math.PI / 2;
+      ceilPlane.position.set(cx, y0 - 0.12, cz);
+      if (this.floorGroups[CONFIG.NUM_FLOORS - 1]) this.floorGroups[CONFIG.NUM_FLOORS - 1].add(ceilPlane);
+
+      const img = new Image();
+      const state = { tex, ctx, canvas, img, planes: [atticPlane, ceilPlane], acc: 0, ready: false };
+      img.onload = () => { state.ready = true; };
+      img.src = `assets/magicportal.gif?v=${window._ASSET_VERSION || Date.now()}`;
+      this.atticPortal = state;
+    }
+
+    updateAtticPortal(delta) {
+      const p = this.atticPortal;
+      if (!p || !p.ready) return;
+      p.acc += delta;
+      if (p.acc < 1 / 30) return;
+      p.acc = 0;
+      if (!p.img.naturalWidth) return;
+      p.ctx.clearRect(0, 0, p.canvas.width, p.canvas.height);
+      try { p.ctx.drawImage(p.img, 0, 0, p.canvas.width, p.canvas.height); } catch (e) {}
+      p.tex.needsUpdate = true;
+    }
+
     updateAtticNpc(delta) {
       if (!this.atticNpcGroup || !this.atticNpcState || !this.atticNpc) return;
       if (this.playerFloor !== CONFIG.ATTIC_FLOOR) return;
 
       const st = this.atticNpcState;
       const wps = this.atticNpcWaypoints;
-      if (!wps || wps.length === 0) return;
       const g = this.atticNpcGroup;
-      const step = st.speed * delta;
+      if (!wps || wps.length === 0) return;
+      st.timer -= delta;
 
-      let wp = wps[st.idx];
-      let dx = wp.x - g.position.x;
-      let dz = wp.z - g.position.z;
-      let dist = Math.hypot(dx, dz);
+      // "Look at the player" — turn toward the player and hold.
+      if (st.mode === 'look') {
+        const pdx = this.playerPos.x - g.position.x;
+        const pdz = this.playerPos.z - g.position.z;
+        if (pdx * pdx + pdz * pdz > 1e-4) this._npcTurn(st, Math.atan2(pdx, pdz), delta * 4);
+        g.rotation.y = st.yaw;
+        if (st.timer <= 0) st.mode = 'walk';
+        return;
+      }
+
+      // "Not walking" / browsing — stand still and slowly look around.
+      if (st.mode === 'idle') {
+        st.yaw += Math.sin(performance.now() * 0.0012 + st.idx * 1.7) * delta * 0.8;
+        g.rotation.y = st.yaw;
+        if (st.timer <= 0) st.mode = 'walk';
+        return;
+      }
+
+      // Walk the aisle toward the current waypoint.
+      const wp = wps[st.idx];
+      const dx = wp.x - g.position.x;
+      const dz = wp.z - g.position.z;
+      const dist = Math.hypot(dx, dz);
+      const step = st.speed * delta;
 
       if (dist <= step || dist < 1e-4) {
         g.position.x = wp.x;
         g.position.z = wp.z;
         st.idx = (st.idx + 1) % wps.length;
-        wp = wps[st.idx];
-        dx = wp.x - g.position.x;
-        dz = wp.z - g.position.z;
-        dist = Math.hypot(dx, dz);
-        st.moving = dist > 1e-4;
-      } else {
-        g.position.x += (dx / dist) * step;
-        g.position.z += (dz / dist) * step;
-        st.moving = true;
+        const r = Math.random();
+        if (r < 0.30) { st.mode = 'look'; st.timer = 1.2 + Math.random() * 1.8; }
+        else if (r < 0.62) { st.mode = 'idle'; st.timer = 1.0 + Math.random() * 2.2; }
+        return;
       }
 
-      if (st.moving) {
-        const targetYaw = Math.atan2(dx, dz);
-        let diff = targetYaw - st.yaw;
-        while (diff > Math.PI) diff -= Math.PI * 2;
-        while (diff < -Math.PI) diff += Math.PI * 2;
-        st.yaw += diff * Math.min(1, delta * 6);
-        g.rotation.y = st.yaw;
-      }
+      g.position.x += (dx / dist) * step;
+      g.position.z += (dz / dist) * step;
+      this._npcTurn(st, Math.atan2(dx, dz), delta * 5);
+      g.rotation.y = st.yaw;
+
+      // Occasionally stop mid-aisle to glance at the player.
+      if (Math.random() < delta * 0.12) { st.mode = 'look'; st.timer = 0.8 + Math.random() * 1.2; }
     }
 
     // --- MULTI-STORY U-STAIRWELL CONTINUOUS SURFACE ELEVATION SOLVER ---
@@ -28153,6 +28221,7 @@ window.game = this;
             }
             this.updateSmitty(delta);
             if (this.updateAtticNpc) this.updateAtticNpc(delta);
+            if (this.updateAtticPortal) this.updateAtticPortal(delta);
             if (this.finalFight) {
               this.finalFight.update(delta);
             }
