@@ -8920,57 +8920,12 @@ window.game = this;
       paperStack.rotation.y = 0.12;
       counterGroup.add(paperStack);
 
-      // 6. Realistic Office Back Wall Decor & Room Furniture:
       // Vending machine against the back wall (x = -1.6, z = 13.42)
-      // This spot used to hold a tall oak box whose shelves sat *inside* an opaque block, so it
-      // rendered as a detail-less brown slab. Replaced with a real machine using the supplied art.
-      const vendingGroup = new THREE.Group();
-      // Sits at z = 13.42: the 0.4m-thick back wall's inner face is z = 13.8, so a 1.4m-deep
+      // Sits at z = 5.42: the 0.4m-thick back wall's inner face is z = 13.8, so a 1.4m-deep
       // cabinet must stay south of 13.8 or it buries itself in the wall.
+      const vendingGroup = this.createVendingMachine();
       vendingGroup.position.set(-1.6, 0, 5.42);
-
-      // Dimensions derived from artwork's aspect (1793 x 2924 = 0.613) so nothing stretches
-      const VEND_W = 1.20;
-      const VEND_H = 1.96;
-      const VEND_D = 0.70;
-
-      const vendingShellMat = new THREE.MeshStandardMaterial({ color: 0x1e2226, roughness: 0.45, metalness: 0.7 });
-      const vendingBody = new THREE.Mesh(new THREE.BoxGeometry(VEND_W, VEND_H, VEND_D), vendingShellMat);
-      vendingBody.position.set(0, VEND_H / 2, 0);
-      vendingBody.castShadow = true;
-      vendingBody.receiveShadow = true;
-      vendingGroup.add(vendingBody);
-
-// Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
-      const vendingRailMat = new THREE.MeshStandardMaterial({ color: 0x8b939b, roughness: 0.34, metalness: 0.85 });
-      [-1, 1].forEach((side) => {
-        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H, 0.035), vendingRailMat);
-        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2, -VEND_D / 2 + 0.018);
-        vendingGroup.add(rail);
-      });
-
-      const vendingTex = this.texLoader.load('assets/vending.png', (tx) => {
-        if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
-        else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
-        tx.anisotropy = 8;
-        tx.needsUpdate = true;
-      });
-
-      const vendingFaceMat = new THREE.MeshBasicMaterial({
-        map: vendingTex,
-        side: THREE.DoubleSide
-      });
-
-      // Front face centered and facing toward the desk opening
-      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
-      vendingFace.rotation.y = Math.PI; // face south (-Z in counterGroup coords)
-      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.005); // sit just proud of the front (south) face so the body doesn't occlude the art
-      vendingGroup.add(vendingFace);
       counterGroup.add(vendingGroup);
-
-      // Force texture update when loaded
-      vendingTex.wrapS = THREE.ClampToEdgeWrapping;
-      vendingTex.wrapT = THREE.ClampToEdgeWrapping;
 
       // Brushed-steel drawer cabinet on east side (x = 1.6, z = 13.45)
       // Previously a single flat grey box; now built up with drawer fronts, pulls and label holders.
@@ -9116,6 +9071,54 @@ window.game = this;
         { type: 'box', floor: 0, minX: x - 2.6, maxX: x - 0.6, minZ: z + 5.05, maxZ: z + 6.0, minY: y0, maxY: y0 + 2.0 },
         { type: 'box', floor: 0, minX: x + 1.2, maxX: x + 2.0, minZ: z + 5.05, maxZ: z + 6.0, minY: y0, maxY: y0 + 1.4 }
       );
+    }
+
+    // Reusable vending machine (identical to the one in REem8's room). Front faces local -Z.
+    createVendingMachine() {
+      const vendingGroup = new THREE.Group();
+      vendingGroup.name = 'VendingMachine';
+
+      // Dimensions derived from artwork's aspect (1793 x 2924 = 0.613) so nothing stretches
+      const VEND_W = 1.20;
+      const VEND_H = 1.96;
+      const VEND_D = 0.70;
+
+      const vendingShellMat = new THREE.MeshStandardMaterial({ color: 0x1e2226, roughness: 0.45, metalness: 0.7 });
+      const vendingBody = new THREE.Mesh(new THREE.BoxGeometry(VEND_W, VEND_H, VEND_D), vendingShellMat);
+      vendingBody.position.set(0, VEND_H / 2, 0);
+      vendingBody.castShadow = true;
+      vendingBody.receiveShadow = true;
+      vendingGroup.add(vendingBody);
+
+      // Brushed-steel corner rails so the cabinet still reads as metal from oblique angles
+      const vendingRailMat = new THREE.MeshStandardMaterial({ color: 0x8b939b, roughness: 0.34, metalness: 0.85 });
+      [-1, 1].forEach((side) => {
+        const rail = new THREE.Mesh(new THREE.BoxGeometry(0.035, VEND_H, 0.035), vendingRailMat);
+        rail.position.set(side * (VEND_W / 2 - 0.018), VEND_H / 2, -VEND_D / 2 + 0.018);
+        vendingGroup.add(rail);
+      });
+
+      const vendingTex = this.texLoader.load('assets/vending.png', (tx) => {
+        if (typeof THREE.sRGBEncoding !== 'undefined') tx.encoding = THREE.sRGBEncoding;
+        else if (typeof THREE.SRGBColorSpace !== 'undefined') tx.colorSpace = THREE.SRGBColorSpace;
+        tx.anisotropy = 8;
+        tx.needsUpdate = true;
+      });
+      vendingTex.wrapS = THREE.ClampToEdgeWrapping;
+      vendingTex.wrapT = THREE.ClampToEdgeWrapping;
+
+      const vendingFaceMat = new THREE.MeshBasicMaterial({
+        map: vendingTex,
+        side: THREE.DoubleSide
+      });
+
+      // Front face centered and facing local -Z
+      const vendingFace = new THREE.Mesh(new THREE.PlaneGeometry(VEND_W - 0.02, VEND_H - 0.02), vendingFaceMat);
+      vendingFace.rotation.y = Math.PI;
+      vendingFace.position.set(0, VEND_H / 2, -VEND_D / 2 - 0.005);
+      vendingGroup.add(vendingFace);
+
+      return vendingGroup;
     }
 
     buildMuseumClerk(fl, y0, mats) {
@@ -12907,6 +12910,24 @@ window.game = this;
       const fenceMesh = new THREE.Mesh(mergedFenceGeo, fenceMat);
       fenceMesh.position.set(0, 0, 0);
       group.add(fenceMesh);
+
+      // 9b. Identical vending machine near the perimeter fence, behind the mountain.
+      // Reuses REem8's machine so it is an exact copy; sits on the foothill ground and
+      // faces inward toward the valley so players approaching from the meadow see the front.
+      const svx = 89.0;
+      const svz = -16.2;
+      const svGroundY = this.getSafeRoomGroundY(originX + svx, originZ + svz) - originY;
+      const sanctuaryVending = this.createVendingMachine();
+      sanctuaryVending.position.set(svx, svGroundY, svz);
+      sanctuaryVending.rotation.y = Math.atan2(svx, svz); // front (-Z) points back toward the valley center
+      group.add(sanctuaryVending);
+      this.colliders.push({
+        type: 'box', floor: 'all',
+        minX: originX + svx - 0.75, maxX: originX + svx + 0.75,
+        minZ: originZ + svz - 0.75, maxZ: originZ + svz + 0.75,
+        minY: originY + svGroundY - 0.2, maxY: originY + svGroundY + 2.0,
+        isWall: false
+      });
 
       // 10. Valley-Wide Ethereal Dreamlike Illumination
       // (A) Celestial Twilight Atmosphere
