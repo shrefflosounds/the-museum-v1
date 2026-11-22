@@ -96,6 +96,10 @@ hud.prompt_take_relic = [E] TAKE RELIC: {relic}
 hud.prompt_examine_art = [E] EXAMINE ARTWORK: "{title}"
 # Prompt when standing at the Clerk's Stand counter in front of REem8
 hud.prompt_talk_clerk = [E] TALK TO REem8
+# Prompt when standing at the attic ladder on the 4th floor
+hud.prompt_climb_attic = [E] CLIMB LADDER TO ATTIC
+# Prompt when standing at the attic hatch, ready to climb back down
+hud.prompt_climb_down = [E] CLIMB DOWN
 # Shown at the top of the screen once all relics are collected
 hud.exit_unlocked = LOCKDOWN DISENGAGED — FLEE TO 1ST FLOOR SOUTH EXIT!
 # Room name at the top of the screen. {floor} = floor name, {area} = room name (both listed below)
@@ -118,6 +122,7 @@ floor.1 = 1ST FLOOR
 floor.2 = 2ND FLOOR
 floor.3 = 3RD FLOOR
 floor.4 = 4TH FLOOR
+floor.attic = ATTIC
 
 
 [ ROOM NAMES (TOP OF SCREEN AS YOU WALK AROUND) ]
@@ -140,6 +145,7 @@ area.main_stacks = ARTS & MUSIC MAIN STACKS
 area.arts_music_office = ARTS & MUSIC OFFICE
 area.south_media_wing = SOUTH MEDIA & REFERENCE WING
 area.feature_films_rotunda = FEATURE FILMS ROTUNDA
+area.attic = THE ATTIC
 
 
 [ SIGNS ON THE WALLS ]

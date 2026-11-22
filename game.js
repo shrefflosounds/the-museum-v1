@@ -1227,6 +1227,17 @@
     TOTAL_RELICS: 14,
     FLOOR_HEIGHT: 7.5,
     NUM_FLOORS: 4,
+    // The attic is a special upper level reached only by the 4th-floor ladder.
+    // It is NOT part of the stairwell / nav-tower loop (NUM_FLOORS stays 4 for stairs & Smitty).
+    ATTIC_FLOOR: 4,
+    NUM_LEVELS: 5,
+    ATTIC: {
+      MIN_X: 2, MAX_X: 22,
+      MIN_Z: -40, MAX_Z: -28,
+      WALL_H: 3.2,
+      LADDER_X: 8, LADDER_Z: -30,
+      LAND_Z: -32
+    },
     AMMO_PICKUP: {
       RESPAWN_TIME: 180.0, // 3 minutes respawn timer
       AMMO_AMOUNT: 5
@@ -4306,6 +4317,7 @@
       this.playerPos = new THREE.Vector3(-10.0, CONFIG.PLAYER.CAMERA_HEIGHT, 22.0);
       this.playerFloor = 0;
       this.playerStairState = { active: null, baseFloor: 0 };
+      this.ladderClimb = null;
       this.playerPitch = 0;
       this.playerYaw = 0;
       this.health = CONFIG.PLAYER.MAX_HEALTH;
@@ -4422,6 +4434,12 @@
       this.smittyDeadTimer = 0;
       this.smittyRespawnTimer = 0;
       this.statuesEnabled = true;
+
+      // Attic wandering NPC (glides along the floor, no rigging/animation)
+      this.atticNpc = null;
+      this.atticNpcGroup = null;
+      this.atticNpcState = null;
+      this.atticNpcWaypoints = null;
 
       // Liquid Blood Physics State
       this.bloodDroplets = [];
@@ -4641,7 +4659,7 @@
       };
       window.playAllRelicsFoundCutscene = () => this.playAllRelicsFoundCutscene(false);
 window.game = this;
-      this.floorLights = [[], [], [], []];
+      this.floorLights = [[], [], [], [], []];
 
       console.log('%c[THE MUSEUM]%c Ready', 'color:#00ff88;font-weight:bold;background:#111;padding:3px 6px;border-radius:3px', 'color:#fff;background:#222;padding:3px 6px');
 
@@ -4872,6 +4890,9 @@ window.game = this;
       // Build the two continuous 4-story U-stairwells (Stairwell N and Stairwell SW)
       this.buildFourStoryStairwells(mats);
 
+      // Build the attic level (a 5th, ladder-only space above the 4th floor)
+      this.buildAtticLevel(mats);
+
       // Populate all 136 curated gallery artworks across the 4 floors
       this.populateCuratedArtworks(mats);
     }
@@ -4915,11 +4936,28 @@ window.game = this;
         if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = true;
         return;
       }
+      // While climbing the attic ladder, render both the 4th floor and the attic
+      if (this.ladderClimb && this.ladderClimb.active) {
+        const fromF = CONFIG.NUM_FLOORS - 1;
+        const toF = CONFIG.ATTIC_FLOOR;
+        for (let f = 0; f < this.floorGroups.length; f++) {
+          if (!this.floorGroups[f]) continue;
+          this.floorGroups[f].visible = (f === fromF || f === toF);
+        }
+        if (this.topFloorFogGroup) this.topFloorFogGroup.visible = true;
+        if (this.topFloorStairFogGroup) this.topFloorStairFogGroup.visible = true;
+        return;
+      }
       const nearStair = (this.isInStairwell && this.isInStairwell(this.playerPos)) ||
                         (this.isNearStairwell && this.isNearStairwell(this.playerPos)) ||
                         (this.playerStairState && this.playerStairState.active !== null);
       for (let f = 0; f < this.floorGroups.length; f++) {
         if (!this.floorGroups[f]) continue;
+        // The attic is only ever shown while the player is up there (never via stairwell adjacency)
+        if (f === CONFIG.ATTIC_FLOOR) {
+          this.floorGroups[f].visible = (this.playerFloor === CONFIG.ATTIC_FLOOR);
+          continue;
+        }
         this.floorGroups[f].visible = (f === this.playerFloor) || (nearStair && Math.abs(f - this.playerFloor) <= 1);
       }
       if (this.topFloorFogGroup) {
@@ -5661,11 +5699,274 @@ window.game = this;
       });
     }
 
+    buildAtticLevel(mats) {
+      const A = CONFIG.ATTIC;
+      const fl = CONFIG.ATTIC_FLOOR;
+      const y0 = fl * CONFIG.FLOOR_HEIGHT;
+      const ceilH = A.WALL_H;
+      const minX = A.MIN_X, maxX = A.MAX_X, minZ = A.MIN_Z, maxZ = A.MAX_Z;
+      const cx = (minX + maxX) / 2;
+      const cz = (minZ + maxZ) / 2;
+      const w = maxX - minX;
+      const d = maxZ - minZ;
+
+      const atticGroup = new THREE.Group();
+      atticGroup.name = `FloorGroup_${fl}`;
+      atticGroup.visible = false;
+      const rootSceneAdd = this._rootSceneAdd || this.scene.add.bind(this.scene);
+      rootSceneAdd(atticGroup);
+      this.floorGroups.push(atticGroup);
+      if (!this.floorLights[fl]) this.floorLights[fl] = [];
+
+      // Route structural meshes into the attic group while (point) lights go to the scene root
+      this.scene.add = (...objs) => {
+        for (const obj of objs) {
+          if (obj && obj.isLight) {
+            rootSceneAdd(obj);
+            if (this.floorLights[fl]) this.floorLights[fl].push(obj);
+          } else if (obj) {
+            atticGroup.add(obj);
+          }
+        }
+        return this.scene;
+      };
+
+      try {
+        const floorMat = mats.floorDarkWood;
+        const wallMat = mats.wallBrick;
+        const beamMat = mats.mahogany;
+        const yc = y0 + ceilH / 2;
+
+        this.createFloor(cx, y0, cz, w, d, floorMat);
+        this.createCeiling(cx, y0 + ceilH, cz, w, d, mats.ceiling);
+
+        // Solid perimeter walls (colliders tagged to the attic level)
+        this.createWall(cx, yc, minZ, w, ceilH, 0.4, wallMat, true, fl);
+        this.createWall(cx, yc, maxZ, w, ceilH, 0.4, wallMat, true, fl);
+        this.createWall(minX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
+        this.createWall(maxX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
+
+        // Exposed wooden rafters
+        for (let i = 0; i < 5; i++) {
+          const rz = minZ + 1.6 + i * 2.3;
+          const beam = new THREE.Mesh(new THREE.BoxGeometry(w - 0.9, 0.18, 0.22), beamMat);
+          beam.position.set(cx, y0 + ceilH - 0.28, rz);
+          atticGroup.add(beam);
+        }
+        // Support posts in the corners
+        for (const [px, pz] of [[minX + 0.5, minZ + 0.5], [maxX - 0.5, minZ + 0.5], [minX + 0.5, maxZ - 0.5], [maxX - 0.5, maxZ - 0.5]]) {
+          const post = new THREE.Mesh(new THREE.BoxGeometry(0.22, ceilH, 0.22), beamMat);
+          post.position.set(px, yc, pz);
+          atticGroup.add(post);
+          this.colliders.push({ type: 'box', floor: fl, minX: px - 0.11, maxX: px + 0.11, minZ: pz - 0.11, maxZ: pz + 0.11, minY: y0, maxY: y0 + ceilH, isWall: false });
+        }
+
+        // Hanging bare bulb
+        const cordMat = new THREE.MeshBasicMaterial({ color: 0x1a1712 });
+        const cord = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.75, 6), cordMat);
+        cord.position.set(cx, y0 + ceilH - 0.45, cz);
+        atticGroup.add(cord);
+        const bulb = new THREE.Mesh(new THREE.SphereGeometry(0.09, 10, 10), new THREE.MeshBasicMaterial({ color: 0xffdca0 }));
+        bulb.position.set(cx, y0 + ceilH - 0.86, cz);
+        atticGroup.add(bulb);
+        const atticLight = new THREE.PointLight(0xffcf8a, 0.95, 18.0, 1.35);
+        atticLight._origIntensity = 0.95;
+        atticLight.position.set(cx, y0 + ceilH - 0.95, cz);
+        this.scene.add(atticLight);
+
+        // Stored clutter: crates & trunks along the walls
+        const addAtticBox = (bx, bz, bw, bh, bd, mat) => {
+          const m = new THREE.Mesh(new THREE.BoxGeometry(bw, bh, bd), mat);
+          m.position.set(bx, y0 + bh / 2, bz);
+          atticGroup.add(m);
+          this.colliders.push({ type: 'box', floor: fl, minX: bx - bw / 2, maxX: bx + bw / 2, minZ: bz - bd / 2, maxZ: bz + bd / 2, minY: y0, maxY: y0 + bh, isWall: false });
+        };
+        addAtticBox(4.2, -38.2, 1.4, 1.0, 1.4, mats.floorDarkWood);
+        addAtticBox(5.9, -38.4, 1.1, 0.7, 1.1, mats.mahogany);
+        addAtticBox(19.8, -38.0, 1.5, 1.2, 1.5, mats.floorDarkWood);
+        addAtticBox(20.0, -30.0, 1.2, 0.9, 1.2, mats.mahogany);
+        addAtticBox(4.0, -29.6, 1.3, 1.1, 1.0, mats.floorDarkWood);
+        addAtticBox(17.5, -29.5, 1.0, 0.8, 1.0, mats.mahogany);
+
+        // Old sheet-covered shape (a dusty chair / mannequin)
+        const sheet = new THREE.Mesh(new THREE.ConeGeometry(0.7, 1.5, 10), new THREE.MeshLambertMaterial({ color: 0xcfc9bd }));
+        sheet.position.set(13.5, y0 + 0.75, -36.0);
+        atticGroup.add(sheet);
+        this.colliders.push({ type: 'cylinder', floor: fl, x: 13.5, z: -36.0, radius: 0.6, minY: y0, maxY: y0 + 1.5, isWall: false });
+      } finally {
+        this.scene.add = rootSceneAdd;
+      }
+
+      // Ladder + hatch (lower half on the 4th floor, upper frame in the attic)
+      this.buildAtticLadder(mats);
+
+      // Wandering attic NPC (glides along the floor, no rigging/animation)
+      this.buildAtticNpc();
+    }
+
+    buildAtticLadder(mats) {
+      const A = CONFIG.ATTIC;
+      const H = CONFIG.FLOOR_HEIGHT;
+      const baseY = (CONFIG.NUM_FLOORS - 1) * H; // 4th floor level (22.5)
+      const topY = CONFIG.ATTIC_FLOOR * H;       // attic level (30.0)
+      const lx = A.LADDER_X;
+      const lz = A.LADDER_Z;
+      const railMat = mats.mahogany;
+
+      const lower = new THREE.Group();
+      const railGeo = new THREE.BoxGeometry(0.08, topY - baseY, 0.08);
+      const railL = new THREE.Mesh(railGeo, railMat);
+      railL.position.set(lx - 0.36, (baseY + topY) / 2, lz);
+      const railR = new THREE.Mesh(railGeo, railMat);
+      railR.position.set(lx + 0.36, (baseY + topY) / 2, lz);
+      lower.add(railL, railR);
+      const rungGeo = new THREE.BoxGeometry(0.8, 0.06, 0.06);
+      const rungCount = Math.floor((topY - baseY) / 0.38);
+      for (let i = 1; i < rungCount; i++) {
+        const ry = baseY + i * 0.38;
+        const rung = new THREE.Mesh(rungGeo, railMat);
+        rung.position.set(lx, ry, lz);
+        lower.add(rung);
+      }
+      if (this.floorGroups[CONFIG.NUM_FLOORS - 1]) this.floorGroups[CONFIG.NUM_FLOORS - 1].add(lower);
+
+      // Hatch frame in the attic floor around the ladder opening
+      const frameMat = mats.mahogany;
+      const fw = 1.4;
+      const addFrame = (fx, fz, fw2, fd2) => {
+        const m = new THREE.Mesh(new THREE.BoxGeometry(fw2, 0.08, fd2), frameMat);
+        m.position.set(fx, topY + 0.02, fz);
+        if (this.floorGroups[CONFIG.ATTIC_FLOOR]) this.floorGroups[CONFIG.ATTIC_FLOOR].add(m);
+      };
+      addFrame(lx, lz - fw / 2, fw + 0.24, 0.12);
+      addFrame(lx, lz + fw / 2, fw + 0.24, 0.12);
+      addFrame(lx - fw / 2, lz, 0.12, fw + 0.24);
+      addFrame(lx + fw / 2, lz, 0.12, fw + 0.24);
+    }
+
+    buildAtticNpc() {
+      const fl = CONFIG.ATTIC_FLOOR;
+      const y0 = fl * CONFIG.FLOOR_HEIGHT;
+      const atticGroup = this.floorGroups[fl];
+      if (!atticGroup) return;
+
+      // Root group lives inside the attic floor group so it is hidden/shown
+      // together with the attic level.
+      const npcGroup = new THREE.Group();
+      npcGroup.name = 'AtticNpc';
+      npcGroup.position.set(12, y0, -33);
+      atticGroup.add(npcGroup);
+      this.atticNpcGroup = npcGroup;
+
+      // Patrol waypoints, kept clear of the crates, corner posts and the
+      // sheet-covered shape so the creature never clips through clutter.
+      this.atticNpcWaypoints = [
+        { x: 10.0, z: -32.5 },
+        { x: 17.0, z: -32.5 },
+        { x: 17.0, z: -35.0 },
+        { x: 10.0, z: -35.0 }
+      ];
+      this.atticNpcState = { idx: 0, speed: 1.1, yaw: 0, moving: false };
+
+      const cacheKey = window._ASSET_VERSION || Date.now();
+      fetch(`assets/Yellow-Creature.glb?v=${cacheKey}`)
+        .then((res) => {
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+          return res.arrayBuffer();
+        })
+        .then((buffer) => {
+          const loader = new THREE.GLTFLoader();
+          loader.parse(buffer, '', (gltf) => {
+            const model = gltf.scene;
+            model.name = 'YellowCreature';
+
+            // Scale to roughly half the player's height.
+            model.updateMatrixWorld(true);
+            const size = new THREE.Vector3();
+            new THREE.Box3().setFromObject(model).getSize(size);
+            const targetH = CONFIG.PLAYER.CAMERA_HEIGHT * 0.5;
+            if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
+
+            // Drop the model so its feet rest on the attic floor (local y = 0).
+            model.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(model);
+            model.position.y -= box.min.y;
+
+            // No rigging, no animation: just render the static mesh.
+            model.traverse((child) => {
+              if (child.isMesh) {
+                child.frustumCulled = true;
+                if (child.material) {
+                  const fix = (m) => { const c = m.clone(); c.side = THREE.FrontSide; return c; };
+                  child.material = Array.isArray(child.material) ? child.material.map(fix) : fix(child.material);
+                }
+              }
+            });
+
+            npcGroup.add(model);
+            this.atticNpc = model;
+          }, (err) => {
+            console.warn('Could not load assets/Yellow-Creature.glb:', err);
+          });
+        })
+        .catch((err) => {
+          console.warn('Could not load assets/Yellow-Creature.glb:', err);
+        });
+    }
+
+    updateAtticNpc(delta) {
+      if (!this.atticNpcGroup || !this.atticNpcState || !this.atticNpc) return;
+      if (this.playerFloor !== CONFIG.ATTIC_FLOOR) return;
+
+      const st = this.atticNpcState;
+      const wps = this.atticNpcWaypoints;
+      if (!wps || wps.length === 0) return;
+      const g = this.atticNpcGroup;
+      const step = st.speed * delta;
+
+      let wp = wps[st.idx];
+      let dx = wp.x - g.position.x;
+      let dz = wp.z - g.position.z;
+      let dist = Math.hypot(dx, dz);
+
+      if (dist <= step || dist < 1e-4) {
+        g.position.x = wp.x;
+        g.position.z = wp.z;
+        st.idx = (st.idx + 1) % wps.length;
+        wp = wps[st.idx];
+        dx = wp.x - g.position.x;
+        dz = wp.z - g.position.z;
+        dist = Math.hypot(dx, dz);
+        st.moving = dist > 1e-4;
+      } else {
+        g.position.x += (dx / dist) * step;
+        g.position.z += (dz / dist) * step;
+        st.moving = true;
+      }
+
+      if (st.moving) {
+        const targetYaw = Math.atan2(dx, dz);
+        let diff = targetYaw - st.yaw;
+        while (diff > Math.PI) diff -= Math.PI * 2;
+        while (diff < -Math.PI) diff += Math.PI * 2;
+        st.yaw += diff * Math.min(1, delta * 6);
+        g.rotation.y = st.yaw;
+      }
+    }
+
     // --- MULTI-STORY U-STAIRWELL CONTINUOUS SURFACE ELEVATION SOLVER ---
     updateStairwellElevation(pos, stairState, currentFloor, currentFootY = undefined) {
       const H = CONFIG.FLOOR_HEIGHT;
       const halfH = H / 2;
       const numFloors = CONFIG.NUM_FLOORS || 4;
+      // The attic is not part of the stairwell system: hold the player at its own level
+      if (currentFloor >= (CONFIG.NUM_FLOORS || 4)) {
+        if (stairState) {
+          stairState.active = null;
+          stairState.baseFloor = currentFloor;
+        }
+        return { y: currentFloor * H, floor: currentFloor };
+      }
       const footRef = (typeof currentFootY === 'number' && !isNaN(currentFootY))
         ? currentFootY
         : (currentFloor * H);
@@ -19679,8 +19980,24 @@ window.game = this;
         connect(swEastBase, floorNodes[fl + 1].stairSWLand);
       }
 
+      // Attic level nav nodes (ladder-only; intentionally disconnected from the stair graph
+      // so Smitty and the tour never route up here)
+      {
+        const af = CONFIG.ATTIC_FLOOR;
+        const ay = af * CONFIG.FLOOR_HEIGHT;
+        const aLand = addNode(CONFIG.ATTIC.LADDER_X, ay, CONFIG.ATTIC.LAND_Z, af, 'attic_land');
+        const aMid = addNode(8.0, ay, -35.0, af, 'attic_mid');
+        const aEast = addNode(16.0, ay, -34.0, af, 'attic_east');
+        const aWest = addNode(5.0, ay, -33.5, af, 'attic_west');
+        connect(aLand, aMid);
+        connect(aMid, aEast);
+        connect(aMid, aWest);
+      }
+
       // Pre-partition navNodes by floor for O(1) floor lookup in findNearestNavNode
-      this.navNodesByFloor = [[], [], [], []];
+      const navLevelCount = CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1);
+      this.navNodesByFloor = [];
+      for (let f = 0; f < navLevelCount; f++) this.navNodesByFloor.push([]);
       for (let i = 0; i < this.navNodes.length; i++) {
         const n = this.navNodes[i];
         if (this.navNodesByFloor[n.floor]) {
@@ -19690,26 +20007,44 @@ window.game = this;
     }
 
     getCollidersForFloor(floorIdx, includeAdjacent = false) {
-      if (!this._collidersByFloor || this._collidersByFloorLen !== this.colliders.length) {
-        this._collidersByFloor = [[], [], [], []];
-        this._collidersWithAdjByFloor = [[], [], [], []];
+      const NL = CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1);
+      const NF = CONFIG.NUM_FLOORS || 4;
+      if (!this._collidersByFloor || this._collidersByFloorLen !== this.colliders.length || !this._collidersByFloor[NL - 1]) {
+        this._collidersByFloor = [];
+        this._collidersWithAdjByFloor = [];
+        for (let f = 0; f < NL; f++) {
+          this._collidersByFloor.push([]);
+          this._collidersWithAdjByFloor.push([]);
+        }
         for (let i = 0; i < this.colliders.length; i++) {
           const c = this.colliders[i];
           if (c.floor === 'all') {
-            for (let f = 0; f < 4; f++) {
+            // Continuous (stairwell shaft) colliders only apply to the stair-served floors
+            for (let f = 0; f < NF; f++) {
               this._collidersByFloor[f].push(c);
               this._collidersWithAdjByFloor[f].push(c);
             }
-          } else if (typeof c.floor === 'number' && this._collidersByFloor[c.floor]) {
-            this._collidersByFloor[c.floor].push(c);
-            for (let f = 0; f < 4; f++) {
-              if (Math.abs(f - c.floor) <= 1) {
-                this._collidersWithAdjByFloor[f].push(c);
+          } else if (typeof c.floor === 'number') {
+            const cf = c.floor;
+            if (cf >= 0 && cf < NL) {
+              this._collidersByFloor[cf].push(c);
+              if (cf < NF) {
+                // Adjacency is only meaningful between the stair-served floors
+                for (let f = Math.max(0, cf - 1); f <= Math.min(NF - 1, cf + 1); f++) {
+                  this._collidersWithAdjByFloor[f].push(c);
+                }
+              } else if (this._collidersWithAdjByFloor[cf]) {
+                // A special upper level (attic) only ever collides within itself
+                this._collidersWithAdjByFloor[cf].push(c);
               }
             }
           }
         }
         this._collidersByFloorLen = this.colliders.length;
+      }
+      // The attic (and any special upper level) is a self-contained room: use only its own colliders
+      if (floorIdx >= NF) {
+        return this._collidersByFloor[floorIdx] || [];
       }
       if (includeAdjacent) {
         return this._collidersWithAdjByFloor[floorIdx] || this.colliders;
@@ -19718,6 +20053,11 @@ window.game = this;
     }
 
     isPointInsideWalkableFootprint(x, z, floorIdx = 0) {
+      // The attic is a self-contained upper room with its own walkable footprint
+      if (floorIdx === CONFIG.ATTIC_FLOOR) {
+        const A = CONFIG.ATTIC;
+        return (x >= A.MIN_X + 0.3 && x <= A.MAX_X - 0.3 && z >= A.MIN_Z + 0.3 && z <= A.MAX_Z - 0.3);
+      }
       // Exact union of interior walkable rooms, doorways, and stairwells across the Museum
       // 1. West Wing Exhibition Gallery (-35.46..-15.80, -5.46..18.00)
       if (x >= -35.46 && x <= -15.80 && z >= -5.46 && z <= 18.00) return true;
@@ -20318,7 +20658,7 @@ window.game = this;
       minX -= 12; maxX += 12; minZ -= 12; maxZ += 12;
       const w = Math.ceil((maxX - minX) / CELL) + 1;
       const h = Math.ceil((maxZ - minZ) / CELL) + 1;
-      const NF = CONFIG.NUM_FLOORS;
+      const NF = CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1);
       const grids = [];
       for (let fl = 0; fl < NF; fl++) grids.push(new Uint8Array(w * h));
 
@@ -21542,7 +21882,7 @@ window.game = this;
       // Light Culling: Only illuminate point lights for the current active floor!
       // Keep l.visible = true on all floorLights and toggle intensity to 0 on inactive floors so Three.js NUM_POINT_LIGHTS never changes or triggers shader recompilation!
       if (this.floorLights) {
-        for (let f = 0; f < 4; f++) {
+        for (let f = 0; f < this.floorLights.length; f++) {
           const isCurFloor = (f === this.playerFloor);
           if (this.floorLights[f]) {
             for (let l of this.floorLights[f]) {
@@ -22864,7 +23204,10 @@ window.game = this;
       ctx.fillStyle = '#e2e8f0';
       ctx.font = 'bold 11px Caryn';
       ctx.textAlign = 'left';
-      ctx.fillText(T('map.current_level', 'CURRENT LEVEL: FLOOR {number} OF 4', { number: this.playerFloor + 1 }), 14, 22);
+      const levelLabel = (this.playerFloor === CONFIG.ATTIC_FLOOR)
+        ? T('map.current_level_attic', 'CURRENT LEVEL: ATTIC')
+        : T('map.current_level', 'CURRENT LEVEL: FLOOR {number} OF 4', { number: this.playerFloor + 1 });
+      ctx.fillText(levelLabel, 14, 22);
     }
 
     pauseGame() {
@@ -23901,6 +24244,108 @@ window.game = this;
       this.requestNativeOrBrowserLock();
     }
 
+    getAtticLadderBase() {
+      return { x: CONFIG.ATTIC.LADDER_X, z: CONFIG.ATTIC.LADDER_Z };
+    }
+
+    getAtticLadderPrompt() {
+      const b = this.getAtticLadderBase();
+      const d = Math.hypot(this.playerPos.x - b.x, this.playerPos.z - b.z);
+      if (this.playerFloor === CONFIG.NUM_FLOORS - 1 && d < 2.2) {
+        return T('hud.prompt_climb_attic', '[E] CLIMB LADDER TO ATTIC');
+      }
+      if (this.playerFloor === CONFIG.ATTIC_FLOOR && d < 2.2) {
+        return T('hud.prompt_climb_down', '[E] CLIMB DOWN');
+      }
+      return null;
+    }
+
+    tryUseAtticLadder() {
+      if (this.ladderClimb && this.ladderClimb.active) return true;
+      const b = this.getAtticLadderBase();
+      const d = Math.hypot(this.playerPos.x - b.x, this.playerPos.z - b.z);
+      if (this.playerFloor === CONFIG.NUM_FLOORS - 1 && d < 2.2) {
+        this.startLadderClimb(CONFIG.ATTIC_FLOOR);
+        return true;
+      }
+      if (this.playerFloor === CONFIG.ATTIC_FLOOR && d < 2.2) {
+        this.startLadderClimb(CONFIG.NUM_FLOORS - 1);
+        return true;
+      }
+      return false;
+    }
+
+    startLadderClimb(targetFloor) {
+      const H = CONFIG.FLOOR_HEIGHT;
+      const camH = CONFIG.PLAYER.CAMERA_HEIGHT;
+      const b = this.getAtticLadderBase();
+      const toZ = (targetFloor === CONFIG.ATTIC_FLOOR) ? CONFIG.ATTIC.LAND_Z : b.z;
+      this.ladderClimb = {
+        active: true,
+        t: 0,
+        duration: 1.7,
+        fromX: this.playerPos.x,
+        fromY: this.playerPos.y,
+        fromZ: this.playerPos.z,
+        toX: b.x,
+        toY: targetFloor * H + camH,
+        toZ: toZ,
+        targetFloor: targetFloor
+      };
+      this.playerVelocity.set(0, 0, 0);
+      this.isGrounded = false;
+      this.isSprinting = false;
+      this.playerStairState.active = null;
+      this.playerPitch = (targetFloor === CONFIG.ATTIC_FLOOR) ? 0.55 : -0.55;
+      this.setInteractPrompt(null);
+    }
+
+    updateLadderClimb(delta) {
+      const c = this.ladderClimb;
+      c.t += delta;
+      const k = Math.min(1, c.t / c.duration);
+      const s = k * k * (3 - 2 * k);
+      this.playerPos.x = c.fromX + (c.toX - c.fromX) * s;
+      this.playerPos.z = c.fromZ + (c.toZ - c.fromZ) * s;
+      this.playerPos.y = c.fromY + (c.toY - c.fromY) * s;
+      this.playerVelocity.set(0, 0, 0);
+
+      if (this.isThirdPersonView()) {
+        if (this.playerModelRoot) {
+          this.playerModelRoot.position.set(this.playerPos.x, this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT, this.playerPos.z);
+        }
+        this.updateThirdPersonCamera(delta);
+      } else {
+        this.camera.position.copy(this.playerPos);
+        this.camera.rotation.set(this.playerPitch, this.playerYaw, 0, 'YXZ');
+      }
+      this.updateFlashlight();
+      this.updateWeaponViewmodel(delta, false);
+      if (this.leftHandGroup) this.updateLeftHandViewmodel(delta, false);
+      this.updateHud();
+
+      if (k >= 1) {
+        this.finishLadderClimb(c.toX, c.toY, c.toZ, c.targetFloor);
+      }
+    }
+
+    finishLadderClimb(x, y, z, targetFloor) {
+      this.playerFloor = targetFloor;
+      this.playerPos.set(x, y, z);
+      this.playerVelocity.set(0, 0, 0);
+      this.isGrounded = true;
+      this.isSprinting = false;
+      this.isFalling = false;
+      this.playerStairState.active = null;
+      this.playerStairState.baseFloor = targetFloor;
+      this.currentCamHeight = CONFIG.PLAYER.CAMERA_HEIGHT;
+      this.ladderClimb = null;
+      this.showFloorNotification(targetFloor);
+      if (this.audio && this.audio.playFootstep) {
+        try { this.audio.playFootstep(); } catch (e) {}
+      }
+    }
+
     interact() {
       // 0. Check Return Portal in Nature Saferoom
       if (this.isSafeRoomActive) {
@@ -23925,6 +24370,9 @@ window.game = this;
           }
         }
       }
+
+      // 0b. Attic ladder (4th floor <-> attic)
+      if (this.tryUseAtticLadder()) return;
 
       // 1. Check Relics (takes priority over NPCs/statues and paintings)
       for (let relic of this.relics) {
@@ -24450,6 +24898,12 @@ window.game = this;
 
       if (!this.gameStarted || this.isGameOver || this.isVictory || this.isPaused || this.isExaminingArt || this.isPlayingCutscene) return;
 
+      // Scripted attic-ladder climb takes over movement entirely
+      if (this.ladderClimb && this.ladderClimb.active) {
+        this.updateLadderClimb(delta);
+        return;
+      }
+
       if (this.isNoClipMode) {
         // Garry's Mod style 3D free flight
         const wantsBoost = !!(this.keys['ShiftLeft'] || this.keys['ShiftRight']);
@@ -24512,10 +24966,10 @@ window.game = this;
           const srBaseY = sr ? sr.originY : 50.0;
           this.playerPos.y = Math.max(srBaseY - 2.0, Math.min(srBaseY + 60.0, this.playerPos.y));
         } else {
-          const maxMuseumY = CONFIG.NUM_FLOORS * CONFIG.FLOOR_HEIGHT;
+          const maxMuseumY = (CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1)) * CONFIG.FLOOR_HEIGHT;
           this.playerPos.y = Math.max(-1.0, Math.min(maxMuseumY, this.playerPos.y));
 
-          const approxFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
+          const approxFloor = Math.max(0, Math.min((CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1)) - 1, Math.floor(this.playerPos.y / CONFIG.FLOOR_HEIGHT)));
           if (approxFloor !== this.playerFloor) {
             this.playerFloor = approxFloor;
             this.showFloorNotification(this.playerFloor);
@@ -25277,6 +25731,14 @@ window.game = this;
         return;
       }
 
+      // Attic ladder prompt (4th floor <-> attic)
+      const ladderPrompt = this.getAtticLadderPrompt();
+      if (ladderPrompt) {
+        this.setInteractPrompt(ladderPrompt);
+        this.focusedPainting = null;
+        return;
+      }
+
       // Crate pickup prompt across any floor
       if (this.physicsCrates && this.physicsCrates.length > 0) {
         const cosPitch = Math.cos(this.playerPitch);
@@ -25467,7 +25929,7 @@ window.game = this;
       this.updateRelicFloorVisibility();
       if (!this.dom.floorIndicator) return;
       if (this.isSpectatorMode && this.isSpectatorHudHidden) return;
-      const names = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR'];
+      const names = ['1ST FLOOR', '2ND FLOOR', '3RD FLOOR', '4TH FLOOR', 'ATTIC'];
       const text = names[floor] || `FLOOR ${floor + 1}`;
       this.dom.floorIndicator.textContent = text;
       this.dom.floorIndicator.style.opacity = '1';
@@ -25656,7 +26118,7 @@ window.game = this;
           this.jumpVelocity = 0;
         } else {
           const footY = this.playerPos.y - CONFIG.PLAYER.CAMERA_HEIGHT;
-          let groundFloor = Math.max(0, Math.min(CONFIG.NUM_FLOORS - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
+          let groundFloor = Math.max(0, Math.min((CONFIG.NUM_LEVELS || (CONFIG.NUM_FLOORS + 1)) - 1, Math.floor((footY + 0.1) / CONFIG.FLOOR_HEIGHT)));
           this.playerFloor = groundFloor;
           this.playerStairState = { active: null, baseFloor: groundFloor };
 
@@ -25716,6 +26178,17 @@ window.game = this;
       const px = this.playerPos.x;
       const pz = this.playerPos.z;
       const fl = this.playerFloor;
+      if (fl === CONFIG.ATTIC_FLOOR) {
+        const atticArea = T('area.attic', 'THE ATTIC');
+        if (this.dom.roomIndicator && this.dom.roomIndicator.textContent !== atticArea) {
+          this.dom.roomIndicator.textContent = atticArea;
+          this.dom.roomIndicator.style.color = '#f59e0b';
+        }
+        const atticRoomEl = document.getElementById('room-name');
+        if (atticRoomEl) atticRoomEl.textContent = T('floor.attic', 'ATTIC') + ' • ' + atticArea;
+        this.currentRoom = atticArea;
+        return;
+      }
       let areaKey = 'area.buffoon_gallery';
       let defaultArea = 'BUFFOON GALLERY';
 
@@ -27679,6 +28152,7 @@ window.game = this;
               this.buildObstacleGrid();
             }
             this.updateSmitty(delta);
+            if (this.updateAtticNpc) this.updateAtticNpc(delta);
             if (this.finalFight) {
               this.finalFight.update(delta);
             }
