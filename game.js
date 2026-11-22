@@ -36,6 +36,10 @@
       this.pendingMenuMusic = false;
       this.menuMusicSource = null;
       this.menuMusicGain = null;
+      this.deathMusicActive = false;
+      this.pendingDeathMusic = false;
+      this.deathMusicSource = null;
+      this.deathMusicGain = null;
       this.roomToneSource = null;
       this.roomToneGain = null;
       this.waterfallSource = null;
@@ -86,7 +90,7 @@
         'weapon_empty_click.wav', 'weapon_reload.wav', 'flashlight_click.wav',
         'relic_chime.wav', 'lockdown_disengaged.wav', 'lockdown_disengaged_death_scream.wav',
         'smitty_growl.wav', 'jumpscare_stinger.wav', 'heartbeat_pulse.wav',
-        'room_tone_ambience.wav', 'MainMenu-byR3E4.wav'
+        'room_tone_ambience.wav', 'MainMenu-byR3E4.wav', 'R3E4-DeathMusic.wav'
       ];
       const audioVer = window._ASSET_VERSION || Date.now();
       for (const name of files) {
@@ -102,6 +106,11 @@
               if (name === 'MainMenu-byR3E4.wav') {
                 if (this.menuMusicActive || this.pendingMenuMusic) {
                   this.playMenuMusic();
+                }
+              }
+              if (name === 'R3E4-DeathMusic.wav') {
+                if (this.deathMusicActive || this.pendingDeathMusic) {
+                  this.playDeathMusic();
                 }
               }
             }, () => {});
@@ -471,6 +480,79 @@
       const oldGain = this.menuMusicGain;
       this.menuMusicSource = null;
       this.menuMusicGain = null;
+
+      setTimeout(() => {
+        try {
+          oldSource.stop();
+          oldSource.disconnect();
+          oldGain.disconnect();
+        } catch (e) {}
+      }, duration * 1000 + 50);
+    }
+
+    playDeathMusic() {
+      if (!this.musicEnabled) {
+        this.deathMusicActive = false;
+        this.pendingDeathMusic = false;
+        return;
+      }
+      this.deathMusicActive = true;
+      if (!this.ctx) {
+        this.init();
+      }
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+
+      const buf = this.customBuffers['R3E4-DeathMusic.wav'];
+      if (!buf) {
+        this.pendingDeathMusic = true;
+        return;
+      }
+      this.pendingDeathMusic = false;
+
+      if (this.deathMusicSource && this.deathMusicGain) {
+        const now = this.ctx.currentTime;
+        this.deathMusicGain.gain.cancelScheduledValues(now);
+        this.deathMusicGain.gain.setValueAtTime(this.deathMusicGain.gain.value, now);
+        this.deathMusicGain.gain.linearRampToValueAtTime(0.9, now + 0.25);
+        return;
+      }
+
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.9, this.ctx.currentTime + 0.6);
+
+      src.connect(gain);
+      gain.connect(this.masterGain);
+
+      src.start();
+      this.deathMusicSource = src;
+      this.deathMusicGain = gain;
+    }
+
+    stopDeathMusic(duration = 0.5) {
+      this.deathMusicActive = false;
+      this.pendingDeathMusic = false;
+      if (!this.deathMusicSource || !this.deathMusicGain || !this.ctx) {
+        return;
+      }
+
+      const now = this.ctx.currentTime;
+      const currentGain = this.deathMusicGain.gain.value;
+      this.deathMusicGain.gain.cancelScheduledValues(now);
+      this.deathMusicGain.gain.setValueAtTime(currentGain, now);
+      this.deathMusicGain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+      const oldSource = this.deathMusicSource;
+      const oldGain = this.deathMusicGain;
+      this.deathMusicSource = null;
+      this.deathMusicGain = null;
 
       setTimeout(() => {
         try {
@@ -28178,6 +28260,9 @@ window.game = this;
       this.isGameOver = true;
       this.releaseNativeOrBrowserLock();
 
+      // Fade out gameplay ambience/heartbeat so the death screen music can take over
+      if (this.audio) this.audio.pauseGameplayAudio();
+
       // Smoothly fade the screen to pure black
       if (this.dom.jumpscareOverlay) {
         this.dom.jumpscareOverlay.classList.add('active');
@@ -28213,6 +28298,9 @@ window.game = this;
         if (this.dom.deathShots) this.dom.deathShots.textContent = this.shotsFired;
         if (this.dom.deathHits) this.dom.deathHits.textContent = this.shotsHit;
         this.dom.gameOverModal.classList.remove('hidden');
+
+        // Play the death-screen song once the game-over modal is up
+        if (this.audio) this.audio.playDeathMusic();
 
         // Keep jumpscareOverlay active behind game-over modal until restart, or smoothly clean it up
         setTimeout(() => {
