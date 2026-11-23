@@ -5908,67 +5908,72 @@ window.game = this;
       const atticGroup = this.floorGroups[fl];
       if (!atticGroup) return;
 
-      // Feature one table (west column, second row) with four floating copies.
-      const tableX = 3.0;
-      const tableZ = -29.0;
       const tableTopY = y0 + 0.82 + 0.09;
       const baseFloatY = tableTopY + 0.55;
       const offsets = [-2.4, -0.8, 0.8, 2.4];
+
+      // Feature tables, each with four floating copies of its own model.
+      const features = [
+        { x: 3.0, z: -29.0, model: 'assets/models/CD-EstFni.glb' },
+        { x: 21.0, z: -29.0, model: 'assets/models/CD-SF2.glb' }
+      ];
 
       this.giftShopProducts = [];
       this.giftShopTime = 0;
 
       const cacheKey = window._ASSET_VERSION || Date.now();
-      fetch(`assets/models/CD-EstFni.glb?v=${cacheKey}`)
-        .then((res) => {
-          if (!res.ok) throw new Error(`HTTP ${res.status}`);
-          return res.arrayBuffer();
-        })
-        .then((buffer) => {
-          const loader = new THREE.GLTFLoader();
-          loader.parse(buffer, '', (gltf) => {
-            const src = gltf.scene;
-            // Normalize scale + recenter the pivot so each copy spins and hovers about its middle.
-            src.updateMatrixWorld(true);
-            const size = new THREE.Vector3();
-            new THREE.Box3().setFromObject(src).getSize(size);
-            const targetH = 0.45;
-            if (size.y > 1e-4) src.scale.multiplyScalar(targetH / size.y);
-            src.updateMatrixWorld(true);
-            const center = new THREE.Vector3();
-            new THREE.Box3().setFromObject(src).getCenter(center);
-            src.position.x -= center.x;
-            src.position.y -= center.y;
-            src.position.z -= center.z;
+      features.forEach((feat, fi) => {
+        fetch(`${feat.model}?v=${cacheKey}`)
+          .then((res) => {
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            return res.arrayBuffer();
+          })
+          .then((buffer) => {
+            const loader = new THREE.GLTFLoader();
+            loader.parse(buffer, '', (gltf) => {
+              const src = gltf.scene;
+              // Normalize scale + recenter the pivot so each copy spins and hovers about its middle.
+              src.updateMatrixWorld(true);
+              const size = new THREE.Vector3();
+              new THREE.Box3().setFromObject(src).getSize(size);
+              const targetH = 0.45;
+              if (size.y > 1e-4) src.scale.multiplyScalar(targetH / size.y);
+              src.updateMatrixWorld(true);
+              const center = new THREE.Vector3();
+              new THREE.Box3().setFromObject(src).getCenter(center);
+              src.position.x -= center.x;
+              src.position.y -= center.y;
+              src.position.z -= center.z;
 
-            src.traverse((c) => {
-              if (c.isMesh) {
-                c.castShadow = true;
-                c.frustumCulled = true;
-              }
-            });
-
-            offsets.forEach((ox, i) => {
-              const group = new THREE.Group();
-              group.position.set(tableX + ox, baseFloatY, tableZ);
-              group.add(src.clone());
-              atticGroup.add(group);
-              this.giftShopProducts.push({
-                group,
-                baseY: baseFloatY,
-                phase: i * 1.3,
-                rotSpeed: 0.6,
-                hoverAmp: 0.08,
-                hoverFreq: 1.1
+              src.traverse((c) => {
+                if (c.isMesh) {
+                  c.castShadow = true;
+                  c.frustumCulled = true;
+                }
               });
+
+              offsets.forEach((ox, i) => {
+                const group = new THREE.Group();
+                group.position.set(feat.x + ox, baseFloatY, feat.z);
+                group.add(src.clone());
+                atticGroup.add(group);
+                this.giftShopProducts.push({
+                  group,
+                  baseY: baseFloatY,
+                  phase: i * 1.3 + fi * 0.9,
+                  rotSpeed: 0.6,
+                  hoverAmp: 0.08,
+                  hoverFreq: 1.1
+                });
+              });
+            }, (err) => {
+              console.warn(`Could not load ${feat.model}:`, err);
             });
-          }, (err) => {
-            console.warn('Could not load assets/models/CD-EstFni.glb:', err);
+          })
+          .catch((err) => {
+            console.warn(`Could not load ${feat.model}:`, err);
           });
-        })
-        .catch((err) => {
-          console.warn('Could not load assets/models/CD-EstFni.glb:', err);
-        });
+      });
     }
 
     updateGiftShopProducts(delta) {
