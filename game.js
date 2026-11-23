@@ -5968,7 +5968,10 @@ window.game = this;
       // Feature tables, each with four floating copies of its own model.
       const features = [
         { x: 3.0, z: -29.0, model: 'assets/models/CD-EstFni.glb' },
-        { x: 21.0, z: -29.0, model: 'assets/models/CD-SF2.glb' }
+        { x: 21.0, z: -29.0, model: 'assets/models/CD-SF2.glb' },
+        { x: 3.0, z: -35.0, model: 'assets/models/CD-GeminiDiaries.glb' },
+        { x: 21.0, z: -35.0, model: 'assets/models/CD-TheAmazingBulkRebulked.glb' },
+        { x: 3.0, z: -39.0, model: 'assets/models/CD-ThePortSheldonSessions.glb' }
       ];
 
       this.giftShopProducts = [];
