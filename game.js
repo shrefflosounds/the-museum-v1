@@ -28995,7 +28995,7 @@ window.game = this;
           });
 
           // Forward axis alignment in Three.js (-PI/2)
-          model.rotation.y = Math.PI / 2;
+          model.rotation.y = -Math.PI / 2;
 
           model.updateMatrixWorld(true);
           const box = new THREE.Box3().setFromObject(model);
