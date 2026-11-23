@@ -4975,6 +4975,51 @@ window.game = this;
       // Build the attic level (a 5th, ladder-only space above the 4th floor)
       this.buildAtticLevel(mats);
 
+      // Directional wall markers (N/E/S/W) for editing reference.
+      // Game convention: -Z is North, +Z is South, +X is East, -X is West.
+      // Placed flush just inside each wall's inner face, facing into the room.
+      const atticGroup = this.floorGroups[CONFIG.ATTIC_FLOOR];
+      const A = CONFIG.ATTIC;
+      const H = CONFIG.FLOOR_HEIGHT;
+      const y0 = CONFIG.ATTIC_FLOOR * H;
+      const ceilH = A.WALL_H;
+      const minX = A.MIN_X, maxX = A.MAX_X, minZ = A.MIN_Z, maxZ = A.MAX_Z;
+      const cx = (minX + maxX) / 2;
+      const cz = (minZ + maxZ) / 2;
+      const wallT = 0.4;
+      const pad = 0.015;
+      const innerN = minZ + wallT / 2 - pad;
+      const innerS = maxZ - wallT / 2 + pad;
+      const innerE = maxX - wallT / 2 + pad;
+      const innerW = minX + wallT / 2 - pad;
+      const mkDirMarker = (letter, color, x, z, rotY) => {
+        const cvs = document.createElement('canvas');
+        cvs.width = 256; cvs.height = 512;
+        const c = cvs.getContext('2d');
+        c.fillStyle = '#000000';
+        c.fillRect(0, 0, 256, 512);
+        c.fillStyle = '#ffffff';
+        c.font = 'bold 400px sans-serif';
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.fillText(letter, 128, 256);
+        const tex = new THREE.CanvasTexture(cvs);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        tex.needsUpdate = true;
+        const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), mat);
+        plane.position.set(x, y0 + 4.0, z);
+        plane.rotation.y = rotY;
+        plane.userData = { dirMarker: letter };
+        atticGroup.add(plane);
+        return plane;
+      };
+      mkDirMarker('N', 0xffffff, cx, innerN, 0);
+      mkDirMarker('S', 0xffffff, cx, innerS, Math.PI);
+      mkDirMarker('E', 0xffffff, innerE, cz, -Math.PI / 2);
+      mkDirMarker('W', 0xffffff, innerW, cz, Math.PI / 2);
+
       // Populate all 136 curated gallery artworks across the 4 floors
       this.populateCuratedArtworks(mats);
     }
@@ -5827,45 +5872,6 @@ window.game = this;
         this.createWall(cx, yc, maxZ, w, ceilH, 0.4, wallMat, true, fl);
         this.createWall(minX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
         this.createWall(maxX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
-
-        // Directional wall markers (N/E/S/W) for editing reference.
-        // Game convention: -Z is North, +Z is South, +X is East, -X is West.
-        // Placed flush just inside each wall's inner face, facing into the room.
-        const mkDirMarker = (letter, x, z, rotY) => {
-          const cvs = document.createElement('canvas');
-          cvs.width = 256; cvs.height = 512;
-          const c = cvs.getContext('2d');
-          c.fillStyle = '#000000';
-          c.fillRect(0, 0, 256, 512);
-          c.fillStyle = '#ffffff';
-          c.font = 'bold 400px sans-serif';
-          c.textAlign = 'center';
-          c.textBaseline = 'middle';
-          c.fillText(letter, 128, 256);
-          const tex = new THREE.CanvasTexture(cvs);
-          if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
-          tex.minFilter = THREE.LinearFilter;
-          tex.magFilter = THREE.LinearFilter;
-          const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
-          tex.needsUpdate = true;
-          const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), mat);
-          plane.position.set(x, y0 + 4.0, z);
-          plane.rotation.y = rotY;
-          atticGroup.add(plane);
-          return plane;
-        };
-
-        const wallT = 0.4; // wall thickness (createWall depth/width)
-        const pad = 0.015; // just inside the inner face
-        const innerN = minZ + wallT / 2 - pad; // north wall inner face faces +Z into room
-        const innerS = maxZ - wallT / 2 + pad; // south wall inner face faces -Z into room
-        const innerE = maxX - wallT / 2 + pad; // east wall inner face faces -X into room
-        const innerW = minX + wallT / 2 - pad; // west wall inner face faces +X into room
-
-        mkDirMarker('N', cx, innerN, 0);              // faces +Z (into room from north wall)
-        mkDirMarker('S', cx, innerS, Math.PI);         // faces -Z (into room from south wall)
-        mkDirMarker('E', innerE, cz, -Math.PI / 2);    // faces -X (into room from east wall)
-        mkDirMarker('W', innerW, cz, Math.PI / 2);     // faces +X (into room from west wall)
 
         // Bright, even Apple-Store-style lighting: white ambient + hemisphere fill
         // for shadowless brightness, a grid of recessed ceiling downlights, and a
