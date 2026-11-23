@@ -6003,7 +6003,7 @@ window.game = this;
             model.position.y += tableTopY - box.min.y;
             model.position.x += desktopTableX;
             model.position.z += desktopTableZ;
-            model.rotation.y = -Math.PI / 2;
+            model.rotation.y = Math.PI / 2;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load blue-beanie.glb:', err));
         })
@@ -6030,7 +6030,7 @@ window.game = this;
             const box = new THREE.Box3().setFromObject(model);
             model.position.y += tableTopY - box.min.y;
             model.position.x += 4.0;
-            model.rotation.y = -Math.PI / 2;
+            model.rotation.y = Math.PI / 2;
             model.position.z += desktopTableZ;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load shirt-sponge.glb:', err));
@@ -28995,7 +28995,7 @@ window.game = this;
           });
 
           // Forward axis alignment in Three.js (-PI/2)
-          model.rotation.y = -Math.PI / 2;
+          model.rotation.y = Math.PI / 2;
 
           model.updateMatrixWorld(true);
           const box = new THREE.Box3().setFromObject(model);
