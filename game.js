@@ -5864,8 +5864,9 @@ window.game = this;
         }
 
         // Display tables (light wood) in two columns with a wide central aisle
-        const legH = 0.82, topT = 0.09;
+        const legH = 0.82 * 0.8, topT = 0.09; // legs 20% shorter
         const tableTopY = y0 + legH + topT;
+        this.giftShopTableTopY = tableTopY;
         const addTable = (tx, tz, tw, td) => {
           const top = new THREE.Mesh(new THREE.BoxGeometry(tw, topT, td), tableMat);
           top.position.set(tx, y0 + legH + topT / 2, tz);
@@ -5908,7 +5909,7 @@ window.game = this;
       const atticGroup = this.floorGroups[fl];
       if (!atticGroup) return;
 
-      const tableTopY = y0 + 0.82 + 0.09;
+      const tableTopY = (typeof this.giftShopTableTopY === 'number') ? this.giftShopTableTopY : (y0 + 0.82 * 0.8 + 0.09);
       const baseFloatY = tableTopY + 0.55;
       const offsets = [-2.4, -0.8, 0.8, 2.4];
 
