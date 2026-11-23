@@ -23558,8 +23558,10 @@ window.game = this;
           }
         } else if (e.code === 'Escape') {
           const _fs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
-          if (_fs) { e.preventDefault(); return; }
           e.preventDefault();
+          if (_fs) {
+            // Keep fullscreen; let the normal Escape handling (pause menu) run.
+          }
           if (this.isMuseumMode) {
             this.exitMuseumModeToMenu();
             return;
@@ -23756,7 +23758,11 @@ window.game = this;
       const isFullscreen = !!(doc.fullscreenElement || doc.webkitFullscreenElement || doc.mozFullScreenElement || doc.msFullscreenElement);
       if (!isFullscreen) {
         if (elem.requestFullscreen) {
-          elem.requestFullscreen().catch(() => {});
+          elem.requestFullscreen().then(() => {
+            if (navigator.keyboard && navigator.keyboard.lock) {
+              navigator.keyboard.lock(['Escape']).catch(() => {});
+            }
+          }).catch(() => {});
         } else if (elem.webkitRequestFullscreen) {
           elem.webkitRequestFullscreen();
         } else if (elem.msRequestFullscreen) {
@@ -23765,6 +23771,9 @@ window.game = this;
           elem.mozRequestFullScreen();
         }
       } else {
+        if (navigator.keyboard && navigator.keyboard.unlock) {
+          navigator.keyboard.unlock();
+        }
         if (doc.exitFullscreen) {
           doc.exitFullscreen().catch(() => {});
         } else if (doc.webkitExitFullscreen) {
