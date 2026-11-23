@@ -4977,7 +4977,7 @@ window.game = this;
 
       // Directional wall markers (N/E/S/W) for editing reference.
       // Game convention: -Z is North, +Z is South, +X is East, -X is West.
-      // Placed flush just inside each wall's inner face, facing into the room.
+      // Placed just inside each wall's inner face, facing into the room.
       const atticGroup = this.floorGroups[CONFIG.ATTIC_FLOOR];
       const A = CONFIG.ATTIC;
       const H = CONFIG.FLOOR_HEIGHT;
@@ -4987,38 +4987,45 @@ window.game = this;
       const cx = (minX + maxX) / 2;
       const cz = (minZ + maxZ) / 2;
       const wallT = 0.4;
-      const pad = 0.015;
-      const innerN = minZ + wallT / 2 - pad;
-      const innerS = maxZ - wallT / 2 + pad;
-      const innerE = maxX - wallT / 2 + pad;
-      const innerW = minX + wallT / 2 - pad;
+      const pad = 0.05;
+      // Wall BoxGeometry is centered on the wall line with depth wallT:
+      // North wall inner face (+Z side into room) at minZ + wallT/2; marker just inside room: +pad
+      const innerN = minZ + wallT / 2 + pad;
+      // South wall inner face (-Z side into room) at maxZ - wallT/2; marker just inside room: -pad
+      const innerS = maxZ - wallT / 2 - pad;
+      // East wall inner face (-X side into room) at maxX - wallT/2; marker just inside room: -pad
+      const innerE = maxX - wallT / 2 - pad;
+      // West wall inner face (+X side into room) at minX + wallT/2; marker just inside room: +pad
+      const innerW = minX + wallT / 2 + pad;
       const mkDirMarker = (letter, color, x, z, rotY) => {
         const cvs = document.createElement('canvas');
-        cvs.width = 256; cvs.height = 512;
+        cvs.width = 512; cvs.height = 1024;
         const c = cvs.getContext('2d');
         c.fillStyle = '#000000';
-        c.fillRect(0, 0, 256, 512);
+        c.fillRect(0, 0, 512, 1024);
         c.fillStyle = '#ffffff';
-        c.font = 'bold 400px sans-serif';
+        c.font = 'bold 800px sans-serif';
         c.textAlign = 'center';
         c.textBaseline = 'middle';
-        c.fillText(letter, 128, 256);
+        c.fillText(letter, 256, 512);
         const tex = new THREE.CanvasTexture(cvs);
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
         const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
-        const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), mat);
-        plane.position.set(x, y0 + 4.0, z);
+        const plane = new THREE.Mesh(new THREE.PlaneGeometry(4.0, 5.0), mat);
+        plane.position.set(x, y0 + ceilH / 2, z);
         plane.rotation.y = rotY;
+        plane.renderOrder = 1;
+        plane.frustumCulled = false;
         plane.userData = { dirMarker: letter };
         atticGroup.add(plane);
         return plane;
       };
-      mkDirMarker('N', 0xffffff, cx, innerN, 0);
-      mkDirMarker('S', 0xffffff, cx, innerS, Math.PI);
-      mkDirMarker('E', 0xffffff, innerE, cz, -Math.PI / 2);
-      mkDirMarker('W', 0xffffff, innerW, cz, Math.PI / 2);
+      mkDirMarker('N', 0xff0000, cx, innerN, 0);
+      mkDirMarker('S', 0x0000ff, cx, innerS, Math.PI);
+      mkDirMarker('E', 0x00ff00, innerE, cz, -Math.PI / 2);
+      mkDirMarker('W', 0xffff00, innerW, cz, Math.PI / 2);
 
       // Populate all 136 curated gallery artworks across the 4 floors
       this.populateCuratedArtworks(mats);
