@@ -4845,7 +4845,10 @@ window.game = this;
 
       const viewmodelLight = new THREE.PointLight(0xffeedd, 0.85, 2.5);
       viewmodelLight.position.set(0.12, 0.05, -0.25);
+      // Isolate viewmodel light to Layer 1 (hands/viewmodels only) so it never casts light onto world walls, tables, or CD covers
+      viewmodelLight.layers.set(1);
       this.camera.add(viewmodelLight);
+      this.camera.layers.enable(1); // Camera renders both default world (Layer 0) and viewmodels (Layer 1)
 
       this.muzzleLight = new THREE.PointLight(0xffaa33, 0, 12);
       this.muzzleLight.position.set(0.18, -0.15, -0.8);
@@ -6005,6 +6008,17 @@ window.game = this;
                 if (c.isMesh) {
                   c.castShadow = true;
                   c.frustumCulled = true;
+                  if (c.material) {
+                    const mats = Array.isArray(c.material) ? c.material : [c.material];
+                    mats.forEach((m) => {
+                      if (m && (m.name === 'Cover' || m.name === 'BackCover' || m.name === 'White')) {
+                        m.roughness = Math.max(m.roughness || 0, 0.65);
+                        m.metalness = 0;
+                        if (m.specularIntensity !== undefined) m.specularIntensity = 0.15;
+                        if (m.specularColor) m.specularColor.setRGB(0.2, 0.2, 0.2);
+                      }
+                    });
+                  }
                 }
               });
 
@@ -21425,6 +21439,7 @@ window.game = this;
             child.castShadow = false;
             child.receiveShadow = false;
             child.frustumCulled = false;
+            child.layers.enable(1); // Receive light from viewmodelLight (Layer 1)
             if (child.material) {
               child.material.depthTest = true;
               child.material.side = THREE.FrontSide;
@@ -21454,6 +21469,7 @@ window.game = this;
             child.castShadow = false;
             child.receiveShadow = false;
             child.frustumCulled = false;
+            child.layers.enable(1); // Receive light from viewmodelLight (Layer 1)
             if (child.material) {
               child.material.depthTest = true;
               child.material.side = THREE.FrontSide;
