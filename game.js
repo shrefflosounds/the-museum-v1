@@ -5846,9 +5846,9 @@ window.game = this;
           if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
           tex.minFilter = THREE.LinearFilter;
           tex.magFilter = THREE.LinearFilter;
+          const mat = new THREE.MeshStandardMaterial({ map: tex, side: THREE.DoubleSide });
           tex.needsUpdate = true;
-          const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
-          const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.45), mat);
+          const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.6, 2.0), mat);
           plane.position.set(x, y0 + 4.0, z);
           plane.rotation.y = rotY;
           atticGroup.add(plane);
@@ -5864,8 +5864,8 @@ window.game = this;
 
         mkDirMarker('N', cx, innerN, 0);              // faces +Z (into room from north wall)
         mkDirMarker('S', cx, innerS, Math.PI);         // faces -Z (into room from south wall)
-        mkDirMarker('E', innerE, cz, Math.PI / 2);     // faces -X (into room from east wall)
-        mkDirMarker('W', innerW, cz, -Math.PI / 2);    // faces +X (into room from west wall)
+        mkDirMarker('E', innerE, cz, -Math.PI / 2);    // faces -X (into room from east wall)
+        mkDirMarker('W', innerW, cz, Math.PI / 2);     // faces +X (into room from west wall)
 
         // Bright, even Apple-Store-style lighting: white ambient + hemisphere fill
         // for shadowless brightness, a grid of recessed ceiling downlights, and a
