@@ -4843,13 +4843,10 @@ window.game = this;
       this.flashlight.target = this.flashlightTarget;
       this.scene.add(this.flashlight);
 
-      const viewmodelLight = new THREE.PointLight(0xffeedd, 0.85, 2.5);
-      viewmodelLight.position.set(0.12, 0.05, -0.25);
-      // Isolate viewmodel light to Layer 1 (hands/viewmodels only) so it never casts light onto world walls, tables, or CD covers
-      viewmodelLight.layers.set(1);
-      this.camera.add(viewmodelLight);
-      this.camera.layers.enable(1); // Camera renders both default world (Layer 0) and viewmodels (Layer 1)
-
+      // Note: viewmodelLight was completely removed because in Three.js forward rendering,
+      // camera-attached point lights illuminate all world geometry within distance, creating
+      // an unwanted growing circle of light on walls and washing out CD covers.
+      // Hand viewmodels are kept visible by scene ambient light and their PBR textures.
       this.muzzleLight = new THREE.PointLight(0xffaa33, 0, 12);
       this.muzzleLight.position.set(0.18, -0.15, -0.8);
       this.camera.add(this.muzzleLight);
@@ -5887,12 +5884,12 @@ window.game = this;
         // for shadowless brightness, a grid of recessed ceiling downlights, and a
         // few real point lights for soft modeling. All are attic-scoped (culled by
         // updateRelicFloorVisibility so they only light the gift shop).
-        const atticAmbient = new THREE.AmbientLight(0xffffff, 0.45);
-        atticAmbient._origIntensity = 0.45;
+        const atticAmbient = new THREE.AmbientLight(0xffffff, 0.22);
+        atticAmbient._origIntensity = 0.22;
         this.scene.add(atticAmbient);
 
-        const atticHemi = new THREE.HemisphereLight(0xffffff, 0xdfe1e4, 0.35);
-        atticHemi._origIntensity = 0.35;
+        const atticHemi = new THREE.HemisphereLight(0xffffff, 0xdfe1e4, 0.18);
+        atticHemi._origIntensity = 0.18;
         atticHemi.position.set(cx, y0 + ceilH, cz);
         this.scene.add(atticHemi);
 
