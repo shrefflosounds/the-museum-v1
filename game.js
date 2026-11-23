@@ -23528,6 +23528,8 @@ window.game = this;
             this.interact();
           }
         } else if (e.code === 'Escape') {
+          const _fs = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement);
+          if (_fs) { e.preventDefault(); return; }
           e.preventDefault();
           if (this.isMuseumMode) {
             this.exitMuseumModeToMenu();
