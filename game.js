@@ -5980,7 +5980,7 @@ window.game = this;
       const cacheKey = window._ASSET_VERSION || Date.now();
 
       // Desktop model on an empty gift-shop table.
-      const desktopTableX = -0.3;
+      const desktopTableX = 5.5;
       const desktopTableZ = -25.0;
       fetch(`assets/models/blue-beanie.glb?v=${cacheKey}`)
         .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
