@@ -5980,7 +5980,7 @@ window.game = this;
       const cacheKey = window._ASSET_VERSION || Date.now();
 
       // Desktop model on an empty gift-shop table.
-      const desktopTableX = 3.0;
+      const desktopTableX = -0.3;
       const desktopTableZ = -25.0;
       fetch(`assets/models/blue-beanie.glb?v=${cacheKey}`)
         .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
@@ -5991,7 +5991,7 @@ window.game = this;
             model.updateMatrixWorld(true);
             const size = new THREE.Vector3();
             new THREE.Box3().setFromObject(model).getSize(size);
-            const targetH = 0.35;
+            const targetH = 0.7;
             if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
             model.updateMatrixWorld(true);
             const center = new THREE.Vector3();
