@@ -6008,6 +6008,33 @@ window.game = this;
         })
         .catch((err) => console.warn('Could not load blue-beanie.glb:', err));
 
+      // Shirt-sponge desktop model next to the blue beanie.
+      fetch(`assets/models/shirt-sponge.glb?v=${cacheKey}`)
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
+        .then((buffer) => {
+          const loader = new THREE.GLTFLoader();
+          loader.parse(buffer, '', (gltf) => {
+            const model = gltf.scene;
+            model.updateMatrixWorld(true);
+            const size = new THREE.Vector3();
+            new THREE.Box3().setFromObject(model).getSize(size);
+            const targetH = 0.7;
+            if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
+            model.updateMatrixWorld(true);
+            const center = new THREE.Vector3();
+            new THREE.Box3().setFromObject(model).getCenter(center);
+            model.position.x -= center.x;
+            model.position.z -= center.z;
+            model.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(model);
+            model.position.y += tableTopY - box.min.y;
+            model.position.x += 4.0;
+            model.position.z += desktopTableZ;
+            atticGroup.add(model);
+          }, (err) => console.warn('Could not load shirt-sponge.glb:', err));
+        })
+        .catch((err) => console.warn('Could not load shirt-sponge.glb:', err));
+
       features.forEach((feat, fi) => {
         fetch(`${feat.model}?v=${cacheKey}`)
           .then((res) => {
