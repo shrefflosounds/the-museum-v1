@@ -5830,6 +5830,7 @@ window.game = this;
 
         // Directional wall markers (N/E/S/W) for editing reference.
         // Game convention: -Z is North, +Z is South, +X is East, -X is West.
+        // Placed flush just inside each wall's inner face, facing into the room.
         const mkDirMarker = (letter, x, z, rotY) => {
           const cvs = document.createElement('canvas');
           cvs.width = 256; cvs.height = 512;
@@ -5845,6 +5846,7 @@ window.game = this;
           if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
           tex.minFilter = THREE.LinearFilter;
           tex.magFilter = THREE.LinearFilter;
+          tex.needsUpdate = true;
           const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
           const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.45), mat);
           plane.position.set(x, y0 + 4.0, z);
@@ -5853,11 +5855,17 @@ window.game = this;
           return plane;
         };
 
-        const dirY = y0 + 4.0;
-        mkDirMarker('N', cx, minZ + 0.06, 0);              // North wall (faces -Z outward)
-        mkDirMarker('S', cx, maxZ - 0.06, Math.PI);         // South wall (faces +Z outward)
-        mkDirMarker('E', maxX - 0.06, cz, -Math.PI / 2);    // East wall (faces +X outward)
-        mkDirMarker('W', minX + 0.06, cz, Math.PI / 2);     // West wall (faces -X outward)
+        const wallT = 0.4; // wall thickness (createWall depth/width)
+        const pad = 0.015; // just inside the inner face
+        const innerN = minZ + wallT / 2 - pad; // north wall inner face faces +Z into room
+        const innerS = maxZ - wallT / 2 + pad; // south wall inner face faces -Z into room
+        const innerE = maxX - wallT / 2 + pad; // east wall inner face faces -X into room
+        const innerW = minX + wallT / 2 - pad; // west wall inner face faces +X into room
+
+        mkDirMarker('N', cx, innerN, 0);              // faces +Z (into room from north wall)
+        mkDirMarker('S', cx, innerS, Math.PI);         // faces -Z (into room from south wall)
+        mkDirMarker('E', innerE, cz, Math.PI / 2);     // faces -X (into room from east wall)
+        mkDirMarker('W', innerW, cz, -Math.PI / 2);    // faces +X (into room from west wall)
 
         // Bright, even Apple-Store-style lighting: white ambient + hemisphere fill
         // for shadowless brightness, a grid of recessed ceiling downlights, and a
