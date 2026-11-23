@@ -5828,6 +5828,37 @@ window.game = this;
         this.createWall(minX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
         this.createWall(maxX, yc, cz, 0.4, ceilH, d, wallMat, true, fl);
 
+        // Directional wall markers (N/E/S/W) for editing reference.
+        // Game convention: -Z is North, +Z is South, +X is East, -X is West.
+        const mkDirMarker = (letter, x, z, rotY) => {
+          const cvs = document.createElement('canvas');
+          cvs.width = 256; cvs.height = 512;
+          const c = cvs.getContext('2d');
+          c.fillStyle = '#000000';
+          c.fillRect(0, 0, 256, 512);
+          c.fillStyle = '#ffffff';
+          c.font = 'bold 400px sans-serif';
+          c.textAlign = 'center';
+          c.textBaseline = 'middle';
+          c.fillText(letter, 128, 256);
+          const tex = new THREE.CanvasTexture(cvs);
+          if (THREE.SRGBColorSpace) tex.colorSpace = THREE.SRGBColorSpace;
+          tex.minFilter = THREE.LinearFilter;
+          tex.magFilter = THREE.LinearFilter;
+          const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
+          const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.1, 1.45), mat);
+          plane.position.set(x, y0 + 4.0, z);
+          plane.rotation.y = rotY;
+          atticGroup.add(plane);
+          return plane;
+        };
+
+        const dirY = y0 + 4.0;
+        mkDirMarker('N', cx, minZ + 0.06, 0);              // North wall (faces -Z outward)
+        mkDirMarker('S', cx, maxZ - 0.06, Math.PI);         // South wall (faces +Z outward)
+        mkDirMarker('E', maxX - 0.06, cz, -Math.PI / 2);    // East wall (faces +X outward)
+        mkDirMarker('W', minX + 0.06, cz, Math.PI / 2);     // West wall (faces -X outward)
+
         // Bright, even Apple-Store-style lighting: white ambient + hemisphere fill
         // for shadowless brightness, a grid of recessed ceiling downlights, and a
         // few real point lights for soft modeling. All are attic-scoped (culled by
