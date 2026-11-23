@@ -27521,6 +27521,7 @@ window.game = this;
 
     checkSmittyVision() {
       if (this.isSpectatorMode) return false;
+      if (this.playerFloor === CONFIG.ATTIC_FLOOR) return false;
       const isChase = (this.smittyState === 'CHASE');
       const isStairSmitty = this.isInStairwell(this.smittyPos);
       const isStairPlayer = this.isInStairwell(this.playerPos);
@@ -27646,6 +27647,7 @@ window.game = this;
 
     alertSmittySound(soundPos, soundFloor, radius, isImmediateChase = false) {
       if (this.isSpectatorMode || this.smittyState === 'DEAD' || this.smittyState === 'RESPAWNING' || !this.gameStarted) return;
+      if (soundFloor === CONFIG.ATTIC_FLOOR) return;
 
       // Smitty CANNOT hear or detect sounds from another floor unless he is ALREADY in CHASE
       if (soundFloor !== this.smittyFloor && this.smittyState !== 'CHASE') {
