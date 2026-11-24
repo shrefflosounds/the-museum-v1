@@ -6087,7 +6087,7 @@ window.game = this;
             model.position.y += tableTopY - box.min.y;
             model.position.x += 2.5;
             model.position.z += desktopTableZ;
-            model.rotation.y = 0;
+            model.rotation.y = Math.PI;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load hat-SF2025.glb:', err));
         })
