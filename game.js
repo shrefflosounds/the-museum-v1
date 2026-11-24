@@ -6047,7 +6047,7 @@ window.game = this;
             model.updateMatrixWorld(true);
             const size = new THREE.Vector3();
             new THREE.Box3().setFromObject(model).getSize(size);
-            const targetH = 0.7;
+            const targetH = 1.4;
             if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
             model.updateMatrixWorld(true);
             const center = new THREE.Vector3();
