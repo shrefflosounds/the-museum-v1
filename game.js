@@ -6416,7 +6416,7 @@ window.game = this;
       const mat = new THREE.MeshStandardMaterial({
         map: tex, roughness: 0.8, metalness: 0.0,
         emissive: 0xffffff, emissiveMap: tex, emissiveIntensity: 0.22,
-        transparent: true, side: THREE.FrontSide, depthWrite: false
+        transparent: true, opacity: 0.5, side: THREE.FrontSide, depthWrite: false
       });
       const geo = new THREE.PlaneGeometry(4.0, 4.0);
 
