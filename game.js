@@ -6095,6 +6095,34 @@ window.game = this;
         })
         .catch((err) => console.warn('Could not load blue-beanie.glb:', err));
 
+      // SF-YoungThug model on a north table.
+      fetch(`assets/models/SF-YoungThug_exported.glb?v=${cacheKey}`)
+        .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
+        .then((buffer) => {
+          const loader = new THREE.GLTFLoader();
+          loader.parse(buffer, '', (gltf) => {
+            const model = gltf.scene;
+            model.updateMatrixWorld(true);
+            const size = new THREE.Vector3();
+            new THREE.Box3().setFromObject(model).getSize(size);
+            const targetH = 0.7;
+            if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
+            model.updateMatrixWorld(true);
+            const center = new THREE.Vector3();
+            new THREE.Box3().setFromObject(model).getCenter(center);
+            model.position.x -= center.x;
+            model.position.z -= center.z;
+            model.updateMatrixWorld(true);
+            const box = new THREE.Box3().setFromObject(model);
+            model.position.y += tableTopY - box.min.y;
+            model.position.x += 3.0;
+            model.position.z += -43.0;
+            model.rotation.y = Math.PI / 2;
+            atticGroup.add(model);
+          }, (err) => console.warn('Could not load SF-YoungThug_exported.glb:', err));
+        })
+        .catch((err) => console.warn('Could not load SF-YoungThug_exported.glb:', err));
+
       // Shirt-black-human on an empty table, same placement as blue beanie.
       fetch(`assets/models/shirt-black-human.glb?v=${cacheKey}`)
         .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
