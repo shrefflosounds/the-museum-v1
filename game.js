@@ -6173,7 +6173,7 @@ window.game = this;
             model.position.y += tableTopY - box.min.y;
             model.position.x += 23.5;
             model.position.z += -25.0;
-            model.rotation.y = Math.PI / 2 - 0.1745;
+            model.rotation.y = Math.PI / 2 + 0.5236;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load white-sweatpants.glb:', err));
         })
