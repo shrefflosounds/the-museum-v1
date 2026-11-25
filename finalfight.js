@@ -507,31 +507,40 @@
       }
 
       // Inter-floor following & leash:
-      // When the player changes floors, FinalFight immediately prioritizes following them up/down to protect them!
+      // When the player changes floors, travels stairs without The Being, or gets too far away,
+      // The Being immediately teleports behind the player to keep up as a loyal protector!
       const dP = this._dist2D(this.pos, g.playerPos);
       const floorGap = Math.abs(this.floor - g.playerFloor);
+      const playerOnStair = (g.isInStairwell && g.isInStairwell(g.playerPos)) ||
+                            (g.playerStairState && g.playerStairState.active !== null);
+      const selfOnStair = (g.isInStairwell && g.isInStairwell(this.pos)) ||
+                          (this.stairState && this.stairState.active !== null);
 
-      if (floorGap > 0) {
-        // Player is on a different floor: if not already navigating stairs rapidly toward them,
-        // or if player has established distance/time on the new floor, promptly catch up to defend them!
-        this.floorChangeFollowTimer = (this.floorChangeFollowTimer || 0) + delta;
-        if (!this.jump && (floorGap > 1 || this.floorChangeFollowTimer > 1.8 || dP > 28)) {
+      if (this.lastObservedPlayerFloor === undefined) {
+        this.lastObservedPlayerFloor = g.playerFloor;
+      }
+      const playerFloorChanged = (g.playerFloor !== this.lastObservedPlayerFloor);
+      this.lastObservedPlayerFloor = g.playerFloor;
+
+      if (!this.jump && !this.attack) {
+        // Condition 1: Player went up or down stairs to another floor without The Being
+        if (floorGap > 0) {
           this._teleportBehindPlayer();
           this.floorChangeFollowTimer = 0;
-        } else if (this.mode !== 'INTERCEPT_FLOOR' && this.mode !== 'HUNT') {
-          // Immediately route into stairs toward the player's floor
-          this.mode = 'INTERCEPT_FLOOR';
-          this.modeTimer = 4.0;
         }
-      } else {
-        this.floorChangeFollowTimer = 0;
-        if (this.mode === 'INTERCEPT_FLOOR') {
-          this.mode = 'ROAM';
-          this.modeTimer = rand(3, 6);
-        }
-        if (!this.jump && dP > 48) {
+        // Condition 2: Player moved between floors or is navigating stairs while The Being is left behind outside the stairs
+        else if (playerFloorChanged || (playerOnStair && !selfOnStair && dP > 8.0)) {
           this._teleportBehindPlayer();
         }
+        // Condition 3: Player got too far away on the same floor (> 22 meters)
+        else if (dP > 22.0) {
+          this._teleportBehindPlayer();
+        }
+      }
+
+      if (floorGap === 0 && this.mode === 'INTERCEPT_FLOOR') {
+        this.mode = 'ROAM';
+        this.modeTimer = rand(3, 6);
       }
 
       this.routeTimer -= delta;
@@ -886,18 +895,51 @@
       const g = this.g;
       const yaw = g.playerYaw || 0;
       const fl = g.playerFloor;
-      for (const dist of [6, 5, 4, 7, 3]) {
-        const x = g.playerPos.x + Math.sin(yaw) * dist, z = g.playerPos.z + Math.cos(yaw) * dist;
-        if (!g.gridBlocked(fl, x, z) && g.gridLOS(fl, g.playerPos, { x, z })) {
-          this.pos.set(x, fl * CONFIG_FH(), z);
-          this.floor = fl;
-          this.stairState = { active: null, baseFloor: fl };
-          this.path = [];
-          this.mode = 'ROAM';
-          this.roamGoal = this._pickRoamGoal();
-          return;
+
+      // In Three.js with camera rotation (YXZ), camera forward vector is (-sin(yaw), 0, -cos(yaw)).
+      // Behind the player is (+sin(yaw), 0, +cos(yaw)).
+      const bx = Math.sin(yaw);
+      const bz = Math.cos(yaw);
+      const rx = Math.cos(yaw);
+      const rz = -Math.sin(yaw);
+
+      // Try multiple placement candidates directly behind and slightly offset behind the player
+      const candidates = [];
+      for (const dist of [4.5, 3.8, 5.2, 3.0, 6.0, 2.4]) {
+        candidates.push({ x: g.playerPos.x + bx * dist, z: g.playerPos.z + bz * dist });
+        candidates.push({ x: g.playerPos.x + bx * dist + rx * 1.2, z: g.playerPos.z + bz * dist + rz * 1.2 });
+        candidates.push({ x: g.playerPos.x + bx * dist - rx * 1.2, z: g.playerPos.z + bz * dist - rz * 1.2 });
+      }
+
+      let chosen = null;
+      for (const c of candidates) {
+        if (!g.gridBlocked(fl, c.x, c.z) && g.gridLOS(fl, g.playerPos, c)) {
+          chosen = c;
+          break;
         }
       }
+
+      if (!chosen) {
+        // Fallback: search nearest free walkable cell behind player
+        const f = g.gridNearestFree ? g.gridNearestFree(fl, g.playerPos.x + bx * 3.5, g.playerPos.z + bz * 3.5, 10) : null;
+        if (f && g.navGrid) {
+          chosen = { x: g.navGrid.minX + f.i * g.navGrid.CELL, z: g.navGrid.minZ + f.j * g.navGrid.CELL };
+        } else {
+          chosen = { x: g.playerPos.x + bx * 3.0, z: g.playerPos.z + bz * 3.0 };
+        }
+      }
+
+      const footY = fl * CONFIG_FH();
+      this.pos.set(chosen.x, footY, chosen.z);
+      this.floor = fl;
+      this.stairState = { active: null, baseFloor: fl };
+      this.path = [];
+      this.stuckTimer = 0;
+      this.yaw = Math.atan2(g.playerPos.x - chosen.x, g.playerPos.z - chosen.z);
+      this.mode = 'LEAD';
+      this.modeTimer = rand(3, 6);
+      this.roamGoal = null;
+      this._commit();
     }
 
     _commit() {
