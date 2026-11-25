@@ -51,6 +51,10 @@
       this.etherealBreezeLFO = null;
       this._chimeTimer = null;
       this._chimeInterval = null;
+      this.giftShopMusicActive = false;
+      this.pendingGiftShopMusic = false;
+      this.giftShopMusicSource = null;
+      this.giftShopMusicGain = null;
       this.musicEnabled = (localStorage.getItem('the_museum_music') !== 'false');
     }
 
@@ -90,7 +94,8 @@
         'weapon_empty_click.wav', 'weapon_reload.wav', 'flashlight_click.wav',
         'relic_chime.wav', 'lockdown_disengaged.wav', 'lockdown_disengaged_death_scream.wav',
         'smitty_growl.wav', 'jumpscare_stinger.wav', 'heartbeat_pulse.wav',
-        'room_tone_ambience.wav', 'MainMenu-byR3E4.wav', 'R3E4-DeathMusic.wav'
+        'room_tone_ambience.wav', 'MainMenu-byR3E4.wav', 'R3E4-DeathMusic.wav',
+        'gift-shop.wav'
       ];
       const audioVer = window._ASSET_VERSION || Date.now();
       for (const name of files) {
@@ -111,6 +116,11 @@
               if (name === 'R3E4-DeathMusic.wav') {
                 if (this.deathMusicActive || this.pendingDeathMusic) {
                   this.playDeathMusic();
+                }
+              }
+              if (name === 'gift-shop.wav') {
+                if (this.giftShopMusicActive || this.pendingGiftShopMusic) {
+                  this.playGiftShopMusic();
                 }
               }
             }, () => {});
@@ -232,6 +242,9 @@
         this.roomToneGain.gain.cancelScheduledValues(now);
         this.roomToneGain.gain.setValueAtTime(this.roomToneGain.gain.value, now);
         this.roomToneGain.gain.linearRampToValueAtTime(0.0001, now + 0.2);
+      }
+      if (this.giftShopMusicActive) {
+        this.stopGiftShopMusic(0.2);
       }
     }
 
@@ -414,6 +427,7 @@
       } catch (e) {}
       if (!this.musicEnabled) {
         this.fadeOutMenuMusic(0.2);
+        this.stopGiftShopMusic(0.2);
       }
     }
 
@@ -553,6 +567,79 @@
       const oldGain = this.deathMusicGain;
       this.deathMusicSource = null;
       this.deathMusicGain = null;
+
+      setTimeout(() => {
+        try {
+          oldSource.stop();
+          oldSource.disconnect();
+          oldGain.disconnect();
+        } catch (e) {}
+      }, duration * 1000 + 50);
+    }
+
+    playGiftShopMusic() {
+      if (!this.musicEnabled) {
+        this.giftShopMusicActive = false;
+        this.pendingGiftShopMusic = false;
+        return;
+      }
+      this.giftShopMusicActive = true;
+      if (!this.ctx) {
+        this.init();
+      }
+      if (!this.ctx) return;
+      if (this.ctx.state === 'suspended') {
+        this.ctx.resume().catch(() => {});
+      }
+
+      const buf = this.customBuffers['gift-shop.wav'];
+      if (!buf) {
+        this.pendingGiftShopMusic = true;
+        return;
+      }
+      this.pendingGiftShopMusic = false;
+
+      if (this.giftShopMusicSource && this.giftShopMusicGain) {
+        const now = this.ctx.currentTime;
+        this.giftShopMusicGain.gain.cancelScheduledValues(now);
+        this.giftShopMusicGain.gain.setValueAtTime(this.giftShopMusicGain.gain.value, now);
+        this.giftShopMusicGain.gain.linearRampToValueAtTime(0.75, now + 0.35);
+        return;
+      }
+
+      const src = this.ctx.createBufferSource();
+      src.buffer = buf;
+      src.loop = true;
+
+      const gain = this.ctx.createGain();
+      gain.gain.setValueAtTime(0.01, this.ctx.currentTime);
+      gain.gain.linearRampToValueAtTime(0.75, this.ctx.currentTime + 0.5);
+
+      src.connect(gain);
+      gain.connect(this.masterGain);
+
+      src.start();
+      this.giftShopMusicSource = src;
+      this.giftShopMusicGain = gain;
+    }
+
+    stopGiftShopMusic(duration = 0.5) {
+      this.giftShopMusicActive = false;
+      this.pendingGiftShopMusic = false;
+      if (!this.giftShopMusicSource || !this.giftShopMusicGain || !this.ctx) {
+        return;
+      }
+
+      const now = this.ctx.currentTime;
+      const currentGain = this.giftShopMusicGain.gain.value;
+      this.giftShopMusicGain.gain.cancelScheduledValues(now);
+      this.giftShopMusicGain.gain.setValueAtTime(currentGain, now);
+      this.giftShopMusicGain.gain.linearRampToValueAtTime(0.0001, now + duration);
+
+      const oldSource = this.giftShopMusicSource;
+      const oldGain = this.giftShopMusicGain;
+      this.giftShopMusicSource = null;
+      this.giftShopMusicGain = null;
 
       setTimeout(() => {
         try {
@@ -21076,6 +21163,23 @@ window.game = this;
       return (pos.x >= -3.8 && pos.x <= 4.0 && pos.z >= -14.0 && pos.z <= -6.0);
     }
 
+    isInGiftShop() {
+      return (this.playerFloor === CONFIG.ATTIC_FLOOR);
+    }
+
+    updateGiftShopAudio() {
+      if (!this.audio) return;
+      if (this.isInGiftShop()) {
+        if (!this.audio.giftShopMusicActive && !this.audio.pendingGiftShopMusic) {
+          this.audio.playGiftShopMusic();
+        }
+      } else {
+        if (this.audio.giftShopMusicActive || this.audio.pendingGiftShopMusic) {
+          this.audio.stopGiftShopMusic(0.6);
+        }
+      }
+    }
+
     isInStairwell(pos) {
       if (!pos) return false;
       if (pos.x >= -4.2 && pos.x <= 4.2 && pos.z >= -26.5 && pos.z <= -13.5) return true;
@@ -28717,6 +28821,7 @@ window.game = this;
             if (this.updateAtticNpc) this.updateAtticNpc(delta);
             if (this.updateAtticPortal) this.updateAtticPortal(delta);
             if (this.updateGiftShopProducts) this.updateGiftShopProducts(delta);
+            if (this.updateGiftShopAudio) this.updateGiftShopAudio();
             if (this.finalFight) {
               this.finalFight.update(delta);
             }
