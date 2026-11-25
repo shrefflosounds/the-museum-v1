@@ -6298,7 +6298,9 @@ window.game = this;
       ];
       // placeholder z for hat uses desktopTableZ; resolve below
       __imgModels[2].z = (typeof desktopTableZ !== 'undefined') ? desktopTableZ : -25.0;
+      this.modelImageTargets = this.modelImageTargets || [];
       for (const im of __imgModels) {
+        this.modelImageTargets.push({ x: im.x, z: im.z, floor: CONFIG.ATTIC_FLOOR, file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic' });
         this.paintings.push({
           x: im.x, z: im.z, floor: CONFIG.ATTIC_FLOOR,
           file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic'
@@ -25273,6 +25275,11 @@ window.game = this;
         return;
       }
 
+      // 4b. Check Model Image Targets
+      if (this.focusedModelImage) {
+        this.openArtModal(this.focusedModelImage);
+        return;
+      }
       // 4. Check Paintings
       if (this.focusedPainting) {
         this.openArtModal(this.focusedPainting);
@@ -26677,6 +26684,26 @@ window.game = this;
         }
       }
 
+      this.focusedModelImage = null;
+      // Model image targets (gift shop models)
+      if (this.modelImageTargets) {
+        for (const m of this.modelImageTargets) {
+          if (m.floor !== this.playerFloor) continue;
+          const md = Math.hypot(this.playerPos.x - m.x, this.playerPos.z - m.z);
+          if (md < 4.5) {
+            _tempVec1.set(m.x - this.playerPos.x, 0, m.z - this.playerPos.z).normalize();
+            const mdot = _tempForward.dot(_tempVec1);
+            if (mdot > 0.6) {
+              this.focusedModelImage = m;
+            }
+          }
+        }
+      }
+      if (this.focusedModelImage) {
+        this.setInteractPrompt(T('hud.prompt_examine_art', '[E] EXAMINE: "{title}"', { title: this.focusedModelImage.title.toUpperCase() }));
+        this.focusedPainting = null;
+        return;
+      }
       _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
       let bestPainting = null;
       let minDotDist = Infinity;
