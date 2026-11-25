@@ -6116,8 +6116,8 @@ window.game = this;
             const box = new THREE.Box3().setFromObject(model);
             model.position.y += tableTopY - box.min.y;
             model.position.x += 3.0;
-            model.position.z += -43.0;
-            model.rotation.y = Math.PI / 2;
+            model.position.z += -42.3;
+            model.rotation.y = Math.PI;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load SF-YoungThug_exported.glb:', err));
         })
