@@ -4782,6 +4782,7 @@
         optionsStatuesToggleBtn: document.getElementById('options-statues-toggle-btn'),
         optionsStatuesTitle: document.getElementById('options-statues-title'),
         optionsHostOnlyNote: document.getElementById('options-host-only-note'),
+        optionsFullscreenToggleBtn: document.getElementById('options-fullscreen-toggle-btn'),
         optionsMusicToggleBtn: document.getElementById('options-music-toggle-btn'),
         optionsMusicTitle: document.getElementById('options-music-title'),
         optionsSmittyOnBtn: document.getElementById('options-smitty-on-btn'),
@@ -23360,6 +23361,14 @@ window.game = this;
         this.dom.optionsStatuesOffBtn.addEventListener('click', (e) => {
           e.stopPropagation();
           this.setStatuesMode(false);
+        });
+      }
+
+      // Fullscreen Toggle
+      if (this.dom.optionsFullscreenToggleBtn) {
+        this.dom.optionsFullscreenToggleBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          this.toggleFullscreen();
         });
       }
 
