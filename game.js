@@ -6291,6 +6291,20 @@ window.game = this;
         })
         .catch((err) => console.warn('Could not load hat-SF2025.glb:', err));
 
+      const __imgModels = [
+        { x: 6.0, z: -43.0, file: 'assets/images/image-headband.png', title: 'Headband (SF-YoungThug)' },
+        { x: 21.0, z: -25.0, file: 'assets/images/image-batshit.png', title: 'Batshit Jersey' },
+        { x: 2.5, z: null, file: 'assets/images/image-sf2025.png', title: 'SF2025 Hat' },
+      ];
+      // placeholder z for hat uses desktopTableZ; resolve below
+      __imgModels[2].z = (typeof desktopTableZ !== 'undefined') ? desktopTableZ : -25.0;
+      for (const im of __imgModels) {
+        this.paintings.push({
+          x: im.x, z: im.z, floor: CONFIG.ATTIC_FLOOR,
+          file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic'
+        });
+      }
+
       features.forEach((feat, fi) => {
         fetch(`${feat.model}?v=${cacheKey}`)
           .then((res) => {
