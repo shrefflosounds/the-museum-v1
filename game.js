@@ -6115,7 +6115,7 @@ window.game = this;
             model.updateMatrixWorld(true);
             const box = new THREE.Box3().setFromObject(model);
             model.position.y += tableTopY - box.min.y;
-            model.position.x += 3.0;
+            model.position.x += 6.0;
             model.position.z += -42.3;
             model.rotation.y = 3 * Math.PI / 2;
             atticGroup.add(model);
