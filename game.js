@@ -6292,7 +6292,7 @@ window.game = this;
         .catch((err) => console.warn('Could not load hat-SF2025.glb:', err));
 
       const __imgModels = [
-        { x: 6.0, z: -43.0, file: 'assets/images/image-headband.png', title: 'Headband (SF-YoungThug)' },
+        { x: 6.0, z: -43.0, file: 'assets/images/image-headband.png', title: 'Headband' },
         { x: 21.0, z: -25.0, file: 'assets/images/image-batshit.png', title: 'Batshit Jersey' },
         { x: 2.5, z: null, file: 'assets/images/image-sf2025.png', title: 'SF2025 Hat' },
       ];
