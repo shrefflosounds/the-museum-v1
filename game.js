@@ -6117,7 +6117,7 @@ window.game = this;
             model.position.y += tableTopY - box.min.y;
             model.position.x += 3.0;
             model.position.z += -42.3;
-            model.rotation.y = Math.PI;
+            model.rotation.y = 3 * Math.PI / 2;
             atticGroup.add(model);
           }, (err) => console.warn('Could not load SF-YoungThug_exported.glb:', err));
         })
