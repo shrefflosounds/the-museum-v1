@@ -5098,7 +5098,7 @@ window.game = this;
         tex.minFilter = THREE.LinearFilter;
         tex.magFilter = THREE.LinearFilter;
         tex.needsUpdate = true;
-        const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide });
+        const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
         const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), mat);
         plane.position.set(x, y0 + ceilH / 2, z);
         plane.rotation.y = rotY;
