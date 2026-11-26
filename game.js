@@ -4506,6 +4506,7 @@
       this.isVictory = false;
       this.isPaused = false;
       this.isExaminingArt = false;
+      this.isExaminingGiftShop = false;
       this.isPointerLocked = false;
       this.isNativeLocked = false;
       this.skipNextMouseMove = false;
@@ -4739,6 +4740,10 @@
         artModalArtist: document.getElementById('art-modal-artist'),
         artModalWing: document.getElementById('art-modal-wing'),
         artCloseBtn: document.getElementById('art-close-btn'),
+        giftShopModal: document.getElementById('gift-shop-modal'),
+        giftShopModalImg: document.getElementById('gift-modal-img'),
+        giftShopModalLink: document.getElementById('gift-modal-link'),
+        giftShopCloseBtn: document.getElementById('gift-close-btn'),
         optionsModal: document.getElementById('options-modal'),
         optionsBubbleBtn: document.getElementById('options-bubble-btn'),
         optionsCloseBtn: document.getElementById('options-close-btn'),
@@ -6291,13 +6296,12 @@ window.game = this;
         })
         .catch((err) => console.warn('Could not load hat-SF2025.glb:', err));
 
+      // Image targets shown in the artwork inspection modal (unchanged painting behaviour)
       const __imgModels = [
-        { x: 6.0, z: -43.0, file: 'assets/images/image-headband.png', title: 'Headband' },
-        { x: 21.0, z: -25.0, file: 'assets/images/image-batshit.png', title: 'Batshit Jersey' },
         { x: 2.5, z: null, file: 'assets/images/image-sf2025.png', title: 'SF2025 Hat' },
       ];
       // placeholder z for hat uses desktopTableZ; resolve below
-      __imgModels[2].z = (typeof desktopTableZ !== 'undefined') ? desktopTableZ : -25.0;
+      __imgModels[0].z = (typeof desktopTableZ !== 'undefined') ? desktopTableZ : -25.0;
       this.modelImageTargets = this.modelImageTargets || [];
       for (const im of __imgModels) {
         this.modelImageTargets.push({ x: im.x, z: im.z, floor: CONFIG.ATTIC_FLOOR, file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic' });
@@ -6306,6 +6310,17 @@ window.game = this;
           file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic'
         });
       }
+
+      // Gift shop items (clothing + CDs) — open the rosy-red gift shop modal with a buy link
+      this.giftShopItems = [
+        { x: 6.0, z: -43.0, floor: CONFIG.ATTIC_FLOOR, title: 'Headband', image: 'assets/images/image-headband.png', url: 'https://shrefflo2-shop.fourthwall.com/products/shrefflo-meattext-headband' },
+        { x: 21.0, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Batshit Jersey', image: 'assets/images/image-batshit.png', url: 'https://shrefflo2-shop.fourthwall.com/products/batshit-jersey' },
+        { x: 3.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'Est Fni', image: null, url: 'https://elasticstage.com/shrefflo/releases/est-fni-album' },
+        { x: 21.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2', image: null, url: 'https://elasticstage.com/shrefflo/releases/smitty-fantastic-2-album' },
+        { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: null, url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
+        { x: 21.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: "The Port Sheldon Sessions", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-port-sheldon-sessions-album' },
+        { x: 3.0, z: -39.0, floor: CONFIG.ATTIC_FLOOR, title: "The Amazing Bulk", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-amazing-bulk-re-bulked-official-soundtrack-album' },
+      ];
 
       features.forEach((feat, fi) => {
         fetch(`${feat.model}?v=${cacheKey}`)
@@ -23088,7 +23103,7 @@ window.game = this;
     }
 
     applyMouseLook(rawMx, rawMy) {
-      if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt) return;
+      if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isExaminingGiftShop) return;
       const maxDelta = 85;
       const mx = Math.max(-maxDelta, Math.min(maxDelta, rawMx));
       const my = Math.max(-maxDelta, Math.min(maxDelta, rawMy));
@@ -23356,6 +23371,18 @@ window.game = this;
           if (e.target === this.dom.artModal) {
             e.stopPropagation();
             this.closeArtModal();
+          }
+        });
+      }
+
+      this.dom.giftShopCloseBtn.addEventListener('click', () => {
+        this.closeGiftShopModal();
+      });
+      if (this.dom.giftShopModal) {
+        this.dom.giftShopModal.addEventListener('click', (e) => {
+          if (e.target === this.dom.giftShopModal) {
+            e.stopPropagation();
+            this.closeGiftShopModal();
           }
         });
       }
@@ -23662,7 +23689,7 @@ window.game = this;
       });
 
       window.addEventListener('mousemove', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene) {
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isExaminingGiftShop || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene) {
           this.lastClientX = null;
           this.lastClientY = null;
           return;
@@ -23684,13 +23711,13 @@ window.game = this;
 
       window.addEventListener('wheel', (e) => {
         if (!this.gameStarted || !this.isThirdPersonView() || this.isPaused || this.isGameOver || this.isVictory ||
-            this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;
+            this.isExaminingArt || this.isExaminingGiftShop || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen) return;
         e.preventDefault();
         this.zoomThirdPersonCamera(e.deltaY);
       }, { passive: false });
 
       window.addEventListener('mousedown', (e) => {
-        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene || this.isRelicCutscenePending) return;
+        if (!this.gameStarted || this.isPaused || this.isGameOver || this.isVictory || this.isExaminingArt || this.isExaminingGiftShop || this.isObjectiveModalOpen || this.isOptionsModalOpen || this.isSettingsModalOpen || this.isAboutModalOpen || this.isPlayingCutscene || this.isRelicCutscenePending) return;
 
         // Ensure browser lock is requested if not locked, without blocking gameplay action
         if (!this.isPointerLocked && !this.isNativeLocked) {
@@ -23800,7 +23827,7 @@ window.game = this;
           e.code === 'Space' || e.code === 'ShiftLeft' || e.code === 'ShiftRight' ||
           e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'ArrowLeft' || e.code === 'ArrowRight'
         );
-        if (isMovementOrActionKey && this.gameStarted && !this.isPaused && !this.isExaminingArt &&
+        if (isMovementOrActionKey && this.gameStarted && !this.isPaused && !this.isExaminingArt && !this.isExaminingGiftShop &&
             !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isGameOver && !this.isVictory) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
@@ -23813,16 +23840,16 @@ window.game = this;
             this.toggleFullscreen();
           }
         } else if (e.code === 'KeyQ') {
-          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
+          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isExaminingGiftShop) {
             this.performPlayerPunch();
           }
         } else if (e.code === 'KeyX') {
-          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt) {
+          if (this.gameStarted && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isExaminingGiftShop) {
             this.togglePlayerDance();
           }
         } else if (e.code === 'KeyP') {
           if (this.gameStarted) {
-            if (this.isThirdPersonView() && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isPlayingCutscene) {
+            if (this.isThirdPersonView() && !this.isPaused && !this.isGameOver && !this.isVictory && !this.isExaminingArt && !this.isExaminingGiftShop && !this.isPlayingCutscene) {
               this.toggleThirdPersonPerspective();
             } else {
               this.togglePause();
@@ -23839,7 +23866,9 @@ window.game = this;
             this.reloadPistol();
           }
         } else if (e.code === 'KeyE') {
-          if (this.isExaminingArt) {
+          if (this.isExaminingGiftShop) {
+            this.closeGiftShopModal();
+          } else if (this.isExaminingArt) {
             this.closeArtModal();
           } else if (this.charSelectUI && this.charSelectUI.modal && !this.charSelectUI.modal.classList.contains('hidden')) {
             this.charSelectUI.cancelSelection();
@@ -23864,7 +23893,9 @@ window.game = this;
           if (performance.now() - (this.lastPointerLockExitTime || 0) < 300) {
             return;
           }
-          if (this.isExaminingArt) {
+          if (this.isExaminingGiftShop) {
+            this.closeGiftShopModal();
+          } else if (this.isExaminingArt) {
             this.closeArtModal();
           } else if (this.charSelectUI && this.charSelectUI.modal && !this.charSelectUI.modal.classList.contains('hidden')) {
             this.charSelectUI.cancelSelection();
@@ -25037,6 +25068,29 @@ window.game = this;
       this.requestNativeOrBrowserLock();
     }
 
+    openGiftShopModal(item) {
+      this.isExaminingGiftShop = true;
+      this.releaseNativeOrBrowserLock();
+      const img = this.dom.giftShopModalImg;
+      if (item.image) {
+        img.src = item.image;
+        img.style.display = 'block';
+      } else {
+        img.src = '';
+        img.style.display = 'none';
+      }
+      const link = this.dom.giftShopModalLink;
+      link.href = item.url;
+      link.textContent = item.url;
+      this.dom.giftShopModal.classList.remove('hidden');
+    }
+
+    closeGiftShopModal() {
+      this.isExaminingGiftShop = false;
+      this.dom.giftShopModal.classList.add('hidden');
+      this.requestNativeOrBrowserLock();
+    }
+
     getAtticLadderBase() {
       return { x: CONFIG.ATTIC.LADDER_X, z: CONFIG.ATTIC.LADDER_Z };
     }
@@ -25275,6 +25329,11 @@ window.game = this;
         return;
       }
 
+      // 4a. Check Gift Shop Items (clothing + CDs)
+      if (this.focusedGiftShopItem) {
+        this.openGiftShopModal(this.focusedGiftShopItem);
+        return;
+      }
       // 4b. Check Model Image Targets
       if (this.focusedModelImage) {
         this.openArtModal(this.focusedModelImage);
@@ -26701,6 +26760,29 @@ window.game = this;
       }
       if (this.focusedModelImage) {
         this.setInteractPrompt(T('hud.prompt_examine_art', '[E] EXAMINE: "{title}"', { title: this.focusedModelImage.title.toUpperCase() }));
+        this.focusedPainting = null;
+        return;
+      }
+
+      this.focusedGiftShopItem = null;
+      // Gift shop items (clothing + CDs)
+      if (this.giftShopItems) {
+        _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
+        for (const g of this.giftShopItems) {
+          if (g.floor !== this.playerFloor) continue;
+          const gd = Math.hypot(this.playerPos.x - g.x, this.playerPos.z - g.z);
+          if (gd < 4.5) {
+            _tempVec1.set(g.x - this.playerPos.x, 0, g.z - this.playerPos.z).normalize();
+            const gdot = _tempForward.dot(_tempVec1);
+            if (gdot > 0.6) {
+              this.focusedGiftShopItem = g;
+            }
+          }
+        }
+      }
+      if (this.focusedGiftShopItem) {
+        this.setInteractPrompt(T('hud.prompt_examine_art', '[E] EXAMINE: "{title}"', { title: this.focusedGiftShopItem.title.toUpperCase() }));
+        this.focusedModelImage = null;
         this.focusedPainting = null;
         return;
       }

@@ -1195,6 +1195,98 @@ body.cutscene-playing *,
   color: #720000;
 }
 
+/* Gift Shop Item Modal — soft rosy red blob instead of the purple artwork blob */
+.gift-lightbox {
+  position: relative;
+  max-width: min(860px, 92vw);
+  width: fit-content;
+  min-width: min(440px, 90vw);
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  padding: 68px 78px 54px 78px;
+  background: transparent;
+}
+
+.gift-lightbox::before {
+  content: '';
+  position: absolute;
+  top: -34px;
+  bottom: -34px;
+  left: -44px;
+  right: -44px;
+  background: radial-gradient(circle at 50% 50%, #ffb7b7 0%, #e87a7a 55%, #c06c6c 100%);
+  filter: drop-shadow(0 25px 60px rgba(0, 0, 0, 0.90));
+  z-index: -1;
+  pointer-events: none;
+  animation: rosyBlobPulse 6s ease-in-out infinite;
+}
+
+@keyframes rosyBlobPulse {
+  0%, 100% {
+    transform: translate(var(--blob-tx, 0px), var(--blob-ty, 0px)) scale(var(--blob-sx, 1), var(--blob-sy, 1));
+  }
+  35% {
+    transform: translate(var(--blob-tx, 0px), var(--blob-ty, 0px)) scale(calc(var(--blob-sx, 1) * 1.022), calc(var(--blob-sy, 1) * 0.988));
+  }
+  70% {
+    transform: translate(var(--blob-tx, 0px), var(--blob-ty, 0px)) scale(calc(var(--blob-sx, 1) * 0.988), calc(var(--blob-sy, 1) * 1.02));
+  }
+}
+
+.gift-img-wrap {
+  flex: 0 1 auto;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0 14px 0;
+  overflow: visible;
+  max-height: 46vh;
+}
+
+#gift-modal-img {
+  max-width: 100%;
+  max-height: 44vh;
+  object-fit: contain;
+  border-radius: 6px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  display: block;
+}
+
+.gift-details {
+  padding: 0;
+  background: transparent;
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+}
+
+.gift-link {
+  font-family: 'Caryn';
+  font-size: 20px;
+  color: #38bdf8;
+  text-decoration: underline;
+  margin-bottom: 10px;
+  display: inline-block;
+}
+
+.gift-link:hover {
+  color: #7dd3fc;
+  text-decoration: underline;
+}
+
+.gift-exit-hint {
+  font-family: 'Caryn';
+  font-size: 15px;
+  font-weight: normal;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #ffffff;
+  margin-top: auto;
+}
+
 /* Relic Manifest Checklist */
 .checklist-box {
   max-width: 780px;
