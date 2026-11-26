@@ -23600,7 +23600,7 @@ window.game = this;
       });
 
       window.addEventListener('click', () => {
-        if (this.gameStarted && !this.isExaminingArt && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending && !this.isGameOver && !this.isVictory) {
+        if (this.gameStarted && !this.isExaminingArt && !this.isExaminingGiftShop && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending && !this.isGameOver && !this.isVictory) {
           if (!this.isPointerLocked && !this.isNativeLocked) {
             this.requestNativeOrBrowserLock();
           }
@@ -23649,7 +23649,7 @@ window.game = this;
             return;
           }
           if (this.gameStarted && !this.isGameOver && !this.isVictory && !this.isExaminingArt &&
-              !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
+              !this.isExaminingGiftShop && !this.isObjectiveModalOpen && !this.isOptionsModalOpen && !this.isSettingsModalOpen && !this.isAboutModalOpen && !this.isPaused && !this.isPlayingCutscene && !this.isRelicCutscenePending) {
             this.pauseGame();
             this.lastPointerLockExitTime = performance.now();
           }
