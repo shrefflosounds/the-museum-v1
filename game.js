@@ -26781,7 +26781,7 @@ window.game = this;
         }
       }
       if (this.focusedGiftShopItem) {
-        this.setInteractPrompt(T('hud.prompt_examine_art', '[E] EXAMINE: "{title}"', { title: this.focusedGiftShopItem.title.toUpperCase() }));
+        this.setInteractPrompt('[E] EXAMINE');
         this.focusedModelImage = null;
         this.focusedPainting = null;
         return;
