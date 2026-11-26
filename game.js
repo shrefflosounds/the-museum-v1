@@ -6297,11 +6297,7 @@ window.game = this;
         .catch((err) => console.warn('Could not load hat-SF2025.glb:', err));
 
       // Image targets shown in the artwork inspection modal (unchanged painting behaviour)
-      const __imgModels = [
-        { x: 2.5, z: null, file: 'assets/images/image-sf2025.png', title: 'SF2025 Hat' },
-      ];
-      // placeholder z for hat uses desktopTableZ; resolve below
-      __imgModels[0].z = (typeof desktopTableZ !== 'undefined') ? desktopTableZ : -25.0;
+      const __imgModels = [];
       this.modelImageTargets = this.modelImageTargets || [];
       for (const im of __imgModels) {
         this.modelImageTargets.push({ x: im.x, z: im.z, floor: CONFIG.ATTIC_FLOOR, file: im.file, title: im.title, artist: 'Smitty Fantastic', wing: 'Attic' });
@@ -6315,6 +6311,7 @@ window.game = this;
       this.giftShopItems = [
         { x: 6.0, z: -43.0, floor: CONFIG.ATTIC_FLOOR, title: 'Headband', image: 'assets/images/image-headband.png', url: 'https://shrefflo2-shop.fourthwall.com/products/shrefflo-meattext-headband' },
         { x: 21.0, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Batshit Jersey', image: 'assets/images/image-batshit.png', url: 'https://shrefflo2-shop.fourthwall.com/products/batshit-jersey' },
+        { x: 2.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2025 Hat', image: 'assets/images/image-sf2025.png', url: '' },
         { x: 3.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'Est Fni', image: null, url: 'https://elasticstage.com/shrefflo/releases/est-fni-album' },
         { x: 21.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2', image: null, url: 'https://elasticstage.com/shrefflo/releases/smitty-fantastic-2-album' },
         { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: null, url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
