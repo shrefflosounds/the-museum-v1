@@ -6533,6 +6533,7 @@ window.game = this;
         { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: null, url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
         { x: 21.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: "The Port Sheldon Sessions", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-port-sheldon-sessions-album' },
         { x: 3.0, z: -39.0, floor: CONFIG.ATTIC_FLOOR, title: "The Amazing Bulk", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-amazing-bulk-re-bulked-official-soundtrack-album' },
+        { x: 23.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'White Sweatpants', image: null, url: 'https://smitty-fantastic-shop.fourthwall.com/products/6sigilwhitepants' },
       ];
 
       features.forEach((feat, fi) => {
