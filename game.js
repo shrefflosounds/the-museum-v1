@@ -6051,7 +6051,7 @@ window.game = this;
               const box = new THREE.Box3().setFromObject(model);
               model.position.y += y0 - box.min.y;
               model.position.x += 12;
-              model.position.z += -12;
+              model.position.z += -20;
               model.rotation.y = 0;
               atticGroup.add(model);
               this.colliders.push({
@@ -6059,8 +6059,8 @@ window.game = this;
                 floor: fl,
                 minX: 12 - size.x / 2 * (targetH / size.y),
                 maxX: 12 + size.x / 2 * (targetH / size.y),
-                minZ: -12 - size.z / 2 * (targetH / size.y),
-                maxZ: -12 + size.z / 2 * (targetH / size.y),
+                minZ: -20 - size.z / 2 * (targetH / size.y),
+                maxZ: -20 + size.z / 2 * (targetH / size.y),
                 minY: y0,
                 maxY: y0 + targetH,
                 isWall: true
