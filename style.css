@@ -1207,8 +1207,6 @@ body.cutscene-playing *,
   box-sizing: border-box;
   padding: 68px 78px 54px 78px;
   background: transparent;
-  overflow: hidden;
-  border-radius: 65% 35% 55% 45% / 45% 65% 35% 55%;
 }
 
 .gift-lightbox::before {
@@ -1218,11 +1216,18 @@ body.cutscene-playing *,
   bottom: -34px;
   left: -44px;
   right: -44px;
-  background: radial-gradient(circle at 50% 50%, #ffb7b7 0%, #e87a7a 55%, #c06c6c 100%);
-  filter: drop-shadow(0 25px 60px rgba(0, 0, 0, 0.90));
+  background: url('assets/ui/blob_red.png') center center / 100% 100% no-repeat;
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.45))
+          drop-shadow(0 0 35px rgba(255, 255, 255, 0.25))
+          drop-shadow(0 25px 60px rgba(0, 0, 0, 0.90));
   z-index: -1;
   pointer-events: none;
   animation: rosyBlobPulse 6s ease-in-out infinite;
+}
+
+.gift-lightbox .close-btn {
+  top: 18px;
+  right: 22px;
 }
 
 @keyframes rosyBlobPulse {
@@ -1245,7 +1250,7 @@ body.cutscene-playing *,
   justify-content: center;
   padding: 0 0 14px 0;
   overflow: visible;
-  max-height: 46vh;
+  max-height: 58vh;
 }
 
 #gift-modal-img {
