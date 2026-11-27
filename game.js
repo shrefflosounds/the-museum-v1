@@ -6084,6 +6084,179 @@ window.game = this;
 
       // Floating, slowly rotating CD products hovering over one display table
       this.buildGiftShopProducts();
+
+      // Giant floor-mounted security camera whose head tracks the player
+      this.buildGiftShopSecurityCamera();
+    }
+
+    buildGiftShopSecurityCamera() {
+      const fl = CONFIG.ATTIC_FLOOR;
+      const y0 = fl * CONFIG.FLOOR_HEIGHT;
+      const atticGroup = this.floorGroups[fl];
+      if (!atticGroup) return;
+
+      // Placed on the floor on the left side of the empty area toward the south wall
+      // (looking toward the south wall S at z=-8, left of the center cash register is x=22.5, z=-14.5).
+      const camX = 22.5;
+      const camZ = -14.5;
+
+      const root = new THREE.Group();
+      root.name = 'GiftShopSecurityCamera';
+      root.position.set(camX, y0, camZ);
+      atticGroup.add(root);
+
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: 0xa5a7b0,
+        roughness: 0.72,
+        metalness: 0.12,
+        flatShading: true
+      });
+      const darkTrimMat = new THREE.MeshStandardMaterial({
+        color: 0x8c8e97,
+        roughness: 0.76,
+        metalness: 0.12,
+        flatShading: true
+      });
+      const lightTrimMat = new THREE.MeshStandardMaterial({
+        color: 0xc2c4cd,
+        roughness: 0.68,
+        metalness: 0.1,
+        flatShading: true
+      });
+      const lensMat = new THREE.MeshStandardMaterial({
+        color: 0x2b3c41,
+        roughness: 0.35,
+        metalness: 0.15,
+        flatShading: true
+      });
+      const socketMat = new THREE.MeshStandardMaterial({
+        color: 0x5c5e66,
+        roughness: 0.8,
+        metalness: 0.1,
+        flatShading: true
+      });
+      const redLightMat = new THREE.MeshStandardMaterial({
+        color: 0xe60808,
+        emissive: 0xcc0000,
+        emissiveIntensity: 0.75,
+        roughness: 0.3,
+        metalness: 0.05,
+        flatShading: true
+      });
+
+      // 1. Rectangular floor base slab
+      const baseW = 1.95, baseH = 0.54, baseD = 1.95;
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(baseW, baseH, baseD), bodyMat);
+      baseMesh.position.set(0, baseH / 2, 0);
+      baseMesh.castShadow = true;
+      baseMesh.receiveShadow = true;
+      root.add(baseMesh);
+
+      // 2. Angled octagonal support neck rising from the base
+      const postH = 1.35;
+      const postGeo = new THREE.CylinderGeometry(0.31, 0.31, postH, 8);
+      const postMesh = new THREE.Mesh(postGeo, bodyMat);
+      postMesh.position.set(0, baseH + postH * 0.45, -0.06);
+      postMesh.rotation.x = 0.16;
+      postMesh.castShadow = true;
+      postMesh.receiveShadow = true;
+      root.add(postMesh);
+
+      // 3. Pivoting camera head group (local +Z is the front lens axis)
+      const headPivotY = baseH + postH * 0.88 + 0.86;
+      const headGroup = new THREE.Group();
+      headGroup.name = 'GiftShopSecurityCameraHead';
+      headGroup.position.set(0, headPivotY, 0);
+      headGroup.rotation.order = 'YXZ';
+      root.add(headGroup);
+
+      // Main boxy camera housing
+      const headW = 2.08, headH = 1.74, headD = 2.38;
+      const housing = new THREE.Mesh(new THREE.BoxGeometry(headW, headH, headD), bodyMat);
+      housing.position.set(0, 0, -0.10);
+      housing.castShadow = true;
+      housing.receiveShadow = true;
+      headGroup.add(housing);
+
+      // Side recessed horizontal detail groove + bottom highlight ledge on both sides
+      for (const sx of [-1, 1]) {
+        const groove = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.24, 1.88), darkTrimMat);
+        groove.position.set(sx * (headW / 2 + 0.005), -0.38, -0.14);
+        headGroup.add(groove);
+
+        const ledge = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.05, 1.88), lightTrimMat);
+        ledge.position.set(sx * (headW / 2 + 0.008), -0.52, -0.14);
+        headGroup.add(ledge);
+      }
+
+      // Stepped circular front lens bezel + dark slate-teal lens glass on +Z face
+      const frontZ = headD / 2 - 0.10;
+      const outerBezel = new THREE.Mesh(new THREE.CylinderGeometry(0.78, 0.82, 0.20, 20), bodyMat);
+      outerBezel.rotation.x = Math.PI / 2;
+      outerBezel.position.set(0, -0.02, frontZ + 0.08);
+      outerBezel.castShadow = true;
+      headGroup.add(outerBezel);
+
+      const innerBezel = new THREE.Mesh(new THREE.CylinderGeometry(0.69, 0.74, 0.14, 20), darkTrimMat);
+      innerBezel.rotation.x = Math.PI / 2;
+      innerBezel.position.set(0, -0.02, frontZ + 0.15);
+      headGroup.add(innerBezel);
+
+      const lensDisc = new THREE.Mesh(new THREE.CylinderGeometry(0.65, 0.65, 0.06, 20), lensMat);
+      lensDisc.rotation.x = Math.PI / 2;
+      lensDisc.position.set(0, -0.02, frontZ + 0.20);
+      headGroup.add(lensDisc);
+
+      // Side box module with recessed circular socket and red indicator light (upper-left from front view -> +X side)
+      const podW = 0.42, podH = 0.86, podD = 0.82;
+      const sidePod = new THREE.Mesh(new THREE.BoxGeometry(podW, podH, podD), bodyMat);
+      sidePod.position.set(headW / 2 + podW / 2 - 0.02, 0.18, frontZ - podD / 2 - 0.08);
+      sidePod.castShadow = true;
+      sidePod.receiveShadow = true;
+      headGroup.add(sidePod);
+
+      const podFrontZ = sidePod.position.z + podD / 2;
+      const socketRecess = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 14), socketMat);
+      socketRecess.rotation.x = Math.PI / 2;
+      socketRecess.position.set(sidePod.position.x, sidePod.position.y + 0.20, podFrontZ - 0.01);
+      headGroup.add(socketRecess);
+
+      const redLed = new THREE.Mesh(new THREE.SphereGeometry(0.105, 8, 6), redLightMat);
+      redLed.position.set(sidePod.position.x, sidePod.position.y + 0.20, podFrontZ + 0.01);
+      headGroup.add(redLed);
+
+      this.giftShopSecurityCam = root;
+      this.giftShopSecurityCamHead = headGroup;
+      this.giftShopSecurityCamPos = new THREE.Vector3(camX, y0 + headPivotY, camZ);
+
+      // Solid collider so the player cannot walk through the giant security camera
+      this.colliders.push({
+        type: 'box',
+        floor: fl,
+        minX: camX - 1.25,
+        maxX: camX + 1.25,
+        minZ: camZ - 1.25,
+        maxZ: camZ + 1.25,
+        minY: y0,
+        maxY: y0 + headPivotY + headH / 2,
+        isWall: true
+      });
+    }
+
+    updateGiftShopSecurityCamera() {
+      const head = this.giftShopSecurityCamHead;
+      const camPos = this.giftShopSecurityCamPos;
+      if (!head || !camPos || !this.playerPos) return;
+      if (this.playerFloor !== CONFIG.ATTIC_FLOOR) return;
+
+      const dx = this.playerPos.x - camPos.x;
+      const dy = (this.playerPos.y - 0.12) - camPos.y;
+      const dz = this.playerPos.z - camPos.z;
+      const horizDist = Math.hypot(dx, dz);
+
+      head.rotation.y = Math.atan2(dx, dz);
+      const rawPitch = -Math.atan2(dy, Math.max(0.001, horizDist));
+      head.rotation.x = Math.max(-0.75, Math.min(0.85, rawPitch));
     }
 
     buildGiftShopProducts() {
@@ -29100,6 +29273,7 @@ window.game = this;
             if (this.updateAtticNpc) this.updateAtticNpc(delta);
             if (this.updateAtticPortal) this.updateAtticPortal(delta);
             if (this.updateGiftShopProducts) this.updateGiftShopProducts(delta);
+            if (this.updateGiftShopSecurityCamera) this.updateGiftShopSecurityCamera();
             if (this.updateGiftShopAudio) this.updateGiftShopAudio();
             if (this.finalFight) {
               this.finalFight.update(delta);
