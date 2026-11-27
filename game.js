@@ -1402,7 +1402,7 @@
     NUM_LEVELS: 5,
     ATTIC: {
       MIN_X: -8, MAX_X: 32,
-      MIN_Z: -46, MAX_Z: -22,
+      MIN_Z: -46, MAX_Z: -15,
       WALL_H: 6.4,
       LADDER_X: 8, LADDER_Z: -30,
       LAND_Z: -32
@@ -6028,6 +6028,46 @@ window.game = this;
         for (const tx of tableXs) {
           for (const tz of tableZs) addTable(tx, tz, tableW, tableD);
         }
+
+        // Cash register toward the south wall (aisle center, between table columns)
+        const cacheKey = window._ASSET_VERSION || Date.now();
+        fetch(`assets/models/Cash-Register.glb?v=${cacheKey}`)
+          .then((res) => { if (!res.ok) throw new Error(`HTTP ${res.status}`); return res.arrayBuffer(); })
+          .then((buffer) => {
+            const loader = new THREE.GLTFLoader();
+            loader.parse(buffer, '', (gltf) => {
+              const model = gltf.scene;
+              model.updateMatrixWorld(true);
+              const size = new THREE.Vector3();
+              new THREE.Box3().setFromObject(model).getSize(size);
+              const targetH = 1.0;
+              if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
+              model.updateMatrixWorld(true);
+              const center = new THREE.Vector3();
+              new THREE.Box3().setFromObject(model).getCenter(center);
+              model.position.x -= center.x;
+              model.position.z -= center.z;
+              model.updateMatrixWorld(true);
+              const box = new THREE.Box3().setFromObject(model);
+              model.position.y += y0 - box.min.y;
+              model.position.x += 12;
+              model.position.z += -18;
+              model.rotation.y = 0;
+              atticGroup.add(model);
+              this.colliders.push({
+                type: 'box',
+                floor: fl,
+                minX: 12 - size.x / 2 * (targetH / size.y),
+                maxX: 12 + size.x / 2 * (targetH / size.y),
+                minZ: -18 - size.z / 2 * (targetH / size.y),
+                maxZ: -18 + size.z / 2 * (targetH / size.y),
+                minY: y0,
+                maxY: y0 + targetH,
+                isWall: true
+              });
+            }, (err) => console.warn('Could not load Cash-Register.glb:', err));
+          })
+          .catch((err) => console.warn('Could not load Cash-Register.glb:', err));
       } finally {
         this.scene.add = rootSceneAdd;
       }
