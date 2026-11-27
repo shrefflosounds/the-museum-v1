@@ -1207,6 +1207,8 @@ body.cutscene-playing *,
   box-sizing: border-box;
   padding: 68px 78px 54px 78px;
   background: transparent;
+  overflow: hidden;
+  border-radius: 65% 35% 55% 45% / 45% 65% 35% 55%;
 }
 
 .gift-lightbox::before {
@@ -1248,7 +1250,7 @@ body.cutscene-playing *,
 
 #gift-modal-img {
   max-width: 100%;
-  max-height: 44vh;
+  max-height: 55vh;
   object-fit: contain;
   border-radius: 6px;
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
