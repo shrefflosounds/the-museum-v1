@@ -140,9 +140,9 @@
 
       <!-- Options & Controls Bubbles -->
       <div class="start-bubbles-row">
-        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Audio and Curator gameplay options" data-text="bubble.options">OPTIONS</button>
-        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="View keybinds and spectator mode controls" data-text="bubble.controls">CONTROLS</button>
-        <button id="about-bubble-btn" class="start-bubble-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about">ABOUT</button>
+        <button id="options-bubble-btn" class="start-bubble-btn" type="button" title="Configure Settings, NPCs, Audio" data-text="bubble.options">OPTIONS</button>
+        <button id="settings-bubble-btn" class="start-bubble-btn" type="button" title="List of controls / keybindings" data-text="bubble.controls">CONTROLS</button>
+        <button id="about-bubble-btn" class="start-bubble-btn" type="button" title="Info, credits, provenance" data-text="bubble.about">ABOUT</button>
       </div>
 
       <button id="start-btn" class="museum-btn" title="Enter the museum and begin the exhibition" data-text="start.button">START GAME</button>
@@ -156,7 +156,7 @@
         <button id="join-game-btn" class="museum-btn mp-action-btn" type="button" title="Join a cooperative game">JOIN CO-OP</button>
       </div>
 
-      <button id="start-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
+      <button id="start-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Leave museum" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
     </div>
   </div>
 
@@ -229,13 +229,13 @@
 
       <div class="options-section">
         <div class="options-toggle-group">
-          <button id="options-smitty-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+          <button id="options-smitty-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true" title="Danger and Lighting">
             <span id="options-smitty-title" class="options-toggle-title">Curator: ON</span>
           </button>
-          <button id="options-statues-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+          <button id="options-statues-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true" title="Traveling statue NPCs">
             <span id="options-statues-title" class="options-toggle-title">Statues: ON</span>
           </button>
-          <button id="options-music-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true">
+          <button id="options-music-toggle-btn" class="options-toggle-btn active" type="button" aria-pressed="true" title="Music">
             <span id="options-music-title" class="options-toggle-title">Music: ON</span>
           </button>
         </div>
@@ -404,10 +404,10 @@
       <p class="pause-sub" data-text="pause.text">Click Resume to continue.</p>
       <div class="pause-actions-list">
         <button id="resume-btn" class="museum-btn" title="Return to exploring the museum" data-text="pause.button">RESUME EXPLORATION</button>
-        <button id="pause-options-btn" class="museum-btn pause-opt-btn" type="button" title="Audio and Curator gameplay options" data-text="bubble.options">OPTIONS</button>
-        <button id="pause-settings-btn" class="museum-btn pause-opt-btn" type="button" title="View keybinds and spectator mode controls" data-text="bubble.controls">CONTROLS</button>
-        <button id="pause-about-btn" class="museum-btn pause-opt-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about">ABOUT</button>
-        <button id="pause-quit-btn" class="museum-btn pause-opt-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit">QUIT</button>
+        <button id="pause-options-btn" class="museum-btn pause-opt-btn" type="button" title="Configure Settings, NPCs, Audio" data-text="bubble.options">OPTIONS</button>
+        <button id="pause-settings-btn" class="museum-btn pause-opt-btn" type="button" title="List of controls / keybindings" data-text="bubble.controls">CONTROLS</button>
+        <button id="pause-about-btn" class="museum-btn pause-opt-btn" type="button" title="Info, credits, provenance" data-text="bubble.about">ABOUT</button>
+        <button id="pause-quit-btn" class="museum-btn pause-opt-btn menu-quit-btn" type="button" title="Leave museum" data-text="menu.quit">QUIT</button>
       </div>
     </div>
   </div>
@@ -422,7 +422,7 @@
         <p><span data-text="gameover.time_label">Playtime:</span> <span id="death-time">0:00</span></p>
       </div>
       <button id="restart-btn" class="museum-btn" title="Restart exploration from the ground floor" data-text="gameover.button">TRY AGAIN</button>
-      <button id="gameover-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
+      <button id="gameover-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Leave museum" data-text="menu.quit" style="margin-top: 12px;">QUIT</button>
     </div>
   </div>
 
@@ -435,8 +435,8 @@
         <p><span data-text="victory.time_label">Playtime:</span> <span id="win-time">0:00</span></p>
       </div>
       <button id="win-restart-btn" class="museum-btn" title="Begin a new museum expedition" data-text="victory.button">PLAY AGAIN</button>
-      <button id="victory-about-btn" class="museum-btn pause-opt-btn" type="button" title="Exhibition credits, build info, and provenance" data-text="bubble.about" style="margin-top: 10px;">ABOUT</button>
-      <button id="victory-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Exit to desktop / close exhibition window" data-text="menu.quit" style="margin-top: 10px;">QUIT</button>
+      <button id="victory-about-btn" class="museum-btn pause-opt-btn" type="button" title="Info, credits, provenance" data-text="bubble.about" style="margin-top: 10px;">ABOUT</button>
+      <button id="victory-quit-btn" class="museum-btn menu-quit-btn" type="button" title="Leave museum" data-text="menu.quit" style="margin-top: 10px;">QUIT</button>
     </div>
   </div>
 
