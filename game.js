@@ -6534,6 +6534,7 @@ window.game = this;
         { x: 21.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: "The Port Sheldon Sessions", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-port-sheldon-sessions-album' },
         { x: 3.0, z: -39.0, floor: CONFIG.ATTIC_FLOOR, title: "The Amazing Bulk", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-amazing-bulk-re-bulked-official-soundtrack-album' },
         { x: 23.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'White Sweatpants', image: 'assets/images/ad-whitesweatpants.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/6sigilwhitepants' },
+        { x: 5.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Blue Beanie', image: 'assets/images/ad-bluebeanie.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/white-sigil-beanie' },
       ];
 
       features.forEach((feat, fi) => {
