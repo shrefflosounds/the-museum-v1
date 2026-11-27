@@ -1402,7 +1402,7 @@
     NUM_LEVELS: 5,
     ATTIC: {
       MIN_X: -8, MAX_X: 32,
-      MIN_Z: -46, MAX_Z: -15,
+      MIN_Z: -46, MAX_Z: -8,
       WALL_H: 6.4,
       LADDER_X: 8, LADDER_Z: -30,
       LAND_Z: -32
@@ -6040,7 +6040,7 @@ window.game = this;
               model.updateMatrixWorld(true);
               const size = new THREE.Vector3();
               new THREE.Box3().setFromObject(model).getSize(size);
-              const targetH = 2.3;
+              const targetH = 2.53;
               if (size.y > 1e-4) model.scale.multiplyScalar(targetH / size.y);
               model.updateMatrixWorld(true);
               const center = new THREE.Vector3();
@@ -6051,7 +6051,7 @@ window.game = this;
               const box = new THREE.Box3().setFromObject(model);
               model.position.y += y0 - box.min.y;
               model.position.x += 12;
-              model.position.z += -18;
+              model.position.z += -12;
               model.rotation.y = 0;
               atticGroup.add(model);
               this.colliders.push({
@@ -6059,8 +6059,8 @@ window.game = this;
                 floor: fl,
                 minX: 12 - size.x / 2 * (targetH / size.y),
                 maxX: 12 + size.x / 2 * (targetH / size.y),
-                minZ: -18 - size.z / 2 * (targetH / size.y),
-                maxZ: -18 + size.z / 2 * (targetH / size.y),
+                minZ: -12 - size.z / 2 * (targetH / size.y),
+                maxZ: -12 + size.z / 2 * (targetH / size.y),
                 minY: y0,
                 maxY: y0 + targetH,
                 isWall: true
