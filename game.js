@@ -6528,7 +6528,7 @@ window.game = this;
         { x: 6.0, z: -43.0, floor: CONFIG.ATTIC_FLOOR, title: 'Headband', image: 'assets/images/image-headband.png', url: 'https://shrefflo2-shop.fourthwall.com/products/shrefflo-meattext-headband' },
         { x: 21.0, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Batshit Jersey', image: 'assets/images/image-batshit.png', url: 'https://shrefflo2-shop.fourthwall.com/products/batshit-jersey' },
         { x: 2.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2025 Hat', image: 'assets/images/image-sf2025.png', url: '' },
-        { x: 3.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'Est Fni', image: null, url: 'https://elasticstage.com/shrefflo/releases/est-fni-album' },
+        { x: 3.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'Est Fni', image: 'assets/images/ad-estfni.png', url: 'https://elasticstage.com/shrefflo/releases/est-fni-album' },
         { x: 21.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2', image: 'assets/images/ad-sf2.png', url: 'https://elasticstage.com/shrefflo/releases/smitty-fantastic-2-album' },
         { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: null, url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
         { x: 21.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: "The Port Sheldon Sessions", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-amazing-bulk-re-bulked-official-soundtrack-album' },
