@@ -6537,6 +6537,7 @@ window.game = this;
         { x: 5.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Blue Beanie', image: 'assets/images/ad-bluebeanie.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/white-sigil-beanie' },
         { x: 18.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Black Shirt', image: 'assets/images/ad-blackshirt-ahuman.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/a-human' },
         { x: 1.0, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Green Shirt', image: 'assets/images/ad-graffeetee.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/graffeetee' },
+        { x: 4.0, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'Sponge Shirt', image: 'assets/images/ad-sponge.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/sponge' },
       ];
 
       features.forEach((feat, fi) => {
