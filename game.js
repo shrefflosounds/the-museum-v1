@@ -5105,7 +5105,7 @@ window.game = this;
         tex.needsUpdate = true;
         const mat = new THREE.MeshBasicMaterial({ map: tex, side: THREE.DoubleSide, transparent: true });
         const plane = new THREE.Mesh(new THREE.PlaneGeometry(1.2, 1.5), mat);
-        plane.position.set(x, y0 + ceilH / 2, z);
+        plane.position.set(x, y0 + ceilH * 0.82, z);
         plane.rotation.y = rotY;
         plane.renderOrder = 1;
         plane.frustumCulled = false;
