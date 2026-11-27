@@ -6098,11 +6098,14 @@ window.game = this;
       // Placed on the floor on the left side of the empty area toward the south wall
       // (looking toward the south wall S at z=-8, left of the center cash register is x=22.5, z=-14.5).
       const camX = 22.5;
-      const camZ = -14.5;
+      const camZ = -11;
+
+      const camScale = 1.3;
 
       const root = new THREE.Group();
       root.name = 'GiftShopSecurityCamera';
       root.position.set(camX, y0, camZ);
+      root.scale.set(camScale, camScale, camScale);
       atticGroup.add(root);
 
       const bodyMat = new THREE.MeshStandardMaterial({
@@ -6227,18 +6230,18 @@ window.game = this;
 
       this.giftShopSecurityCam = root;
       this.giftShopSecurityCamHead = headGroup;
-      this.giftShopSecurityCamPos = new THREE.Vector3(camX, y0 + headPivotY, camZ);
+      this.giftShopSecurityCamPos = new THREE.Vector3(camX, y0 + headPivotY * camScale, camZ);
 
       // Solid collider so the player cannot walk through the giant security camera
       this.colliders.push({
         type: 'box',
         floor: fl,
-        minX: camX - 1.25,
-        maxX: camX + 1.25,
-        minZ: camZ - 1.25,
-        maxZ: camZ + 1.25,
+        minX: camX - 1.25 * camScale,
+        maxX: camX + 1.25 * camScale,
+        minZ: camZ - 1.25 * camScale,
+        maxZ: camZ + 1.25 * camScale,
         minY: y0,
-        maxY: y0 + headPivotY + headH / 2,
+        maxY: y0 + (headPivotY + headH / 2) * camScale,
         isWall: true
       });
     }
