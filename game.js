@@ -6530,7 +6530,7 @@ window.game = this;
         { x: 2.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2025 Hat', image: 'assets/images/image-sf2025.png', url: '' },
         { x: 3.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'Est Fni', image: 'assets/images/ad-estfni.png', url: 'https://elasticstage.com/shrefflo/releases/est-fni-album' },
         { x: 21.0, z: -29.0, floor: CONFIG.ATTIC_FLOOR, title: 'SF2', image: 'assets/images/ad-sf2.png', url: 'https://elasticstage.com/shrefflo/releases/smitty-fantastic-2-album' },
-        { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: null, url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
+        { x: 3.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: 'Gemini Diaries', image: 'assets/images/ad-geminidiaries.png', url: 'https://elasticstage.com/shrefflo/releases/gemini-diaries-album' },
         { x: 21.0, z: -35.0, floor: CONFIG.ATTIC_FLOOR, title: "The Port Sheldon Sessions", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-amazing-bulk-re-bulked-official-soundtrack-album' },
         { x: 3.0, z: -39.0, floor: CONFIG.ATTIC_FLOOR, title: "The Amazing Bulk", image: null, url: 'https://elasticstage.com/shrefflo/releases/the-port-sheldon-sessions-album' },
         { x: 23.5, z: -25.0, floor: CONFIG.ATTIC_FLOOR, title: 'White Sweatpants', image: 'assets/images/ad-whitesweatpants.png', url: 'https://smitty-fantastic-shop.fourthwall.com/products/6sigilwhitepants' },
