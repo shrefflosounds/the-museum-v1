@@ -26963,18 +26963,27 @@ window.game = this;
 
       this.focusedModelImage = null;
       // Model image targets (gift shop models)
-      if (this.modelImageTargets) {
+      if (this.modelImageTargets && this.modelImageTargets.length > 0) {
+        _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
+        let bestModel = null;
+        let bestModelScore = Infinity;
         for (const m of this.modelImageTargets) {
           if (m.floor !== this.playerFloor) continue;
           const md = Math.hypot(this.playerPos.x - m.x, this.playerPos.z - m.z);
-          if (md < 4.5) {
+          if (md < 3.6) {
             _tempVec1.set(m.x - this.playerPos.x, 0, m.z - this.playerPos.z).normalize();
             const mdot = _tempForward.dot(_tempVec1);
-            if (mdot > 0.6) {
-              this.focusedModelImage = m;
+            if (mdot > 0.72) {
+              const perpDist = md * Math.sqrt(Math.max(0, 1 - mdot * mdot));
+              const score = perpDist * 3.0 + md;
+              if (score < bestModelScore) {
+                bestModelScore = score;
+                bestModel = m;
+              }
             }
           }
         }
+        this.focusedModelImage = bestModel;
       }
       if (this.focusedModelImage) {
         this.setInteractPrompt(T('hud.prompt_examine_art', '[E] EXAMINE: "{title}"', { title: this.focusedModelImage.title.toUpperCase() }));
@@ -26986,17 +26995,28 @@ window.game = this;
       // Gift shop items (clothing + CDs)
       if (this.giftShopItems) {
         _tempForward.set(-Math.sin(this.playerYaw), 0, -Math.cos(this.playerYaw));
+        let bestGiftItem = null;
+        let bestGiftScore = Infinity;
         for (const g of this.giftShopItems) {
           if (g.floor !== this.playerFloor) continue;
           const gd = Math.hypot(this.playerPos.x - g.x, this.playerPos.z - g.z);
-          if (gd < 4.5) {
+          const maxR = (g.image === null) ? 4.2 : 2.6;
+          if (gd < maxR) {
             _tempVec1.set(g.x - this.playerPos.x, 0, g.z - this.playerPos.z).normalize();
             const gdot = _tempForward.dot(_tempVec1);
-            if (gdot > 0.6) {
-              this.focusedGiftShopItem = g;
+            const minDot = (g.image === null) ? 0.65 : 0.78;
+            if (gdot > minDot) {
+              // Prioritize items closest to the player's line of sight (perpendicular offset) and proximity
+              const perpDist = gd * Math.sqrt(Math.max(0, 1 - gdot * gdot));
+              const score = perpDist * 3.0 + gd;
+              if (score < bestGiftScore) {
+                bestGiftScore = score;
+                bestGiftItem = g;
+              }
             }
           }
         }
+        this.focusedGiftShopItem = bestGiftItem;
       }
       if (this.focusedGiftShopItem) {
         this.setInteractPrompt('[E] EXAMINE');
